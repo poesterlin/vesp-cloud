@@ -1,6 +1,6 @@
 #pragma once
 #include "esphome.h"
-#include "button.h"
+#include "light_element.h"
 
 // --- NAVIGATION STATE ---
 enum ViewState {
@@ -8,6 +8,14 @@ enum ViewState {
   VIEW_DETAIL_VACUUM,
   VIEW_DETAIL_LIGHTS,
   VIEW_DETAIL_TODO
+};
+
+struct LightControl {
+  bool state = false;
+  volatile bool loading = false;
+  volatile bool actionRequested = false;
+  unsigned long loadingStartTime = 0;
+  LightElement btn;
 };
 
 // Centralized state for the display
@@ -40,6 +48,12 @@ struct DisplayState {
   volatile bool vacuumBadgeActionRequested = false;
   Button vacuumBadgeBtn = Button(0, 0, 60, 20);
 
+  // Lights Detail Navigation
+  volatile bool lightsDetailLoading = false;
+  unsigned long lightsDetailLoadingStartTime = 0;
+  volatile bool lightsDetailActionRequested = false; // Dummy
+  Button lightsDetailBtn = Button(40, 155, 160, 80); // Overlay for Page 2 lights section
+
   // --- SENSORS ---
   
   // Climate
@@ -59,6 +73,17 @@ struct DisplayState {
   bool windowWork = false;
   
   // Lights (true = on)
+  LightControl lightStehlampe;      // switch.stehlampe_switch
+  LightControl lightWohnzimmer;     // light.wohnzimmer_licht_light
+  LightControl lightKleineLampe;    // switch.kleine_lampe_switch
+  LightControl lightWLED;           // light.wled
+  LightControl lightStehlampeOben;  // light.stehlampe_oben
+  LightControl lightKamera;         // light.innr_rf_262_light
+
+  LightControl lightOffice;         // light.schlafzimmer_licht_light
+  LightControl lightGrosseLED;      // switch.grosse_led_switch
+
+  // Legacy (mapping for compatibility if needed, or we can just replace them)
   bool lightLiving = false;
   bool lightDesk = false;
   bool lightLamp = false;

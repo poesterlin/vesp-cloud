@@ -34,12 +34,21 @@ The application is split into two modes:
 
 ## Build/Test Commands
 
+### Python Environment
+```bash
+# Activate virtual environment (necessary for ESPHome commands)
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
 ### ESPHome Commands
 ```bash
-# Compile the firmware (dry run)
-esphome compile esphome/my-display.yaml
+# Compile the firmware (dry run). its very noisy so redirect output to /dev/null and only show if there are errors. it will still output "INFO Successfully compiled program." if successful.
+esphome compile esphome/my-display.yaml 1>/dev/null
 
-# Upload to device
+# Upload to device. I will do this for you when needed. Never upload without confirming first.
 esphome upload esphome/my-display.yaml
 
 # Run with debug output
@@ -50,15 +59,6 @@ esphome clean esphome/my-display.yaml
 
 # Validate configuration
 esphome config esphome/my-display.yaml
-```
-
-### Python Environment
-```bash
-# Activate virtual environment (if needed)
-source .venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
 ```
 
 ## Project Architecture

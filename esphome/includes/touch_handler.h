@@ -93,6 +93,13 @@ private:
           }
         }
       }
+      // Page 2: House Status -> Open Light Details
+      else if (gState.mainPageIndex == 2) {
+        if (gState.lightsDetailBtn.processTap(x, y, gState.lightsDetailLoading, gState.lightsDetailLoadingStartTime, gState.lightsDetailActionRequested)) {
+          openView(VIEW_DETAIL_LIGHTS);
+          return;
+        }
+      }
       // Page 3: Devices Page -> Open Details
       else if (gState.mainPageIndex == 3) {
         // Vacuum Card Button
@@ -117,8 +124,20 @@ private:
       if (gState.currentView == VIEW_DETAIL_VACUUM) {
         if (gState.vacuumBtn.processTap(x, y, gState.vacuumLoading, gState.vacuumLoadingStartTime, gState.vacuumActionRequested, gState.scrollY)) {
           gState.lastTouchTime = millis();
-          ESP_LOGI("touch", "Vacuum button processed - ActionRequested set to TRUE");
+          ESP_LOGI("touch", "Vacuum button processed");
         }
+      }
+      
+      // Lights Detail View Buttons
+      if (gState.currentView == VIEW_DETAIL_LIGHTS) {
+        if (gState.lightStehlampe.btn.processTap(x, y, gState.lightStehlampe.loading, gState.lightStehlampe.loadingStartTime, gState.lightStehlampe.actionRequested, gState.scrollY)) return;
+        if (gState.lightWohnzimmer.btn.processTap(x, y, gState.lightWohnzimmer.loading, gState.lightWohnzimmer.loadingStartTime, gState.lightWohnzimmer.actionRequested, gState.scrollY)) return;
+        if (gState.lightKleineLampe.btn.processTap(x, y, gState.lightKleineLampe.loading, gState.lightKleineLampe.loadingStartTime, gState.lightKleineLampe.actionRequested, gState.scrollY)) return;
+        if (gState.lightWLED.btn.processTap(x, y, gState.lightWLED.loading, gState.lightWLED.loadingStartTime, gState.lightWLED.actionRequested, gState.scrollY)) return;
+        if (gState.lightStehlampeOben.btn.processTap(x, y, gState.lightStehlampeOben.loading, gState.lightStehlampeOben.loadingStartTime, gState.lightStehlampeOben.actionRequested, gState.scrollY)) return;
+        if (gState.lightKamera.btn.processTap(x, y, gState.lightKamera.loading, gState.lightKamera.loadingStartTime, gState.lightKamera.actionRequested, gState.scrollY)) return;
+        if (gState.lightOffice.btn.processTap(x, y, gState.lightOffice.loading, gState.lightOffice.loadingStartTime, gState.lightOffice.actionRequested, gState.scrollY)) return;
+        if (gState.lightGrosseLED.btn.processTap(x, y, gState.lightGrosseLED.loading, gState.lightGrosseLED.loadingStartTime, gState.lightGrosseLED.actionRequested, gState.scrollY)) return;
       }
     }
   }

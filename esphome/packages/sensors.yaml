@@ -194,20 +194,51 @@ binary_sensor:
     entity_id: light.wohnzimmer_licht_light
     internal: true
     on_state:
-      - lambda: "gState.lightLiving = x;"
+      - lambda: "gState.lightWohnzimmer.state = x; gState.lightLiving = x;"
   - platform: homeassistant
     id: light_schreibtisch
     entity_id: light.schlafzimmer_licht_light
     internal: true
     on_state:
-      - lambda: "gState.lightDesk = x;"
+      - lambda: "gState.lightOffice.state = x; gState.lightDesk = x;"
   - platform: homeassistant
     id: light_stehlampe
     entity_id: light.stehlampe_oben
     internal: true
     on_state:
-      - lambda: "gState.lightLamp = x;"
+      - lambda: "gState.lightStehlampeOben.state = x; gState.lightLamp = x;"
       
+  - platform: homeassistant
+    id: sw_stehlampe
+    entity_id: switch.stehlampe_switch
+    internal: true
+    on_state:
+      - lambda: "gState.lightStehlampe.state = x;"
+  - platform: homeassistant
+    id: sw_kleine_lampe
+    entity_id: switch.kleine_lampe_switch
+    internal: true
+    on_state:
+      - lambda: "gState.lightKleineLampe.state = x;"
+  - platform: homeassistant
+    id: light_wled
+    entity_id: light.wled
+    internal: true
+    on_state:
+      - lambda: "gState.lightWLED.state = x;"
+  - platform: homeassistant
+    id: light_kamera
+    entity_id: light.innr_rf_262_light
+    internal: true
+    on_state:
+      - lambda: "gState.lightKamera.state = x;"
+  - platform: homeassistant
+    id: sw_grosse_led
+    entity_id: switch.grosse_led_switch
+    internal: true
+    on_state:
+      - lambda: "gState.lightGrosseLED.state = x;"
+
   - platform: homeassistant
     id: beamer_on
     entity_id: switch.beamer_switch
@@ -283,15 +314,43 @@ interval:
     then:
       - lambda: |-
           if (gState.vacuumActionRequested) {
-            ESP_LOGI("vacuum", "Action requested! Current cleaning state: %d", gState.vacuumCleaning);
             gState.vacuumActionRequested = false;
-            if (gState.vacuumCleaning) {
-              ESP_LOGI("vacuum", "Executing STOP (return to base)");
-              id(call_vacuum_stop).execute();
-            } else {
-              ESP_LOGI("vacuum", "Executing START");
-              id(call_vacuum_start).execute();
-            }
+            if (gState.vacuumCleaning) id(call_vacuum_stop).execute();
+            else id(call_vacuum_start).execute();
+          }
+          
+          // Light Actions
+          if (gState.lightStehlampe.actionRequested) {
+            gState.lightStehlampe.actionRequested = false;
+            id(toggle_stehlampe).execute();
+          }
+          if (gState.lightWohnzimmer.actionRequested) {
+            gState.lightWohnzimmer.actionRequested = false;
+            id(toggle_wohnzimmer).execute();
+          }
+          if (gState.lightKleineLampe.actionRequested) {
+            gState.lightKleineLampe.actionRequested = false;
+            id(toggle_kleine_lampe).execute();
+          }
+          if (gState.lightWLED.actionRequested) {
+            gState.lightWLED.actionRequested = false;
+            id(toggle_wled).execute();
+          }
+          if (gState.lightStehlampeOben.actionRequested) {
+            gState.lightStehlampeOben.actionRequested = false;
+            id(toggle_stehlampe_oben).execute();
+          }
+          if (gState.lightKamera.actionRequested) {
+            gState.lightKamera.actionRequested = false;
+            id(toggle_kamera).execute();
+          }
+          if (gState.lightOffice.actionRequested) {
+            gState.lightOffice.actionRequested = false;
+            id(toggle_office).execute();
+          }
+          if (gState.lightGrosseLED.actionRequested) {
+            gState.lightGrosseLED.actionRequested = false;
+            id(toggle_grosse_led).execute();
           }
 
 script:
@@ -307,3 +366,52 @@ script:
           service: vacuum.return_to_base
           data:
             entity_id: vacuum.roborock_qrevo_curv_series
+
+  - id: toggle_stehlampe
+    then:
+      - homeassistant.service:
+          service: switch.toggle
+          data:
+            entity_id: switch.stehlampe_switch
+  - id: toggle_wohnzimmer
+    then:
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.wohnzimmer_licht_light
+  - id: toggle_kleine_lampe
+    then:
+      - homeassistant.service:
+          service: switch.toggle
+          data:
+            entity_id: switch.kleine_lampe_switch
+  - id: toggle_wled
+    then:
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.wled
+  - id: toggle_stehlampe_oben
+    then:
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.stehlampe_oben
+  - id: toggle_kamera
+    then:
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.innr_rf_262_light
+  - id: toggle_office
+    then:
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.schlafzimmer_licht_light
+  - id: toggle_grosse_led
+    then:
+      - homeassistant.service:
+          service: switch.toggle
+          data:
+            entity_id: switch.grosse_led_switch

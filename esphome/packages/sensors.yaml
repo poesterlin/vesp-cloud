@@ -278,3 +278,29 @@ interval:
           if (gState.currentView == VIEW_MAIN_DASHBOARD && gState.mainPageIndex != 0 && (millis() - gState.lastTouchTime) > 30000) {
             setPage(0);
           }
+
+  - interval: 200ms
+    then:
+      - lambda: |-
+          if (gState.vacuumActionRequested) {
+            gState.vacuumActionRequested = false;
+            if (gState.vacuumCleaning) {
+              id(call_vacuum_stop).execute();
+            } else {
+              id(call_vacuum_start).execute();
+            }
+          }
+
+script:
+  - id: call_vacuum_start
+    then:
+      - homeassistant.service:
+          service: vacuum.start
+          data:
+            entity_id: vacuum.roborock_qrevo_curv_series
+  - id: call_vacuum_stop
+    then:
+      - homeassistant.service:
+          service: vacuum.return_to_base
+          data:
+            entity_id: vacuum.roborock_qrevo_curv_series

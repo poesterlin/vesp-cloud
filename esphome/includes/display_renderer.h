@@ -2,7 +2,6 @@
 #include "esphome.h"
 #include "state_manager.h"
 #include "dial.h"
-#include "button.h"
 #include <cmath>
 
 // Forward declare fonts
@@ -64,6 +63,17 @@ void drawPageIndicator(display::Display& it, int page, int count) {
       it.circle(dot_x, 306, 3, C_DIM);
     }
   }
+}
+
+void drawDetailHeader(display::Display& it, const char* title) {
+  it.filled_rectangle(0, 0, 240, 40, C_DIMMER);
+  it.line(0, 40, 240, 40, C_DIM);
+  
+  // Back button - very short timeout as it's just for feedback
+  gState.backBtn.draw(it, "<", C_CYAN, gState.backLoading, gState.backLoadingStartTime, 150, font_small);
+  
+  // Title
+  it.printf(120, 20, font_small, C_WHITE, TextAlign::CENTER, "%s", title);
 }
 
 // --- PAGE 0: STATUS ---
@@ -372,11 +382,8 @@ void renderPage3_Devices(display::Display& it) {
 void renderDetail_Vacuum(display::Display& it) {
   int y = 40 + gState.scrollY;
   
-  // Header (Fixed) - consistent with drawCommonHeader
-  it.filled_rectangle(0, 0, 240, 40, C_DIMMER);
-  it.printf(120, 5, font_small, C_WHITE, TextAlign::TOP_CENTER, "VACUUM DETAIL");
-  it.printf(5, 5, font_small, C_CYAN, TextAlign::TOP_LEFT, "<");
-  it.line(0, 40, 240, 40, C_DIM);
+  // Header
+  drawDetailHeader(it, "VACUUM DETAIL");
   
   // Status Card
   it.rectangle(10, y, 220, 60, C_DIM);
@@ -396,11 +403,10 @@ void renderDetail_Vacuum(display::Display& it) {
   y += 70;
   
   // Start Button
-  int btn_y = y;
   if (!gState.vacuumCleaning) {
-    Button::draw(it, 10, btn_y, 220, 50, "START CLEANING", C_GREEN, gState.vacuumLoading, gState.vacuumLoadingStartTime, 5000, font_small);
+    gState.vacuumBtn.draw(it, "START CLEANING", C_GREEN, gState.vacuumLoading, gState.vacuumLoadingStartTime, 5000, font_small, gState.scrollY);
   } else {
-    Button::draw(it, 10, btn_y, 220, 50, "STOP VACUUM", C_RED, gState.vacuumLoading, gState.vacuumLoadingStartTime, 5000, font_small);
+    gState.vacuumBtn.draw(it, "STOP VACUUM", C_RED, gState.vacuumLoading, gState.vacuumLoadingStartTime, 5000, font_small, gState.scrollY);
   }
   y += 60;
   

@@ -1,5 +1,6 @@
 #pragma once
 #include "esphome.h"
+#include "button.h"
 
 // --- NAVIGATION STATE ---
 enum ViewState {
@@ -22,6 +23,10 @@ struct DisplayState {
   
   // Touch State
   unsigned long lastTouchTime = 0;
+  bool backLoading = false;
+  bool backActionRequested = false;
+  unsigned long backLoadingStartTime = 0;
+  Button backBtn = Button(5, 5, 40, 30);
   
   // --- SENSORS ---
   
@@ -54,9 +59,11 @@ struct DisplayState {
   float vacuumBattery = 0;
   bool vacuumCleaning = false;
   bool vacuumLoading = false;
+  bool vacuumActionRequested = false;
   unsigned long vacuumLoadingStartTime = 0;
   std::string vacuumStatus = "Unknown";
-  
+  Button vacuumBtn = Button(10, 180, 220, 50);
+
   float printerProgress = 0;
   std::string printerFilename = "";
   

@@ -61,21 +61,6 @@ public:
         if (abs(dx) < 20 && abs(dy) < 20) {
            handleTap(startX, startY);
         }
-        
-        // Vacuum Start/Stop Button (only active in vacuum detail view)
-        if (gState.currentView == VIEW_DETAIL_VACUUM && !gState.vacuumLoading) {
-          // The button is at y = 180 + scrollY (approximately, based on status and battery cards)
-          // 40 (header) + 70 (status) + 70 (battery) = 180
-          int button_y = 180 + gState.scrollY; 
-          if (x >= 10 && x <= 230 && y >= button_y && y <= button_y + 50) {
-            gState.vacuumLoading = true;
-            gState.vacuumLoadingStartTime = millis();
-            gState.lastTouchTime = millis();
-            ESP_LOGI("touch", "Vacuum button pressed, setting loading state");
-            // In a real application, a Home Assistant service would be called here.
-            // The loading state would be cleared when the vacuum status changes.
-          }
-        }
       }
     }
     
@@ -99,9 +84,18 @@ private:
       }
       
     } else {
-      // In Detail View -> Check for Back Button (Top Left)
-      if (x < 60 && y < 60) {
+      // In Detail View -> Check for Back Button
+      if (gState.backBtn.processTap(x, y, gState.backLoading, gState.backLoadingStartTime, gState.backActionRequested)) {
         goBack();
+        return;
+      }
+
+      // Vacuum Detail View Buttons
+      if (gState.currentView == VIEW_DETAIL_VACUUM) {
+        if (gState.vacuumBtn.processTap(x, y, gState.vacuumLoading, gState.vacuumLoadingStartTime, gState.vacuumActionRequested, gState.scrollY)) {
+          gState.lastTouchTime = millis();
+          ESP_LOGI("touch", "Vacuum button processed");
+        }
       }
     }
   }

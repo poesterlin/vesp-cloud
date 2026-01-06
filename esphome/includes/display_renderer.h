@@ -319,9 +319,14 @@ void renderPage2_House(display::Display& it) {
   // Invisible button overlay for the lights section
   gState.lightsDetailBtn.draw(it, "", Color(0,0,0,0), gState.lightsDetailLoading, gState.lightsDetailLoadingStartTime, 0, font_tiny);
 
-  drawBulbIcon(it, 50, 190, "WOHN", gState.lightLiving);
-  drawBulbIcon(it, 120, 190, "DESK", gState.lightDesk);
-  drawBulbIcon(it, 190, 190, "LAMP", gState.lightLamp);
+  int livingOn = gState.getLivingRoomActiveCount();
+  int officeOn = gState.getOfficeActiveCount();
+
+  it.printf(70, 185, font_medium, livingOn > 0 ? C_AMBER : C_DIM, TextAlign::CENTER, "%d", livingOn);
+  it.printf(70, 205, font_tiny, C_DIM, TextAlign::CENTER, "LIVING");
+
+  it.printf(170, 185, font_medium, officeOn > 0 ? C_AMBER : C_DIM, TextAlign::CENTER, "%d", officeOn);
+  it.printf(170, 205, font_tiny, C_DIM, TextAlign::CENTER, "OFFICE");
   
   // Presence
   it.printf(120, 235, font_small, C_WHITE, TextAlign::CENTER, "PRESENCE");

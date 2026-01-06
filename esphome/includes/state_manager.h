@@ -127,6 +127,19 @@ struct DisplayState {
   int getOpenWindowCount() {
     return (windowLiving ? 1 : 0) + (windowBath ? 1 : 0) + (windowWork ? 1 : 0);
   }
+
+  int getLivingRoomActiveCount() {
+    return (lightStehlampe.state ? 1 : 0) + 
+           (lightWohnzimmer.state ? 1 : 0) + 
+           (lightKleineLampe.state ? 1 : 0) + 
+           (lightWLED.state ? 1 : 0) + 
+           (lightStehlampeOben.state ? 1 : 0) + 
+           (lightKamera.state ? 1 : 0);
+  }
+  
+  int getOfficeActiveCount() {
+    return (lightOffice.state ? 1 : 0) + (lightGrosseLED.state ? 1 : 0);
+  }
 };
 
 // Global instance

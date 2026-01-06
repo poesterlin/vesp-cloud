@@ -18,6 +18,7 @@ esphome:
     - includes/light_element.h
     - includes/icon_bar.h
     - includes/notification.h
+    - includes/scrolling_text.h
     - includes/diagram.h
     - includes/display_renderer.h
 

@@ -3,6 +3,7 @@
 #include "state_manager.h"
 #include "dial.h"
 #include "notification.h"
+#include "scrolling_text.h"
 #include "colors.h"
 #include <cmath>
 
@@ -91,16 +92,16 @@ void drawTodoItem(display::Display& it, int y, const DisplayState::TodoItem& ite
     it.printf(25, y, font_small, C_CYAN, TextAlign::TOP_LEFT, "[ ]");
     
     int text_offset = 55;
+    int max_w = 170;
+    
     if (item.due != "none" && !item.due.empty()) {
        Color date_color = item.isOverdue ? C_RED : C_AMBER;
        it.printf(55, y + 2, font_tiny, date_color, TextAlign::TOP_LEFT, "%s", item.due.c_str());
        text_offset = 100;
+       max_w = 125;
     }
 
-    if (text_offset > 60)
-      it.printf(text_offset, y, font_small, C_WHITE, TextAlign::TOP_LEFT, "%.14s", item.title.c_str());
-    else
-      it.printf(text_offset, y, font_small, C_WHITE, TextAlign::TOP_LEFT, "%.22s", item.title.c_str());
+    ScrollingText::draw(it, text_offset, y, max_w, item.title, font_small, C_WHITE);
 
   } else if (y == 178) { // Only show "Empty" for the first slot if it's empty
      it.printf(120, y, font_tiny, C_DIMMER, TextAlign::CENTER, "LIST EMPTY");

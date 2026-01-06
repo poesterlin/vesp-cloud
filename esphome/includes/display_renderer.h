@@ -2,6 +2,7 @@
 #include "esphome.h"
 #include "state_manager.h"
 #include "dial.h"
+#include "button.h"
 #include <cmath>
 
 // Forward declare fonts
@@ -96,7 +97,6 @@ void renderPage0_Status(display::Display& it) {
     const char* days[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
     const char* months[] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", 
                             "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
-    // time_now.day_of_week is 1-7
     int dayIdx = time_now.day_of_week - 1;
     if(dayIdx < 0) dayIdx = 0;
     int monthIdx = time_now.month - 1;
@@ -112,16 +112,28 @@ void renderPage0_Status(display::Display& it) {
   
   // Temp OUT
   it.printf(45, 95, font_tiny, C_CYAN, TextAlign::CENTER, "OUT");
-  it.printf(45, 110, font_small, C_CYAN, TextAlign::CENTER, "%.0fC", gState.outsideTemp);
+  if (gState.outsideTemp != 0) {  // Simple validation since sensors initialize to 0
+    it.printf(45, 110, font_small, C_CYAN, TextAlign::CENTER, "%.0fC", gState.outsideTemp);
+  } else {
+    it.printf(45, 110, font_small, C_DIM, TextAlign::CENTER, "--");
+  }
   
   // Temp IN
   it.printf(95, 95, font_tiny, C_AMBER, TextAlign::CENTER, "IN");
-  it.printf(95, 110, font_small, C_AMBER, TextAlign::CENTER, "%.0fC", gState.indoorTemp);
+  if (gState.indoorTemp != 0) {
+    it.printf(95, 110, font_small, C_AMBER, TextAlign::CENTER, "%.0fC", gState.indoorTemp);
+  } else {
+    it.printf(95, 110, font_small, C_DIM, TextAlign::CENTER, "--");
+  }
   
   // CO2
   it.printf(145, 95, font_tiny, C_DIM, TextAlign::CENTER, "CO2");
-  Color co2_color = gState.co2 < 800 ? C_GREEN : (gState.co2 < 1200 ? C_AMBER : C_RED);
-  it.printf(145, 110, font_small, co2_color, TextAlign::CENTER, "%.0f", gState.co2);
+  if (gState.co2 != 0) {
+    Color co2_color = gState.co2 < 800 ? C_GREEN : (gState.co2 < 1200 ? C_AMBER : C_RED);
+    it.printf(145, 110, font_small, co2_color, TextAlign::CENTER, "%.0f", gState.co2);
+  } else {
+    it.printf(145, 110, font_small, C_DIM, TextAlign::CENTER, "--");
+  }
   
   // Presence
   it.printf(195, 95, font_tiny, C_DIM, TextAlign::CENTER, "HOME");
@@ -200,13 +212,11 @@ void renderPage1_Climate(display::Display& it) {
   // CO2 Gauge
   int gx = 120, gy = 120, gr = 65;
   
-  // Ticks
   for (int i = -45; i <= 225; i += 4) {
     float angle = i * 3.14159265f / 180.0f;
     it.draw_pixel_at(gx + cosf(angle) * gr, gy + sinf(angle) * gr, C_DIM);
   }
   
-  // Main markers
   const char* labels[] = {"400", "800", "1200", "1600", "2000"};
   for (int i = 0; i <= 4; i++) {
     float angle = (225 - i * 67.5f) * 3.14159265f / 180.0f;
@@ -221,7 +231,6 @@ void renderPage1_Climate(display::Display& it) {
     it.printf(lx, ly, font_tiny, C_DIM, TextAlign::CENTER, "%s", labels[i]);
   }
   
-  // Needle
   float co2_val = gState.co2;
   if(co2_val < 400.0f) co2_val = 400.0f;
   Color needle_color = co2_val < 800.0f ? C_GREEN : (co2_val < 1200.0f ? C_AMBER : C_RED);
@@ -358,36 +367,53 @@ void renderPage3_Devices(display::Display& it) {
   }
 }
 
-// --- PAGE 4: TOUCH DEBUG ---
+// --- DETAIL VIEW: VACUUM ---
 
-void drawCrosshair(display::Display& it, int x, int y, const char* label) {
-  it.line(x-10, y, x+10, y, C_WHITE);
-  it.line(x, y-10, x, y+10, C_WHITE);
-  it.circle(x, y, 6, C_CYAN);
-  it.printf(x, y + 12, font_tiny, C_CYAN, TextAlign::TOP_CENTER, "%s (%d,%d)", label, x, y);
-}
-
-void renderPage4_Debug(display::Display& it) {
-  it.printf(120, 5, font_small, C_WHITE, TextAlign::TOP_CENTER, "TOUCH CALIBRATION");
-
-  // Draw Calibration Targets (Inset by 20px)
-  drawCrosshair(it, 20, 40, "TL");
-  drawCrosshair(it, 220, 40, "TR");
-  drawCrosshair(it, 20, 300, "BL");
-  drawCrosshair(it, 220, 300, "BR");
-
-  // Show Raw Touch Data
-  int fingers = gState.touchDebug.fingerCount;
+void renderDetail_Vacuum(display::Display& it) {
+  int y = 40 + gState.scrollY;
   
-  if (fingers > 0) {
-    // Verified Hybrid Logic (Red)
-    int y2 = gState.touchDebug.y1_fmt2 * 320 / 5100;
-    it.filled_circle(gState.touchDebug.x1_fmt2 * 240 / 3900, y2, 6, C_RED);
-    it.printf(10, 65, font_tiny, C_RED, TextAlign::TOP_LEFT, "Touch: %d,%d", gState.touchDebug.x1_fmt2, gState.touchDebug.y1_fmt2);
-    
-    it.printf(120, 160, font_small, C_AMBER, TextAlign::CENTER, 
-              "RAW X=%d", gState.touchDebug.x1_fmt2);
+  // Header (Fixed) - consistent with drawCommonHeader
+  it.filled_rectangle(0, 0, 240, 40, C_DIMMER);
+  it.printf(120, 5, font_small, C_WHITE, TextAlign::TOP_CENTER, "VACUUM DETAIL");
+  it.printf(5, 5, font_small, C_CYAN, TextAlign::TOP_LEFT, "<");
+  it.line(0, 40, 240, 40, C_DIM);
+  
+  // Status Card
+  it.rectangle(10, y, 220, 60, C_DIM);
+  it.printf(20, y + 5, font_tiny, C_DIM, TextAlign::TOP_LEFT, "STATUS");
+  it.printf(20, y + 25, font_small, gState.vacuumCleaning ? C_GREEN : C_CYAN, TextAlign::TOP_LEFT, "%s", 
+            gState.vacuumStatus.c_str());
+  y += 70;
+  
+  // Battery Card
+  it.rectangle(10, y, 220, 60, C_DIM);
+  it.printf(20, y + 5, font_tiny, C_DIM, TextAlign::TOP_LEFT, "BATTERY");
+  // Battery bar
+  it.rectangle(20, y + 25, 140, 14, C_DIM);
+  Color batt_color = gState.vacuumBattery > 50.0f ? C_GREEN : (gState.vacuumBattery > 20.0f ? C_AMBER : C_RED);
+  it.filled_rectangle(22, y + 27, (int)((gState.vacuumBattery / 100.0f) * 136), 10, batt_color);
+  it.printf(170, y + 25, font_tiny, batt_color, TextAlign::TOP_LEFT, "%.0f%%", gState.vacuumBattery);
+  y += 70;
+  
+  // Start Button
+  int btn_y = y;
+  if (!gState.vacuumCleaning) {
+    Button::draw(it, 10, btn_y, 220, 50, "START CLEANING", C_GREEN, gState.vacuumLoading, gState.vacuumLoadingStartTime, 5000, font_small);
+  } else {
+    Button::draw(it, 10, btn_y, 220, 50, "STOP VACUUM", C_RED, gState.vacuumLoading, gState.vacuumLoadingStartTime, 5000, font_small);
   }
+  y += 60;
+  
+  // Info Section
+  it.printf(10, y, font_tiny, C_DIM, TextAlign::TOP_LEFT, "Last Clean: Today 10:00");
+  y += 20;
+  it.printf(10, y, font_tiny, C_DIM, TextAlign::TOP_LEFT, "Map Saved: Yes");
+  y += 20;
+  it.printf(10, y, font_tiny, C_DIM, TextAlign::TOP_LEFT, "Total Runtime: 2h 34m");
+  y += 20;
+  
+  // Set content height for scrolling
+  gState.maxScrollY = (y - 40) > 280 ? (y - 40 - 280) : 0;
 }
 
 // --- MAIN RENDERER ---
@@ -395,18 +421,25 @@ void renderPage4_Debug(display::Display& it) {
 void renderDisplay(display::Display& it) {
   it.fill(C_BLACK);
   
-  // Global Header
-  drawCommonHeader(it);
-  
-  // Page Indicator
-  drawPageIndicator(it, gState.currentPage, gState.totalPages);
-  
-  // Page Content
-  switch (gState.currentPage) {
-    case 0: renderPage0_Status(it); break;
-    case 1: renderPage1_Climate(it); break;
-    case 2: renderPage2_House(it); break;
-    case 3: renderPage3_Devices(it); break;
-    case 4: renderPage4_Debug(it); break;
+  if (gState.currentView == VIEW_MAIN_DASHBOARD) {
+    // Global Header
+    drawCommonHeader(it);
+    
+    // Page Indicator
+    drawPageIndicator(it, gState.mainPageIndex, gState.totalMainPages);
+    
+    // Page Content
+    switch (gState.mainPageIndex) {
+      case 0: renderPage0_Status(it); break;
+      case 1: renderPage1_Climate(it); break;
+      case 2: renderPage2_House(it); break;
+      case 3: renderPage3_Devices(it); break;
+    }
+  } else {
+    // Detail Views
+    switch (gState.currentView) {
+      case VIEW_DETAIL_VACUUM: renderDetail_Vacuum(it); break;
+      default: break;
+    }
   }
 }

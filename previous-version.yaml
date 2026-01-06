@@ -110,8 +110,8 @@ interval:
           else if (current_state == 0 && id(last_touch_state) == 1) {
             int delta = id(touch_current_x) - id(touch_start_x);
             
-            ESP_LOGI("touch", "TOUCH RELEASE: Start=%d, End=%d, Delta=%d", 
-                     id(touch_start_x), id(touch_current_x), delta);
+            // ESP_LOGI("touch", "TOUCH RELEASE: Start=%d, End=%d, Delta=%d", 
+            //          id(touch_start_x), id(touch_current_x), delta);
             
             if (delta < -40) {
               // Swipe LEFT (right to left) = next page

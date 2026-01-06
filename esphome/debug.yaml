@@ -12,6 +12,7 @@ packages:
 esphome:
   includes:
     - includes/state_manager.h
+    - includes/touch_handler.h
     - includes/dial.h
     - includes/notification.h
     - includes/display_renderer.h

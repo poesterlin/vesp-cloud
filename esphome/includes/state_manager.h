@@ -1,27 +1,27 @@
 #pragma once
 #include "esphome.h"
 
+// --- NAVIGATION STATE ---
+enum ViewState {
+  VIEW_MAIN_DASHBOARD,
+  VIEW_DETAIL_VACUUM,
+  VIEW_DETAIL_LIGHTS,
+  VIEW_DETAIL_TODO
+};
+
 // Centralized state for the display
 struct DisplayState {
   // Page management
-  int currentPage = 0;
-  int totalPages = 4;
+  ViewState currentView = VIEW_MAIN_DASHBOARD;
+  int mainPageIndex = 0; // Tracks the carousel index (0-3)
+  int totalMainPages = 4;
+  
+  // Scrolling for Detail Views
+  int scrollY = 0;
+  int maxScrollY = 0; // Updated by renderer based on content height
   
   // Touch State
-  uint32_t lastTouchTime = 0;
-  
-  struct TouchDebug {
-    uint8_t raw[16];
-    uint8_t status;
-    int fingerCount;
-    
-    // Format 1
-    uint16_t x1_fmt1, y1_fmt1;
-    // Format 2
-    uint16_t x1_fmt2, y1_fmt2;
-    // Format 3
-    uint16_t x1_fmt3, y1_fmt3;
-  } touchDebug;
+  unsigned long lastTouchTime = 0;
   
   // --- SENSORS ---
   
@@ -53,6 +53,8 @@ struct DisplayState {
   // Devices
   float vacuumBattery = 0;
   bool vacuumCleaning = false;
+  bool vacuumLoading = false;
+  unsigned long vacuumLoadingStartTime = 0;
   std::string vacuumStatus = "Unknown";
   
   float printerProgress = 0;
@@ -63,7 +65,7 @@ struct DisplayState {
   bool beamerOn = false;
   float beamerPower = 0;
   
-  // To-Do List (Title, Due, Overdue)
+  // To-Do List
   struct TodoItem {
     std::string title;
     std::string due;
@@ -73,7 +75,6 @@ struct DisplayState {
 
   // --- UI HELPERS ---
   
-  // Helper to count open windows
   int getOpenWindowCount() {
     return (windowLiving ? 1 : 0) + (windowBath ? 1 : 0) + (windowWork ? 1 : 0);
   }
@@ -84,18 +85,35 @@ static DisplayState gState;
 
 // State update helpers
 void nextPage() {
-  gState.currentPage = (gState.currentPage + 1) % gState.totalPages;
+  if (gState.currentView == VIEW_MAIN_DASHBOARD) {
+    gState.mainPageIndex = (gState.mainPageIndex + 1) % gState.totalMainPages;
+  }
   gState.lastTouchTime = millis();
 }
 
 void prevPage() {
-  gState.currentPage = (gState.currentPage - 1 + gState.totalPages) % gState.totalPages;
+  if (gState.currentView == VIEW_MAIN_DASHBOARD) {
+    gState.mainPageIndex = (gState.mainPageIndex - 1 + gState.totalMainPages) % gState.totalMainPages;
+  }
   gState.lastTouchTime = millis();
 }
 
 void setPage(int page) {
-  if (page >= 0 && page < gState.totalPages) {
-    gState.currentPage = page;
+  if (page >= 0 && page < gState.totalMainPages) {
+    gState.currentView = VIEW_MAIN_DASHBOARD;
+    gState.mainPageIndex = page;
     gState.lastTouchTime = millis();
   }
+}
+
+// Navigation Helpers
+void openView(ViewState view) {
+  gState.currentView = view;
+  gState.scrollY = 0;
+  gState.lastTouchTime = millis();
+}
+
+void goBack() {
+  gState.currentView = VIEW_MAIN_DASHBOARD;
+  gState.lastTouchTime = millis();
 }

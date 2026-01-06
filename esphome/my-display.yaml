@@ -11,7 +11,9 @@ packages:
 esphome:
   includes:
     - includes/state_manager.h
+    - includes/touch_handler.h
     - includes/dial.h
+    - includes/button.h
     - includes/icon_bar.h
     - includes/notification.h
     - includes/diagram.h

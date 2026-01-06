@@ -227,9 +227,9 @@ interval:
   - interval: 16ms
     then:
       - lambda: |- 
-          static int last_touch_state = 0;
-          static int touch_start_x = 0;
-          static int touch_current_x = 0;
+          // Static variables to store last touch coordinates
+          static int last_x = 0;
+          static int last_y = 0;
           
           uint8_t start_reg = 0x00;
           uint8_t buf[16];
@@ -238,50 +238,43 @@ interval:
           if (id(touch_i2c)->read(0x1A, buf, 16) != i2c::ERROR_OK) return;
           
           uint8_t status = buf[0];
-          int finger_count = (status == 0x06) ? 1 : (status == 0x10) ? 2 : 0;
+          bool touched = (status == 0x06 || status == 0x10);
           
-          // Hybrid Decoding (Winning Mapping)
-          uint16_t x_raw = ((buf[1] & 0x0F) << 8) | buf[2];
-          uint16_t y_raw = (buf[2] << 8) | buf[3];
-          
-          // Calibration (X: 0-3900 -> 0-240, Y: 0-5100 -> 0-320)
-          int x = (int)((float)x_raw * 240.0f / 3900.0f);
-          int y = (int)((float)y_raw * 320.0f / 5100.0f);
-          
-          // Clamp
-          if (x < 0) x = 0; if (x > 239) x = 239;
-          if (y < 0) y = 0; if (y > 319) y = 319;
-          
-          // Touch Start
-          if (finger_count > 0 && last_touch_state == 0) {
-            touch_start_x = x;
-            touch_current_x = x;
-            gState.lastTouchTime = millis();
-          }
-          // Touch Move
-          else if (finger_count > 0) {
-            touch_current_x = x;
-            gState.lastTouchTime = millis();
-          }
-          // Touch Release (Swipe/Tap)
-          else if (finger_count == 0 && last_touch_state > 0) {
-            int delta = touch_current_x - touch_start_x;
+          if (touched) {
+            // Hybrid Decoding (Winning Mapping)
+            uint16_t x_raw = ((buf[1] & 0x0F) << 8) | buf[2];
+            uint16_t y_raw = (buf[2] << 8) | buf[3];
             
-            if (delta < -40) {
-              nextPage();
-            } else if (delta > 40) {
-              prevPage();
-            } else {
-              nextPage(); // Tap
-            }
+            // Calibration (X: 0-3900 -> 0-240, Y: 0-5100 -> 0-320)
+            int x = (int)((float)x_raw * 240.0f / 3900.0f);
+            int y = (int)((float)y_raw * 320.0f / 5100.0f);
+            
+            // Clamp
+            if (x < 0) x = 0; if (x > 239) x = 239;
+            if (y < 0) y = 0; if (y > 319) y = 319;
+            
+            // Store for release event
+            last_x = x;
+            last_y = y;
+            
+            ESP_LOGI("touch", "TOUCH at X=%d, Y=%d (raw: X=%d, Y=%d)", x, y, x_raw, y_raw);
+            
+            // Delegate to Touch Handler
+            TouchHandler::handleTouch(x, y, true);
+          } else {
+            // Release - pass last known coordinates for proper gesture detection
+            // ESP_LOGI("touch", "TOUCH RELEASE");
+            TouchHandler::handleTouch(last_x, last_y, false);
           }
-          
-          last_touch_state = finger_count;
 
   - interval: 1s
     then:
       - lambda: |- 
-          // Auto-return to page 0 after 30s
-          if (gState.currentPage != 0 && (millis() - gState.lastTouchTime) > 30000) {
+          // Auto-return to main dashboard after 30s of inactivity
+          if (gState.currentView != VIEW_MAIN_DASHBOARD && (millis() - gState.lastTouchTime) > 30000) {
+            goBack();
+          }
+          // Also reset main page to 0 if idle
+          if (gState.currentView == VIEW_MAIN_DASHBOARD && gState.mainPageIndex != 0 && (millis() - gState.lastTouchTime) > 30000) {
             setPage(0);
           }

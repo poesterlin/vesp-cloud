@@ -3,56 +3,63 @@
 #include "state_manager.h"
 #include "dial.h"
 #include "notification.h"
+#include "colors.h"
 #include <cmath>
 
 // Forward declare fonts
-namespace esphome {
-  namespace font {
-    class Font;
-  }
-}
-extern esphome::font::Font* font_tiny;
-extern esphome::font::Font* font_small;
-extern esphome::font::Font* font_medium;
-extern esphome::font::Font* font_large;
-
-// Forward declare time
-extern esphome::sntp::SNTPComponent *sntp_time;
-
-// Colors
-const Color C_BLACK(0, 0, 0);
-const Color C_WHITE(255, 255, 255);
-const Color C_CYAN(0, 255, 255);
-const Color C_AMBER(255, 180, 0);
-const Color C_GREEN(0, 255, 100);
-const Color C_RED(255, 60, 60);
-const Color C_BLUE(80, 140, 255);
-const Color C_MAGENTA(255, 0, 200);
-const Color C_DIM(80, 80, 80);
-const Color C_DIMMER(40, 40, 40);
 
 // --- HELPER FUNCTIONS ---
 
-void drawCommonHeader(display::Display& it) {
-  // Decorative Frame
-  it.rectangle(4, 4, 232, 312, C_DIMMER);
-  it.line(8, 8, 25, 8, C_DIM);
-  it.line(8, 8, 8, 25, C_DIM);
-  it.line(232, 8, 215, 8, C_DIM);
-  it.line(232, 8, 232, 25, C_DIM);
-  it.line(8, 312, 25, 312, C_DIM);
-  it.line(8, 312, 8, 295, C_DIM);
-  it.line(232, 312, 215, 312, C_DIM);
-  it.line(232, 312, 232, 295, C_DIM);
+void drawRetroBox(display::Display& it, int x, int y, int w, int h, const char* label = nullptr, Color color = C_DIM) {
+  // Main Border
+  it.rectangle(x, y, w, h, C_DIMMER);
+  
+  // High-Contrast Pronounced Corners (Double thick)
+  int s = 10;
+  // Top Left
+  it.line(x, y, x + s, y, color);
+  it.line(x, y, x, y + s, color);
+  it.line(x+1, y+1, x + s, y+1, color);
+  it.line(x+1, y+1, x+1, y + s, color);
+  
+  // Top Right
+  it.line(x + w, y, x + w - s, y, color);
+  it.line(x + w, y, x + w, y + s, color);
+  it.line(x + w - 1, y+1, x + w - s, y+1, color);
+  it.line(x + w - 1, y+1, x + w - 1, y + s, color);
+  
+  // Bottom Left
+  it.line(x, y + h, x + s, y + h, color);
+  it.line(x, y + h, x, y + h - s, color);
+  it.line(x+1, y + h - 1, x + s, y + h - 1, color);
+  it.line(x+1, y + h - 1, x+1, y + h - s, color);
+  
+  // Bottom Right
+  it.line(x + w, y + h, x + w - s, y + h, color);
+  it.line(x + w, y + h, x + w, y + h - s, color);
+  it.line(x + w - 1, y + h - 1, x + w - s, y + h - 1, color);
+  it.line(x + w - 1, y + h - 1, x + w - 1, y + h - s, color);
 
-  // Time
+  if (label) {
+    it.printf(x + 12, y - 7, font_tiny, color, TextAlign::TOP_LEFT, " %s ", label);
+  }
+}
+
+void drawCommonHeader(display::Display& it) {
+  // Edge Accents
+  it.line(0, 0, 0, 320, C_DIMMER);
+  it.line(239, 0, 239, 320, C_DIMMER);
+
+  // Time Section
   auto time_now = sntp_time->now();
   if (time_now.is_valid()) {
-    it.printf(120, 18, font_medium, C_WHITE, TextAlign::CENTER, "%02d:%02d", 
+    it.printf(10, 10, font_medium, C_WHITE, TextAlign::TOP_LEFT, "%02d:%02d", 
               time_now.hour, time_now.minute);
-    it.printf(200, 20, font_tiny, C_DIM, TextAlign::CENTER, "%02d", time_now.second);
+    it.printf(75, 12, font_tiny, C_DIM, TextAlign::TOP_LEFT, ":%02d", time_now.second);
   }
-  it.line(15, 38, 225, 38, C_DIM);
+  
+  it.printf(230, 12, font_tiny, C_GREEN, TextAlign::TOP_RIGHT, "SYS_NOMINAL");
+  it.line(10, 35, 230, 35, C_DIM);
 }
 
 void drawPageIndicator(display::Display& it, int page, int count) {
@@ -103,179 +110,123 @@ void drawTodoItem(display::Display& it, int y, const DisplayState::TodoItem& ite
 void renderPage0_Status(display::Display& it) {
   auto time_now = sntp_time->now();
   
-  // Date
+  // Date & System ID
   if (time_now.is_valid()) {
     const char* days[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
     const char* months[] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", 
                             "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
     int dayIdx = time_now.day_of_week - 1;
     if(dayIdx < 0) dayIdx = 0;
-    int monthIdx = time_now.month - 1;
-    if(monthIdx < 0) monthIdx = 0;
     
-    it.printf(120, 52, font_small, C_AMBER, TextAlign::CENTER, "%s %02d %s", 
-              days[dayIdx], time_now.day_of_month, months[monthIdx]);
+    it.printf(10, 42, font_tiny, C_DIM, TextAlign::TOP_LEFT, "ID: HD-D01 // %s %02d %s", 
+              days[dayIdx], time_now.day_of_month, months[time_now.month-1]);
   }
   
-  // Quick Status Row
-  it.line(15, 70, 225, 70, C_DIM);
-  it.printf(120, 77, font_tiny, C_DIM, TextAlign::CENTER, "STATUS");
+  // --- ENVIRONMENT BOX ---
+  drawRetroBox(it, 10, 65, 220, 75, "ENVIRONS", C_CYAN);
   
-  // Temp OUT
-  it.printf(45, 95, font_tiny, C_CYAN, TextAlign::CENTER, "OUT");
-  if (gState.outsideTemp != 0) {  // Simple validation since sensors initialize to 0
-    it.printf(45, 110, font_small, C_CYAN, TextAlign::CENTER, "%.0fC", gState.outsideTemp);
-  } else {
-    it.printf(45, 110, font_small, C_DIM, TextAlign::CENTER, "--");
-  }
+  auto drawMetric = [&](int x, const char* label, float val, const char* unit, Color c) {
+    it.printf(x, 82, font_tiny, C_DIM, TextAlign::CENTER, "%s", label);
+    if (val != 0)
+      it.printf(x, 105, font_small, c, TextAlign::CENTER, "%.0f%s", val, unit);
+    else
+      it.printf(x, 105, font_small, C_DIMMER, TextAlign::CENTER, "--");
+  };
+
+  drawMetric(45, "OUT", gState.outsideTemp, "C", C_CYAN);
+  drawMetric(95, "IN", gState.indoorTemp, "C", C_AMBER);
   
-  // Temp IN
-  it.printf(95, 95, font_tiny, C_AMBER, TextAlign::CENTER, "IN");
-  if (gState.indoorTemp != 0) {
-    it.printf(95, 110, font_small, C_AMBER, TextAlign::CENTER, "%.0fC", gState.indoorTemp);
-  } else {
-    it.printf(95, 110, font_small, C_DIM, TextAlign::CENTER, "--");
-  }
+  Color co2_color = gState.co2 < 800 ? C_GREEN : (gState.co2 < 1200 ? C_AMBER : C_RED);
+  drawMetric(145, "CO2", gState.co2, "", co2_color);
   
-  // CO2
-  it.printf(145, 95, font_tiny, C_DIM, TextAlign::CENTER, "CO2");
-  if (gState.co2 != 0) {
-    Color co2_color = gState.co2 < 800 ? C_GREEN : (gState.co2 < 1200 ? C_AMBER : C_RED);
-    it.printf(145, 110, font_small, co2_color, TextAlign::CENTER, "%.0f", gState.co2);
-  } else {
-    it.printf(145, 110, font_small, C_DIM, TextAlign::CENTER, "--");
-  }
-  
-  // Presence
-  it.printf(195, 95, font_tiny, C_DIM, TextAlign::CENTER, "HOME");
-  it.filled_circle(195, 115, 6, gState.occupancyRadar ? C_GREEN : C_DIMMER);
-  
-  // Windows Alert
+  it.printf(195, 82, font_tiny, C_DIM, TextAlign::CENTER, "PRSC");
+  it.filled_circle(195, 105, 6, gState.occupancyRadar ? C_GREEN : C_DIMMER);
+
+  // Windows Alert within Environs box if active
   int open_count = gState.getOpenWindowCount();
   if (open_count > 0) {
-    char buf[32];
-    snprintf(buf, sizeof(buf), "%d WINDOW%s OPEN", open_count, open_count > 1 ? "S" : "");
-    gState.windowsAlertBtn.draw(it, buf, C_RED, gState.windowsAlertLoading, gState.windowsAlertLoadingStartTime, 200, font_small);
+    it.printf(120, 122, font_tiny, C_RED, TextAlign::CENTER, "!! %d WINDOWS OPEN !!", open_count);
   }
+
+  // --- LOGISTICS BOX (TO-DO) ---
+  drawRetroBox(it, 10, 155, 220, 95, "LOGISTICS", C_AMBER);
+  drawTodoItem(it, 172, gState.todos[0]);
+  drawTodoItem(it, 194, gState.todos[1]);
+  drawTodoItem(it, 216, gState.todos[2]);
+
+  // --- HARDWARE STATUS (BADGES) ---
+  drawRetroBox(it, 10, 265, 220, 40, "ACTIVE_SUBSYSTEMS", C_DIM);
   
-  // To-Do List
-  it.line(15, 155, 225, 155, C_DIM);
-  it.printf(120, 162, font_tiny, C_DIM, TextAlign::CENTER, "TO-DO LIST");
-  
-  drawTodoItem(it, 178, gState.todos[0]);
-  drawTodoItem(it, 200, gState.todos[1]);
-  drawTodoItem(it, 222, gState.todos[2]);
-  
-  // Active Devices Badge
-  it.line(15, 248, 225, 248, C_DIM);
-  it.printf(120, 255, font_tiny, C_DIM, TextAlign::CENTER, "ACTIVE DEVICES");
-  
-  int badge_x = 25;
-  int badge_y = 272;
+  int badge_x = 20;
+  int badge_y = 278;
   bool any_active = false;
   
-  // Vacuum
-  if (gState.vacuumCleaning) {
-    gState.vacuumBadgeBtn.x = badge_x;
-    gState.vacuumBadgeBtn.y = badge_y;
-    gState.vacuumBadgeBtn.w = 60;
-    gState.vacuumBadgeBtn.h = 18;
-    gState.vacuumBadgeBtn.draw(it, "VACUUM", C_GREEN, gState.vacuumBadgeLoading, gState.vacuumBadgeLoadingStartTime, 200, font_tiny);
+  auto drawMiniBadge = [&](const char* label, Color c, bool condition, Button* btn = nullptr) {
+    if (!condition) return;
     
-    badge_x += 65;
+    if (btn) {
+      btn->x = badge_x;
+      btn->y = badge_y;
+      btn->w = 45;
+      btn->h = 14;
+      btn->draw(it, label, c, gState.vacuumBadgeLoading, gState.vacuumBadgeLoadingStartTime, 200, font_tiny);
+    } else {
+      // Shadow
+      it.rectangle(badge_x + 2, badge_y + 2, 45, 14, Color(20, 20, 20));
+      // Main
+      it.rectangle(badge_x, badge_y, 45, 14, Color(40, 40, 40));
+      it.rectangle(badge_x - 1, badge_y - 1, 47, 16, c);
+      it.printf(badge_x + 22, badge_y + 7, font_tiny, c, TextAlign::CENTER, "%s", label);
+    }
+    
+    badge_x += 55;
     any_active = true;
-  }
-  
-  // Washer
-  bool washer_active = (gState.washingMachineStatus != "All Done!" && 
-                        !gState.washingMachineStatus.empty() && 
-                        gState.washingMachineStatus != "Next Load Please!");
-  if (washer_active) {
-    Color w_color = (gState.washingMachineStatus == "Wrinkle Risk Rising!") ? C_RED : C_MAGENTA;
-    it.filled_rectangle(badge_x, badge_y, 60, 18, w_color);
-    it.printf(badge_x + 30, badge_y + 9, font_tiny, C_BLACK, TextAlign::CENTER, "WASHER");
-    badge_x += 65;
-    any_active = true;
-  }
-  
-  // Printer
-  if (gState.printerProgress > 0) {
-    it.filled_rectangle(badge_x, badge_y, 60, 18, C_AMBER);
-    it.printf(badge_x + 30, badge_y + 9, font_tiny, C_BLACK, TextAlign::CENTER, "PRINT");
-    badge_x += 65;
-    any_active = true;
-  }
-  
-  // Beamer
-  if (gState.beamerOn) {
-    it.filled_rectangle(badge_x, badge_y, 60, 18, C_BLUE);
-    it.printf(badge_x + 30, badge_y + 9, font_tiny, C_BLACK, TextAlign::CENTER, "BEAMER");
-    badge_x += 65;
-    any_active = true;
-  }
+  };
+
+  drawMiniBadge("VAC", C_GREEN, gState.vacuumCleaning, &gState.vacuumBadgeBtn);
+  drawMiniBadge("WASH", C_MAGENTA, (gState.washingMachineStatus != "All Done!" && !gState.washingMachineStatus.empty()));
+  drawMiniBadge("PRNT", C_AMBER, gState.printerProgress > 0);
+  drawMiniBadge("BEAM", C_BLUE, gState.beamerOn);
   
   if (!any_active) {
-    it.printf(120, badge_y + 6, font_tiny, C_DIMMER, TextAlign::CENTER, "ALL IDLE");
+    it.printf(120, badge_y + 7, font_tiny, C_DIMMER, TextAlign::CENTER, "ALL SYSTEMS IDLE");
   }
 }
 
 // --- PAGE 1: CLIMATE ---
 
 void renderPage1_Climate(display::Display& it) {
-  it.printf(120, 48, font_tiny, C_DIM, TextAlign::CENTER, "CLIMATE MONITOR");
+  it.printf(10, 42, font_tiny, C_DIM, TextAlign::TOP_LEFT, "SUBSYSTEM: ENVIRONMENT_MONITOR");
   
-  // CO2 Gauge
-  int gx = 120, gy = 120, gr = 65;
-  
-  for (int i = -45; i <= 225; i += 4) {
-    float angle = i * 3.14159265f / 180.0f;
-    it.draw_pixel_at(gx + cosf(angle) * gr, gy + sinf(angle) * gr, C_DIM);
-  }
-  
-  const char* labels[] = {"400", "800", "1200", "1600", "2000"};
-  for (int i = 0; i <= 4; i++) {
-    float angle = (225 - i * 67.5f) * 3.14159265f / 180.0f;
-    int x1 = gx + (int)(cosf(angle) * (gr - 6));
-    int y1 = gy + (int)(sinf(angle) * (gr - 6));
-    int x2 = gx + (int)(cosf(angle) * gr);
-    int y2 = gy + (int)(sinf(angle) * gr);
-    it.line(x1, y1, x2, y2, C_WHITE);
-    
-    int lx = gx + (int)(cosf(angle) * (gr - 18));
-    int ly = gy + (int)(sinf(angle) * (gr - 18));
-    it.printf(lx, ly, font_tiny, C_DIM, TextAlign::CENTER, "%s", labels[i]);
-  }
+  // --- AIR QUALITY BOX ---
+  drawRetroBox(it, 10, 60, 220, 110, "AIR_QUALITY", C_GREEN);
   
   float co2_val = gState.co2;
-  if(co2_val < 400.0f) co2_val = 400.0f;
-  Color needle_color = co2_val < 800.0f ? C_GREEN : (co2_val < 1200.0f ? C_AMBER : C_RED);
+  Color co2_color = co2_val < 800.0f ? C_GREEN : (co2_val < 1200.0f ? C_AMBER : C_RED);
   
+  it.printf(30, 85, font_tiny, C_DIM, TextAlign::TOP_LEFT, "CO2 CONCENTRATION");
+  it.printf(30, 105, font_large, co2_color, TextAlign::TOP_LEFT, "%.0f", co2_val);
+  it.printf(110, 120, font_tiny, C_DIM, TextAlign::TOP_LEFT, "PPM");
+
+  // Retro bar gauge
+  it.rectangle(30, 140, 180, 10, C_DIMMER);
   float mapped = (co2_val - 400.0f) / 1600.0f;
-  if (mapped < 0.0f) mapped = 0.0f;
-  if (mapped > 1.0f) mapped = 1.0f;
-  float needle_angle = (225.0f - mapped * 270.0f) * 3.14159265f / 180.0f;
+  if (mapped < 0) mapped = 0; if (mapped > 1) mapped = 1;
+  it.filled_rectangle(32, 142, (int)(mapped * 176), 6, co2_color);
   
-  int nx = gx + (int)(cosf(needle_angle) * (gr - 10));
-  int ny = gy + (int)(sinf(needle_angle) * (gr - 10));
-  it.line(gx, gy, nx, ny, needle_color);
-  it.filled_circle(gx, gy, 4, C_WHITE);
+  // --- THERMAL DYNAMICS BOX ---
+  drawRetroBox(it, 10, 185, 220, 115, "THERMAL_DYNAMICS", C_AMBER);
   
-  it.printf(120, 185, font_tiny, C_DIM, TextAlign::CENTER, "CO2 ppm");
-  it.printf(120, 202, font_large, needle_color, TextAlign::TOP_CENTER, "%.0f", gState.co2);
+  auto drawReadout = [&](int x, int y, const char* label, float val, const char* unit, Color c) {
+    it.printf(x, y, font_tiny, C_DIM, TextAlign::TOP_LEFT, "%s", label);
+    it.printf(x, y + 15, font_medium, c, TextAlign::TOP_LEFT, "%.1f%s", val, unit);
+  };
+
+  drawReadout(30, 210, "INDOOR_TEMP", gState.indoorTemp, "C", C_AMBER);
+  drawReadout(130, 210, "INDOOR_HUM", gState.indoorHumidity, "%", C_DIM);
   
-  it.line(20, 235, 220, 235, C_DIM);
-  
-  // Outdoor
-  it.printf(70, 242, font_tiny, C_CYAN, TextAlign::CENTER, "OUTDOOR");
-  it.printf(70, 260, font_medium, C_CYAN, TextAlign::CENTER, "%.1fC", gState.outsideTemp);
-  it.printf(70, 282, font_small, C_DIM, TextAlign::CENTER, "%.0f%% RH", gState.outsideHumidity);
-  
-  it.line(120, 245, 120, 285, C_DIMMER);
-  
-  // Indoor
-  it.printf(170, 242, font_tiny, C_AMBER, TextAlign::CENTER, "INDOOR");
-  it.printf(170, 260, font_medium, C_AMBER, TextAlign::CENTER, "%.1fC", gState.indoorTemp);
-  it.printf(170, 282, font_small, C_DIM, TextAlign::CENTER, "%.0f%% RH", gState.indoorHumidity);
+  drawReadout(30, 255, "OUTDOOR_TEMP", gState.outsideTemp, "C", C_CYAN);
+  drawReadout(130, 255, "OUTDOOR_HUM", gState.outsideHumidity, "%", C_DIM);
 }
 
 // --- PAGE 2: HOUSE STATUS ---
@@ -303,93 +254,95 @@ void drawBulbIcon(display::Display& it, int x, int y, const char* label, bool is
 }
 
 void renderPage2_House(display::Display& it) {
-  it.printf(120, 48, font_tiny, C_DIM, TextAlign::CENTER, "HOUSE STATUS");
+  it.printf(10, 42, font_tiny, C_DIM, TextAlign::TOP_LEFT, "SUBSYSTEM: DOMICILE_STATUS");
   
-  // Windows
-  it.printf(120, 65, font_small, C_WHITE, TextAlign::CENTER, "WINDOWS");
-  it.line(40, 78, 200, 78, C_DIM);
+  // --- PERIMETER BOX (WINDOWS) ---
+  drawRetroBox(it, 10, 60, 220, 85, "PERIMETER", C_GREEN);
   
-  drawWindowIcon(it, 50, 88, "WOHN", gState.windowLiving);
-  drawWindowIcon(it, 120, 88, "BAD", gState.windowBath);
-  drawWindowIcon(it, 190, 88, "WORK", gState.windowWork);
+  auto drawWindow = [&](int x, int y, const char* label, bool is_open) {
+    Color c = is_open ? C_RED : C_GREEN;
+    it.rectangle(x-10, y, 20, 25, c);
+    it.line(x, y, x, y+25, c);
+    it.line(x-10, y+12, x+10, y+12, c);
+    it.printf(x, y + 30, font_tiny, c, TextAlign::CENTER, "%s", is_open ? "OPEN" : "SHUT");
+    it.printf(x, y + 42, font_tiny, C_DIM, TextAlign::CENTER, "%s", label);
+  };
+
+  drawWindow(50, 80, "WOHN", gState.windowLiving);
+  drawWindow(120, 80, "BAD", gState.windowBath);
+  drawWindow(190, 80, "WORK", gState.windowWork);
   
-  // Lights
-  it.printf(120, 155, font_small, C_WHITE, TextAlign::CENTER, "LIGHTS");
-  it.line(40, 168, 200, 168, C_DIM);
-  
-  // Invisible button overlay for the lights section
-  gState.lightsDetailBtn.draw(it, "", Color(0,0,0,0), gState.lightsDetailLoading, gState.lightsDetailLoadingStartTime, 0, font_tiny);
+  // --- ILLUMINATION BOX ---
+  // Button serves as the boundary
+  gState.lightsDetailBtn.x = 10;
+  gState.lightsDetailBtn.y = 160;
+  gState.lightsDetailBtn.w = 220;
+  gState.lightsDetailBtn.h = 75;
+  gState.lightsDetailBtn.draw(it, "", C_AMBER, gState.lightsDetailLoading, gState.lightsDetailLoadingStartTime, 0, font_tiny, 0, "ILLUMINATION");
 
   int livingOn = gState.getLivingRoomActiveCount();
   int officeOn = gState.getOfficeActiveCount();
 
-  it.printf(70, 185, font_medium, livingOn > 0 ? C_AMBER : C_DIM, TextAlign::CENTER, "%d", livingOn);
-  it.printf(70, 205, font_tiny, C_DIM, TextAlign::CENTER, "LIVING");
+  it.printf(70, 180, font_medium, livingOn > 0 ? C_AMBER : C_DIM, TextAlign::CENTER, "%d", livingOn);
+  it.printf(70, 205, font_tiny, C_DIM, TextAlign::CENTER, "LIVING_RM");
 
-  it.printf(170, 185, font_medium, officeOn > 0 ? C_AMBER : C_DIM, TextAlign::CENTER, "%d", officeOn);
-  it.printf(170, 205, font_tiny, C_DIM, TextAlign::CENTER, "OFFICE");
+  it.printf(170, 180, font_medium, officeOn > 0 ? C_AMBER : C_DIM, TextAlign::CENTER, "%d", officeOn);
+  it.printf(170, 205, font_tiny, C_DIM, TextAlign::CENTER, "OFFICE_RM");
   
-  // Presence
-  it.printf(120, 235, font_small, C_WHITE, TextAlign::CENTER, "PRESENCE");
-  it.line(40, 248, 200, 248, C_DIM);
+  it.printf(120, 218, font_tiny, C_DIM, TextAlign::CENTER, "TAP TO CONFIGURE");
+
+  // --- BIOMETRIC BOX (PRESENCE) ---
+  drawRetroBox(it, 10, 250, 220, 55, "BIOMETRICS", C_BLUE);
   
-  it.printf(80, 262, font_tiny, C_DIM, TextAlign::CENTER, "MOTION");
-  it.filled_circle(80, 280, 8, gState.motionLiving ? C_GREEN : C_DIMMER);
-  
-  it.printf(160, 262, font_tiny, C_DIM, TextAlign::CENTER, "OCCUPIED");
-  it.filled_circle(160, 280, 8, gState.occupancyRadar ? C_GREEN : C_DIMMER);
+  auto drawPresence = [&](int x, const char* label, bool val) {
+    it.printf(x, 265, font_tiny, C_DIM, TextAlign::CENTER, "%s", label);
+    it.filled_circle(x, 285, 7, val ? C_GREEN : C_DIMMER);
+    it.circle(x, 285, 9, val ? C_GREEN : C_DIMMER);
+  };
+
+  drawPresence(70, "MOTION", gState.motionLiving);
+  drawPresence(170, "OCCUPIED", gState.occupancyRadar);
 }
 
 // --- PAGE 3: DEVICES ---
 
 void renderPage3_Devices(display::Display& it) {
-  it.printf(120, 48, font_tiny, C_DIM, TextAlign::CENTER, "DEVICES");
+  it.printf(10, 42, font_tiny, C_DIM, TextAlign::TOP_LEFT, "SUBSYSTEM: HARDWARE_INTERFACE");
   
-  // Roborock Card
-  Color vac_base_color = gState.vacuumCleaning ? C_GREEN : C_CYAN;
-  gState.vacuumCardBtn.draw(it, "", vac_base_color, gState.vacuumCardLoading, gState.vacuumCardLoadingStartTime, 200, font_small);
+  // --- ROBOROCK BOX ---
+  Color vac_c = gState.vacuumCleaning ? C_GREEN : C_CYAN;
+  gState.vacuumCardBtn.y = 60;
+  gState.vacuumCardBtn.h = 75;
+  gState.vacuumCardBtn.draw(it, "", vac_c, gState.vacuumCardLoading, gState.vacuumCardLoadingStartTime, 0, font_tiny, 0, "UNIT_ROBOROCK");
 
-  it.printf(120, 65, font_small, C_WHITE, TextAlign::CENTER, "ROBOROCK");
-  // it.line(40, 78, 200, 78, C_DIM); // Removed line as button draws border
+  it.printf(30, 80, font_small, vac_c, TextAlign::TOP_LEFT, "%s", gState.vacuumStatus.c_str());
+  it.printf(30, 100, font_tiny, C_DIM, TextAlign::TOP_LEFT, "BATT: %.0f%%", gState.vacuumBattery);
   
-  Color vac_color = gState.vacuumCleaning ? C_GREEN : C_CYAN;
-  it.printf(120, 92, font_medium, vac_color, TextAlign::CENTER, "%s", 
-            gState.vacuumStatus.c_str());
+  it.rectangle(110, 100, 100, 10, C_DIMMER);
+  it.filled_rectangle(112, 102, (int)(gState.vacuumBattery * 0.96f), 6, vac_c);
   
-  it.printf(35, 118, font_tiny, C_DIM, TextAlign::TOP_LEFT, "BAT");
-  it.rectangle(55, 115, 120, 14, C_DIM);
-  float batt = gState.vacuumBattery;
-  Color bc = batt > 50.0f ? C_GREEN : (batt > 20.0f ? C_AMBER : C_RED);
-  it.filled_rectangle(57, 117, (int)((batt / 100.0f) * 116), 10, bc);
-  it.printf(185, 116, font_tiny, bc, TextAlign::TOP_LEFT, "%.0f%%", batt);
-  
-  // Washing Machine (positioned lower)
-  it.printf(120, 150, font_small, C_WHITE, TextAlign::CENTER, "WASHING MACHINE");
-  it.line(40, 163, 200, 163, C_DIM);
-  
+  // --- WASHING MACHINE BOX ---
   std::string wash_status = gState.washingMachineStatus;
-  if(wash_status.empty()) wash_status = "---";
+  if(wash_status.empty()) wash_status = "IDLE";
+  Color wash_c = C_DIM;
+  if (wash_status == "Scrubbing Away!") wash_c = C_CYAN;
+  else if (wash_status == "Drama in the Drum!") wash_c = C_MAGENTA;
+  else if (wash_status == "All Done!") wash_c = C_GREEN;
+  else if (wash_status == "Wrinkle Risk Rising!") wash_c = C_RED;
   
-  Color wash_color = C_DIM;
-  if (wash_status == "Scrubbing Away!") wash_color = C_CYAN;
-  else if (wash_status == "Drama in the Drum!") wash_color = C_MAGENTA;
-  else if (wash_status == "All Done!") wash_color = C_GREEN;
-  else if (wash_status == "Wrinkle Risk Rising!") wash_color = C_RED;
-  else if (wash_status == "Next Load Please!") wash_color = C_DIM;
+  drawRetroBox(it, 10, 150, 220, 65, "UNIT_WASHER", wash_c);
+  it.printf(30, 175, font_small, wash_c, TextAlign::TOP_LEFT, "%.20s", wash_status.c_str());
   
-  it.printf(120, 175, font_medium, wash_color, TextAlign::CENTER, "%.18s", wash_status.c_str());
-  
-  // 3D Printer
-  it.printf(120, 210, font_small, C_WHITE, TextAlign::CENTER, "3D PRINTER");
-  it.line(40, 223, 200, 223, C_DIM);
+  // --- 3D PRINTER BOX ---
+  Color prnt_c = gState.printerProgress > 0 ? C_AMBER : C_DIM;
+  drawRetroBox(it, 10, 230, 220, 75, "UNIT_PRINTER", prnt_c);
   
   if (gState.printerProgress > 0.0f) {
-    it.printf(120, 238, font_tiny, C_AMBER, TextAlign::CENTER, "PRINTING");
-    it.rectangle(30, 253, 180, 14, C_DIM);
-    it.filled_rectangle(32, 255, (int)((gState.printerProgress / 100.0f) * 176), 10, C_AMBER);
-    it.printf(120, 272, font_medium, C_AMBER, TextAlign::CENTER, "%.0f%%", gState.printerProgress);
+    it.printf(30, 250, font_small, C_AMBER, TextAlign::TOP_LEFT, "PROGRESS: %.0f%%", gState.printerProgress);
+    it.rectangle(30, 275, 180, 10, C_DIMMER);
+    it.filled_rectangle(32, 277, (int)(gState.printerProgress * 1.76f), 6, C_AMBER);
   } else {
-    it.printf(120, 255, font_medium, C_DIM, TextAlign::CENTER, "IDLE");
+    it.printf(120, 265, font_small, C_DIM, TextAlign::CENTER, "SYSTEM_READY");
   }
 }
 

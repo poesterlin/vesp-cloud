@@ -10,6 +10,7 @@ packages:
 
 esphome:
   includes:
+    - includes/colors.h
     - includes/state_manager.h
     - includes/touch_handler.h
     - includes/dial.h

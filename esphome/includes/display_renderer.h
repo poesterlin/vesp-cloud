@@ -276,33 +276,66 @@ void renderPage0_Status(display::Display& it) {
 // --- PAGE 1: MUSIC ---
 
 void renderPage1_Music(display::Display& it) {
+  // Tabs
+  bool mainActive = (gState.musicViewTab == 0);
+  bool boseActive = (gState.musicViewTab == 1);
+  bool dummyLoading = false;
+  unsigned long dummyTime = 0;
+
+  gState.musicMainTabBtn.draw(it, "LIVING", mainActive ? C_CYAN : C_DIM, dummyLoading, dummyTime, 0, font_tiny);
+  gState.musicBoseTabBtn.draw(it, "BOSE", boseActive ? C_AMBER : C_DIM, dummyLoading, dummyTime, 0, font_tiny);
+
+  // Main Info Box
   gState.musicDetailBtn.draw(it, "", C_CYAN, gState.musicDetailLoading, gState.musicDetailLoadingStartTime, 0, font_tiny, 0, "NOW_PLAYING");
   
   // Add a small indicator that this box is clickable
-  it.printf(225, 45, font_tiny, C_CYAN, TextAlign::TOP_RIGHT, "OPTIONS >");
+  it.printf(225, 80, font_tiny, C_CYAN, TextAlign::TOP_RIGHT, "OPTIONS >");
 
-  if (gState.mediaStatus == "playing") {
-    ScrollingText::draw(it, 30, 65, 180, gState.mediaTitle, font_medium, C_WHITE);
-    it.printf(30, 95, font_small, C_DIM, TextAlign::TOP_LEFT, "%s", gState.mediaArtist.c_str());
-    
-    // Simple animated bar visualizer
-    int bars = 15;
-    int bx = 30;
-    int by = 145;
-    for (int i = 0; i < bars; i++) {
-      int h = 5 + (rand() % 15);
-      it.filled_rectangle(bx + i * 12, by - h, 8, h, C_CYAN);
+  if (mainActive) {
+    if (gState.mediaStatus == "playing") {
+      ScrollingText::draw(it, 30, 100, 180, gState.mediaTitle, font_medium, C_WHITE);
+      it.printf(30, 130, font_small, C_DIM, TextAlign::TOP_LEFT, "%s", gState.mediaArtist.c_str());
+      
+      // Simple animated bar visualizer
+      int bars = 15;
+      int bx = 30;
+      int by = 165;
+      for (int i = 0; i < bars; i++) {
+        int h = 5 + (rand() % 15);
+        it.filled_rectangle(bx + i * 12, by - h, 8, h, C_CYAN);
+      }
+    } else {
+      it.printf(120, 125, font_medium, C_DIMMER, TextAlign::CENTER, "IDLE");
     }
+
+    // Play Music Button
+    gState.musicPlayBtn.draw(it, "START MUSIC", C_GREEN, gState.musicPlayLoading, gState.musicPlayLoadingStartTime, 2000, font_small);
+
+    // Bottom Buttons
+    gState.musicLikeBtn.draw(it, "LIKE", C_MAGENTA, gState.musicLikeLoading, gState.musicLikeLoadingStartTime, 1000, font_small);
+    gState.musicSkipBtn.draw(it, "SKIP", C_AMBER, gState.musicSkipLoading, gState.musicSkipLoadingStartTime, 1000, font_small);
+  
   } else {
-    it.printf(120, 90, font_medium, C_DIMMER, TextAlign::CENTER, "IDLE");
+    // Bose Player
+    if (gState.mediaStatusBose == "playing") {
+      ScrollingText::draw(it, 30, 100, 180, gState.mediaTitleBose, font_medium, C_WHITE);
+      it.printf(30, 130, font_small, C_DIM, TextAlign::TOP_LEFT, "%s", gState.mediaArtistBose.c_str());
+      
+      // Visualizer (Amber)
+      int bars = 15;
+      int bx = 30;
+      int by = 165;
+      for (int i = 0; i < bars; i++) {
+        int h = 5 + (rand() % 15);
+        it.filled_rectangle(bx + i * 12, by - h, 8, h, C_AMBER);
+      }
+    } else {
+      it.printf(120, 125, font_medium, C_DIMMER, TextAlign::CENTER, "IDLE");
+    }
+
+    // No controls available message
+    it.printf(120, 200, font_small, C_DIM, TextAlign::CENTER, "CONTROLS UNAVAILABLE");
   }
-
-  // Play Music Button
-  gState.musicPlayBtn.draw(it, "START MUSIC", C_GREEN, gState.musicPlayLoading, gState.musicPlayLoadingStartTime, 2000, font_small);
-
-  // Bottom Buttons
-  gState.musicLikeBtn.draw(it, "LIKE", C_MAGENTA, gState.musicLikeLoading, gState.musicLikeLoadingStartTime, 1000, font_small);
-  gState.musicSkipBtn.draw(it, "SKIP", C_AMBER, gState.musicSkipLoading, gState.musicSkipLoadingStartTime, 1000, font_small);
 }
 
 // --- DETAIL VIEW: MUSIC ---
@@ -311,21 +344,62 @@ void renderDetail_Music(display::Display& it) {
   int ly = 50;
   auto getSY = [&](int logicalY) { return logicalY + gState.scrollY; };
 
-  it.printf(120, getSY(ly), font_small, C_WHITE, TextAlign::CENTER, "TRANSFER QUEUE");
-  ly += 30;
+  it.printf(120, getSY(ly), font_small, C_WHITE, TextAlign::CENTER, "TRANSFER PLAYBACK");
+  ly += 25;
 
+  // Side-by-side transfer buttons
+  gState.musicTransferOfficeBtn.x = 10;
   gState.musicTransferOfficeBtn.y = ly;
-  gState.musicTransferOfficeBtn.draw(it, "TO OFFICE", C_CYAN, gState.musicTransferOfficeLoading, gState.musicTransferOfficeStartTime, 2000, font_small, gState.scrollY);
-  ly += 60;
+  gState.musicTransferOfficeBtn.w = 105;
+  gState.musicTransferOfficeBtn.h = 45;
+  gState.musicTransferOfficeBtn.draw(it, "OFFICE", C_CYAN, gState.musicTransferOfficeLoading, gState.musicTransferOfficeStartTime, 2000, font_small, gState.scrollY);
 
+  gState.musicTransferLivingBtn.x = 125;
   gState.musicTransferLivingBtn.y = ly;
-  gState.musicTransferLivingBtn.draw(it, "TO LIVING ROOM", C_CYAN, gState.musicTransferLivingLoading, gState.musicTransferLivingStartTime, 2000, font_small, gState.scrollY);
+  gState.musicTransferLivingBtn.w = 105;
+  gState.musicTransferLivingBtn.h = 45;
+  gState.musicTransferLivingBtn.draw(it, "LIVING", C_CYAN, gState.musicTransferLivingLoading, gState.musicTransferLivingStartTime, 2000, font_small, gState.scrollY);
+  
+  ly += 60; // Reduced spacing
+
+  // --- VOLUME SLIDER ---
+  drawRetroBox(it, 10, getSY(ly), 220, 70, "VOLUME_CONTROL", C_DIM);
+  
+  float currentVol = (gState.musicViewTab == 0) ? gState.mediaVolume : gState.mediaVolumeBose;
+  
+  // Slider Params
+  int sliderX = 25;
+  int sliderW = 190;
+  int sliderY = getSY(ly + 40);
+  
+  // Track
+  it.line(sliderX, sliderY, sliderX + sliderW, sliderY, C_DIMMER);
+  it.line(sliderX, sliderY+1, sliderX + sliderW, sliderY+1, C_DIMMER);
+  
+  // Progress
+  if (currentVol > 1.0f) currentVol = 1.0f;
+  if (currentVol < 0.0f) currentVol = 0.0f;
+  int handleX = sliderX + (int)(currentVol * sliderW);
+  
+  it.line(sliderX, sliderY, handleX, sliderY, C_CYAN);
+  it.line(sliderX, sliderY+1, handleX, sliderY+1, C_CYAN);
+  
+  // Handle
+  it.filled_circle(handleX, sliderY, 8, C_CYAN);
+  it.circle(handleX, sliderY, 10, C_WHITE);
+  
+  it.printf(120, getSY(ly + 15), font_tiny, C_DIM, TextAlign::CENTER, "VOLUME: %.0f%%", currentVol * 100);
+  
   ly += 80;
 
-  // Space for future actions
-  drawRetroBox(it, 10, getSY(ly), 220, 100, "FUTURE_ACTIONS", C_DIM);
-  it.printf(120, getSY(ly + 50), font_tiny, C_DIMMER, TextAlign::CENTER, "MORE SLOTS AVAILABLE");
-  ly += 110;
+  // --- TRACK CONTROLS ---
+  gState.musicPrevBtn.y = ly;
+  gState.musicNextBtn.y = ly;
+  
+  gState.musicPrevBtn.draw(it, "PREV", C_AMBER, gState.musicPrevLoading, gState.musicPrevStartTime, 500, font_small, gState.scrollY);
+  gState.musicNextBtn.draw(it, "NEXT", C_AMBER, gState.musicNextLoading, gState.musicNextStartTime, 500, font_small, gState.scrollY);
+
+  ly += 60;
 
   int totalContentHeight = ly - 40;
   gState.maxScrollY = totalContentHeight > 280 ? (totalContentHeight - 280) : 0;

@@ -26,10 +26,8 @@ public:
       
       // Detect start of music volume drag
       if (gState.currentView == VIEW_DETAIL_MUSIC) {
-        int sliderLogicalY = 170 + gState.scrollY; // ly was ly += 80 before slider, ly start was 50 + 30 + 60 + 80 = 220? Wait.
-        // Let's check ly calculation in renderer: 50 + 30 + 60 + 80 = 220 logical.
-        // So slider is at 220 to 290 logical.
-        int sy = 220 + gState.scrollY;
+        // Slider box starts at logical Y = 135 in the new condensed layout
+        int sy = 135 + gState.scrollY;
         if (x >= 10 && x <= 230 && y >= sy && y <= sy + 70) {
           gState.volumeDragging = true;
         }

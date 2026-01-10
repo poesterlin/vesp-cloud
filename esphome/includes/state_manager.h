@@ -66,6 +66,10 @@ struct DisplayState {
   Button windowsAlertBtn = Button(20, 70, 200, 20);
 
   // Music Buttons (Page 1)
+  int musicViewTab = 0; // 0 = Living Room, 1 = Bose
+  Button musicMainTabBtn = Button(10, 40, 105, 30);
+  Button musicBoseTabBtn = Button(125, 40, 105, 30);
+
   volatile bool musicPlayLoading = false;
   unsigned long musicPlayLoadingStartTime = 0;
   volatile bool musicPlayActionRequested = false;
@@ -84,18 +88,37 @@ struct DisplayState {
   volatile bool musicDetailLoading = false;
   unsigned long musicDetailLoadingStartTime = 0;
   volatile bool musicDetailActionRequested = false; // Dummy
-  Button musicDetailBtn = Button(10, 40, 220, 120); // Overlay for Page 1 NOW_PLAYING section
+  Button musicDetailBtn = Button(10, 75, 220, 100); // Overlay for Page 1 NOW_PLAYING section
 
   // Music Detail Actions
   volatile bool musicTransferOfficeLoading = false;
   unsigned long musicTransferOfficeStartTime = 0;
   volatile bool musicTransferOfficeRequested = false;
-  Button musicTransferOfficeBtn = Button(10, 50, 220, 50);
+  Button musicTransferOfficeBtn = Button(10, 75, 105, 45);
 
   volatile bool musicTransferLivingLoading = false;
   unsigned long musicTransferLivingStartTime = 0;
   volatile bool musicTransferLivingRequested = false;
-  Button musicTransferLivingBtn = Button(10, 110, 220, 50);
+  Button musicTransferLivingBtn = Button(125, 75, 105, 45);
+
+  // Media Detail Actions (Volume & Track)
+  float mediaVolume = 0; // 0.0 to 1.0
+  float mediaVolumeBose = 0; // 0.0 to 1.0
+  bool volumeDragging = false;
+  
+  volatile bool musicNextLoading = false;
+  unsigned long musicNextStartTime = 0;
+  volatile bool musicNextRequested = false;
+  Button musicNextBtn = Button(130, 200, 100, 50); 
+
+  volatile bool musicPrevLoading = false;
+  unsigned long musicPrevStartTime = 0;
+  volatile bool musicPrevRequested = false;
+  Button musicPrevBtn = Button(10, 200, 100, 50); 
+  
+  volatile bool musicVolumeActionRequested = false; // Flag to trigger volume update in HA
+  float musicVolumeSetPoint = 0; // Target volume to set
+
 
   // Vacuum Badge Button (Page 0)
   volatile bool vacuumBadgeLoading = false;
@@ -159,6 +182,10 @@ struct DisplayState {
   std::string mediaTitle = "Nothing playing";
   std::string mediaArtist = "";
   std::string mediaStatus = "idle";
+
+  std::string mediaTitleBose = "Nothing playing";
+  std::string mediaArtistBose = "";
+  std::string mediaStatusBose = "idle";
 
   // Devices
   float vacuumBattery = 0;

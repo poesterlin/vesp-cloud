@@ -92,19 +92,20 @@ public:
           // Swipe Right on screen (dx > 0) = Previous Page
           if (dx > 30) {
             prevPage(); 
-                    }
-                    // Swipe Left on screen (dx < 0) = Next Page
-                    else if (dx < -30) {
-                      nextPage(); 
-                    }
-                  }
-                  // Tap (Minimal movement in both directions)
-                  // Reduced horizontal tolerance to prevent swipe starts from triggering clicks
-                  else if (abs(dx) < 10 && abs(dy) < 20) {
-                    handleTap(startX, startY);
-                  }
-                } 
-                // Detail View Tap      else {
+          } 
+          // Swipe Left on screen (dx < 0) = Next Page
+          else if (dx < -30) {
+            nextPage(); 
+          }
+        }
+        // Tap (Minimal movement in both directions)
+        // Reduced horizontal tolerance to prevent swipe starts from triggering clicks
+        else if (abs(dx) < 10 && abs(dy) < 20) {
+          handleTap(startX, startY);
+        }
+      } 
+      // Detail View Tap
+      else {
         if (abs(dx) < 20 && abs(dy) < 20) {
            handleTap(startX, startY);
         }

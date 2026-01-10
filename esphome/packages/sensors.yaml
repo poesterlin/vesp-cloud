@@ -468,6 +468,8 @@ interval:
           if (gState.notificationActionRequested) {
             ESP_LOGI("main", "Notification action requested, clearing local and HA state");
             gState.notificationActionRequested = false;
+            // Stop any playing sound (timer/alert)
+            id(swipe_buzzer).stop();
             // Clear local state immediately for fast feedback
             gState.notificationTitle = "";
             gState.notificationBody = "";

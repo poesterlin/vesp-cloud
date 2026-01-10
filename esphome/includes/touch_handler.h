@@ -23,6 +23,17 @@ public:
           gState.timerDragging = true;
         }
       }
+      
+      // Detect start of music volume drag
+      if (gState.currentView == VIEW_DETAIL_MUSIC) {
+        int sliderLogicalY = 170 + gState.scrollY; // ly was ly += 80 before slider, ly start was 50 + 30 + 60 + 80 = 220? Wait.
+        // Let's check ly calculation in renderer: 50 + 30 + 60 + 80 = 220 logical.
+        // So slider is at 220 to 290 logical.
+        int sy = 220 + gState.scrollY;
+        if (x >= 10 && x <= 230 && y >= sy && y <= sy + 70) {
+          gState.volumeDragging = true;
+        }
+      }
     }
     // Touch Move
     else if (touched && wasTouched) {
@@ -38,6 +49,18 @@ public:
         int minutes = (int)(progress * 60.0f + 0.5f);
         gState.timerRemaining = minutes * 60;
         gState.timerDuration = gState.timerRemaining;
+      }
+      else if (gState.volumeDragging) {
+        int sliderX = 25;
+        int sliderW = 190;
+        float progress = (float)(x - sliderX) / (float)sliderW;
+        if (progress < 0) progress = 0; if (progress > 1) progress = 1;
+        
+        gState.musicVolumeSetPoint = progress;
+        gState.musicVolumeActionRequested = true; // Trigger update
+        // Local update for immediate feedback
+        if (gState.musicViewTab == 0) gState.mediaVolume = progress;
+        else gState.mediaVolumeBose = progress;
       }
       // Handle Scrolling in Detail Views
       else if (gState.currentView != VIEW_MAIN_DASHBOARD) {
@@ -58,6 +81,7 @@ public:
     // Touch Release
     else if (!touched && wasTouched) {
       gState.timerDragging = false;
+      gState.volumeDragging = false;
       int dx = x - startX;
       int dy = y - startY;
       
@@ -68,19 +92,19 @@ public:
           // Swipe Right on screen (dx > 0) = Previous Page
           if (dx > 30) {
             prevPage(); 
-          } 
-          // Swipe Left on screen (dx < 0) = Next Page
-          else if (dx < -30) {
-            nextPage(); 
-          }
-        }
-        // Tap (Minimal movement in both directions)
-        else if (abs(dx) < 20 && abs(dy) < 20) {
-          handleTap(startX, startY);
-        }
-      } 
-      // Detail View Tap
-      else {
+                    }
+                    // Swipe Left on screen (dx < 0) = Next Page
+                    else if (dx < -30) {
+                      nextPage(); 
+                    }
+                  }
+                  // Tap (Minimal movement in both directions)
+                  // Reduced horizontal tolerance to prevent swipe starts from triggering clicks
+                  else if (abs(dx) < 10 && abs(dy) < 20) {
+                    handleTap(startX, startY);
+                  }
+                } 
+                // Detail View Tap      else {
         if (abs(dx) < 20 && abs(dy) < 20) {
            handleTap(startX, startY);
         }
@@ -144,13 +168,33 @@ private:
       }
       // Page 1: Music
       else if (gState.mainPageIndex == 1) {
+        // Tabs
+        bool dummyLoading = false;
+        unsigned long dummyTime = 0;
+        bool dummyAction = false;
+        
+        if (gState.musicMainTabBtn.processTap(x, y, dummyLoading, dummyTime, dummyAction)) {
+           gState.musicViewTab = 0;
+           gPendingTapSound = true;
+           return;
+        }
+        if (gState.musicBoseTabBtn.processTap(x, y, dummyLoading, dummyTime, dummyAction)) {
+           gState.musicViewTab = 1;
+           gPendingTapSound = true;
+           return;
+        }
+
         if (gState.musicDetailBtn.processTap(x, y, gState.musicDetailLoading, gState.musicDetailLoadingStartTime, gState.musicDetailActionRequested)) {
           openView(VIEW_DETAIL_MUSIC);
           return;
         }
-        if (gState.musicPlayBtn.processTap(x, y, gState.musicPlayLoading, gState.musicPlayLoadingStartTime, gState.musicPlayActionRequested)) return;
-        if (gState.musicLikeBtn.processTap(x, y, gState.musicLikeLoading, gState.musicLikeLoadingStartTime, gState.musicLikeActionRequested)) return;
-        if (gState.musicSkipBtn.processTap(x, y, gState.musicSkipLoading, gState.musicSkipLoadingStartTime, gState.musicSkipActionRequested)) return;
+        
+        // Only allow controls if Main Player (Tab 0) is active
+        if (gState.musicViewTab == 0) {
+            if (gState.musicPlayBtn.processTap(x, y, gState.musicPlayLoading, gState.musicPlayLoadingStartTime, gState.musicPlayActionRequested)) return;
+            if (gState.musicLikeBtn.processTap(x, y, gState.musicLikeLoading, gState.musicLikeLoadingStartTime, gState.musicLikeActionRequested)) return;
+            if (gState.musicSkipBtn.processTap(x, y, gState.musicSkipLoading, gState.musicSkipLoadingStartTime, gState.musicSkipActionRequested)) return;
+        }
       }
       // Page 2: House Status -> Open Light Details
       else if (gState.mainPageIndex == 2) {
@@ -180,12 +224,16 @@ private:
         if (gState.musicTransferOfficeBtn.processTap(x, y, gState.musicTransferOfficeLoading, gState.musicTransferOfficeStartTime, gState.musicTransferOfficeRequested, gState.scrollY)) {
           gState.lastTouchTime = millis();
           ESP_LOGI("touch", "Music Transfer Office button processed");
-          // TODO: Call Home Assistant service here
         }
         if (gState.musicTransferLivingBtn.processTap(x, y, gState.musicTransferLivingLoading, gState.musicTransferLivingStartTime, gState.musicTransferLivingRequested, gState.scrollY)) {
           gState.lastTouchTime = millis();
           ESP_LOGI("touch", "Music Transfer Living Room button processed");
-          // TODO: Call Home Assistant service here
+        }
+        if (gState.musicPrevBtn.processTap(x, y, gState.musicPrevLoading, gState.musicPrevStartTime, gState.musicPrevRequested, gState.scrollY)) {
+           return;
+        }
+        if (gState.musicNextBtn.processTap(x, y, gState.musicNextLoading, gState.musicNextStartTime, gState.musicNextRequested, gState.scrollY)) {
+           return;
         }
       }
 

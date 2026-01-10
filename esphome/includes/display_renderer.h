@@ -376,10 +376,11 @@ void renderDetail_Music(display::Display& it) {
   it.line(sliderX, sliderY, sliderX + sliderW, sliderY, C_DIMMER);
   it.line(sliderX, sliderY+1, sliderX + sliderW, sliderY+1, C_DIMMER);
   
-  // Progress
-  if (currentVol > 1.0f) currentVol = 1.0f;
-  if (currentVol < 0.0f) currentVol = 0.0f;
-  int handleX = sliderX + (int)(currentVol * sliderW);
+  // Progress - Map 0..0.25 to 0..1.0 for visual bar
+  float visualProgress = currentVol / 0.25f;
+  if (visualProgress > 1.0f) visualProgress = 1.0f;
+  if (visualProgress < 0.0f) visualProgress = 0.0f;
+  int handleX = sliderX + (int)(visualProgress * sliderW);
   
   it.line(sliderX, sliderY, handleX, sliderY, C_CYAN);
   it.line(sliderX, sliderY+1, handleX, sliderY+1, C_CYAN);
@@ -475,8 +476,8 @@ void renderDetail_Timer(display::Display& it) {
   bool dummyLoading = false;
   unsigned long dummyStartTime = 0;
   
-  gState.timerStartBtn.draw(it, startLabel, startColor, dummyLoading, dummyStartTime, 0, font_small, gState.scrollY);
-  gState.timerResetBtn.draw(it, "RESET", C_AMBER, dummyLoading, dummyStartTime, 0, font_small, gState.scrollY);
+  gState.timerStartBtn.draw(it, startLabel, startColor, gState.timerStartLoading, gState.timerStartLoadingStartTime, 2000, font_small, gState.scrollY);
+  gState.timerResetBtn.draw(it, "RESET", C_AMBER, gState.timerResetLoading, gState.timerResetLoadingStartTime, 1000, font_small, gState.scrollY);
 
   ly += 60;
 

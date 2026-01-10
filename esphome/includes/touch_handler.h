@@ -54,11 +54,14 @@ public:
         float progress = (float)(x - sliderX) / (float)sliderW;
         if (progress < 0) progress = 0; if (progress > 1) progress = 1;
         
-        gState.musicVolumeSetPoint = progress;
+        // Scale 0..1 progress to 0..0.25 volume setpoint
+        float scaledVolume = progress * 0.25f;
+        
+        gState.musicVolumeSetPoint = scaledVolume;
         gState.musicVolumeActionRequested = true; // Trigger update
         // Local update for immediate feedback
-        if (gState.musicViewTab == 0) gState.mediaVolume = progress;
-        else gState.mediaVolumeBose = progress;
+        if (gState.musicViewTab == 0) gState.mediaVolume = scaledVolume;
+        else gState.mediaVolumeBose = scaledVolume;
       }
       // Handle Scrolling in Detail Views
       else if (gState.currentView != VIEW_MAIN_DASHBOARD) {
@@ -241,15 +244,13 @@ private:
         bool dummyLoading = false;
         unsigned long dummyTime = 0;
         bool dummyAction = false;
-        if (gState.timerStartBtn.processTap(x, y, dummyLoading, dummyTime, dummyAction, gState.scrollY)) {
-          gState.timerActive = !gState.timerActive;
-          gPendingTapSound = true;
+        
+        if (gState.timerStartBtn.processTap(x, y, gState.timerStartLoading, gState.timerStartLoadingStartTime, gState.timerStartActionRequested, gState.scrollY)) {
+          // Action handled in sensors.yaml
           return;
         }
-        if (gState.timerResetBtn.processTap(x, y, dummyLoading, dummyTime, dummyAction, gState.scrollY)) {
-          gState.timerActive = false;
-          gState.timerRemaining = gState.timerDuration;
-          gPendingTapSound = true;
+        if (gState.timerResetBtn.processTap(x, y, gState.timerResetLoading, gState.timerResetLoadingStartTime, gState.timerResetActionRequested, gState.scrollY)) {
+          // Action handled in sensors.yaml
           return;
         }
         if (!gState.timerActive) {

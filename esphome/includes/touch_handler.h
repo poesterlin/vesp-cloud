@@ -245,12 +245,15 @@ private:
         unsigned long dummyTime = 0;
         bool dummyAction = false;
         
-        if (gState.timerStartBtn.processTap(x, y, gState.timerStartLoading, gState.timerStartLoadingStartTime, gState.timerStartActionRequested, gState.scrollY)) {
-          // Action handled in sensors.yaml
+        if (gState.timerStartBtn.processTap(x, y, dummyLoading, dummyTime, dummyAction, gState.scrollY)) {
+          gState.timerActive = !gState.timerActive;
+          gPendingTapSound = true;
           return;
         }
-        if (gState.timerResetBtn.processTap(x, y, gState.timerResetLoading, gState.timerResetLoadingStartTime, gState.timerResetActionRequested, gState.scrollY)) {
-          // Action handled in sensors.yaml
+        if (gState.timerResetBtn.processTap(x, y, dummyLoading, dummyTime, dummyAction, gState.scrollY)) {
+          gState.timerActive = false;
+          gState.timerRemaining = gState.timerDuration;
+          gPendingTapSound = true;
           return;
         }
         if (!gState.timerActive) {

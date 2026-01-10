@@ -476,8 +476,8 @@ void renderDetail_Timer(display::Display& it) {
   bool dummyLoading = false;
   unsigned long dummyStartTime = 0;
   
-  gState.timerStartBtn.draw(it, startLabel, startColor, gState.timerStartLoading, gState.timerStartLoadingStartTime, 2000, font_small, gState.scrollY);
-  gState.timerResetBtn.draw(it, "RESET", C_AMBER, gState.timerResetLoading, gState.timerResetLoadingStartTime, 1000, font_small, gState.scrollY);
+  gState.timerStartBtn.draw(it, startLabel, startColor, dummyLoading, dummyStartTime, 0, font_small, gState.scrollY);
+  gState.timerResetBtn.draw(it, "RESET", C_AMBER, dummyLoading, dummyStartTime, 0, font_small, gState.scrollY);
 
   ly += 60;
 

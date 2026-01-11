@@ -146,6 +146,12 @@ private:
            return;
         }
 
+        // Scenes Link Overlay
+        if (gState.scenesLinkBtn.processTap(x, y, gState.scenesLinkLoading, gState.scenesLinkLoadingStartTime, gState.scenesLinkActionRequested)) {
+           openView(VIEW_DETAIL_SCENES);
+           return;
+        }
+
         // Windows Alert Badge
         if (gState.getOpenWindowCount() > 0) {
           if (gState.windowsAlertBtn.processTap(x, y, gState.windowsAlertLoading, gState.windowsAlertLoadingStartTime, gState.windowsAlertActionRequested)) {
@@ -282,6 +288,14 @@ private:
         }
       }
       
+      // Scene Detail View Buttons
+      if (gState.currentView == VIEW_DETAIL_SCENES) {
+        if (gState.sceneAllOffBtn.processTap(x, y, gState.sceneAllOffLoading, gState.sceneAllOffStartTime, gState.sceneAllOffRequested, gState.scrollY)) return;
+        if (gState.sceneCozyBtn.processTap(x, y, gState.sceneCozyLoading, gState.sceneCozyStartTime, gState.sceneCozyRequested, gState.scrollY)) return;
+        if (gState.sceneBeamerBtn.processTap(x, y, gState.sceneBeamerLoading, gState.sceneBeamerStartTime, gState.sceneBeamerRequested, gState.scrollY)) return;
+        if (gState.sceneDayBtn.processTap(x, y, gState.sceneDayLoading, gState.sceneDayStartTime, gState.sceneDayRequested, gState.scrollY)) return;
+      }
+
       // Lights Detail View Buttons
       if (gState.currentView == VIEW_DETAIL_LIGHTS) {
         if (gState.lightStehlampe.btn.processTap(x, y, gState.lightStehlampe.loading, gState.lightStehlampe.loadingStartTime, gState.lightStehlampe.actionRequested, gState.scrollY)) return;

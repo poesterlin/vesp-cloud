@@ -32,6 +32,7 @@ esphome:
     - includes/render_detail_climate.h
     - includes/render_detail_music.h
     - includes/render_detail_timer.h
+    - includes/render_detail_scenes.h
     - includes/display_renderer.h
 
 # Globals are now in includes/state_manager.h

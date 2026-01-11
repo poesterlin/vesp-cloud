@@ -7,6 +7,7 @@
 #include "render_detail_climate.h"
 #include "render_detail_music.h"
 #include "render_detail_timer.h"
+#include "render_detail_scenes.h"
 
 void renderDetailViews(display::Display& it, ViewState view) {
   switch (view) {
@@ -16,6 +17,7 @@ void renderDetailViews(display::Display& it, ViewState view) {
     case VIEW_DETAIL_CLIMATE: renderDetail_Climate(it); break;
     case VIEW_DETAIL_MUSIC:   renderDetail_Music(it); break;
     case VIEW_DETAIL_TIMER:   renderDetail_Timer(it); break;
+    case VIEW_DETAIL_SCENES:  renderDetail_Scenes(it); break;
     default: break;
   }
 }

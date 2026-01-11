@@ -103,19 +103,32 @@ void renderPage0_Status(display::Display& it) {
 
   drawPreviewItems(105);
 
-  int timerBtnY = 195;
-  gState.timerLinkBtn.x = 70;
-  gState.timerLinkBtn.y = timerBtnY;
+  int btnY = 195;
+  
+  // Timer Button
+  gState.timerLinkBtn.x = 15;
+  gState.timerLinkBtn.y = btnY;
   gState.timerLinkBtn.w = 100;
   gState.timerLinkBtn.h = 35;
   gState.timerLinkBtn.draw(it, "   TIMER", C_AMBER, gState.timerLinkLoading, gState.timerLinkLoadingStartTime, 0, font_small);
   
-  int cx = 85;
-  int cy = timerBtnY + 17;
-  it.circle(cx, cy, 7, C_AMBER);
-  it.line(cx, cy, cx, cy - 4, C_AMBER);
-  it.line(cx, cy, cx + 3, cy, C_AMBER);
+  int tcx = 30; // 15 + 15
+  int tcy = btnY + 17;
+  it.circle(tcx, tcy, 7, C_AMBER);
+  it.line(tcx, tcy, tcx, tcy - 4, C_AMBER);
+  it.line(tcx, tcy, tcx + 3, tcy, C_AMBER);
 
+  // Scenes Button
+  gState.scenesLinkBtn.x = 125;
+  gState.scenesLinkBtn.y = btnY;
+  gState.scenesLinkBtn.w = 100;
+  gState.scenesLinkBtn.h = 35;
+  gState.scenesLinkBtn.draw(it, "   SCENES", C_AMBER, gState.scenesLinkLoading, gState.scenesLinkLoadingStartTime, 0, font_small);
+  
+  int scx = 140; // 125 + 15
+  int scy = btnY + 17;
+  it.filled_circle(scx, scy, 7, C_AMBER); // Solid circle for scenes
+  
   drawRetroBox(it, 10, 260, 220, 40, nullptr, C_DIM);
   
   int badge_x = 15;

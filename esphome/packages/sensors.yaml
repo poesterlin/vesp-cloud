@@ -480,6 +480,32 @@ interval:
             id(clear_notification).execute();
           }
 
+          // Scene Actions
+          if (gState.sceneAllOffRequested) {
+            gState.sceneAllOffRequested = false;
+            gState.sceneAllOffLoading = true;
+            gState.sceneAllOffStartTime = millis();
+            id(call_scene_all_off).execute();
+          }
+          if (gState.sceneCozyRequested) {
+            gState.sceneCozyRequested = false;
+            gState.sceneCozyLoading = true;
+            gState.sceneCozyStartTime = millis();
+            id(call_scene_cozy).execute();
+          }
+          if (gState.sceneBeamerRequested) {
+            gState.sceneBeamerRequested = false;
+            gState.sceneBeamerLoading = true;
+            gState.sceneBeamerStartTime = millis();
+            id(call_scene_beamer).execute();
+          }
+          if (gState.sceneDayRequested) {
+            gState.sceneDayRequested = false;
+            gState.sceneDayLoading = true;
+            gState.sceneDayStartTime = millis();
+            id(call_scene_day).execute();
+          }
+
           // Music Actions
           if (gState.musicPlayActionRequested) {
             gState.musicPlayActionRequested = false;
@@ -546,6 +572,12 @@ interval:
           if (gState.musicSkipLoading && (millis() - gState.musicSkipLoadingStartTime > 3000)) gState.musicSkipLoading = false;
           if (gState.musicNextLoading && (millis() - gState.musicNextStartTime > 1000)) gState.musicNextLoading = false;
           if (gState.musicPrevLoading && (millis() - gState.musicPrevStartTime > 1000)) gState.musicPrevLoading = false;
+
+          // Reset Scene Loading after timeout
+          if (gState.sceneAllOffLoading && (millis() - gState.sceneAllOffStartTime > 2000)) gState.sceneAllOffLoading = false;
+          if (gState.sceneCozyLoading && (millis() - gState.sceneCozyStartTime > 2000)) gState.sceneCozyLoading = false;
+          if (gState.sceneBeamerLoading && (millis() - gState.sceneBeamerStartTime > 2000)) gState.sceneBeamerLoading = false;
+          if (gState.sceneDayLoading && (millis() - gState.sceneDayStartTime > 2000)) gState.sceneDayLoading = false;
 
 script:
   - id: call_vacuum_start
@@ -692,3 +724,28 @@ script:
           data:
             entity_id: !lambda 'return entity;'
             volume_level: !lambda 'return vol;'
+
+  - id: call_scene_all_off
+    then:
+      - homeassistant.service:
+          service: scene.turn_on
+          data:
+            entity_id: scene.alles_aus
+  - id: call_scene_cozy
+    then:
+      - homeassistant.service:
+          service: scene.turn_on
+          data:
+            entity_id: scene.gemutlich
+  - id: call_scene_beamer
+    then:
+      - homeassistant.service:
+          service: scene.turn_on
+          data:
+            entity_id: scene.gemutlich_beamer
+  - id: call_scene_day
+    then:
+      - homeassistant.service:
+          service: scene.turn_on
+          data:
+            entity_id: scene.tageslicht

@@ -16,7 +16,8 @@ enum ViewState {
   VIEW_DETAIL_TODO,
   VIEW_DETAIL_CLIMATE,
   VIEW_DETAIL_MUSIC,
-  VIEW_DETAIL_TIMER
+  VIEW_DETAIL_TIMER,
+  VIEW_DETAIL_SCENES
 };
 
 struct LightControl {
@@ -49,7 +50,34 @@ struct DisplayState {
   volatile bool timerLinkLoading = false;
   unsigned long timerLinkLoadingStartTime = 0;
   volatile bool timerLinkActionRequested = false; // Dummy
-  Button timerLinkBtn = Button(75, 40, 100, 30);
+  Button timerLinkBtn = Button(15, 195, 100, 35); // Adjusted for split layout
+
+  // Scenes Link (Page 0)
+  volatile bool scenesLinkLoading = false;
+  unsigned long scenesLinkLoadingStartTime = 0;
+  volatile bool scenesLinkActionRequested = false; // Dummy
+  Button scenesLinkBtn = Button(125, 195, 100, 35);
+
+  // Scene Buttons
+  volatile bool sceneAllOffLoading = false;
+  unsigned long sceneAllOffStartTime = 0;
+  volatile bool sceneAllOffRequested = false;
+  Button sceneAllOffBtn = Button(10, 60, 220, 50);
+
+  volatile bool sceneCozyLoading = false;
+  unsigned long sceneCozyStartTime = 0;
+  volatile bool sceneCozyRequested = false;
+  Button sceneCozyBtn = Button(10, 120, 220, 50);
+
+  volatile bool sceneBeamerLoading = false;
+  unsigned long sceneBeamerStartTime = 0;
+  volatile bool sceneBeamerRequested = false;
+  Button sceneBeamerBtn = Button(10, 180, 220, 50);
+
+  volatile bool sceneDayLoading = false;
+  unsigned long sceneDayStartTime = 0;
+  volatile bool sceneDayRequested = false;
+  Button sceneDayBtn = Button(10, 240, 220, 50);
   
   // Climate Detail Navigation
   volatile bool climateDetailLoading = false;

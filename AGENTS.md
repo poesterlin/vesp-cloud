@@ -119,6 +119,7 @@ Routes to appropriate detail view based on `gState.currentView`:
 - `render_detail_climate.h` - Air quality, thermal dynamics, environment stats
 - `render_detail_music.h` - Playback transfer, volume slider, track controls
 - `render_detail_timer.h` - Countdown, time slider, start/stop/reset controls
+- `render_detail_scenes.h` - Scene activation buttons (All Off, Cozy, Beamer, Daylight)
 
 #### Dependency Chain
 ```
@@ -131,7 +132,8 @@ display_renderer.h
     ├── render_detail_todo.h → render_helpers.h
     ├── render_detail_climate.h → render_helpers.h
     ├── render_detail_music.h → render_helpers.h
-    └── render_detail_timer.h → render_helpers.h
+    ├── render_detail_timer.h → render_helpers.h
+    └── render_detail_scenes.h → render_helpers.h
 ```
 
 #### Key Design Principles

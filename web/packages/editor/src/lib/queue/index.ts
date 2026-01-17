@@ -188,11 +188,11 @@ export class CompilationQueue extends EventEmitter {
         }
 
         // Cleanup temp dir
-        // try {
-        //   await fs.rm(tempDir, { recursive: true, force: true });
-        // } catch (e) {
-        //   console.error('Failed to cleanup temp directory:', e);
-        // }
+        try {
+          await fs.rm(tempDir, { recursive: true, force: true });
+        } catch (e) {
+          console.error('Failed to cleanup temp directory:', e);
+        }
 
         this.processQueue();
       });

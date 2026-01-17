@@ -84,20 +84,23 @@ export function generateStateHeader(project: Project): string {
    lines.push(`void openView(ViewState view) {`);
    lines.push(`  gState.currentView = view;`);
    lines.push(`  gState.scrollY = 0;`);
-   lines.push(`  gState.viewMode = ViewMode::DETAIL;`);
    lines.push(`}`);
    lines.push(``);
    lines.push(`void goBack() {`);
-   lines.push(`  gState.viewMode = ViewMode::DASHBOARD;`);
+   lines.push(`  gState.currentView = VIEW_MAIN_DASHBOARD;`);
    lines.push(`  gState.scrollY = 0;`);
    lines.push(`}`);
    lines.push(``);
    lines.push(`void nextPage() {`);
-   lines.push(`  gState.mainPageIndex = (gState.mainPageIndex + 1) % ${project.dashboardPages?.length ?? 1};`);
+   lines.push(`  if (gState.currentView == VIEW_MAIN_DASHBOARD) {`);
+   lines.push(`    gState.mainPageIndex = (gState.mainPageIndex + 1) % ${project.dashboardPages?.length ?? 1};`);
+   lines.push(`  }`);
    lines.push(`}`);
    lines.push(``);
    lines.push(`void prevPage() {`);
-   lines.push(`  gState.mainPageIndex = (gState.mainPageIndex - 1 + ${project.dashboardPages?.length ?? 1}) % ${project.dashboardPages?.length ?? 1};`);
+   lines.push(`  if (gState.currentView == VIEW_MAIN_DASHBOARD) {`);
+   lines.push(`    gState.mainPageIndex = (gState.mainPageIndex - 1 + ${project.dashboardPages?.length ?? 1}) % ${project.dashboardPages?.length ?? 1};`);
+   lines.push(`  }`);
    lines.push(`}`);
 
    return lines.join("\n");

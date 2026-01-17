@@ -48,7 +48,7 @@ export function generateCppRenderer(project: Project): string {
    lines.push(`void renderDisplay(display::Display& it) {`);
    lines.push(`  it.fill(Theme::BACKGROUND);`);
    lines.push(``);
-   lines.push(`  if (gState.isDashboard()) {`);
+   lines.push(`  if (gState.currentView == VIEW_MAIN_DASHBOARD) {`);
    lines.push(`    drawCommonHeader(it);`);
    lines.push(`    switch (gState.mainPageIndex) {`);
    project.dashboardPages.forEach((_, i) => {
@@ -57,11 +57,13 @@ export function generateCppRenderer(project: Project): string {
    lines.push(`    }`);
    lines.push(`    drawPageIndicator(it, gState.mainPageIndex, ${project.dashboardPages.length});`);
    lines.push(`  } else {`);
+   lines.push(`    // Render detail view`);
    lines.push(`    switch (gState.currentView) {`);
    project.detailViews.forEach((view) => {
      const safeId = view.id.toUpperCase().replace(/-/g, '_');
      lines.push(`      case VIEW_DETAIL_${safeId}: renderDetail_${safeId}(it); break;`);
    });
+   lines.push(`      default: break;`);
    lines.push(`    }`);
    lines.push(`  }`);
    lines.push(`}`);

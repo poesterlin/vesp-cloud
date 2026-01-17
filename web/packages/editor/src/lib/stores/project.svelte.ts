@@ -54,13 +54,6 @@ function createProjectStore() {
         console.error("Failed to parse saved project", e);
       }
     }
-
-    // Auto-save when project changes (browser only)
-    $effect.root(() => {
-      $effect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
-      });
-    });
   }
 
   // Current view tracking

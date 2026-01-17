@@ -150,9 +150,12 @@
 <div
   class="canvas-wrapper"
   style:width="{projectStore.display.width}px"
-  style:height="{(projectStore.viewMode === 'detail' && projectStore.currentDetailView) ? projectStore.currentDetailView.height : projectStore.display.height}px"
+  style:height="{(projectStore.viewMode === 'detail' && projectStore.currentDetailView) ? (projectStore.currentDetailView.height || 320) : projectStore.display.height}px"
 >
-  <DetailHeader />
+  <DetailHeader 
+    title={projectStore.currentDetailView?.title || ""} 
+    onBack={() => projectStore.setViewMode("dashboard")} 
+  />
   <div
     bind:this={canvasEl}
     class="canvas"
@@ -162,7 +165,7 @@
     onclick={handleCanvasClick}
     ondrop={handleDrop}
     ondragover={handleDragOver}
-    style:height="{(projectStore.viewMode === 'detail' && projectStore.currentDetailView) ? projectStore.currentDetailView.height - 45 : '100%'}px"
+    style:height="{(projectStore.viewMode === 'detail' && projectStore.currentDetailView) ? (projectStore.currentDetailView.height || 320) - 45 : '100%'}px"
   >
     {#each projectStore.activeComponents as component (component.id)}
       <ComponentRenderer {component} />
@@ -173,11 +176,11 @@
 
   <!-- Display size indicator -->
   <div class="size-indicator">
-    {projectStore.display.width} x {(projectStore.viewMode === 'detail' && projectStore.currentDetailView) ? projectStore.currentDetailView.height : projectStore.display.height}
+    {projectStore.display.width} x {(projectStore.viewMode === 'detail' && projectStore.currentDetailView) ? (projectStore.currentDetailView.height || 320) : projectStore.display.height}
     {#if projectStore.viewMode === 'dashboard'}
       (Dashboard: {projectStore.currentDashboardPage.name})
     {:else}
-      (Detail: {projectStore.currentDetailView?.title})
+      (Detail: {projectStore.currentDetailView?.title || "Unknown"})
     {/if}
   </div>
 </div>

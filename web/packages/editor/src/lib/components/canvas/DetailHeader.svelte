@@ -1,58 +1,64 @@
 <script lang="ts">
-  import { projectStore } from "$lib/stores/project.svelte";
-  import { colorToCss } from "$lib/utils/color-utils";
+  import { projectStore } from "../../stores/project.svelte";
+  import { colorToRgb } from "../../utils/themed-drawing";
 
+  interface Props {
+    title: string;
+    onBack?: () => void;
+  }
+
+  let { title, onBack }: Props = $props();
   const theme = $derived(projectStore.theme);
-  const currentDetail = $derived(projectStore.currentDetailView);
-
-  const accentColor = $derived(colorToCss(theme.colors.accent));
-  const foregroundColor = $derived(colorToCss(theme.colors.foreground));
-  const shadowColor = $derived(colorToCss(theme.colors.background, "black"));
-  const shadowOffset = $derived(theme.values.shadowOffset ?? 3);
-  const cornerSize = $derived(theme.values.cornerSize ?? 10);
 </script>
 
-{#if projectStore.viewMode === 'detail' && currentDetail}
-  <div class="detail-header" style:height="45px" style:background={colorToCss(theme.colors.background)}>
-    <svg width="100%" height="100%">
-      <!-- Bottom Border -->
-      <line x1="0" y1="44" x2="240" y2="44" stroke={accentColor} stroke-width="1" />
-      
-      <!-- Back Button Mockup (Simplified for Header) -->
-      <g class="back-btn" onclick={() => projectStore.setViewMode('dashboard')}>
-         <rect x="5" y="8" width="50" height="28" fill={colorToCss(theme.colors.backgroundSecondary)} stroke={accentColor} />
-         <text x="30" y="22" fill="white" font-family="monospace" font-size="12" text-anchor="middle" dominant-baseline="central">&lt; BACK</text>
-      </g>
-
-      <!-- Title -->
-      <text 
-        x="130" 
-        y="22" 
-        fill={foregroundColor} 
-        font-family="monospace" 
-        font-size="14" 
-        font-weight="bold"
-        text-anchor="middle" 
-        dominant-baseline="central"
-      >
-        {currentDetail.title.toUpperCase()}
-      </text>
+<div 
+  class="detail-header" 
+  style:border-bottom="1px solid {colorToRgb(theme.colors.foregroundMuted || {r:128,g:128,b:128})}"
+>
+  <div class="back-button" onclick={onBack}>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colorToRgb(theme.colors.accent || {r:0,g:255,b:255})} stroke-width="2">
+      <path d="M15 18l-6-6 6-6" />
     </svg>
+    <span style:color={colorToRgb(theme.colors.accent || {r:0,g:255,b:255})}>BACK</span>
   </div>
-{/if}
+  
+  <h1 style:color={colorToRgb(theme.colors.foreground || {r:255,g:255,b:255})}>{(title || "").toUpperCase()}</h1>
+  
+  <div class="spacer"></div>
+</div>
 
 <style>
   .detail-header {
-    position: sticky;
+    position: absolute;
     top: 0;
-    width: 100%;
-    z-index: 100;
-    pointer-events: all;
+    left: 0;
+    right: 0;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    background: inherit;
+    z-index: 10;
   }
-  .back-btn {
+
+  .back-button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    font-weight: bold;
     cursor: pointer;
   }
-  .back-btn:hover rect {
-    fill: #444;
+
+  h1 {
+    flex: 1;
+    text-align: center;
+    font-size: 16px;
+    margin: 0;
+    letter-spacing: 1px;
+  }
+
+  .spacer {
+    width: 60px; /* Balance the back button */
   }
 </style>

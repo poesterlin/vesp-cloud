@@ -100,12 +100,26 @@ export function generateESPHomeYAML(project: Project): string {
   lines.push(`  - id: current_page`);
   lines.push(`    type: int`);
   lines.push(`    initial_value: "0"`);
+  lines.push(`  - id: scroll_y`);
+  lines.push(`    type: int`);
+  lines.push(`    initial_value: "0"`);
+  lines.push(`  - id: max_scroll_y`);
+  lines.push(`    type: int`);
+  lines.push(`    initial_value: "0"`);
+  lines.push(``);
+
+  // Interval for touch polling
+  lines.push(`interval:`);
+  lines.push(`  - interval: 16ms`);
+  lines.push(`    then:`);
+  lines.push(`      - lambda: |-`);
+  lines.push(`          id(main_display).update();`);
   lines.push(``);
 
   // Page count info
-  lines.push(`# Total pages: ${project.pages.length}`);
-  for (let i = 0; i < project.pages.length; i++) {
-    lines.push(`# Page ${i}: ${project.pages[i].name}`);
+  lines.push(`# Total dashboard pages: ${project.dashboardPages.length}`);
+  for (let i = 0; i < project.dashboardPages.length; i++) {
+    lines.push(`# Page ${i}: ${project.dashboardPages[i].name}`);
   }
 
   return lines.join("\n");
@@ -122,33 +136,17 @@ function extractAllBindings(project: Project): BindingResult {
   const textSensors = new Set<string>();
   const actions = new Set<string>();
 
-  for (const page of project.pages) {
+  // Extract from dashboard pages
+  for (const page of project.dashboardPages || []) {
     for (const comp of page.components) {
-      // Value bindings (slider, gauge)
-      if ("valueBinding" in comp && comp.valueBinding) {
-        const entity = (comp.valueBinding as { entityId: string }).entityId;
-        if (isNumericDomain(entity)) {
-          sensors.add(entity);
-        } else {
-          textSensors.add(entity);
-        }
-      }
+      extractComponentBindings(comp, sensors, textSensors, actions);
+    }
+  }
 
-      // Text bindings
-      if ("textBinding" in comp && comp.textBinding) {
-        const entity = (comp.textBinding as { entityId: string }).entityId;
-        textSensors.add(entity);
-      }
-
-      // Action bindings
-      if ("pressAction" in comp && comp.pressAction) {
-        const service = (comp.pressAction as { service: string }).service;
-        actions.add(service);
-      }
-      if ("holdAction" in comp && comp.holdAction) {
-        const service = (comp.holdAction as { service: string }).service;
-        actions.add(service);
-      }
+  // Extract from detail views
+  for (const view of project.detailViews || []) {
+    for (const comp of view.components) {
+      extractComponentBindings(comp, sensors, textSensors, actions);
     }
   }
 
@@ -157,6 +155,39 @@ function extractAllBindings(project: Project): BindingResult {
     textSensors: [...textSensors],
     actions: [...actions],
   };
+}
+
+function extractComponentBindings(
+  comp: any,
+  sensors: Set<string>,
+  textSensors: Set<string>,
+  actions: Set<string>
+) {
+  // Value bindings (slider, gauge)
+  if ("valueBinding" in comp && comp.valueBinding) {
+    const entity = (comp.valueBinding as { entityId: string }).entityId;
+    if (isNumericDomain(entity)) {
+      sensors.add(entity);
+    } else {
+      textSensors.add(entity);
+    }
+  }
+
+  // Text bindings
+  if ("textBinding" in comp && comp.textBinding) {
+    const entity = (comp.textBinding as { entityId: string }).entityId;
+    textSensors.add(entity);
+  }
+
+  // Action bindings
+  if ("pressAction" in comp && comp.pressAction) {
+    const service = (comp.pressAction as { service: string }).service;
+    actions.add(service);
+  }
+  if ("holdAction" in comp && comp.holdAction) {
+    const service = (comp.holdAction as { service: string }).service;
+    actions.add(service);
+  }
 }
 
 function isNumericDomain(entityId: string): boolean {

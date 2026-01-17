@@ -10,6 +10,13 @@
   import { projectStore } from "$lib/stores/project.svelte";
 
   let showExport = $state(false);
+
+  // Auto-save effect
+  $effect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("esphome-designer-project", JSON.stringify(projectStore.project));
+    }
+  });
 </script>
 
 <svelte:head>

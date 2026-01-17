@@ -13,7 +13,7 @@ import type {
   FontDefinition,
 } from "@esphome-designer/schema";
 import { RETRO_THEME } from "../themes/retro";
-import { assert } from "$lib/utils";
+import { assert, toUpperSnakeCase } from "$lib/utils";
 
 const LATEST_VERSION = "1.0.0";
 const PROJECTS_INDEX_KEY = "esphome-designer-projects-index";
@@ -134,9 +134,10 @@ function createProjectStore() {
     // Detail View management
     addDetailView(view?: Partial<DetailView>) {
       if (!project) return;
+      const title = view?.title ?? `Detail ${project.detailViews.length + 1}`;
       const newView: DetailView = {
-        id: view?.id ?? `detail-${Date.now()}`,
-        title: view?.title ?? `Detail ${project.detailViews.length + 1}`,
+        id: view?.id ?? toUpperSnakeCase(title), // Use toUpperSnakeCase for the ID
+        title: title,
         height: view?.height ?? 640,
         components: view?.components ?? [],
       };
@@ -279,7 +280,7 @@ function createProjectStore() {
     },
 
     exportJSON(): string {
-      return project ? JSON.stringify(project, null, 2) : "";
+      return project ? JSON.stringify(project) : "";
     },
   };
 }

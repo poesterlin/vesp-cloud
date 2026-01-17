@@ -113,7 +113,7 @@ function discoverDetailViews(project: Project): DetailView[] {
  * Validates that a detail view ID matches UPPER_SNAKE_CASE pattern
  */
 function validateDetailViewId(id: string): void {
-  if (!/^[A-Z_]+$/.test(id)) {
+  if (!/^[A-Z0-9_]+$/.test(id)) {
     throw new Error(
       `Invalid detail view ID: ${id} (must be UPPER_SNAKE_CASE like TEMPS, VACUUM, etc.)`
     );
@@ -131,7 +131,7 @@ function generateViewStateEnum(views: DetailView[]): string {
   }
   
   lines.push("enum ViewState {");
-  lines.push("  DASHBOARD = 0,");
+  lines.push("  VIEW_MAIN_DASHBOARD = 0,");
 
   views.forEach((view, idx) => {
     // Prepend VIEW_DETAIL_ prefix to short ID
@@ -184,7 +184,7 @@ function generateDisplayStateStruct(
   lines.push("  // Navigation");
   lines.push("  int mainPageIndex = 0;");
   lines.push(`  int numPages = ${numPages};`);
-  lines.push("  ViewState currentView = DASHBOARD;");
+  lines.push("  ViewState currentView = VIEW_MAIN_DASHBOARD;");
   lines.push("  int scrollY = 0;");
   lines.push("  int maxScrollY = 0;");
   lines.push("");
@@ -200,7 +200,7 @@ function generateDisplayStateStruct(
 
   lines.push("  // Helper: check if we're in the main dashboard");
   lines.push("  bool isDashboard() const {");
-  lines.push("    return currentView == DASHBOARD;");
+  lines.push("    return currentView == VIEW_MAIN_DASHBOARD;");
   lines.push("  }");
   lines.push("");
 

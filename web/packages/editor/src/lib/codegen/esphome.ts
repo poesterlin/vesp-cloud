@@ -35,10 +35,27 @@ export function generateESPHomeYAML(project: Project): string {
   lines.push(`    - includes/touch_handler.h`);
   lines.push(``);
 
+  lines.push(`esp32:`);
+  lines.push(`  board: esp32-s3-devkitc-1`);
+  lines.push(`  framework:`);
+  lines.push(`    type: esp-idf`);
+
+  lines.push(``);
+  lines.push(`spi:`);
+  lines.push(`  id: spi_lcd`);
+  lines.push(`  clk_pin: GPIO40`);
+  lines.push(`  mosi_pin: GPIO45`);
+
   // Display hardware config
   lines.push(`display:`);
   lines.push(`  - platform: ${project.display.platform}`);
+  lines.push(`    model: ST7789V`);
   lines.push(`    id: main_display`);
+  lines.push(`    dc_pin: GPIO41`);
+  lines.push(`    reset_pin: GPIO39`);
+  lines.push(`    cs_pin: GPIO42`);
+  lines.push(`    spi_id: spi_lcd`);
+  lines.push(`    invert_colors: true`);
   lines.push(`    dimensions:`);
   lines.push(`      width: ${project.display.width}`);
   lines.push(`      height: ${project.display.height}`);
@@ -47,28 +64,17 @@ export function generateESPHomeYAML(project: Project): string {
   lines.push(``);
 
   // Fonts
-  if (project.fonts && project.fonts.length > 0) {
-    lines.push(`font:`);
-    for (const font of project.fonts) {
-      lines.push(`  - file: "${font.file}"`);
-      lines.push(`    id: ${font.id}`);
-      lines.push(`    size: ${font.size}`);
-    }
-    lines.push(``);
-  } else {
-    // Default fonts
-    lines.push(`font:`);
-    lines.push(`  - file: "fonts/Roboto-Regular.ttf"`);
-    lines.push(`    id: font_small`);
-    lines.push(`    size: 12`);
-    lines.push(`  - file: "fonts/Roboto-Regular.ttf"`);
-    lines.push(`    id: font_medium`);
-    lines.push(`    size: 16`);
-    lines.push(`  - file: "fonts/Roboto-Regular.ttf"`);
-    lines.push(`    id: font_large`);
-    lines.push(`    size: 24`);
-    lines.push(``);
-  }
+  lines.push(`font:`);
+  lines.push(`  - file: "gfonts://Share Tech Mono"`);
+  lines.push(`    id: font_small`);
+  lines.push(`    size: 12`);
+  lines.push(`  - file: "gfonts://Share Tech Mono"`);
+  lines.push(`    id: font_medium`);
+  lines.push(`    size: 16`);
+  lines.push(`  - file: "gfonts://Share Tech Mono"`);
+  lines.push(`    id: font_large`);
+  lines.push(`    size: 24`);
+  lines.push(``);
 
   // Extract entity bindings
   // (We'll still keep the extraction logic if needed for other things, but remove YAML output)

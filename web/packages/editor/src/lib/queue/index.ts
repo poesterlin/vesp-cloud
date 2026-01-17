@@ -1,11 +1,17 @@
 import { EventEmitter } from 'events';
-import { exec, type ChildProcess } from 'child_process';
+import { exec, spawn, type ChildProcess } from 'child_process';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { getDb, schema } from '$lib/db/index.js';
 import { eq, desc } from 'drizzle-orm';
 import type { CompilationJob } from '$lib/db/schema';
 import { env } from '$env/dynamic/private';
+import type { Project } from '@esphome-designer/schema';
+import { generateESPHomeYAML } from '$lib/codegen/esphome';
+import { generateCppRenderer } from '$lib/codegen/cpp';
+import { generateStateHeader } from '$lib/codegen/state-manager';
+import { generateTouchHandler } from '$lib/codegen/touch-handler';
+import { generateSensorsYAML } from '$lib/codegen/sensors';
 
 interface ActiveJob {
   job: CompilationJob;
@@ -93,15 +99,52 @@ export class CompilationQueue extends EventEmitter {
 
     try {
       await fs.mkdir(tempDir, { recursive: true });
-      await fs.writeFile(configFile, job.config);
+      const includesDir = join(tempDir, 'includes');
+      await fs.mkdir(includesDir, { recursive: true });
+
+      const project = JSON.parse(job.config) as Project;
+
+      // Generate ESPHome YAML
+      const esphomeYaml = generateESPHomeYAML(project);
+      await fs.writeFile(configFile, esphomeYaml);
+
+      // Generate C++ Renderer
+      const cppRenderer = generateCppRenderer(project);
+      await fs.writeFile(join(includesDir, 'display_renderer.h'), cppRenderer);
+
+      // Generate Touch Handler
+      const touchHandler = generateTouchHandler(project);
+      await fs.writeFile(join(includesDir, 'touch_handler.h'), touchHandler);
+
+      // Generate State Manager
+      const stateManager = generateStateHeader(project);
+      await fs.writeFile(join(includesDir, 'state_manager.h'), stateManager);
+
+      // Generate Sensors YAML
+      const sensorsYaml = generateSensorsYAML(project);
+      await fs.writeFile(join(tempDir, 'sensors.yaml'), sensorsYaml);
 
       const venvPath = env.ESPHOME_VENV;
-      const command = `"${venvPath}/bin/python" -m esphome compile "${configFile}"`;
-
-      const childProcess = exec(command, {
-        cwd: tempDir,
-        timeout: 300000, // 5 minutes timeout
-      });
+        const childProcess = spawn(`${venvPath}/bin/python`,
+        ['-m', 'esphome', 'compile', configFile],
+        {
+          cwd: tempDir,
+          timeout: 300000,
+          env: {
+            ...env,
+            // Add the venv bin to the start of PATH
+            PATH: `${venvPath}/bin:${process.env.PATH}`,
+            // Tell Python and ESPHome where the virtualenv is
+            VIRTUAL_ENV: venvPath,
+            PYTHONPATH: `${venvPath}/lib/python3.11/site-packages`, // Adjust version if needed
+            // CRITICAL: Tell PlatformIO not to try creating its own virtualenv
+            PLATFORMIO_PENV_NOT_USED: 'true',
+            // Optional: Keep platformio data inside the build dir to avoid permission issues
+            PLATFORMIO_CORE_DIR: join(tempDir, '.platformio'),
+          },
+          stdio: ['inherit', 'pipe', 'pipe'],
+        }
+      );
 
       this.activeJobs.set(job.id, { job, process: childProcess });
 
@@ -110,19 +153,23 @@ export class CompilationQueue extends EventEmitter {
 
       childProcess.stdout?.on('data', (data) => {
         stdout += data;
+        console.log(`[Job ${job.id}]: ${data}`);
       });
 
       childProcess.stderr?.on('data', (data) => {
         stderr += data;
+        console.error(`[Job ${job.id} ERROR]: ${data}`);
       });
 
       childProcess.on('exit', async (code) => {
         this.activeJobs.delete(job.id);
 
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         if (code === 0) {
           await this.handleJobResult(job.id, { output: stdout });
         } else {
-          await this.handleJobResult(job.id, { error: `ESPHome compile failed (code ${code}): ${stderr}` });
+          await this.handleJobResult(job.id, { error: `ESPHome compile failed (code ${code}): ${stderr}, ${stdout}` });
         }
 
         // Cleanup temp dir

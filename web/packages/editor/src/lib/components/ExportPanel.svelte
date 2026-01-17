@@ -1,10 +1,7 @@
 <script lang="ts">
   import { projectStore } from "$lib/stores/project.svelte";
   import { generateESPHomeYAML } from "$lib/codegen/esphome";
-  import { generateCppRenderer } from "$lib/codegen/cpp";
-  import { generateTouchHandler } from "$lib/codegen/touch-handler";
-  import { generateSensorsYAML } from "$lib/codegen/sensors";
-    import { assert } from "$lib/utils";
+  import { assert } from "$lib/utils";
 
   interface Props {
     onClose: () => void;
@@ -13,10 +10,7 @@
   let { onClose }: Props = $props();
 
   let yamlOutput = $state("");
-  let cppOutput = $state("");
-  let touchOutput = $state("");
-  let sensorsOutput = $state("");
-  let activeTab = $state<"yaml" | "cpp" | "touch" | "sensors" | "json" | "history">("yaml");
+  let activeTab = $state<"yaml" | "history">("yaml");
 
   let compiling = $state(false);
   let currentJobId = $state<string | null>(null);
@@ -56,7 +50,7 @@
         body: JSON.stringify({
           projectId: projectStore.project.id,
           projectName: projectStore.project.name,
-          config: yamlOutput,
+          config: projectStore.exportJSON(),
         }),
       });
 
@@ -103,87 +97,23 @@
   function generate() {
     if (!projectStore.project) {
       yamlOutput = "# No project loaded.";
-      cppOutput = "// No project loaded.";
-      touchOutput = "// No project loaded.";
-      sensorsOutput = "# No project loaded.";
       return;
     }
 
     try {
       yamlOutput = generateESPHomeYAML(projectStore.project);
-      cppOutput = generateCppRenderer(projectStore.project);
-      touchOutput = generateTouchHandler(projectStore.project);
-      sensorsOutput = generateSensorsYAML(projectStore.project);
     } catch (err) {
       console.error("Code generation failed:", err);
       yamlOutput = `# Error generating YAML: ${err}`;
-      cppOutput = `// Error generating C++: ${err}`;
-      touchOutput = `// Error generating Touch Handler: ${err}`;
-      sensorsOutput = `# Error generating Sensors YAML: ${err}`;
     }
   }
 
-  function copyAllFiles() {
-    const allCode = [
-      `// FILE: display.yaml\n${yamlOutput}`,
-      `// FILE: display_renderer.h\n${cppOutput}`,
-      `// FILE: touch_handler.h\n${touchOutput}`,
-      `// FILE: sensors.yaml\n${sensorsOutput}`,
-      `// FILE: project.json\n${projectStore.exportJSON()}`
-    ].join("\n\n" + "=".repeat(50) + "\n\n");
-    
-    copyToClipboard(allCode);
-    alert("All files copied to clipboard!");
-  }
-
-  function download(filename: string, content: string) {
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function downloadAll() {
-    if (!projectStore.project) return;
-
-    const projectName = projectStore.project.name.toLowerCase().replace(/\s+/g, "-");
-    download(`${projectName}.yaml`, yamlOutput);
-    download(`${projectName}_renderer.h`, cppOutput);
-    download(`touch_handler.h`, touchOutput);
-    download(`sensors.yaml`, sensorsOutput);
-    download(`${projectName}.json`, projectStore.exportJSON());
-  }
 
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(text);
   }
 
-  const currentOutput = $derived(
-    activeTab === "yaml"
-      ? yamlOutput
-      : activeTab === "cpp"
-        ? cppOutput
-        : activeTab === "touch"
-          ? touchOutput
-          : activeTab === "sensors"
-            ? sensorsOutput
-            : projectStore.exportJSON()
-  );
-
-  const currentFilename = $derived(
-    activeTab === "yaml"
-      ? "display.yaml"
-      : activeTab === "cpp"
-        ? "display_renderer.h"
-        : activeTab === "touch"
-          ? "touch_handler.h"
-          : activeTab === "sensors"
-            ? "sensors.yaml"
-            : "project.json"
-  );
+  const currentOutput = $derived(yamlOutput);
 </script>
 
 <div class="export-panel">
@@ -193,13 +123,7 @@
   </div>
 
   <div class="actions">
-    <button onclick={generate}>Regenerate</button>
     <button onclick={() => copyToClipboard(currentOutput)}>Copy to Clipboard</button>
-    <button onclick={copyAllFiles}>Copy All for AI Validation</button>
-    <button onclick={() => download(currentFilename, currentOutput)}>
-      Download {currentFilename}
-    </button>
-    <button class="primary" onclick={downloadAll}>Download All</button>
     <button class="compile-btn" class:loading={compiling} disabled={compiling} onclick={compile}>
       {compiling ? `Compiling (${compilationStatus})...` : "Compile with ESPHome"}
     </button>
@@ -208,18 +132,6 @@
   <div class="tabs">
     <button class:active={activeTab === "yaml"} onclick={() => (activeTab = "yaml")}>
       ESPHome YAML
-    </button>
-    <button class:active={activeTab === "cpp"} onclick={() => (activeTab = "cpp")}>
-      C++ Renderer
-    </button>
-    <button class:active={activeTab === "touch"} onclick={() => (activeTab = "touch")}>
-      Touch Handler
-    </button>
-    <button class:active={activeTab === "sensors"} onclick={() => (activeTab = "sensors")}>
-      Sensors
-    </button>
-    <button class:active={activeTab === "json"} onclick={() => (activeTab = "json")}>
-      Project JSON
     </button>
     <button class:active={activeTab === "history"} onclick={() => (activeTab = "history")}>
       History

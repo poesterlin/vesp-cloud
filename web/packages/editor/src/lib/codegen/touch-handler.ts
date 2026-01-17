@@ -152,7 +152,7 @@ export function generateTouchHandler(project: Project): string {
   lines.push(`      float dx = x - start_x;`);
   lines.push(`      float dy = y - start_y;`);
   lines.push(``);
-  lines.push(`      if (gState.currentView == VIEW_MAIN_DASHBOARD) {`);
+  lines.push(`      if (gState.isDashboard()) {`);
   lines.push(`        if (dx > 40) { // Prev page`);
   lines.push(`          prevPage();`);
   lines.push(`        } else if (dx < -40) { // Next page`);
@@ -165,7 +165,7 @@ export function generateTouchHandler(project: Project): string {
   lines.push(`          handleTap(x, y);`);
   lines.push(`        }`);
   lines.push(`      }`);
-  lines.push(`    } else if (touched && was_touched && gState.currentView != VIEW_MAIN_DASHBOARD) {`);
+  lines.push(`    } else if (touched && was_touched && !gState.isDashboard()) {`);
   lines.push(`      float dy = y - last_y;`);
   lines.push(`      gState.scrollY += dy;`);
   lines.push(`      last_y = y;`);
@@ -178,7 +178,7 @@ export function generateTouchHandler(project: Project): string {
   lines.push(``);
   lines.push(` private:`);
   lines.push(`  static void handleTap(float x, float y) {`);
-  lines.push(`    if (gState.currentView == VIEW_MAIN_DASHBOARD) {`);
+  lines.push(`    if (gState.isDashboard()) {`);
   lines.push(`      const HitBox* boxes = nullptr;`);
   lines.push(`      int count = 0;`);
   lines.push(`      switch (gState.mainPageIndex) {`);

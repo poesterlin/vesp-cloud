@@ -12,6 +12,9 @@ import { generateCppRenderer } from '$lib/codegen/cpp';
 import { generateStateHeader } from '$lib/codegen/state-manager';
 import { generateTouchHandler } from '$lib/codegen/touch-handler';
 import { generateSensorsYAML } from '$lib/codegen/sensors';
+import { generateRenderHelpers } from '$lib/codegen/render-helpers';
+import { generateRenderPages } from '$lib/codegen/render-pages';
+import { generateRenderDetails } from '$lib/codegen/render-details';
 
 interface ActiveJob {
   job: CompilationJob;
@@ -108,17 +111,29 @@ export class CompilationQueue extends EventEmitter {
       const esphomeYaml = generateESPHomeYAML(project);
       await fs.writeFile(configFile, esphomeYaml);
 
-      // Generate C++ Renderer
+      // Generate State Manager (dependency)
+      const stateManager = generateStateHeader(project);
+      await fs.writeFile(join(includesDir, 'state_manager.h'), stateManager);
+
+      // Generate Render Helpers (dependency)
+      const renderHelpers = generateRenderHelpers(project);
+      await fs.writeFile(join(includesDir, 'render_helpers.h'), renderHelpers);
+
+      // Generate Pages (dependency)
+      const renderPages = generateRenderPages(project);
+      await fs.writeFile(join(includesDir, 'render_pages.h'), renderPages);
+
+      // Generate Details (dependency)
+      const renderDetails = generateRenderDetails(project);
+      await fs.writeFile(join(includesDir, 'render_details.h'), renderDetails);
+
+      // Generate C++ Renderer (main entry point)
       const cppRenderer = generateCppRenderer(project);
       await fs.writeFile(join(includesDir, 'display_renderer.h'), cppRenderer);
 
       // Generate Touch Handler
       const touchHandler = generateTouchHandler(project);
       await fs.writeFile(join(includesDir, 'touch_handler.h'), touchHandler);
-
-      // Generate State Manager
-      const stateManager = generateStateHeader(project);
-      await fs.writeFile(join(includesDir, 'state_manager.h'), stateManager);
 
       // Generate Sensors YAML
       const sensorsYaml = generateSensorsYAML(project);

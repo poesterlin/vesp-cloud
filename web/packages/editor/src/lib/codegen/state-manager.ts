@@ -73,13 +73,35 @@ export function generateStateHeader(project: Project): string {
   lines.push(``);
   lines.push(generated.structDefinition);
   lines.push(``);
-  lines.push(`// Global state instance`);
-  lines.push(`DisplayState gState;`);
-  lines.push(``);
-  lines.push(generated.themeColors);
+   lines.push(`// Global state instance`);
+   lines.push(`DisplayState gState;`);
+   lines.push(``);
+   lines.push(generated.themeColors);
+   lines.push(``);
+   
+   // Add navigation function declarations
+   lines.push(`// Navigation function declarations`);
+   lines.push(`void openView(ViewState view) {`);
+   lines.push(`  gState.currentView = view;`);
+   lines.push(`  gState.scrollY = 0;`);
+   lines.push(`  gState.viewMode = ViewMode::DETAIL;`);
+   lines.push(`}`);
+   lines.push(``);
+   lines.push(`void goBack() {`);
+   lines.push(`  gState.viewMode = ViewMode::DASHBOARD;`);
+   lines.push(`  gState.scrollY = 0;`);
+   lines.push(`}`);
+   lines.push(``);
+   lines.push(`void nextPage() {`);
+   lines.push(`  gState.mainPageIndex = (gState.mainPageIndex + 1) % ${project.dashboardPages?.length ?? 1};`);
+   lines.push(`}`);
+   lines.push(``);
+   lines.push(`void prevPage() {`);
+   lines.push(`  gState.mainPageIndex = (gState.mainPageIndex - 1 + ${project.dashboardPages?.length ?? 1}) % ${project.dashboardPages?.length ?? 1};`);
+   lines.push(`}`);
 
-  return lines.join("\n");
-}
+   return lines.join("\n");
+ }
 
 /**
  * Discovers all detail views across the project.

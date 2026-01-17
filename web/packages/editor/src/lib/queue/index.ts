@@ -97,7 +97,7 @@ export class CompilationQueue extends EventEmitter {
   }
 
   private async runCompilation(job: CompilationJob): Promise<void> {
-    const tempDir = join('/tmp/esphome-builds', job.id);
+    const tempDir = join('/tmp/esphome-builds', job.projectId);
     const configFile = join(tempDir, 'config.yaml');
 
     try {
@@ -182,20 +182,33 @@ export class CompilationQueue extends EventEmitter {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         if (code === 0) {
+          // .esphome/build/testing/.pioenvs/testing/firmware.bin
+          const binPath = join(tempDir, '.esphome', 'build', job.projectName, '.pioenvs', job.projectName, 'firmware.bin');
+          const publicDest = join(process.cwd(), 'static', 'builds', `${job.id}.bin`);
+          try {
+            // TODO: upload to s3
+            await fs.copyFile(binPath, publicDest);
+            console.log(`Binary saved to ${publicDest}`);
+          } catch (e) {
+            console.error('Binary not found. Check if it is an ESP8266 (firmware.bin) or ESP32 (firmware.factory.bin)', e);
+          }
+
           await this.handleJobResult(job.id, { output: stdout });
         } else {
           await this.handleJobResult(job.id, { error: `ESPHome compile failed (code ${code}): ${stderr}, ${stdout}` });
         }
 
-        // Cleanup temp dir
-        try {
-          await fs.rm(tempDir, { recursive: true, force: true });
-        } catch (e) {
-          console.error('Failed to cleanup temp directory:', e);
-        }
+        // TODO: Cleanup temp dirs of older projects periodically
+        // try {
+        //   await fs.rm(tempDir, { recursive: true, force: true });
+        // } catch (e) {
+        //   console.error('Failed to cleanup temp directory:', e);
+        // }
 
         this.processQueue();
       });
+
+
 
       childProcess.on('error', async (error) => {
         this.activeJobs.delete(job.id);
@@ -287,7 +300,7 @@ export class CompilationQueue extends EventEmitter {
   }
 
   getStats(): { total: number; pending: number; running: number; completed: number; failed: number } {
-    // This is a bit inefficient to fetch all jobs from DB just for stats, 
+    // This is a bit inefficient to fetch all jobs from DB just for stats,
     // but keeping it consistent with the previous implementation for now.
     // In a real app, you'd likely want a more optimized way to get counts.
     return {

@@ -17,6 +17,7 @@
   "dependencies": {
     "@esphome-designer/schema": "workspace:*",
     "drizzle-orm": "^0.45.1",
+    "jszip": "3.10.1",
     "pg": "^8.13.1",
     "uuid": "13.0.0"
   },

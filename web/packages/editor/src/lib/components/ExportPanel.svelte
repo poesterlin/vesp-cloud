@@ -1,7 +1,15 @@
 <script lang="ts">
   import { projectStore } from "$lib/stores/project.svelte";
   import { generateESPHomeYAML } from "$lib/codegen/esphome";
+  import { generateCppRenderer } from "$lib/codegen/cpp";
+  import { generateStateHeader } from "$lib/codegen/state-manager";
+  import { generateTouchHandler } from "$lib/codegen/touch-handler";
+  import { generateSensorsYAML } from "$lib/codegen/sensors";
+  import { generateRenderHelpers } from "$lib/codegen/render-helpers";
+  import { generateRenderPages } from "$lib/codegen/render-pages";
+  import { generateRenderDetails } from "$lib/codegen/render-details";
   import { assert } from "$lib/utils";
+  import JSZip from "jszip";
 
   interface Props {
     onClose: () => void;
@@ -9,39 +17,16 @@
 
   let { onClose }: Props = $props();
 
-  let yamlOutput = $state("");
-  let activeTab = $state<"yaml" | "history">("yaml");
-
   let compiling = $state(false);
-  let currentJobId = $state<string | null>(null);
   let compilationStatus = $state<string | null>(null);
-  let compilationHistory = $state<any[]>([]);
-  let compilationOutput = $state<string | null>(null);
-
-  // Generate on mount
-  $effect(() => {
-    generate();
-    fetchHistory();
-  });
-
-  async function fetchHistory() {
-    try {
-      const response = await fetch("/api/compile");
-      if (response.ok) {
-        compilationHistory = await response.json();
-      }
-    } catch (err) {
-      console.error("Failed to fetch history:", err);
-    }
-  }
+  let manifestUrl = $state<string | null>(null);
 
   async function compile() {
     if (compiling) return;
-    
+
     assert(projectStore.project, "No project loaded for compilation");
     compiling = true;
     compilationStatus = "Starting...";
-    compilationOutput = null;
 
     try {
       const response = await fetch("/api/compile", {
@@ -57,7 +42,6 @@
       if (!response.ok) throw new Error("Failed to start compilation");
 
       const { jobId } = await response.json();
-      currentJobId = jobId;
       pollStatus(jobId);
     } catch (err: any) {
       compilationStatus = `Error: ${err.message}`;
@@ -75,13 +59,10 @@
         compilationStatus = job.status;
 
         if (job.status === "completed") {
-          compilationOutput = job.output;
           compiling = false;
-          fetchHistory();
+          createManifest(jobId);
         } else if (job.status === "failed") {
-          compilationOutput = job.error;
           compiling = false;
-          fetchHistory();
         } else {
           setTimeout(poll, 2000);
         }
@@ -94,251 +75,283 @@
     poll();
   }
 
-  function generate() {
-    if (!projectStore.project) {
-      yamlOutput = "# No project loaded.";
-      return;
-    }
-
+  async function downloadProject() {
+    if (!projectStore.project) return;
+    
     try {
-      yamlOutput = generateESPHomeYAML(projectStore.project);
+      const zip = new JSZip();
+      const fileName = projectStore.project.name.toLowerCase().replace(/\s+/g, "-");
+      const project = projectStore.project;
+      
+      // Main config
+      zip.file(`${fileName}.yaml`, generateESPHomeYAML(project));
+      zip.file("sensors.yaml", generateSensorsYAML(project));
+      
+      // Includes directory
+      const includes = zip.folder("includes");
+      if (includes) {
+        includes.file("state_manager.h", generateStateHeader(project));
+        includes.file("render_helpers.h", generateRenderHelpers(project));
+        includes.file("render_pages.h", generateRenderPages(project));
+        includes.file("render_details.h", generateRenderDetails(project));
+        includes.file("display_renderer.h", generateCppRenderer(project));
+        includes.file("touch_handler.h", generateTouchHandler(project));
+      }
+      
+      // Add a README
+      zip.file("README.md", `# ${projectStore.project.name}\n\nThis project was exported from the Home Display Designer.\n\n## How to use\n1. Install ESPHome: \`pip install esphome\`\n2. Run: \`esphome run ${fileName}.yaml\``);
+      
+      const content = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(content);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${fileName}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Code generation failed:", err);
-      yamlOutput = `# Error generating YAML: ${err}`;
+      console.error("Failed to download project zip:", err);
     }
   }
 
+  function createManifest(jobId: string) {
+    const firmware = `/builds/${jobId}.bin`;
+    const manifest = {
+      name: projectStore.project?.name || "ESP32 Firmware",
+      version: new Date().toISOString().split('T')[0],
+      new_install_prompt_erase: true,
+      builds: [
+        {
+          chipFamily: "ESP32-S3",
+          parts: [
+            { path: firmware, offset: 0 }
+          ]
+        }
+      ]
+    };
 
-  function copyToClipboard(text: string) {
-    navigator.clipboard.writeText(text);
+    const json = JSON.stringify(manifest);
+    const blob = new Blob([json], { type: "application/json" });
+    manifestUrl = URL.createObjectURL(blob);
+
+    // Initialize the ESP Web Tools button after manifest is ready
+    setTimeout(() => {
+      const button = document.querySelector('esp-web-install-button') as any;
+      if (button) {
+        button.manifest = manifestUrl;
+      }
+    }, 100);
   }
 
-  const currentOutput = $derived(yamlOutput);
+  const showFlashButton = $derived(compilationStatus === "completed" && manifestUrl);
 </script>
+
+<svelte:head>
+  <script
+    type="module"
+    src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"
+  ></script>
+</svelte:head>
 
 <div class="export-panel">
   <div class="header">
-    <h2>Export Code</h2>
+    <h2>Export & Compile</h2>
     <button class="close-btn" onclick={onClose}>Close</button>
   </div>
 
   <div class="actions">
-    <button onclick={() => copyToClipboard(currentOutput)}>Copy to Clipboard</button>
-    <button class="compile-btn" class:loading={compiling} disabled={compiling} onclick={compile}>
-      {compiling ? `Compiling (${compilationStatus})...` : "Compile with ESPHome"}
-    </button>
-  </div>
-
-  <div class="tabs">
-    <button class:active={activeTab === "yaml"} onclick={() => (activeTab = "yaml")}>
-      ESPHome YAML
-    </button>
-    <button class:active={activeTab === "history"} onclick={() => (activeTab = "history")}>
-      History
-    </button>
-  </div>
-
-  <div class="code-container">
-    {#if activeTab === "history"}
-      <div class="history-list">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Status</th>
-              <th>Project</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each compilationHistory as job}
-              <tr>
-                <td>{new Date(job.createdAt).toLocaleString()}</td>
-                <td>
-                  <span class="status-badge {job.status}">{job.status}</span>
-                </td>
-                <td>{job.projectName}</td>
-                <td>
-                  <button class="text-btn" onclick={() => {
-                    compilationOutput = job.output || job.error;
-                    activeTab = "yaml"; // Switch to code view to show output if we had a dedicated output view
-                  }}>View Logs</button>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    {:else}
-      {#if compilationOutput && activeTab === "yaml"}
-        <div class="compilation-output">
-          <h3>Compilation Output:</h3>
-          <pre class="log"><code>{compilationOutput}</code></pre>
-          <hr />
-        </div>
+      <button class="compile-btn" class:loading={compiling} disabled={compiling} onclick={compile}>
+      <span class="btn-title">Prepare Firmware</span>
+      <span class="btn-desc">Create the software for your display so it's ready to be installed</span>
+      {#if compiling}
+        <div class="status-text">{compilationStatus}</div>
+      {:else}
+        <span class="btn-note">Note: The first time usually takes a few minutes</span>
       {/if}
-      <pre><code>{currentOutput}</code></pre>
+    </button>
+
+    {#if showFlashButton}
+      <esp-web-install-button>
+        <div slot="activate" class="flash-btn-content">
+          <span class="btn-title">Install to Display</span>
+          <span class="btn-desc">Plug in your display via USB to send the software directly to it</span>
+        </div>
+      </esp-web-install-button>
     {/if}
+
+    <button class="download-btn" onclick={downloadProject}>
+      <span class="btn-title">Download Project</span>
+      <span class="btn-desc">Get a ZIP file with the code and instructions for manual setup</span>
+    </button>
   </div>
 </div>
 
 <style>
   .export-panel {
-    width: 800px;
-    max-width: 90vw;
     display: flex;
     flex-direction: column;
-    height: 80vh;
+    gap: var(--spacing-xl);
+    padding: var(--spacing-xl);
+    min-width: 500px;
+    background: var(--color-bg-primary);
   }
 
   .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
     border-bottom: 1px solid var(--color-border);
   }
 
   h2 {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
+    margin: 0;
+    color: var(--color-text-primary);
   }
 
   .close-btn {
-    background: transparent;
-    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+  }
+
+  .close-btn:hover {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-accent);
+    color: var(--color-text-primary);
   }
 
   .actions {
     display: flex;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md);
-    border-bottom: 1px solid var(--color-border);
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: var(--spacing-lg);
   }
 
   .compile-btn {
-    background: #4caf50;
+    background: linear-gradient(135deg, #4caf50, #43a047);
     color: white;
     border: none;
-    margin-left: auto;
+    padding: var(--spacing-xl);
+    border-radius: 12px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    text-align: center;
   }
 
   .compile-btn:hover:not(:disabled) {
-    background: #43a047;
+    background: linear-gradient(135deg, #43a047, #388e3c);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
   }
 
-  .compile-btn.loading {
-    background: #81c784;
+  .compile-btn:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .compile-btn:disabled {
+    background: linear-gradient(135deg, #81c784, #66bb6a);
     cursor: wait;
+    opacity: 0.8;
   }
 
-  .tabs {
-    display: flex;
-    padding: 0 var(--spacing-md);
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .tabs button {
-    background: transparent;
-    border-radius: 0;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-  }
-
-  .tabs button.active {
-    border-bottom-color: var(--color-accent);
-    color: var(--color-accent);
-  }
-
-  .tabs button:hover:not(.active) {
-    background: var(--color-bg-tertiary);
-  }
-
-  .code-container {
-    flex: 1;
-    overflow: auto;
-  }
-
-  .compilation-output {
-    padding: var(--spacing-md);
-    background: #1e1e1e;
-    border-bottom: 1px solid #333;
-  }
-
-  .compilation-output h3 {
-    font-size: 14px;
-    margin-top: 0;
-    color: #888;
-  }
-
-  .log {
-    background: #000;
-    max-height: 200px;
-    overflow-y: auto;
-  }
-
-  pre {
-    margin: 0;
-    padding: var(--spacing-md);
-    background: var(--color-bg-primary);
-    font-family: "JetBrains Mono", "Fira Code", monospace;
-    font-size: 12px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  code {
+  .download-btn {
+    background: var(--color-bg-secondary);
     color: var(--color-text-primary);
-  }
-
-  .history-list {
-    padding: var(--spacing-md);
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  th {
-    text-align: left;
-    padding: var(--spacing-sm);
-    border-bottom: 2px solid var(--color-border);
-    font-size: 12px;
-    color: var(--color-text-secondary);
-  }
-
-  td {
-    padding: var(--spacing-sm);
-    border-bottom: 1px solid var(--color-border);
-    font-size: 13px;
-  }
-
-  .status-badge {
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 11px;
-    text-transform: uppercase;
-  }
-
-  .status-badge.completed { background: #e8f5e9; color: #2e7d32; }
-  .status-badge.failed { background: #ffebee; color: #c62828; }
-  .status-badge.running { background: #e3f2fd; color: #1565c0; }
-  .status-badge.pending { background: #f5f5f5; color: #616161; }
-
-  .text-btn {
-    background: transparent;
-    border: none;
-    color: var(--color-accent);
+    border: 1px solid var(--color-border);
+    padding: var(--spacing-xl);
+    border-radius: 12px;
     cursor: pointer;
-    padding: 0;
-    font-size: 12px;
+    width: 100%;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    text-align: center;
   }
 
-  .text-btn:hover {
-    text-decoration: underline;
+  .download-btn:hover {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-title {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .btn-desc {
+    font-size: 14px;
+    opacity: 0.9;
+    font-weight: 400;
+    max-width: 320px;
+  }
+
+  .btn-note {
+    font-size: 11px;
+    opacity: 0.7;
+    font-weight: 400;
+    margin-top: var(--spacing-xs);
+    font-style: italic;
+  }
+
+  .status-text {
+    font-size: 13px;
+    margin-top: var(--spacing-xs);
+    font-weight: 500;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+
+  :global(esp-web-install-button) {
+    display: block;
+    width: 100%;
+  }
+
+  :global(esp-web-install-button::part(button)) {
+    width: 100%;
+    height: auto;
+    padding: var(--spacing-xl);
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2196f3, #1976d2);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: white;
+    font-family: inherit;
+  }
+
+  :global(esp-web-install-button::part(button):hover) {
+    background: linear-gradient(135deg, #1976d2, #1565c0);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(33, 150, 243, 0.3);
+  }
+
+  .flash-btn-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    pointer-events: none;
   }
 </style>

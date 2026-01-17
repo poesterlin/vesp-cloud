@@ -6,3 +6,7 @@ web/packages/editor/build/
 web/packages/editor/.env
 
 .venv/
+
+web/packages/editor/public/builds/
+
+web/packages/editor/static/builds/

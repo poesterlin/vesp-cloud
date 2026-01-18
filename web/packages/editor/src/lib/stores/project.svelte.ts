@@ -15,11 +15,13 @@ import type {
 import { RETRO_THEME } from "../themes/retro";
 import { assert, toUpperSnakeCase } from "$lib/utils";
 
+const LATEST_VERSION = "1.0.0";
+const PROJECTS_INDEX_KEY = "esphome-designer-projects-index";
+const PROJECT_PREFIX = "esphome-designer-project-";
+
 export type ProjectConfig = { 
   display?: Partial<DisplayConfig>, 
-  theme?: Theme,
-  dashboardPages?: number,
-  detailViews?: string[] 
+  theme?: Theme
 };
 
 function createProjectStore() {
@@ -244,21 +246,8 @@ function createProjectStore() {
         name,
         theme: config?.theme ?? RETRO_THEME,
         display,
-        dashboardPages: config?.dashboardPages 
-          ? Array.from({ length: config.dashboardPages }, (_, i) => ({
-              id: `page-${i + 1}`,
-              name: i === 0 ? "Home" : `Page ${i + 1}`,
-              components: []
-            }))
-          : [{ id: "page-1", name: "Home", components: [] }],
-        detailViews: config?.detailViews 
-          ? config.detailViews.map(title => ({
-              id: toUpperSnakeCase(title),
-              title,
-              height: 640,
-              components: []
-            }))
-          : [],
+        dashboardPages: [{ id: "page-1", name: "Home", components: [] }],
+        detailViews: [],
         fonts: [],
       };
       project = newProject;

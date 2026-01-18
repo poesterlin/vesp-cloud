@@ -206,7 +206,7 @@
     height: 100%;
     background: #1a1a1a;
     position: relative;
-    overflow-y: auto;
+    overflow: hidden;
     cursor: crosshair;
   }
 

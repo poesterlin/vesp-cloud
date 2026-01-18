@@ -165,9 +165,6 @@ A compound component mirroring the hand-coded music page:
 ### 5. Project Creation & Initialization
 The editor supports configurable project creation:
 - **Display Configuration:** Set dimensions (width/height) and platform (ILI9XXX, ST7789, etc.) at creation.
-- **Initial Content Scaffolding:** 
-    - Specify number of initial dashboard pages.
-    - List detail views (e.g., "Vacuum, Climate, Lights") to auto-generate placeholders.
 - **Theme Selection:** Default "Retro" theme applied, but configurable via `ProjectConfig`.
 
 ---

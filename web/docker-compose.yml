@@ -3,8 +3,6 @@ services:
   app:
     build:
       dockerfile: packages/editor/Dockerfile
-    # ports:
-    #   - "5173:5173"
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/esphome
       - CONCURRENT_JOBS=4

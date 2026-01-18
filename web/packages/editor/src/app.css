@@ -46,10 +46,23 @@
   --transition-normal: 250ms ease;
 }
 
-* {
+/* ============================================
+   CSS Reset & Normalization
+   ============================================ */
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 html,
@@ -68,7 +81,60 @@ body {
   background-color: var(--color-bg-primary);
 }
 
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  padding: 0;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Paragraphs and text elements */
+p,
+span,
+div,
+article,
+section,
+header,
+footer,
+main {
+  margin: 0;
+  padding: 0;
+}
+
+/* Lists */
+ul,
+ol,
+li {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Images and media */
+img,
+svg,
+video,
+canvas,
+iframe {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tables */
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
 button {
+  box-sizing: border-box;
   font-family: inherit;
   font-size: inherit;
   cursor: pointer;
@@ -97,8 +163,12 @@ button.primary:hover {
   background: var(--color-accent-hover);
 }
 
+/* Form elements */
 input,
-select {
+select,
+textarea,
+fieldset {
+  box-sizing: border-box;
   font-family: inherit;
   font-size: inherit;
   background: var(--color-bg-tertiary);
@@ -108,10 +178,57 @@ select {
   border-radius: var(--radius-sm);
 }
 
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: none;
   border-color: var(--color-accent);
+}
+
+/* Remove default appearance for certain inputs */
+input[type="checkbox"],
+input[type="radio"] {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  margin-right: 0.25em;
+}
+
+/* Search input reset */
+input[type="search"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Remove number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Label styling */
+label {
+  display: inline-block;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Fieldset reset */
+fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
 }
 
 /* Scrollbar styling */

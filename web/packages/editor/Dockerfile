@@ -43,6 +43,6 @@ ENV NODE_ENV=production
 ENV CONCURRENT_JOBS=2
 ENV ESPHOME_VENV=/opt/esphome-venv
 
-EXPOSE 5173
+# EXPOSE 5173
 
 CMD ["bun", "run", "packages/editor/build/index.js"]

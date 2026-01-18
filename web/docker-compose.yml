@@ -3,9 +3,18 @@ services:
   app:
     build:
       dockerfile: packages/editor/Dockerfile
-    ports:
-      - "5173:5173"
+    # ports:
+    #   - "5173:5173"
     environment:
-      - DATABASE_URL=postgresql://postgres:password@homelab:5432/esphome
-      - NODE_ENV=development
-      - CONCURRENT_JOBS=2
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/esphome
+      - CONCURRENT_JOBS=4
+    networks:
+      - traefik_web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.esphome.rule=Host(`esphome.oesterlin.dev`)"
+      - "traefik.http.services.esphome.loadbalancer.server.port=3000"
+
+networks:
+  traefik_web:
+    external: true

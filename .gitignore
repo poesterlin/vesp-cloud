@@ -10,3 +10,5 @@ web/packages/editor/.env
 web/packages/editor/public/builds/
 
 web/packages/editor/static/builds/
+
+custom_components/esphome_display/__pycache__/

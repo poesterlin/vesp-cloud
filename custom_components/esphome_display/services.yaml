@@ -8,7 +8,7 @@ notify:
       required: true
       selector:
         text:
-          autocomplete: true
+          autocomplete: "entities"
     title:
       name: Title (Optional)
       description: Bold header text (if empty, uses severity level)
@@ -24,7 +24,6 @@ notify:
       example: "The washing machine has finished its cycle."
       selector:
         text:
-          type: textarea
     severity:
       name: Severity Level
       description: "Affects icon and color: info (blue), warn (amber), alert (red), question (green)"
@@ -65,4 +64,4 @@ clear_notification:
       required: true
       selector:
         text:
-          autocomplete: true
+          autocomplete: "entities"

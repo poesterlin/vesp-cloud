@@ -1,11 +1,13 @@
 """Config flow for ESPHome Display integration."""
 
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 import voluptuous as vol
-from homeassistant import config_entries, data_entry_flow
-from homeassistant.core import HomeAssistant, callback
+from homeassistant import config_entries
+from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import (
@@ -45,19 +47,17 @@ DEVICE_SCHEMA = vol.Schema(
 )
 
 
-class ESPHomeDisplayConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for ESPHome Display."""
 
     VERSION = 1
-    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_PUSH
 
     def __init__(self) -> None:
         """Initialize the config flow."""
-        self.devices: Dict[str, Dict[str, Any]] = {}
-        self.current_device_index: int = 0
+        self.devices: dict[str, dict[str, Any]] = {}
 
     async def async_step_user(
-        self, user_input: Optional[Dict[str, Any]] = None
+        self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle the initial step - welcome screen."""
         if user_input is not None:
@@ -65,13 +65,11 @@ class ESPHomeDisplayConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            description_placeholders={
-                "doc_url": "https://github.com/your-username/esphome_display"
-            },
+            data_schema=vol.Schema({}),
         )
 
     async def async_step_add_device(
-        self, user_input: Optional[Dict[str, Any]] = None
+        self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle adding a new device."""
         errors = {}
@@ -105,12 +103,12 @@ class ESPHomeDisplayConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=DEVICE_SCHEMA,
             errors=errors,
             description_placeholders={
-                "devices_added": len(self.devices),
+                "devices_added": str(len(self.devices)),
             },
         )
 
     async def async_step_add_more_devices(
-        self, user_input: Optional[Dict[str, Any]] = None
+        self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Ask if user wants to add more devices."""
         if user_input is not None:
@@ -131,7 +129,7 @@ class ESPHomeDisplayConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             description_placeholders={
-                "devices_added": len(self.devices),
+                "devices_added": str(len(self.devices)),
             },
         )
 
@@ -139,16 +137,20 @@ class ESPHomeDisplayConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
-    ) -> config_entries.OptionFlow:
+    ) -> ESPHomeDisplayOptionsFlow:
         """Create the options flow."""
         return ESPHomeDisplayOptionsFlow(config_entry)
 
 
-class ESPHomeDisplayOptionsFlow(config_entries.OptionFlow):
+class ESPHomeDisplayOptionsFlow(config_entries.OptionsFlow):
     """Handle ESPHome Display options flow."""
 
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize options flow."""
+        self._config_entry = config_entry
+
     async def async_step_init(
-        self, user_input: Optional[Dict[str, Any]] = None
+        self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Manage the options."""
         if user_input is not None:
@@ -160,7 +162,7 @@ class ESPHomeDisplayOptionsFlow(config_entries.OptionFlow):
                 {
                     vol.Optional(
                         "default_timeout",
-                        default=self.config_entry.options.get("default_timeout", 10),
+                        default=self._config_entry.options.get("default_timeout", 10),
                     ): vol.All(vol.Coerce(int), vol.Range(min=0, max=300)),
                 }
             ),

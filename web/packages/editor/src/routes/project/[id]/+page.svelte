@@ -4,6 +4,7 @@
   import PropertyEditor from "$lib/components/sidebar/PropertyEditor.svelte";
   import Toolbar from "$lib/components/toolbar/Toolbar.svelte";
   import ExportPanel from "$lib/components/ExportPanel.svelte";
+  import ProjectDebugModal from "$lib/components/ProjectDebugModal.svelte";
   import ViewTypeSelector from "$lib/components/sidebar/ViewTypeSelector.svelte";
   import DashboardPageList from "$lib/components/sidebar/DashboardPageList.svelte";
   import DetailViewList from "$lib/components/sidebar/DetailViewList.svelte";
@@ -15,6 +16,7 @@
 
   let showExport = $state(false);
   let showSettings = $state(false);
+  let showDebug = $state(false);
   let loading = $state(true);
   let error = $state<string | null>(null);
 
@@ -49,6 +51,7 @@
   <Toolbar 
     onExport={() => (showExport = !showExport)} 
     onSettings={() => (showSettings = !showSettings)}
+    onDebug={() => (showDebug = !showDebug)}
   />
 
   <div class="editor-container">
@@ -84,6 +87,14 @@
   <div class="modal-overlay" onclick={() => (showSettings = false)}>
     <div class="modal-content settings-modal" onclick={(e: MouseEvent) => e.stopPropagation()}>
       <ProjectSettings onClose={() => (showSettings = false)} />
+    </div>
+  </div>
+{/if}
+
+{#if showDebug}
+  <div class="modal-overlay" onclick={() => (showDebug = false)}>
+    <div class="modal-content debug-modal" onclick={(e: MouseEvent) => e.stopPropagation()}>
+      <ProjectDebugModal onClose={() => (showDebug = false)} />
     </div>
   </div>
 {/if}
@@ -152,6 +163,11 @@
   .modal-content.settings-modal {
     width: 600px;
     height: 80vh;
+  }
+
+  .modal-content.debug-modal {
+    width: 800px;
+    height: 90vh;
   }
 
   .status-screen {

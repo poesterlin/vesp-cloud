@@ -8,7 +8,7 @@
   const selectedComponent = $derived(
     selectionStore.firstSelectedId
       ? projectStore.getComponent(selectionStore.firstSelectedId)
-      : null
+      : null,
   );
 
   function updateProperty(key: string, value: unknown) {
@@ -41,32 +41,39 @@
 </script>
 
 <div class="property-editor">
-    <!-- Detail View specific properties -->
-    {#if projectStore.viewMode === 'detail' && projectStore.currentDetailView && !selectedComponent}
-      <h3>Detail View Properties</h3>
-      <div class="property-section">
-        <div class="field">
-          <span class="field-label">Title</span>
-          <input
-            type="text"
-            value={projectStore.currentDetailView.title}
-            oninput={(e) => projectStore.updateDetailView(projectStore.currentDetailView!.id, { title: e.currentTarget.value })}
-          />
-        </div>
-        <div class="field">
-          <span class="field-label">Height</span>
-          <input
-            type="number"
-            min={projectStore.display.height}
-            step={10}
-            value={projectStore.currentDetailView.height}
-            oninput={(e) => projectStore.updateDetailView(projectStore.currentDetailView!.id, { height: parseInt(e.currentTarget.value) || projectStore.display.height })}
-          />
-        </div>
+  <!-- Detail View specific properties -->
+  {#if projectStore.viewMode === "detail" && projectStore.currentDetailView && !selectedComponent && projectStore.display}
+    <h3>Detail View Properties</h3>
+    <div class="property-section">
+      <div class="field">
+        <span class="field-label">Title</span>
+        <input
+          type="text"
+          value={projectStore.currentDetailView.title}
+          oninput={(e) =>
+            projectStore.updateDetailView(projectStore.currentDetailView!.id, {
+              title: e.currentTarget.value,
+            })}
+        />
       </div>
-    {/if}
+      <div class="field">
+        <span class="field-label">Height</span>
+        <input
+          type="number"
+          min={projectStore.display.height}
+          step={10}
+          value={projectStore.currentDetailView.height}
+          oninput={(e) =>
+            projectStore.updateDetailView(projectStore.currentDetailView!.id, {
+              height:
+                parseInt(e.currentTarget.value) || projectStore.display!.height,
+            })}
+        />
+      </div>
+    </div>
+  {/if}
 
-    {#if selectedComponent}
+  {#if selectedComponent}
     <h3>Properties</h3>
 
     <div class="property-section">
@@ -94,7 +101,8 @@
           <input
             type="number"
             value={selectedComponent.position.x}
-            oninput={(e) => updatePosition("x", parseInt(e.currentTarget.value) || 0)}
+            oninput={(e) =>
+              updatePosition("x", parseInt(e.currentTarget.value) || 0)}
           />
         </div>
         <div class="field">
@@ -102,7 +110,8 @@
           <input
             type="number"
             value={selectedComponent.position.y}
-            oninput={(e) => updatePosition("y", parseInt(e.currentTarget.value) || 0)}
+            oninput={(e) =>
+              updatePosition("y", parseInt(e.currentTarget.value) || 0)}
           />
         </div>
       </div>
@@ -117,7 +126,8 @@
             <input
               type="number"
               value={selectedComponent.size.width}
-              oninput={(e) => updateSize("width", parseInt(e.currentTarget.value) || 10)}
+              oninput={(e) =>
+                updateSize("width", parseInt(e.currentTarget.value) || 10)}
             />
           </div>
           <div class="field">
@@ -125,7 +135,8 @@
             <input
               type="number"
               value={selectedComponent.size.height}
-              oninput={(e) => updateSize("height", parseInt(e.currentTarget.value) || 10)}
+              oninput={(e) =>
+                updateSize("height", parseInt(e.currentTarget.value) || 10)}
             />
           </div>
         </div>
@@ -209,13 +220,16 @@
             <option value="GO_BACK">Go Back</option>
           </select>
         </div>
-        {#if (selectedComponent as any).onTap?.type === 'OPEN_DETAIL'}
+        {#if (selectedComponent as any).onTap?.type === "OPEN_DETAIL"}
           <div class="field">
             <span class="field-label">Target</span>
             <select
               value={(selectedComponent as any).onTap?.targetId ?? ""}
               onchange={(e) => {
-                const onTap = { ...(selectedComponent as any).onTap, targetId: e.currentTarget.value };
+                const onTap = {
+                  ...(selectedComponent as any).onTap,
+                  targetId: e.currentTarget.value,
+                };
                 updateProperty("onTap", onTap);
               }}
             >
@@ -238,7 +252,8 @@
             <input
               type="number"
               value={(selectedComponent as any).min ?? 0}
-              oninput={(e) => updateProperty("min", parseFloat(e.currentTarget.value) || 0)}
+              oninput={(e) =>
+                updateProperty("min", parseFloat(e.currentTarget.value) || 0)}
             />
           </div>
           <div class="field">
@@ -246,7 +261,8 @@
             <input
               type="number"
               value={(selectedComponent as any).max ?? 100}
-              oninput={(e) => updateProperty("max", parseFloat(e.currentTarget.value) || 100)}
+              oninput={(e) =>
+                updateProperty("max", parseFloat(e.currentTarget.value) || 100)}
             />
           </div>
         </div>
@@ -254,7 +270,8 @@
           <span class="field-label">Orientation</span>
           <select
             value={(selectedComponent as any).orientation ?? "horizontal"}
-            onchange={(e) => updateProperty("orientation", e.currentTarget.value)}
+            onchange={(e) =>
+              updateProperty("orientation", e.currentTarget.value)}
           >
             <option value="horizontal">Horizontal</option>
             <option value="vertical">Vertical</option>
@@ -272,7 +289,8 @@
             <input
               type="number"
               value={(selectedComponent as any).min ?? 0}
-              oninput={(e) => updateProperty("min", parseFloat(e.currentTarget.value) || 0)}
+              oninput={(e) =>
+                updateProperty("min", parseFloat(e.currentTarget.value) || 0)}
             />
           </div>
           <div class="field">
@@ -280,7 +298,8 @@
             <input
               type="number"
               value={(selectedComponent as any).max ?? 100}
-              oninput={(e) => updateProperty("max", parseFloat(e.currentTarget.value) || 100)}
+              oninput={(e) =>
+                updateProperty("max", parseFloat(e.currentTarget.value) || 100)}
             />
           </div>
         </div>
@@ -316,7 +335,8 @@
             min="0.1"
             max="5"
             value={(selectedComponent as any).scale ?? 1}
-            oninput={(e) => updateProperty("scale", parseFloat(e.currentTarget.value) || 1)}
+            oninput={(e) =>
+              updateProperty("scale", parseFloat(e.currentTarget.value) || 1)}
           />
         </div>
       </div>

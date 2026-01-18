@@ -9,7 +9,7 @@
   let { component, onUpdate }: Props = $props();
 
   // Get current binding based on component type
-  const currentBinding = $derived<EntityBinding | undefined>(() => {
+  const currentBinding = $derived.by<EntityBinding | undefined>(() => {
     if (component.type === "text") {
       return (component as any).textBinding;
     }

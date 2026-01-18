@@ -26,7 +26,7 @@
   <h3>Components</h3>
 
   <div class="component-list">
-    {#each components as comp}
+    {#each components as comp (comp.type)}
       <div
         class="palette-item"
         draggable="true"

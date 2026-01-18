@@ -11,7 +11,10 @@
   import { page } from "$app/state";
   import { onMount } from "svelte";
 
+  import ProjectSettings from "$lib/components/sidebar/ProjectSettings.svelte";
+
   let showExport = $state(false);
+  let showSettings = $state(false);
   let loading = $state(true);
   let error = $state<string | null>(null);
 
@@ -43,7 +46,10 @@
     <a href="/" class="back-link">Back to projects</a>
   </div>
 {:else if projectStore.project}
-  <Toolbar onExport={() => (showExport = !showExport)} />
+  <Toolbar 
+    onExport={() => (showExport = !showExport)} 
+    onSettings={() => (showSettings = !showSettings)}
+  />
 
   <div class="editor-container">
   <aside class="sidebar left">
@@ -70,6 +76,14 @@
   <div class="modal-overlay" onclick={() => (showExport = false)}>
     <div class="modal-content" onclick={(e: MouseEvent) => e.stopPropagation()}>
       <ExportPanel onClose={() => (showExport = false)} />
+    </div>
+  </div>
+{/if}
+
+{#if showSettings}
+  <div class="modal-overlay" onclick={() => (showSettings = false)}>
+    <div class="modal-content settings-modal" onclick={(e: MouseEvent) => e.stopPropagation()}>
+      <ProjectSettings onClose={() => (showSettings = false)} />
     </div>
   </div>
 {/if}
@@ -133,6 +147,11 @@
     max-width: 90vw;
     max-height: 90vh;
     overflow: hidden;
+  }
+
+  .modal-content.settings-modal {
+    width: 600px;
+    height: 80vh;
   }
 
   .status-screen {

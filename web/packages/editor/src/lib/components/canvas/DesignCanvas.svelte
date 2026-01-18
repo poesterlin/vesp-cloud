@@ -10,9 +10,9 @@
   let canvasEl: HTMLDivElement | undefined = $state();
 
   const canvasHeight = $derived(
-    projectStore.viewMode === "detail" && projectStore.currentDetailView
-      ? projectStore.currentDetailView.height || projectStore.display.height
-      : projectStore.display.height
+    projectStore.project && projectStore.viewMode === "detail" && projectStore.currentDetailView
+      ? projectStore.currentDetailView.height || projectStore.display!.height
+      : projectStore.display?.height ?? 320
   );
 
   function handleCanvasClick(e: MouseEvent) {
@@ -155,7 +155,7 @@
 
   <div
     class="canvas-wrapper"
-    style:width="{projectStore.display.width}px"
+    style:width="{(projectStore.display?.width ?? 240)}px"
     style:height="{canvasHeight}px"
   >
     {#if projectStore.viewMode === 'detail' && projectStore.currentDetailView}
@@ -173,19 +173,21 @@
     onclick={handleCanvasClick}
     ondrop={handleDrop}
     ondragover={handleDragOver}
-    style:height="{projectStore.viewMode === 'detail' ? canvasHeight - 45 : '100%'}px"
+    style:height="{projectStore.viewMode === 'detail' ? canvasHeight - 45 : (projectStore.display?.height ?? 320)}px"
   >
-    {#each projectStore.activeComponents as component (component.id)}
-      <ComponentRenderer {component} />
-    {/each}
+    {#if projectStore.activeComponents}
+      {#each projectStore.activeComponents as component (component.id)}
+        <ComponentRenderer {component} />
+      {/each}
+    {/if}
 
     <SelectionOverlay />
   </div>
 
   <!-- Display size indicator -->
   <div class="size-indicator">
-    {projectStore.display.width} x {canvasHeight}
-    {#if projectStore.viewMode === 'dashboard'}
+    {projectStore.display?.width ?? 240} x {canvasHeight}
+    {#if projectStore.viewMode === 'dashboard' && projectStore.currentDashboardPage}
       (Dashboard: {projectStore.currentDashboardPage.name})
     {:else}
       (Detail: {projectStore.currentDetailView?.title || "Unknown"})
@@ -199,14 +201,14 @@
     border: 2px solid var(--color-border);
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow-lg);
+    background: #1a1a1a;
   }
 
   .canvas {
     width: 100%;
     height: 100%;
-    background: #1a1a1a;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     cursor: crosshair;
   }
 

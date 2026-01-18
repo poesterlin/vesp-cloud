@@ -293,6 +293,24 @@ function createProjectStore() {
     exportJSON(): string {
       return project ? JSON.stringify(project) : "";
     },
+
+    importJSON(json: string): boolean {
+      try {
+        const parsed = JSON.parse(json);
+        // Simple validation
+        if (!parsed.id || !parsed.name || !parsed.display) return false;
+        
+        project = parsed;
+        currentDashboardPageId = parsed.dashboardPages[0]?.id ?? "";
+        currentDetailViewId = null;
+        viewMode = "dashboard";
+        saveToLocalStorage();
+        return true;
+      } catch (e) {
+        console.error("Failed to import project", e);
+        return false;
+      }
+    },
   };
 }
 

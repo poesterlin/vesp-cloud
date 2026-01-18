@@ -401,6 +401,7 @@
   .field-row {
     display: flex;
     gap: var(--spacing-sm);
+    flex-direction: column;
   }
 
   .field-row .field {

@@ -4,6 +4,8 @@
   import { historyStore } from "$lib/stores/history.svelte";
   import EntityPicker from "./EntityPicker.svelte";
   import IconSearcher from "./IconSearcher.svelte";
+  import ActionEditor from "./ActionEditor.svelte";
+  import type { ActionBinding } from "@esphome-designer/schema";
 
   // Get selected component
   const selectedComponent = $derived(
@@ -192,55 +194,15 @@
             oninput={(e) => updateProperty("label", e.currentTarget.value)}
           />
         </div>
-       <div class="field">
-           <span class="field-label">Icon</span>
-           <input
-             type="text"
-             value={(selectedComponent as any).icon ?? ""}
-             placeholder="mdi:icon-name"
-             oninput={(e) => updateProperty("icon", e.currentTarget.value)}
-           />
-         </div>
         <div class="field">
-          <span class="field-label">On Tap</span>
-          <select
-            value={(selectedComponent as any).onTap?.type ?? "none"}
-            onchange={(e) => {
-              const val = e.currentTarget.value;
-              if (val === "none") {
-                updateProperty("onTap", undefined);
-              } else {
-                updateProperty("onTap", { type: val, targetId: "" });
-              }
-            }}
-          >
-            <option value="none">None</option>
-            <option value="OPEN_DETAIL">Open Detail</option>
-            <option value="NEXT_PAGE">Next Page</option>
-            <option value="PREV_PAGE">Prev Page</option>
-            <option value="GO_BACK">Go Back</option>
-          </select>
+          <span class="field-label">Icon</span>
+          <input
+            type="text"
+            value={(selectedComponent as any).icon ?? ""}
+            placeholder="mdi:icon-name"
+            oninput={(e) => updateProperty("icon", e.currentTarget.value)}
+          />
         </div>
-        {#if (selectedComponent as any).onTap?.type === "OPEN_DETAIL"}
-          <div class="field">
-            <span class="field-label">Target</span>
-            <select
-              value={(selectedComponent as any).onTap?.targetId ?? ""}
-              onchange={(e) => {
-                const onTap = {
-                  ...(selectedComponent as any).onTap,
-                  targetId: e.currentTarget.value,
-                };
-                updateProperty("onTap", onTap);
-              }}
-            >
-              <option value="" disabled>Select Detail View</option>
-              {#each projectStore.detailViews as view}
-                <option value={view.id}>{view.title}</option>
-              {/each}
-            </select>
-          </div>
-        {/if}
       </div>
     {/if}
 
@@ -278,6 +240,15 @@
             <option value="vertical">Vertical</option>
           </select>
         </div>
+      </div>
+
+      <div class="property-section">
+        <label class="section-label">Slider Actions</label>
+        <ActionEditor
+          label="On Change"
+          action={(selectedComponent as any).onChange as ActionBinding | undefined}
+          onUpdate={(action) => updateProperty("onChange", action)}
+        />
       </div>
     {/if}
 
@@ -355,6 +326,18 @@
         }}
       />
     </div>
+
+    <!-- Actions section for all components except sliders (which have onChange) -->
+    {#if selectedComponent.type !== "slider"}
+      <div class="property-section">
+        <label class="section-label">Actions</label>
+        <ActionEditor
+          label="On Tap"
+          action={(selectedComponent as any).onTap as ActionBinding | undefined}
+          onUpdate={(action) => updateProperty("onTap", action)}
+        />
+      </div>
+    {/if}
   {:else}
     <div class="no-selection">
       <p>Select a component to edit its properties</p>

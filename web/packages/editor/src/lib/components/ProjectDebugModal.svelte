@@ -8,10 +8,11 @@
 
   let { onClose }: Props = $props();
 
-  let jsonContent = $state(projectStore.exportJSON());
+  let jsonContent = $state(JSON.stringify(JSON.parse(projectStore.exportJSON()), null, 2));
   let isEditing = $state(false);
   let isValid = $state(true);
   let errorMessage = $state("");
+  let hasBeenFormatted = $state(true);
 
   function validateJSON(json: string): boolean {
     try {
@@ -48,7 +49,9 @@
   function formatJSON() {
     try {
       const parsed = JSON.parse(jsonContent);
-      jsonContent = JSON.stringify(parsed, null, 2);
+      const formatted = JSON.stringify(parsed, null, 2);
+      jsonContent = formatted;
+      hasBeenFormatted = true;
       isValid = true;
       errorMessage = "";
     } catch (e) {
@@ -63,18 +66,19 @@
   }
 
   function reset() {
-    jsonContent = projectStore.exportJSON();
+    jsonContent = JSON.stringify(JSON.parse(projectStore.exportJSON()), null, 2);
+    hasBeenFormatted = true;
     isValid = true;
     errorMessage = "";
     isEditing = false;
   }
 
   $effect(() => {
-    // Update JSON content when project changes (only if not editing)
-    if (!isEditing) {
+    // Update JSON content when project changes (only if not editing and hasn't been manually formatted)
+    if (!isEditing && !hasBeenFormatted) {
       const currentJSON = projectStore.exportJSON();
       if (currentJSON !== jsonContent) {
-        jsonContent = currentJSON;
+        jsonContent = JSON.stringify(JSON.parse(currentJSON), null, 2);
       }
     }
   });
@@ -86,12 +90,12 @@
     <div class="header-actions">
       {#if !isEditing}
         <button onclick={() => isEditing = true} class="edit-btn">Edit</button>
-        <button onclick={copyToClipboard} class="copy-btn">Copy</button>
-        <button onclick={formatJSON} class="format-btn">Format</button>
       {:else}
         <button onclick={reset} class="reset-btn">Reset</button>
         <button onclick={applyChanges} class="apply-btn" disabled={!isValid}>Apply</button>
       {/if}
+      <button onclick={copyToClipboard} class="copy-btn">Copy</button>
+      <button onclick={formatJSON} class="format-btn">Format</button>
       <button onclick={onClose} class="close-btn">×</button>
     </div>
   </div>
@@ -178,6 +182,8 @@
     color: var(--color-text-primary);
     resize: none;
     outline: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
   }
 
   .json-editor.invalid {

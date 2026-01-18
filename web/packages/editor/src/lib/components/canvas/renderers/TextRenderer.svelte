@@ -12,7 +12,7 @@
     component.fontSize === "small" ? 12 : component.fontSize === "large" ? 20 : 14
   );
 
-  const textAlign = $derived("flex-" + (component.align === "left" || component.align === undefined ? "start" : component.align === "right" ? "end" : "center"));
+  const textAlign = $derived(component.align === "left" || component.align === undefined ? "flex-start" : component.align === "right" ? "flex-end" : "center");
 
   const colorStyle = $derived(
     component.color

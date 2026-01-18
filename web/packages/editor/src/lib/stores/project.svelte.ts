@@ -15,9 +15,12 @@ import type {
 import { RETRO_THEME } from "../themes/retro";
 import { assert, toUpperSnakeCase } from "$lib/utils";
 
-const LATEST_VERSION = "1.0.0";
-const PROJECTS_INDEX_KEY = "esphome-designer-projects-index";
-const PROJECT_PREFIX = "esphome-designer-project-";
+export type ProjectConfig = { 
+  display?: Partial<DisplayConfig>, 
+  theme?: Theme,
+  dashboardPages?: number,
+  detailViews?: string[] 
+};
 
 function createProjectStore() {
   // Core project state
@@ -228,19 +231,38 @@ function createProjectStore() {
       }
     },
 
-    createNewProject(name: string): Project {
+    createNewProject(name: string, config?: ProjectConfig): Project {
+      const display = { 
+        width: config?.display?.width ?? 240, 
+        height: config?.display?.height ?? 320, 
+        platform: config?.display?.platform ?? "ili9xxx" 
+      } as DisplayConfig;
+
       const newProject: Project = {
         id: crypto.randomUUID(),
         version: LATEST_VERSION,
         name,
-        theme: RETRO_THEME,
-        display: { width: 240, height: 320, platform: "ili9xxx" },
-        dashboardPages: [{ id: "page-1", name: "Home", components: [] }],
-        detailViews: [],
+        theme: config?.theme ?? RETRO_THEME,
+        display,
+        dashboardPages: config?.dashboardPages 
+          ? Array.from({ length: config.dashboardPages }, (_, i) => ({
+              id: `page-${i + 1}`,
+              name: i === 0 ? "Home" : `Page ${i + 1}`,
+              components: []
+            }))
+          : [{ id: "page-1", name: "Home", components: [] }],
+        detailViews: config?.detailViews 
+          ? config.detailViews.map(title => ({
+              id: toUpperSnakeCase(title),
+              title,
+              height: 640,
+              components: []
+            }))
+          : [],
         fonts: [],
       };
       project = newProject;
-      currentDashboardPageId = "page-1";
+      currentDashboardPageId = newProject.dashboardPages[0].id;
       currentDetailViewId = null;
       viewMode = "dashboard";
       saveToLocalStorage();

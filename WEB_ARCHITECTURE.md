@@ -162,17 +162,17 @@ A compound component mirroring the hand-coded music page:
 ```
 *Reference:* `esphome/includes/render_pages.h` (`renderPage1_Music`) and `esphome/includes/scrolling_text.h`.
 
-### 4. Touch Interaction Logic
-The generated `touch_handler.h` will be a hardcoded template that:
-1. Detects `startX/Y` on touch down.
-2. If `viewMode == DETAIL`, calculates vertical `deltaY` for scrolling.
-3. On touch release, if `deltaX > threshold` and `viewMode == DASHBOARD`, triggers `nextPage()` or `prevPage()`.
-4. Otherwise, triggers `handleTap(x, y)` which iterates through component hit-boxes.
-*Reference:* `esphome/includes/touch_handler.h`.
+### 5. Project Creation & Initialization
+The editor supports configurable project creation:
+- **Display Configuration:** Set dimensions (width/height) and platform (ILI9XXX, ST7789, etc.) at creation.
+- **Initial Content Scaffolding:** 
+    - Specify number of initial dashboard pages.
+    - List detail views (e.g., "Vacuum, Climate, Lights") to auto-generate placeholders.
+- **Theme Selection:** Default "Retro" theme applied, but configurable via `ProjectConfig`.
 
 ---
 
-## Proposed Schema Changes
+## Component Schema Details
 
 To support the transition from manual C++ to generated code, the following additions to `components.json` are required:
 

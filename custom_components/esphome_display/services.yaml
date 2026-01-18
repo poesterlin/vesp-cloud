@@ -1,0 +1,68 @@
+notify:
+  name: Send Notification to ESPHome Display
+  description: Send a notification to an ESPHome-powered display. No YAML needed—configure everything through the web UI!
+  fields:
+    device:
+      name: Display Device
+      description: Choose which display to send the notification to
+      required: true
+      selector:
+        text:
+          autocomplete: true
+    title:
+      name: Title (Optional)
+      description: Bold header text (if empty, uses severity level)
+      required: false
+      example: "Laundry Done"
+      selector:
+        text:
+          type: text
+    message:
+      name: Message
+      description: Main notification text (supports multiple lines)
+      required: true
+      example: "The washing machine has finished its cycle."
+      selector:
+        text:
+          type: textarea
+    severity:
+      name: Severity Level
+      description: "Affects icon and color: info (blue), warn (amber), alert (red), question (green)"
+      required: false
+      default: "info"
+      selector:
+        select:
+          options:
+            - label: "ℹ️ Info (Blue)"
+              value: "info"
+            - label: "⚠️ Warning (Amber)"
+              value: "warn"
+            - label: "🚨 Alert (Red)"
+              value: "alert"
+            - label: "❓ Question (Green)"
+              value: "question"
+          mode: dropdown
+    timeout:
+      name: Auto-Dismiss (Seconds)
+      description: "How long to show before auto-closing (0 = manual dismiss)"
+      required: false
+      default: 10
+      selector:
+        number:
+          min: 0
+          max: 3600
+          step: 1
+          unit_of_measurement: "seconds"
+          mode: box
+
+clear_notification:
+  name: Clear Notification on ESPHome Display
+  description: Dismiss the current notification from a display device
+  fields:
+    device:
+      name: Display Device
+      description: Choose which display to clear
+      required: true
+      selector:
+        text:
+          autocomplete: true

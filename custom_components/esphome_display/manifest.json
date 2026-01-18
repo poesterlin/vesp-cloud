@@ -1,0 +1,12 @@
+{
+  "manifest_version": 1,
+  "domain": "esphome_display",
+  "name": "ESPHome Display Notifications & Data Bridge",
+  "codeowners": ["@your-github-username"],
+  "config_flow": true,
+  "documentation": "https://github.com/your-username/home-display",
+  "requirements": [],
+  "version": "1.2.0",
+  "homeassistant": "2024.1.0",
+  "iot_class": "local_push"
+}

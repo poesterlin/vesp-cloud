@@ -1,0 +1,100 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Welcome to ESPHome Display",
+        "description": "This integration simplifies sending notifications to your ESPHome display devices.\n\nNo YAML configuration needed—everything is set up through the web interface!"
+      },
+      "add_device": {
+        "title": "Add Display Device",
+        "description": "Configure a new ESPHome display device. {devices_added} device(s) already configured.",
+        "data": {
+          "name": "Display Name",
+          "esphome_device": "ESPHome Device Name",
+          "default_severity": "Default Notification Severity",
+          "todo_entity": "To-Do List (Optional)"
+        },
+        "data_description": {
+          "name": "A friendly name for this display (e.g., 'Kitchen Display')",
+          "esphome_device": "The device name from your ESPHome YAML (e.g., 'kitchen_screen')",
+          "default_severity": "Default alert level when not specified: info (blue), warn (amber), alert (red), question (green)",
+          "todo_entity": "Optional: Link a Home Assistant to-do list to display tasks on the device"
+        }
+      },
+      "add_more_devices": {
+        "title": "Add Another Device?",
+        "description": "You've successfully configured {devices_added} display device(s).\n\nWould you like to add another display?",
+        "data": {
+          "add_another": "Add another display device"
+        }
+      }
+    },
+    "error": {
+      "name_required": "Display name is required",
+      "name_exists": "A device with this name already exists",
+      "esphome_device_required": "ESPHome device name is required"
+    },
+    "abort": {
+      "already_configured": "ESPHome Display is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "ESPHome Display Options",
+        "description": "Adjust integration-wide settings",
+        "data": {
+          "default_timeout": "Default Notification Timeout (seconds)"
+        },
+        "data_description": {
+          "default_timeout": "How long notifications should display by default before auto-closing (0 = manual dismiss only)"
+        }
+      }
+    }
+  },
+  "services": {
+    "notify": {
+      "name": "Send Notification",
+      "description": "Display a notification on an ESPHome display device",
+      "fields": {
+        "device": {
+          "name": "Device",
+          "description": "Select the display device to send notification to"
+        },
+        "message": {
+          "name": "Message",
+          "description": "Main notification text"
+        },
+        "title": {
+          "name": "Title",
+          "description": "Optional: Bold header (defaults to severity name if omitted)"
+        },
+        "severity": {
+          "name": "Severity Level",
+          "description": "Alert level: info (blue), warn (amber), alert (red), question (green)"
+        },
+        "timeout": {
+          "name": "Auto-Dismiss Timeout",
+          "description": "Seconds until notification automatically closes (0 = manual dismiss)"
+        }
+      }
+    },
+    "clear_notification": {
+      "name": "Clear Notification",
+      "description": "Dismiss the current notification on a display device",
+      "fields": {
+        "device": {
+          "name": "Device",
+          "description": "Select the display device"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "to_do_items": {
+        "name": "To-Do Items"
+      }
+    }
+  }
+}

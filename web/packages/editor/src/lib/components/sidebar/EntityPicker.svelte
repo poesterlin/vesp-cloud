@@ -3,12 +3,20 @@
   import { homeAssistantStore } from "$lib/stores/homeassistant.svelte";
   import type { Entity, Device } from "@esphome-designer/schema/homeassistant-dump";
 
-  interface Props {
-    component: Component;
-    onUpdate: (binding: EntityBinding | undefined) => void;
+  interface DeviceSelection {
+    deviceId: string;
+    deviceName: string;
   }
 
-  let { component, onUpdate }: Props = $props();
+  interface Props {
+    component: Component;
+    onUpdate?: (binding: EntityBinding | undefined) => void;
+    onDeviceSelect?: (device: DeviceSelection | undefined) => void;
+    numericOnly?: boolean;
+    deviceOnly?: boolean;
+  }
+
+  let { component, onUpdate, onDeviceSelect, numericOnly = false, deviceOnly = false }: Props = $props();
 
   // Get current binding based on component type
   const currentBinding = $derived.by<EntityBinding | undefined>(() => {
@@ -22,13 +30,25 @@
   let searchQuery = $state("");
   let showAttributes = $state(false);
   let selectedEntity = $state<Entity | null>(null);
+  let selectedDevice = $state<Device | null>(null);
   let selectedDomain = $state<string | null>(null);
   let selectedDeviceId = $state<string | null>(null);
-  let browseMode = $state<"type" | "device" | "area">("type");
+  let browseMode = $state<"type" | "device" | "area">(deviceOnly ? "device" : "type");
 
   // Sync state when binding changes
   $effect(() => {
-    if (currentBinding?.entityId) {
+    if (deviceOnly) {
+      // For device mode, check if there's a device selection stored
+      const deviceId = (component as any).targetDevice?.deviceId;
+      if (deviceId) {
+        const device = homeAssistantStore.getDeviceById(deviceId);
+        if (device) {
+          selectedDevice = device;
+        }
+      } else {
+        selectedDevice = null;
+      }
+    } else if (currentBinding?.entityId) {
       const entity = homeAssistantStore.getEntity(currentBinding.entityId);
       if (entity) {
         selectedEntity = entity;
@@ -101,35 +121,84 @@
     return domainIcons[domain] || "📦";
   }
 
+  // Get all entities (filtered by numericOnly if needed)
+  const allFilteredEntities = $derived.by(() => {
+    if (!homeAssistantStore.isLoaded) return [];
+    return numericOnly
+      ? homeAssistantStore.entities.filter((e: Entity) => e.numeric_state !== undefined)
+      : homeAssistantStore.entities;
+  });
+
   // Available domains sorted by entity count
   const availableDomains = $derived.by(() => {
     if (!homeAssistantStore.isLoaded) return [];
     const domainCounts: Record<string, number> = {};
-    for (const entity of homeAssistantStore.entities) {
+    for (const entity of allFilteredEntities) {
       domainCounts[entity.domain] = (domainCounts[entity.domain] || 0) + 1;
     }
     return Object.entries(domainCounts)
+      .filter(([_, count]) => count > 0)
       .sort((a, b) => b[1] - a[1])
       .map(([domain, count]) => ({ domain, count }));
   });
 
-  // Available devices sorted by entity count
+  // Available devices sorted by entity count (filtered for numeric entities if needed)
   const availableDevices = $derived.by(() => {
     if (!homeAssistantStore.isLoaded) return [];
+
+    if (numericOnly) {
+      // Count numeric entities per device
+      const deviceEntityCounts: Record<string, number> = {};
+      for (const entity of allFilteredEntities) {
+        if (entity.device_id) {
+          deviceEntityCounts[entity.device_id] = (deviceEntityCounts[entity.device_id] || 0) + 1;
+        }
+      }
+      return homeAssistantStore.devices
+        .filter((d: Device) => deviceEntityCounts[d.id] > 0)
+        .map((d: Device) => ({ ...d, entity_ids: Array(deviceEntityCounts[d.id]).fill('') }))
+        .sort((a: Device, b: Device) => (b.entity_ids?.length ?? 0) - (a.entity_ids?.length ?? 0));
+    }
+
     return homeAssistantStore.devices
       .filter((d: Device) => d.entity_ids && d.entity_ids.length > 0)
       .sort((a: Device, b: Device) => (b.entity_ids?.length ?? 0) - (a.entity_ids?.length ?? 0));
   });
 
-  // Available areas
+  // Available areas (filtered for numeric entities if needed)
   const availableAreas = $derived.by(() => {
     if (!homeAssistantStore.isLoaded) return [];
+
+    if (numericOnly) {
+      // Count numeric entities per area
+      const areaCounts: Record<string, number> = {};
+      for (const entity of allFilteredEntities) {
+        if (entity.area) {
+          areaCounts[entity.area] = (areaCounts[entity.area] || 0) + 1;
+        }
+      }
+      return homeAssistantStore.areasList
+        .filter(area => areaCounts[area.name] > 0)
+        .map(area => ({ ...area, entity_count: areaCounts[area.name] }));
+    }
+
     return homeAssistantStore.areasList;
   });
 
   // Check if a string looks like an ISO date
   function isIsoDate(str: string): boolean {
     return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str);
+  }
+
+  // Check if an entity has a numeric value
+  function isNumericEntity(entity: Entity): boolean {
+    return entity.numeric_state !== undefined;
+  }
+
+  // Filter entities based on numericOnly prop
+  function applyNumericFilter(entities: Entity[]): Entity[] {
+    if (!numericOnly) return entities;
+    return entities.filter(isNumericEntity);
   }
 
   // Search and filter entities
@@ -150,7 +219,7 @@
       return [];
     }
 
-    return entities;
+    return applyNumericFilter(entities);
   });
 
   // Get display name for entity
@@ -196,16 +265,27 @@
     isModalOpen = false;
     resetFilters();
 
-    onUpdate({
+    onUpdate?.({
       entityId: entity.entity_id,
       attribute: currentBinding?.attribute,
+    });
+  }
+
+  function selectDeviceItem(device: Device) {
+    selectedDevice = device;
+    isModalOpen = false;
+    resetFilters();
+
+    onDeviceSelect?.({
+      deviceId: device.id,
+      deviceName: device.friendly_name,
     });
   }
 
   function selectAttribute(attr: string | null) {
     if (!selectedEntity) return;
 
-    onUpdate({
+    onUpdate?.({
       entityId: selectedEntity.entity_id,
       attribute: attr || undefined,
     });
@@ -213,9 +293,14 @@
   }
 
   function clearSelection() {
-    selectedEntity = null;
-    onUpdate(undefined);
-    showAttributes = false;
+    if (deviceOnly) {
+      selectedDevice = null;
+      onDeviceSelect?.(undefined);
+    } else {
+      selectedEntity = null;
+      onUpdate?.(undefined);
+      showAttributes = false;
+    }
   }
 
   function openModal() {
@@ -247,10 +332,41 @@
     <div class="empty-state">
       <span class="empty-icon">📡</span>
       <span class="empty-text">No Home Assistant data loaded</span>
-      <span class="empty-hint">Import your Home Assistant export to see available entities</span>
+      <span class="empty-hint">Import your Home Assistant export to see available {deviceOnly ? 'devices' : 'entities'}</span>
     </div>
+  {:else if deviceOnly}
+    <!-- Device Only Mode -->
+    {#if selectedDevice}
+      <div class="selected-entity">
+        <div class="selected-header">
+          <div class="selected-info">
+            <span class="selected-icon">🔧</span>
+            <div class="selected-details">
+              <span class="selected-name">{selectedDevice.friendly_name}</span>
+              <span class="selected-meta">
+                {#if selectedDevice.manufacturer}
+                  <span class="selected-manufacturer">{selectedDevice.manufacturer}</span>
+                {/if}
+                {#if selectedDevice.area_name}
+                  <span class="selected-area">📍 {selectedDevice.area_name}</span>
+                {/if}
+              </span>
+            </div>
+          </div>
+          <button class="clear-btn" onclick={clearSelection} title="Remove">✕</button>
+        </div>
+        <button class="change-btn" onclick={openModal}>
+          Change device
+        </button>
+      </div>
+    {:else}
+      <button class="select-btn" onclick={openModal}>
+        <span class="select-icon">🔧</span>
+        <span>Select a device...</span>
+      </button>
+    {/if}
   {:else}
-    <!-- Selected Entity Display -->
+    <!-- Entity Mode -->
     {#if selectedEntity}
       <div class="selected-entity">
         <div class="selected-header">
@@ -327,7 +443,7 @@
   <div class="modal-backdrop" role="dialog" aria-modal="true" onclick={closeModal} onkeydown={handleKeydown}>
     <div class="modal" onclick={(e) => e.stopPropagation()}>
       <div class="modal-header">
-        <h2>Select Entity</h2>
+        <h2>{deviceOnly ? 'Select Device' : 'Select Entity'}</h2>
         <button class="modal-close" onclick={closeModal}>✕</button>
       </div>
 
@@ -335,7 +451,7 @@
         <span class="search-icon">🔍</span>
         <input
           type="text"
-          placeholder="Search entities..."
+          placeholder={deviceOnly ? "Search devices..." : "Search entities..."}
           bind:value={searchQuery}
           autofocus
         />
@@ -345,7 +461,44 @@
       </div>
 
       <div class="modal-body">
-        {#if searchQuery}
+        {#if deviceOnly}
+          <!-- Device Only Mode -->
+          {@const filteredDevices = searchQuery
+            ? availableDevices.filter((d: Device) =>
+                d.friendly_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                d.manufacturer?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                d.model?.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+            : availableDevices}
+          <div class="results-panel">
+            <div class="panel-header">
+              <span>{searchQuery ? 'Search Results' : 'All Devices'}</span>
+              <span class="result-count">{filteredDevices.length} devices</span>
+            </div>
+            <div class="entity-grid">
+              {#each filteredDevices as device}
+                <button class="entity-card" onclick={() => selectDeviceItem(device)}>
+                  <span class="entity-icon">🔧</span>
+                  <div class="entity-info">
+                    <span class="entity-name">{device.friendly_name}</span>
+                    <span class="entity-meta">
+                      {#if device.manufacturer}
+                        <span class="entity-manufacturer">{device.manufacturer}{device.model ? ` ${device.model}` : ''}</span>
+                      {/if}
+                      {#if device.area_name}
+                        <span class="entity-area">{device.area_name}</span>
+                      {/if}
+                    </span>
+                  </div>
+                </button>
+              {/each}
+              {#if filteredDevices.length === 0}
+                <div class="no-results">No devices found</div>
+              {/if}
+            </div>
+          </div>
+        {:else if searchQuery}
           <!-- Search Results -->
           <div class="results-panel">
             <div class="panel-header">
@@ -454,7 +607,7 @@
                     {#if browseMode === 'type' && selectedDomain}
                       {getDomainIcon(selectedDomain)} {getDomainLabel(selectedDomain)}
                     {:else if browseMode === 'device' && selectedDeviceId}
-                      {availableDevices.find(d => d.id === selectedDeviceId)?.friendly_name}
+                      {availableDevices.find((d: Device) => d.id === selectedDeviceId)?.friendly_name}
                     {:else if browseMode === 'area' && selectedDomain}
                       🏠 {selectedDomain}
                     {/if}
@@ -1069,6 +1222,12 @@
   .entity-state {
     color: var(--color-accent, #4ec9b0);
     font-weight: 500;
+  }
+
+  .entity-manufacturer,
+  .selected-manufacturer {
+    color: var(--color-text-muted);
+    font-style: italic;
   }
 
   .no-results {

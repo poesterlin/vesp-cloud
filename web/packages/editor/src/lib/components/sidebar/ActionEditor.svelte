@@ -2,7 +2,7 @@
   import type { ActionBinding, ServiceAction, NavigationAction } from "@esphome-designer/schema";
   import { projectStore } from "$lib/stores/project.svelte";
   import { SERVICE_PRESETS, getServicesByDomain, DOMAIN_LABELS } from "$lib/data/service-presets";
-  import ServiceDataEditor from "./ServiceDataEditor.svelte";
+  import EntityPicker from "./EntityPicker.svelte";
 
   type ActionType = "none" | "navigation" | "service";
 
@@ -34,24 +34,19 @@
     action?.type === "SERVICE_CALL" ? (action as ServiceAction) : null
   );
   const serviceName = $derived(serviceAction?.service ?? "");
-  const serviceTarget = $derived(serviceAction?.target?.entityId ?? "");
-  const serviceData = $derived((serviceAction?.data as Record<string, unknown>) ?? {});
-
-  // Get service preset info
-  const currentPreset = $derived(serviceName ? SERVICE_PRESETS[serviceName] : null);
+  const serviceTargetEntity = $derived(serviceAction?.target?.entityId ?? "");
+  const serviceTargetDevice = $derived(serviceAction?.target?.deviceId ?? "");
 
   // Build a clean service action, only including optional fields when populated
   function buildServiceAction(
     service: string,
-    entityId: string,
-    data: Record<string, unknown>
+    target?: { entityId?: string; deviceId?: string }
   ): ServiceAction {
     const action: ServiceAction = { type: "SERVICE_CALL", service };
-    if (entityId.trim()) {
-      action.target = { entityId: entityId.trim() };
-    }
-    if (Object.keys(data).length > 0) {
-      action.data = data;
+    if (target?.entityId || target?.deviceId) {
+      action.target = {};
+      if (target.entityId) action.target.entityId = target.entityId;
+      if (target.deviceId) action.target.deviceId = target.deviceId;
     }
     return action;
   }
@@ -75,32 +70,17 @@
   }
 
   function handleServiceChange(service: string) {
-    onUpdate(buildServiceAction(service, serviceTarget, serviceData));
+    const target = serviceTargetEntity ? { entityId: serviceTargetEntity } : serviceTargetDevice ? { deviceId: serviceTargetDevice } : undefined;
+    onUpdate(buildServiceAction(service, target));
   }
 
-  function handleTargetChange(entityId: string) {
-    onUpdate(buildServiceAction(serviceName, entityId, serviceData));
+  function handleEntityTargetChange(entityId: string | undefined) {
+    onUpdate(buildServiceAction(serviceName, entityId ? { entityId } : undefined));
   }
 
-  function handleDataChange(data: Record<string, unknown>) {
-    onUpdate(buildServiceAction(serviceName, serviceTarget, data));
+  function handleDeviceTargetChange(device: { deviceId: string; deviceName: string } | undefined) {
+    onUpdate(buildServiceAction(serviceName, device ? { deviceId: device.deviceId } : undefined));
   }
-
-  // Domain hints for entity input
-  const domainHints = [
-    "light",
-    "switch",
-    "climate",
-    "cover",
-    "media_player",
-    "fan",
-    "script",
-    "automation",
-    "scene",
-    "input_boolean",
-    "input_number",
-    "lock",
-  ];
 
   // Get services grouped by domain
   const groupedServices = $derived(getServicesByDomain());
@@ -182,34 +162,21 @@
       </div>
     {/if}
 
-    <div class="field">
+    <div class="target-section">
       <span class="field-label">Target</span>
-      <input
-        type="text"
-        placeholder="light.living_room"
-        value={serviceTarget}
-        oninput={(e) => handleTargetChange(e.currentTarget.value)}
-        list="entity-hints"
+      <EntityPicker
+        component={{} as any}
+        deviceOnly={true}
+        onDeviceSelect={handleDeviceTargetChange}
       />
-      <datalist id="entity-hints">
-        {#each domainHints as domain}
-          <option value="{domain}."></option>
-        {/each}
-      </datalist>
     </div>
 
-    <ServiceDataEditor
-      data={serviceData}
-      suggestedParams={currentPreset?.suggestedParams ?? []}
-      onUpdate={handleDataChange}
-    />
-
-    {#if serviceName && serviceTarget}
+    {#if serviceName && serviceTargetDevice}
       <div class="preview">
         <span class="preview-title">Preview:</span>
         <code class="preview-service">{serviceName}</code>
         <span class="preview-arrow">→</span>
-        <code class="preview-target">{serviceTarget}</code>
+        <code class="preview-target">device</code>
       </div>
     {/if}
   {/if}
@@ -238,6 +205,19 @@
   input {
     flex: 1;
     min-width: 0;
+  }
+
+  .target-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .target-section .field-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--color-text-muted);
   }
 
   .preview {

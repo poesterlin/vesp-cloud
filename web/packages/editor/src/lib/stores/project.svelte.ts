@@ -8,6 +8,8 @@ import type {
 } from "@esphome-designer/schema";
 import { RETRO_THEME } from "../themes/retro";
 import { assert, toUpperSnakeCase } from "$lib/utils";
+import { selectionStore } from "./selection.svelte";
+import { browser } from "$app/environment";
 
 const LATEST_VERSION = "1.0.0";
 const PROJECTS_INDEX_KEY = "esphome-designer-projects-index";
@@ -92,6 +94,7 @@ function createProjectStore() {
     // Navigation
     setViewMode(mode: "dashboard" | "detail") {
       viewMode = mode;
+      selectionStore.clear();
 
       if (mode === "dashboard" && project) {
         currentDashboardPageId = project.dashboardPages[0]?.id ?? null;
@@ -105,12 +108,14 @@ function createProjectStore() {
       if (project?.dashboardPages.some((p) => p.id === id)) {
         currentDashboardPageId = id;
         viewMode = "dashboard";
+        selectionStore.clear();
       }
     },
     setDetailView(id: string | null) {
       if (id === null || project?.detailViews.some((v) => v.id === id)) {
         currentDetailViewId = id;
         if (id) viewMode = "detail";
+        selectionStore.clear();
       }
     },
 
@@ -473,7 +478,7 @@ function createProjectStore() {
     },
 
     loadProjectById(id: string): boolean {
-      if (typeof window === "undefined") return false;
+      if (!browser) return false;
       const saved = localStorage.getItem(`${PROJECT_PREFIX}${id}`);
       if (saved) {
         try {
@@ -491,7 +496,7 @@ function createProjectStore() {
     },
 
     deleteProject(id: string) {
-      if (typeof window === "undefined") return;
+      if (!browser) return;
       localStorage.removeItem(`${PROJECT_PREFIX}${id}`);
       const index = getProjectsIndex().filter(p => p.id !== id);
       localStorage.setItem(PROJECTS_INDEX_KEY, JSON.stringify(index));

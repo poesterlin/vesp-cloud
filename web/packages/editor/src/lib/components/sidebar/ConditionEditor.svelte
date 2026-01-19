@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Condition, EntityCondition } from "@esphome-designer/schema";
+  import Self from "./ConditionEditor.svelte";
 
   interface Props {
     condition: Condition | undefined;
@@ -59,7 +60,7 @@
 
   function updateSubCondition(index: number, updated: Condition) {
     if (condition?.type === "compound") {
-      const newConditions = [...condition.conditions];
+      const newConditions = condition.conditions.slice();
       newConditions[index] = updated;
       onUpdate({ ...condition, conditions: newConditions });
     }
@@ -84,7 +85,6 @@
     >
       <option value="none">Always (Default)</option>
       <option value="entity">Home Assistant Entity</option>
-      <option value="state">Internal State</option>
       <option value="time">Time Range</option>
       <option value="compound">Compound (AND/OR)</option>
     </select>
@@ -185,7 +185,7 @@
               <span>#{i + 1}</span>
               <button class="remove-btn" onclick={() => removeSubCondition(i)}>×</button>
             </div>
-            <svelte:self
+            <Self
               condition={sub}
               onUpdate={(updated) => updated && updateSubCondition(i, updated)}
             />

@@ -98,24 +98,7 @@
   {/if}
 
   {#if selectedComponent}
-    <h3>Properties</h3>
-
-    <div class="property-section">
-      <label class="section-label">Component</label>
-      <div class="field">
-        <span class="field-label">Type</span>
-        <span class="field-value">{selectedComponent.type}</span>
-      </div>
-      <div class="field">
-        <span class="field-label">ID</span>
-        <input
-          type="text"
-          value={selectedComponent.id}
-          readonly
-          class="readonly"
-        />
-      </div>
-    </div>
+    <h3>{selectedComponent.type} Properties</h3>
 
     <div class="property-section">
       <label class="section-label">Position</label>
@@ -416,20 +399,23 @@
       </div>
     {/if}
 
-    <!-- Entity Binding -->
-    <div class="property-section">
-      <label class="section-label">Entity Binding</label>
-      <EntityPicker
-        component={selectedComponent}
-        onUpdate={(binding) => {
-          if (selectedComponent.type === "text") {
-            updateProperty("textBinding", binding);
-          } else {
-            updateProperty("valueBinding", binding);
-          }
-        }}
-      />
-    </div>
+    <!-- Entity Binding (only for components that display entity values) -->
+    {#if selectedComponent.type === "text" || selectedComponent.type === "slider" || selectedComponent.type === "gauge"}
+      <div class="property-section">
+        <label class="section-label">Entity Binding</label>
+        <EntityPicker
+          component={selectedComponent}
+          numericOnly={selectedComponent.type === "slider" || selectedComponent.type === "gauge"}
+          onUpdate={(binding) => {
+            if (selectedComponent.type === "text") {
+              updateProperty("textBinding", binding);
+            } else {
+              updateProperty("valueBinding", binding);
+            }
+          }}
+        />
+      </div>
+    {/if}
 
     <!-- Actions section for all components except sliders (which have onChange) -->
     {#if selectedComponent.type !== "slider"}

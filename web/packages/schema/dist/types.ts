@@ -216,8 +216,11 @@ export interface EntityBinding {
 export interface ServiceAction {
   type: "SERVICE_CALL";
   service: string;
-  target?: EntityBinding;
-  data?: {};
+  target?: ServiceTarget;
+}
+export interface ServiceTarget {
+  entityId?: string;
+  deviceId?: string;
 }
 export interface NavigationAction {
   type: "OPEN_DETAIL" | "GO_BACK" | "NEXT_PAGE" | "PREV_PAGE";

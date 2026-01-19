@@ -1,3 +1,4 @@
+import { browser } from "$app/environment";
 import type {
   HomeAssistantDump,
   Entity,
@@ -96,6 +97,7 @@ function createHomeAssistantStore() {
 
   // Persistence
   function save() {
+    if (!browser) return;
     if (dump) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dump));
     } else {
@@ -104,6 +106,7 @@ function createHomeAssistantStore() {
   }
 
   function load(): boolean {
+    if (!browser) return false;
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {

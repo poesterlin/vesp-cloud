@@ -41,13 +41,20 @@
       "required": ["entityId"],
       "additionalProperties": false
     },
+    "ServiceTarget": {
+      "type": "object",
+      "properties": {
+        "entityId": { "type": "string", "pattern": "^[a-z_]+\\.[a-z0-9_]+$" },
+        "deviceId": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
     "ServiceAction": {
       "type": "object",
       "properties": {
         "type": { "const": "SERVICE_CALL" },
         "service": { "type": "string", "pattern": "^[a-z_]+\\.[a-z_0-9]+$" },
-        "target": { "$ref": "#/definitions/EntityBinding" },
-        "data": { "type": "object" }
+        "target": { "$ref": "#/definitions/ServiceTarget" }
       },
       "required": ["type", "service"],
       "additionalProperties": false

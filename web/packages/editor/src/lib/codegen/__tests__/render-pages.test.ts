@@ -7,7 +7,7 @@
 
 import { describe, test, expect } from "bun:test";
 import { generateRenderPages } from "../render-pages";
-import type { Project, Page, TextComponent, ButtonComponent, ContainerComponent } from "@esphome-designer/schema";
+import type { Project, Page, TextComponent, ButtonComponent, ContainerComponent, ConditionalAreaComponent, ConditionalVariant, EntityCondition, CompoundCondition, NotCondition } from "@esphome-designer/schema";
 
 describe("Render Pages Generator", () => {
   describe("generateRenderPages", () => {
@@ -557,6 +557,523 @@ describe("Render Pages Generator", () => {
       const openBraces = (cpp.match(/{/g) || []).length;
       const closeBraces = (cpp.match(/}/g) || []).length;
       expect(openBraces).toBe(closeBraces);
+    });
+  });
+
+  describe("Conditional Area Component Generation", () => {
+    test("generates conditional area with single variant", () => {
+      const conditionalArea: ConditionalAreaComponent = {
+        id: "cond-1",
+        type: "conditional_area",
+        position: { x: 10, y: 20 },
+        size: { width: 100, height: 50 },
+        variants: [
+          {
+            id: "default",
+            name: "Default State",
+            components: [
+              { id: "text-1", type: "text", position: { x: 5, y: 5 }, text: "Hello" } as TextComponent,
+            ],
+          },
+        ],
+      };
+
+      const project: Project = {
+        name: "Test",
+        display: { width: 240, height: 320, platform: "ili9xxx" },
+        dashboardPages: [
+          { id: "page-0", name: "Home", components: [conditionalArea] },
+        ],
+        detailViews: [],
+      };
+
+      const cpp = generateRenderPages(project);
+
+      expect(cpp).toContain("// Conditional Area: cond-1");
+      expect(cpp).toContain("// Variant: Default State");
+    });
+
+    test("applies clipping by default", () => {
+      const conditionalArea: ConditionalAreaComponent = {
+        id: "clipped-area",
+        type: "conditional_area",
+        position: { x: 10, y: 20 },
+        size: { width: 100, height: 50 },
+        variants: [{ id: "v1", name: "V1", components: [] }],
+      };
+
+      const project: Project = {
+        name: "Test",
+        display: { width: 240, height: 320, platform: "ili9xxx" },
+        dashboardPages: [
+          { id: "page-0", name: "Home", components: [conditionalArea] },
+        ],
+        detailViews: [],
+      };
+
+      const cpp = generateRenderPages(project);
+
+      expect(cpp).toContain("it.start_clipping(10, 20, 100, 50)");
+      expect(cpp).toContain("it.end_clipping()");
+    });
+
+    test("disables clipping when clipContent is false", () => {
+      const conditionalArea: ConditionalAreaComponent = {
+        id: "unclipped-area",
+        type: "conditional_area",
+        position: { x: 10, y: 20 },
+        size: { width: 100, height: 50 },
+        clipContent: false,
+        variants: [{ id: "v1", name: "V1", components: [] }],
+      };
+
+      const project: Project = {
+        name: "Test",
+        display: { width: 240, height: 320, platform: "ili9xxx" },
+        dashboardPages: [
+          { id: "page-0", name: "Home", components: [conditionalArea] },
+        ],
+        detailViews: [],
+      };
+
+      const cpp = generateRenderPages(project);
+
+      expect(cpp).not.toContain("start_clipping");
+      expect(cpp).not.toContain("end_clipping");
+    });
+
+    test("generates entity condition with eq operator", () => {
+      const condition: EntityCondition = {
+        type: "entity",
+        entityId: "light.living_room",
+        operator: "eq",
+        value: "on",
+      };
+
+      const conditionalArea: ConditionalAreaComponent = {
+        id: "light-status",
+        type: "conditional_area",
+        position: { x: 0, y: 0 },
+        size: { width: 100, height: 100 },
+        variants: [
+          { id: "on", name: "Light On", condition, components: [] },
+          { id: "off", name: "Light Off", components: [] },
+        ],
+      };
+
+      const project: Project = {
+        name: "Test",
+        display: { width: 240, height: 320, platform: "ili9xxx" },
+        dashboardPages: [
+          { id: "page-0", name: "Home", components: [conditionalArea] },
+        ],
+        detailViews: [],
+      };
+
+      const cpp = generateRenderPages(project);
+
+      expect(cpp).toContain('id(ha_light_living_room).state == "on"');
+      expect(cpp).toContain("// Variant: Light On");
+      expect(cpp).toContain("// Variant: Light Off (Default)");
+    });
+
+    test("generates all comparison operators", () => {
+      const operators = [
+        { op: "neq", expected: "!=" },
+        { op: "gt", expected: ">" },
+        { op: "gte", expected: ">=" },
+        { op: "lt", expected: "<" },
+        { op: "lte", expected: "<=" },
+      ] as const;
+
+      for (const { op, expected } of operators) {
+        const condition: EntityCondition = {
+          type: "entity",
+          entityId: "sensor.temp",
+          operator: op,
+          value: 20,
+        };
+
+        const conditionalArea: ConditionalAreaComponent = {
+          id: "test-area",
+          type: "conditional_area",
+          position: { x: 0, y: 0 },
+          size: { width: 100, height: 100 },
+          variants: [
+            { id: "cond", name: "Conditional", condition, components: [] },
+            { id: "default", name: "Default", components: [] },
+          ],
+        };
+
+        const project: Project = {
+          name: "Test",
+          display: { width: 240, height: 320, platform: "ili9xxx" },
+          dashboardPages: [
+            { id: "page-0", name: "Home", components: [conditionalArea] },
+          ],
+          detailViews: [],
+        };
+
+        const cpp = generateRenderPages(project);
+        expect(cpp).toContain(`id(ha_sensor_temp).state ${expected} 20`);
+      }
+    });
+
+    test("generates contains operator", () => {
+      const condition: EntityCondition = {
+        type: "entity",
+        entityId: "sensor.status",
+        operator: "contains",
+        value: "error",
+      };
+
+      const conditionalArea: ConditionalAreaComponent = {
+        id: "status-area",
+        type: "conditional_area",
+        position: { x: 0, y: 0 },
+        size: { width: 100, height: 100 },
+        variants: [
+          { id: "error", name: "Has Error", condition, components: [] },
+          { id: "ok", name: "OK", components: [] },
+        ],
+      };
+
+      const project: Project = {
+        name: "Test",
+        display: { width: 240, height: 320, platform: "ili9xxx" },
+        dashboardPages: [
+          { id: "page-0", name: "Home", components: [conditionalArea] },
+        ],
+        detailViews: [],
+      };
+
+      const cpp = generateRenderPages(project);
+
+      expect(cpp).toContain('.find("error") != std::string::npos');
+    });
+
+    test("generates compound AND condition", () => {
+      const condition: CompoundCondition = {
+        type: "compound",
+        operator: "and",
+        conditions: [
+          { type: "entity", entityId: "light.a", operator: "eq", value: "on" },
+          { type: "entity", entityId: "light.b", operator: "eq", value: "on" },
+        ],
+      };
+
+      const conditionalArea: ConditionalAreaComponent = {
+        id: "multi-light",
+        type: "conditional_area",
+        position: { x: 0, y: 0 },
+        size: { width: 100, height: 100 },
+        variants: [
+          { id: "both-on", name: "Both On", condition, components: [] },
+          { id: "default", name: "Default", components: [] },
+        ],
+      };
+
+      const project: Project = {
+        name: "Test",
+        display: { width: 240, height: 320, platform: "ili9xxx" },
+        dashboardPages: [
+          { id: "page-0", name: "Home", components: [conditionalArea] },
+        ],
+        detailViews: [],
+      };
+
+      const cpp = generateRenderPages(project);
+
+      expect(cpp).toContain("&&");
+      expect(cpp).toContain('id(ha_light_a).state == "on"');
+      expect(cpp).toContain('id(ha_light_b).state == "on"');
+    });
+
+    test("generates compound OR condition", () => {
+      const condition: CompoundCondition = {
+        type: "compound",
+        operator: "or",
+        conditions: [
+          { type: "entity", entityId: "light.a", operator: "eq", value: "on" },
+          { type: "entity", entityId: "light.b", operator: "eq", value: "on" },
+        ],
+      };
+
+      const conditionalArea: ConditionalAreaComponent = {
+        id: "any-light",
+        type: "conditional_area",
+        position: { x: 0, y: 0 },
+        size: { width: 100, height: 100 },
+        variants: [
+          { id: "any-on", name: "Any On", condition, components: [] },
+          { id: "default", name: "Default", components: [] },
+        ],
+      };
+
+      const project: Project = {
+        name: "Test",
+        display: { width: 240, height: 320, platform: "ili9xxx" },
+        dashboardPages: [
+          { id: "page-0", name: "Home", components: [conditionalArea] },
+        ],
+        detailViews: [],
+      };
+
+      const cpp = generateRenderPages(project);
+
+      expect(cpp).toContain("||");
+    });
+
+    test("generates NOT condition", () => {
+      const condition: NotCondition = {
+        type: "not",
+        condition: { type: "entity", entityId: "binary_sensor.motion", operator: "eq", value: "on" },
+      };
+
+      const conditionalArea: ConditionalAreaComponent = {
+        id: "no-motion",
+        type: "conditional_area",
+        position: { x: 0, y: 0 },
+        size: { width: 100, height: 100 },
+        variants: [
+          { id: "no-motion", name: "No Motion", condition, components: [] },
+          { id: "default", name: "Default", components: [] },
+        ],
+      };
+
+      const project: Project = {
+        name: "Test",
+        display: { width: 240, height: 320, platform: "ili9xxx" },
+        dashboardPages: [
+          { id: "page-0", name: "Home", components: [conditionalArea] },
+        ],
+        detailViews: [],
+      };
+
+      const cpp = generateRenderPages(project);
+
+      expect(cpp).toContain("!(");
+      expect(cpp).toContain('id(ha_binary_sensor_motion).state == "on"');
+    });
+
+    test("sorts variants by priority (highest first)", () => {
+      const conditionalArea: ConditionalAreaComponent = {
+        id: "priority-area",
+        type: "conditional_area",
+        position: { x: 0, y: 0 },
+        size: { width: 100, height: 100 },
+        variants: [
+          {
+            id: "low",
+            name: "Low Priority",
+            priority: 1,
+            condition: { type: "entity", entityId: "sensor.a", operator: "eq", value: 1 },
+            components: [],
+          },
+          {
+            id: "high",
+            name: "High Priority",
+            priority: 10,
+            condition: { type: "entity", entityId: "sensor.b", operator: "eq", value: 1 },
+            components: [],
+          },
+          { id: "default", name: "Default", components: [] },
+        ],
+      };
+
+      const project: Project = {
+        name: "Test",
+        display: { width: 240, height: 320, platform: "ili9xxx" },
+        dashboardPages: [
+          { id: "page-0", name: "Home", components: [conditionalArea] },
+        ],
+        detailViews: [],
+      };
+
+      const cpp = generateRenderPages(project);
+
+      // High priority should appear first in the if chain
+      const highIndex = cpp.indexOf("High Priority");
+      const lowIndex = cpp.indexOf("Low Priority");
+      expect(highIndex).toBeLessThan(lowIndex);
+    });
+
+    test("adjusts child component positions to be absolute", () => {
+      const conditionalArea: ConditionalAreaComponent = {
+        id: "positioned-area",
+        type: "conditional_area",
+        position: { x: 50, y: 100 },
+        size: { width: 100, height: 100 },
+        variants: [
+          {
+            id: "default",
+            name: "Default",
+            components: [
+              { id: "child-text", type: "text", position: { x: 10, y: 20 }, text: "Child" } as TextComponent,
+            ],
+          },
+        ],
+      };
+
+      const project: Project = {
+        name: "Test",
+        display: { width: 240, height: 320, platform: "ili9xxx" },
+        dashboardPages: [
+          { id: "page-0", name: "Home", components: [conditionalArea] },
+        ],
+        detailViews: [],
+      };
+
+      const cpp = generateRenderPages(project);
+
+      // Child at (10, 20) + parent at (50, 100) = (60, 120)
+      expect(cpp).toContain("it.print(60, 120,");
+    });
+
+    test("generates if/else if/else chain for multiple conditions", () => {
+      const conditionalArea: ConditionalAreaComponent = {
+        id: "multi-cond",
+        type: "conditional_area",
+        position: { x: 0, y: 0 },
+        size: { width: 100, height: 100 },
+        variants: [
+          {
+            id: "first",
+            name: "First",
+            condition: { type: "entity", entityId: "sensor.a", operator: "eq", value: 1 },
+            components: [],
+          },
+          {
+            id: "second",
+            name: "Second",
+            condition: { type: "entity", entityId: "sensor.b", operator: "eq", value: 2 },
+            components: [],
+          },
+          { id: "default", name: "Default", components: [] },
+        ],
+      };
+
+      const project: Project = {
+        name: "Test",
+        display: { width: 240, height: 320, platform: "ili9xxx" },
+        dashboardPages: [
+          { id: "page-0", name: "Home", components: [conditionalArea] },
+        ],
+        detailViews: [],
+      };
+
+      const cpp = generateRenderPages(project);
+
+      expect(cpp).toContain("if (");
+      expect(cpp).toContain("else if (");
+      expect(cpp).toContain("else {");
+    });
+
+    test("handles nested components in variants", () => {
+      const conditionalArea: ConditionalAreaComponent = {
+        id: "nested-area",
+        type: "conditional_area",
+        position: { x: 0, y: 0 },
+        size: { width: 200, height: 200 },
+        variants: [
+          {
+            id: "complex",
+            name: "Complex Layout",
+            components: [
+              { id: "text-1", type: "text", position: { x: 10, y: 10 }, text: "Title" } as TextComponent,
+              { id: "btn-1", type: "button", position: { x: 10, y: 40 }, size: { width: 80, height: 30 }, label: "Click" } as ButtonComponent,
+              { id: "container-1", type: "container", position: { x: 10, y: 80 }, size: { width: 180, height: 100 }, label: "Box" } as ContainerComponent,
+            ],
+          },
+        ],
+      };
+
+      const project: Project = {
+        name: "Test",
+        display: { width: 240, height: 320, platform: "ili9xxx" },
+        dashboardPages: [
+          { id: "page-0", name: "Home", components: [conditionalArea] },
+        ],
+        detailViews: [],
+      };
+
+      const cpp = generateRenderPages(project);
+
+      expect(cpp).toContain("// Text: text-1");
+      expect(cpp).toContain("// Button: btn-1");
+      expect(cpp).toContain("// Container: container-1");
+    });
+
+    test("generates balanced braces for conditional areas", () => {
+      const conditionalArea: ConditionalAreaComponent = {
+        id: "balanced-area",
+        type: "conditional_area",
+        position: { x: 0, y: 0 },
+        size: { width: 100, height: 100 },
+        variants: [
+          {
+            id: "v1",
+            name: "V1",
+            condition: { type: "entity", entityId: "sensor.a", operator: "eq", value: 1 },
+            components: [{ id: "t1", type: "text", position: { x: 0, y: 0 }, text: "A" } as TextComponent],
+          },
+          {
+            id: "v2",
+            name: "V2",
+            condition: { type: "entity", entityId: "sensor.b", operator: "eq", value: 2 },
+            components: [{ id: "t2", type: "text", position: { x: 0, y: 0 }, text: "B" } as TextComponent],
+          },
+          { id: "default", name: "Default", components: [] },
+        ],
+      };
+
+      const project: Project = {
+        name: "Test",
+        display: { width: 240, height: 320, platform: "ili9xxx" },
+        dashboardPages: [
+          { id: "page-0", name: "Home", components: [conditionalArea] },
+        ],
+        detailViews: [],
+      };
+
+      const cpp = generateRenderPages(project);
+
+      const openBraces = (cpp.match(/{/g) || []).length;
+      const closeBraces = (cpp.match(/}/g) || []).length;
+      expect(openBraces).toBe(closeBraces);
+    });
+
+    test("handles numeric values in conditions", () => {
+      const condition: EntityCondition = {
+        type: "entity",
+        entityId: "sensor.temperature",
+        operator: "gt",
+        value: 25.5,
+      };
+
+      const conditionalArea: ConditionalAreaComponent = {
+        id: "temp-area",
+        type: "conditional_area",
+        position: { x: 0, y: 0 },
+        size: { width: 100, height: 100 },
+        variants: [
+          { id: "hot", name: "Hot", condition, components: [] },
+          { id: "cool", name: "Cool", components: [] },
+        ],
+      };
+
+      const project: Project = {
+        name: "Test",
+        display: { width: 240, height: 320, platform: "ili9xxx" },
+        dashboardPages: [
+          { id: "page-0", name: "Home", components: [conditionalArea] },
+        ],
+        detailViews: [],
+      };
+
+      const cpp = generateRenderPages(project);
+
+      expect(cpp).toContain("id(ha_sensor_temperature).state > 25.5");
     });
   });
 });

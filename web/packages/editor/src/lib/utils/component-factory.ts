@@ -51,7 +51,7 @@ export function createComponent(type: string, x: number, y: number): Component {
       return {
         ...base,
         type: "icon",
-        icon: "mdi:home",
+        icon: "home",
         size: { width: 32, height: 32 },
         scale: 1,
       } as Component;

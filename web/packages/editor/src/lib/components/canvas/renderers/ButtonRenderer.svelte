@@ -17,8 +17,12 @@
       colorToCss(theme.colors.backgroundSecondary),
     ),
   );
-  const accentColor = $derived(colorToCss(theme.colors.accent));
-  const foregroundColor = $derived(colorToCss(theme.colors.foreground));
+  const accentColor = $derived(
+    colorToCss(component.borderColor, colorToCss(theme.colors.accent)),
+  );
+  const foregroundColor = $derived(
+    colorToCss(component.foregroundColor, colorToCss(theme.colors.foreground)),
+  );
   const shadowColor = $derived(colorToCss(theme.colors.background, "black"));
 
   // Retro style constants

@@ -1,18 +1,21 @@
 <script lang="ts">
-  import type { Component } from "@esphome-designer/schema";
+  import type { GaugeComponent } from "@esphome-designer/schema";
   import Draggable from "../Draggable.svelte";
+  import { projectStore } from "../../../stores/project.svelte";
+  import { colorToCss } from "../../../utils/color-utils";
 
   interface Props {
-    component: Component & { type: "gauge" };
+    component: GaugeComponent;
   }
 
   let { component }: Props = $props();
+  const theme = $derived(projectStore.theme);
 
   // Mock value for preview
   let previewValue = $state(65);
 
   const normalizedValue = $derived(
-    (previewValue - component.min) / (component.max - component.min)
+    (previewValue - component.min) / (component.max - component.min),
   );
 
   // Gauge arc from -135deg to +135deg (270deg total)
@@ -27,6 +30,10 @@
   const radians = $derived((angle * Math.PI) / 180);
   const needleX = $derived(cx + needleLen * Math.cos(radians));
   const needleY = $derived(cy + needleLen * Math.sin(radians));
+
+  const bgColor = $derived(colorToCss(component.backgroundColor, "#2a2a2a"));
+  const needleColor = $derived(colorToCss(component.needleColor, "#ff6b00"));
+  const valueColor = $derived(colorToCss(component.valueColor, "white"));
 </script>
 
 <Draggable {component}>
@@ -36,7 +43,14 @@
     height={component.size?.height ?? 80}
   >
     <!-- Background arc -->
-    <circle {cx} {cy} r={radius} fill="#2a2a2a" stroke="#444" stroke-width="2" />
+    <circle
+      {cx}
+      {cy}
+      r={radius}
+      fill={bgColor}
+      stroke="#444"
+      stroke-width="2"
+    />
 
     <!-- Colored segments if defined -->
     {#if component.segments}
@@ -51,16 +65,22 @@
       y1={cy}
       x2={needleX}
       y2={needleY}
-      stroke="#ff6b00"
+      stroke={needleColor}
       stroke-width="2"
       stroke-linecap="round"
     />
 
     <!-- Center dot -->
-    <circle {cx} {cy} r="4" fill="#ff6b00" />
+    <circle {cx} {cy} r="4" fill={needleColor} />
 
     <!-- Value text -->
-    <text x={cx} y={cy + radius / 2} text-anchor="middle" fill="white" font-size="12">
+    <text
+      x={cx}
+      y={cy + radius / 2}
+      text-anchor="middle"
+      fill={valueColor}
+      font-size="12"
+    >
       {previewValue}{component.unit ?? ""}
     </text>
   </svg>

@@ -1,36 +1,50 @@
 <script lang="ts">
-  import type { Component } from "@esphome-designer/schema";
+  import type { SliderComponent } from "@esphome-designer/schema";
   import Draggable from "../Draggable.svelte";
+  import { projectStore } from "../../../stores/project.svelte";
+  import { colorToCss } from "../../../utils/color-utils";
 
   interface Props {
-    component: Component & { type: "slider" };
+    component: SliderComponent;
   }
 
   let { component }: Props = $props();
+  const theme = $derived(projectStore.theme);
 
   // Mock value for preview
   let previewValue = $state(50);
 
   const isVertical = $derived(component.orientation === "vertical");
   const percentage = $derived(
-    ((previewValue - (component.min ?? 0)) / ((component.max ?? 100) - (component.min ?? 0))) * 100
+    ((previewValue - (component.min ?? 0)) /
+      ((component.max ?? 100) - (component.min ?? 0))) *
+      100,
   );
+
+  const trackColor = $derived(colorToCss(component.trackColor, "#333"));
+  const fillColor = $derived(
+    colorToCss(component.fillColor, colorToCss(theme.colors.accent)),
+  );
+  const handleColor = $derived(colorToCss(component.handleColor, "white"));
 </script>
 
 <Draggable {component}>
   <div class="slider-component" class:vertical={isVertical}>
-    <div class="track">
+    <div class="track" style:background={trackColor}>
       <div
         class="fill"
         style={isVertical ? `height: ${percentage}%` : `width: ${percentage}%`}
+        style:background={fillColor}
       ></div>
       <div
         class="thumb"
         style={isVertical ? `bottom: ${percentage}%` : `left: ${percentage}%`}
+        style:background={handleColor}
+        style:border-color={fillColor}
       ></div>
     </div>
     {#if component.valueBinding}
-      <span class="binding-indicator">{component.valueBinding.entityId}</span>
+      <span class="binding-indicator" style:color={fillColor}>{component.valueBinding.entityId}</span>
     {/if}
   </div>
 </Draggable>

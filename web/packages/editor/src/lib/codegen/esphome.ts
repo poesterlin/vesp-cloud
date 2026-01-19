@@ -91,6 +91,20 @@ export function generateESPHomeYAML(project: Project): string {
    lines.push(`    id: sntp_time`);
    lines.push(``);
 
+   // Icons as Images
+   const icons = extractAllIcons(project);
+   if (icons.size > 0) {
+     lines.push(`image:`);
+     for (const icon of icons) {
+       const iconId = iconToId(icon);
+       lines.push(`  - file: "${icon}"`);
+       lines.push(`    id: ${iconId}`);
+       lines.push(`    type: binary`);
+       lines.push(`    resize: 32x32`); // Default size for icons in buttons/bars
+     }
+     lines.push(``);
+   }
+
    // Bluetooth (optional but good to have)
    lines.push(`esp32_ble_tracker:`);
    lines.push(`  scan_parameters:`);
@@ -239,6 +253,36 @@ function extractComponentBindings(
     const service = (comp.holdAction as { service: string }).service;
     actions.add(service);
   }
+}
+
+function extractAllIcons(project: Project): Set<string> {
+  const icons = new Set<string>();
+
+  const processComponents = (components: any[]) => {
+    for (const comp of components) {
+      if (comp.icon) icons.add(comp.icon);
+      if (comp.type === "conditional_area") {
+        for (const variant of comp.variants) {
+          processComponents(variant.components);
+        }
+      }
+    }
+  };
+
+  for (const page of project.dashboardPages || []) {
+    processComponents(page.components);
+  }
+
+  for (const view of project.detailViews || []) {
+    processComponents(view.components);
+  }
+
+  return icons;
+}
+
+function iconToId(icon: string): string {
+  // mdi:lightbulb -> icon_lightbulb
+  return "icon_" + icon.replace(/^mdi:/, "").replace(/^mdil:/, "").replace(/^memory:/, "").replace(/[^a-zA-Z0-9]/g, "_");
 }
 
 function isNumericDomain(entityId: string): boolean {

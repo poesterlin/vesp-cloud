@@ -295,6 +295,8 @@
             "label": { "type": "string" },
             "icon": { "type": "string" },
             "backgroundColor": { "$ref": "#/definitions/Color" },
+            "foregroundColor": { "$ref": "#/definitions/Color" },
+            "borderColor": { "$ref": "#/definitions/Color" },
             "pressAction": { "$ref": "#/definitions/ActionBinding" },
             "holdAction": { "$ref": "#/definitions/ActionBinding" }
           },
@@ -314,7 +316,10 @@
             "step": { "type": "number", "default": 1 },
             "valueBinding": { "$ref": "#/definitions/EntityBinding" },
             "onChange": { "$ref": "#/definitions/ActionBinding" },
-            "orientation": { "enum": ["horizontal", "vertical"], "default": "horizontal" }
+            "orientation": { "enum": ["horizontal", "vertical"], "default": "horizontal" },
+            "trackColor": { "$ref": "#/definitions/Color" },
+            "fillColor": { "$ref": "#/definitions/Color" },
+            "handleColor": { "$ref": "#/definitions/Color" }
           },
           "required": ["type", "size"]
         }
@@ -331,6 +336,9 @@
             "max": { "type": "number" },
             "valueBinding": { "$ref": "#/definitions/EntityBinding" },
             "unit": { "type": "string" },
+            "backgroundColor": { "$ref": "#/definitions/Color" },
+            "needleColor": { "$ref": "#/definitions/Color" },
+            "valueColor": { "$ref": "#/definitions/Color" },
             "segments": {
               "type": "array",
               "items": {
@@ -406,7 +414,9 @@
             "transparency": { "enum": ["opaque", "chroma_key", "alpha_channel"] },
             "invert_alpha": { "type": "boolean", "default": false },
             "dither": { "enum": ["NONE", "FLOYDSTEINBERG"] },
-            "byte_order": { "enum": ["big_endian", "little_endian"] }
+            "byte_order": { "enum": ["big_endian", "little_endian"] },
+            "foregroundColor": { "$ref": "#/definitions/Color" },
+            "backgroundColor": { "$ref": "#/definitions/Color" }
           },
           "required": ["type", "file", "image_type", "size"]
         }

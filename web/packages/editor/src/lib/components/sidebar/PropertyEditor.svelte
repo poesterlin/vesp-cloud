@@ -6,6 +6,7 @@
   import IconSearcher from "./IconSearcher.svelte";
   import ActionEditor from "./ActionEditor.svelte";
   import ConditionEditor from "./ConditionEditor.svelte";
+  import ColorPicker from "./ColorPicker.svelte";
   import { conditionalEditorStore } from "$lib/stores/conditional-editor.svelte";
   import { describeCondition } from "$lib/utils/condition-utils";
   import type { ActionBinding } from "@esphome-designer/schema";
@@ -185,6 +186,15 @@
           </select>
         </div>
       </div>
+
+      <div class="property-section">
+        <label class="section-label">Styling</label>
+        <ColorPicker
+          label="Text Color"
+          value={(selectedComponent as any).color}
+          onUpdate={(color) => updateProperty("color", color)}
+        />
+      </div>
     {/if}
 
     {#if selectedComponent.type === "button"}
@@ -200,13 +210,36 @@
         </div>
         <div class="field">
           <span class="field-label">Icon</span>
-          <input
+          <!-- <input
             type="text"
             value={(selectedComponent as any).icon ?? ""}
             placeholder="mdi:icon-name"
             oninput={(e) => updateProperty("icon", e.currentTarget.value)}
+          /> -->
+           <IconSearcher
+            value={(selectedComponent as any).icon ?? ""}
+            onSelect={(icon) => updateProperty("icon", icon)}
           />
         </div>
+      </div>
+
+      <div class="property-section">
+        <label class="section-label">Styling</label>
+        <ColorPicker
+          label="Background"
+          value={(selectedComponent as any).backgroundColor}
+          onUpdate={(color) => updateProperty("backgroundColor", color)}
+        />
+        <ColorPicker
+          label="Foreground"
+          value={(selectedComponent as any).foregroundColor}
+          onUpdate={(color) => updateProperty("foregroundColor", color)}
+        />
+        <ColorPicker
+          label="Border"
+          value={(selectedComponent as any).borderColor}
+          onUpdate={(color) => updateProperty("borderColor", color)}
+        />
       </div>
     {/if}
 
@@ -244,6 +277,25 @@
             <option value="vertical">Vertical</option>
           </select>
         </div>
+      </div>
+
+      <div class="property-section">
+        <label class="section-label">Styling</label>
+        <ColorPicker
+          label="Track"
+          value={(selectedComponent as any).trackColor}
+          onUpdate={(color) => updateProperty("trackColor", color)}
+        />
+        <ColorPicker
+          label="Fill"
+          value={(selectedComponent as any).fillColor}
+          onUpdate={(color) => updateProperty("fillColor", color)}
+        />
+        <ColorPicker
+          label="Handle"
+          value={(selectedComponent as any).handleColor}
+          onUpdate={(color) => updateProperty("handleColor", color)}
+        />
       </div>
 
       <div class="property-section">
@@ -289,6 +341,25 @@
           />
         </div>
       </div>
+
+      <div class="property-section">
+        <label class="section-label">Styling</label>
+        <ColorPicker
+          label="Background"
+          value={(selectedComponent as any).backgroundColor}
+          onUpdate={(color) => updateProperty("backgroundColor", color)}
+        />
+        <ColorPicker
+          label="Needle"
+          value={(selectedComponent as any).needleColor}
+          onUpdate={(color) => updateProperty("needleColor", color)}
+        />
+        <ColorPicker
+          label="Value"
+          value={(selectedComponent as any).valueColor}
+          onUpdate={(color) => updateProperty("valueColor", color)}
+        />
+      </div>
     {/if}
 
     {#if selectedComponent.type === "icon"}
@@ -313,6 +384,104 @@
               updateProperty("scale", parseFloat(e.currentTarget.value) || 1)}
           />
         </div>
+      </div>
+
+      <div class="property-section">
+        <label class="section-label">Styling</label>
+        <ColorPicker
+          label="Color"
+          value={(selectedComponent as any).color}
+          onUpdate={(color) => updateProperty("color", color)}
+        />
+      </div>
+    {/if}
+
+    {#if selectedComponent.type === "procedural_icon"}
+      <div class="property-section">
+        <label class="section-label">Procedural Icon</label>
+        <div class="field">
+          <span class="field-label">Type</span>
+          <select
+            value={(selectedComponent as any).iconType ?? "bulb"}
+            onchange={(e) => updateProperty("iconType", e.currentTarget.value)}
+          >
+            <option value="bulb">Bulb</option>
+            <option value="window">Window</option>
+            <option value="vacuum">Vacuum</option>
+            <option value="climate">Climate</option>
+          </select>
+        </div>
+      </div>
+      <div class="property-section">
+        <label class="section-label">Styling</label>
+        <ColorPicker
+          label="Color"
+          value={(selectedComponent as any).color}
+          onUpdate={(color) => updateProperty("color", color)}
+        />
+      </div>
+    {/if}
+
+    {#if selectedComponent.type === "image"}
+      <div class="property-section">
+        <label class="section-label">Image</label>
+        <div class="field">
+          <span class="field-label">File</span>
+          <input
+            type="text"
+            value={(selectedComponent as any).file ?? ""}
+            oninput={(e) => updateProperty("file", e.currentTarget.value)}
+          />
+        </div>
+        <div class="field">
+          <span class="field-label">Type</span>
+          <select
+            value={(selectedComponent as any).image_type ?? "BINARY"}
+            onchange={(e) => updateProperty("image_type", e.currentTarget.value)}
+          >
+            <option value="BINARY">Binary</option>
+            <option value="GRAYSCALE">Grayscale</option>
+            <option value="RGB565">RGB565</option>
+            <option value="RGB">RGB</option>
+          </select>
+        </div>
+      </div>
+      {#if (selectedComponent as any).image_type === "BINARY"}
+        <div class="property-section">
+          <label class="section-label">Binary Image Styling</label>
+          <ColorPicker
+            label="Foreground"
+            value={(selectedComponent as any).foregroundColor}
+            onUpdate={(color) => updateProperty("foregroundColor", color)}
+          />
+          <ColorPicker
+            label="Background"
+            value={(selectedComponent as any).backgroundColor}
+            onUpdate={(color) => updateProperty("backgroundColor", color)}
+          />
+        </div>
+      {/if}
+    {/if}
+
+    {#if selectedComponent.type === "container"}
+      <div class="property-section">
+        <label class="section-label">Container</label>
+        <div class="field">
+          <span class="field-label">Label</span>
+          <input
+            type="text"
+            value={(selectedComponent as any).label ?? ""}
+            oninput={(e) => updateProperty("label", e.currentTarget.value)}
+          />
+        </div>
+      </div>
+      <div class="property-section">
+        <label class="section-label">Styling</label>
+        <ColorPicker
+          label="Background"
+          value={(selectedComponent as any).backgroundColor}
+          onUpdate={(color) => updateProperty("backgroundColor", color)}
+        />
       </div>
     {/if}
 
@@ -400,7 +569,7 @@
     {/if}
 
     <!-- Entity Binding (only for components that display entity values) -->
-    {#if selectedComponent.type === "text" || selectedComponent.type === "slider" || selectedComponent.type === "gauge"}
+    {#if selectedComponent.type === "text" || selectedComponent.type === "slider" || selectedComponent.type === "gauge" || selectedComponent.type === "procedural_icon"}
       <div class="property-section">
         <label class="section-label">Entity Binding</label>
         <EntityPicker
@@ -409,6 +578,8 @@
           onUpdate={(binding) => {
             if (selectedComponent.type === "text") {
               updateProperty("textBinding", binding);
+            } else if (selectedComponent.type === "procedural_icon") {
+              updateProperty("stateBinding", binding);
             } else {
               updateProperty("valueBinding", binding);
             }

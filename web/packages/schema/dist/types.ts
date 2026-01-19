@@ -29,6 +29,8 @@ export type ButtonComponent = BaseComponent & {
   label?: string;
   icon?: string;
   backgroundColor?: Color;
+  foregroundColor?: Color;
+  borderColor?: Color;
   pressAction?: ActionBinding;
   holdAction?: ActionBinding;
 };
@@ -41,6 +43,9 @@ export type SliderComponent = BaseComponent & {
   valueBinding?: EntityBinding;
   onChange?: ActionBinding;
   orientation?: "horizontal" | "vertical";
+  trackColor?: Color;
+  fillColor?: Color;
+  handleColor?: Color;
 };
 export type GaugeComponent = BaseComponent & {
   type: "gauge";
@@ -48,6 +53,9 @@ export type GaugeComponent = BaseComponent & {
   max: number;
   valueBinding?: EntityBinding;
   unit?: string;
+  backgroundColor?: Color;
+  needleColor?: Color;
+  valueColor?: Color;
   segments?: {
     from: number;
     to: number;
@@ -83,6 +91,8 @@ export type ImageComponent = BaseComponent & {
   invert_alpha?: boolean;
   dither?: "NONE" | "FLOYDSTEINBERG";
   byte_order?: "big_endian" | "little_endian";
+  foregroundColor?: Color;
+  backgroundColor?: Color;
 };
 export type ConditionalAreaComponent = BaseComponent & {
   type: "conditional_area";
@@ -300,7 +310,7 @@ export interface CompoundCondition {
   /**
    * @minItems 2
    */
-  conditions: Condition[];
+  conditions: [Condition, Condition, ...Condition[]];
 }
 /**
  * Negates a condition

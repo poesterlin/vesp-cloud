@@ -107,19 +107,20 @@
   }
 
   .sidebar {
-    width: 280px;
     background: var(--color-bg-secondary);
     border-color: var(--color-border);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
   }
-
+  
   .sidebar.left {
+    width: 280px;
     border-right: 1px solid var(--color-border);
   }
 
   .sidebar.right {
+    width: 315px;
     border-left: 1px solid var(--color-border);
   }
 

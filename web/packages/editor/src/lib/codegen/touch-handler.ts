@@ -75,13 +75,13 @@ export function generateTouchHandler(project: Project): string {
     lines.push(`    .x = ${hb.x}, .y = ${hb.y}, .w = ${hb.w}, .h = ${hb.h},`);
     lines.push(`    .type = ${actionTypeToEnum(hb.action.type)},`);
     if (hb.action.type === "SERVICE_CALL") {
-      lines.push(`    .action.serviceCall = {`);
+      lines.push(`    .action = { .serviceCall = {`);
       lines.push(`      .service = "${hb.action.service}",`);
       lines.push(`      .entityId = "${hb.action.entityId}",`);
       lines.push(`      .dataJson = "${escapeJson(hb.action.dataJson || "{}")}",`);
-      lines.push(`    },`);
+      lines.push(`    }},`);
     } else if (hb.action.type === "OPEN_DETAIL") {
-      lines.push(`    .action.targetView = VIEW_DETAIL_${hb.action.targetView?.toUpperCase().replace(/-/g, '_')},`);
+      lines.push(`    .action = { .targetView = VIEW_DETAIL_${hb.action.targetView?.toUpperCase().replace(/-/g, '_')} },`);
     }
     lines.push(`  }`);
     return lines.join("\n");

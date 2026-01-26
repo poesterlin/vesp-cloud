@@ -15,3 +15,4 @@ custom_components/esphome_display/__pycache__/
 .claude/
 
 .ruff_cache/
+*.zip

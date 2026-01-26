@@ -1,0 +1,6820 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-01-19T11:58:36.563320+00:00",
+  "entities": [
+    {
+      "entity_id": "update.home_assistant_supervisor_update",
+      "domain": "update",
+      "name": "Home Assistant Supervisor Update",
+      "state": "off",
+      "attributes": [
+        "auto_update",
+        "display_precision",
+        "installed_version",
+        "in_progress",
+        "latest_version",
+        "release_summary",
+        "release_url",
+        "skipped_version",
+        "title",
+        "update_percentage",
+        "entity_picture",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:30.502264+00:00",
+      "last_updated": "2026-01-19T11:58:30.502264+00:00"
+    },
+    {
+      "entity_id": "update.home_assistant_core_update",
+      "domain": "update",
+      "name": "Home Assistant Core Update",
+      "state": "off",
+      "attributes": [
+        "auto_update",
+        "display_precision",
+        "installed_version",
+        "in_progress",
+        "latest_version",
+        "release_summary",
+        "release_url",
+        "skipped_version",
+        "title",
+        "update_percentage",
+        "entity_picture",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:30.502409+00:00",
+      "last_updated": "2026-01-19T11:58:30.502409+00:00"
+    },
+    {
+      "entity_id": "update.piper_update",
+      "domain": "update",
+      "name": "Piper Update",
+      "state": "off",
+      "attributes": [
+        "auto_update",
+        "display_precision",
+        "installed_version",
+        "in_progress",
+        "latest_version",
+        "release_summary",
+        "release_url",
+        "skipped_version",
+        "title",
+        "update_percentage",
+        "entity_picture",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:30.502501+00:00",
+      "last_updated": "2026-01-19T11:58:30.502501+00:00"
+    },
+    {
+      "entity_id": "update.tailscale_update",
+      "domain": "update",
+      "name": "Tailscale Update",
+      "state": "off",
+      "attributes": [
+        "auto_update",
+        "display_precision",
+        "installed_version",
+        "in_progress",
+        "latest_version",
+        "release_summary",
+        "release_url",
+        "skipped_version",
+        "title",
+        "update_percentage",
+        "entity_picture",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:30.502582+00:00",
+      "last_updated": "2026-01-19T11:58:30.502582+00:00"
+    },
+    {
+      "entity_id": "update.studio_code_server_update",
+      "domain": "update",
+      "name": "Studio Code Server Update",
+      "state": "off",
+      "attributes": [
+        "auto_update",
+        "display_precision",
+        "installed_version",
+        "in_progress",
+        "latest_version",
+        "release_summary",
+        "release_url",
+        "skipped_version",
+        "title",
+        "update_percentage",
+        "entity_picture",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:30.502721+00:00",
+      "last_updated": "2026-01-19T11:58:30.502721+00:00"
+    },
+    {
+      "entity_id": "update.music_assistant_server_beta_update",
+      "domain": "update",
+      "name": "Music Assistant (BETA) Update",
+      "state": "off",
+      "attributes": [
+        "auto_update",
+        "display_precision",
+        "installed_version",
+        "in_progress",
+        "latest_version",
+        "release_summary",
+        "release_url",
+        "skipped_version",
+        "title",
+        "update_percentage",
+        "entity_picture",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:30.502850+00:00",
+      "last_updated": "2026-01-19T11:58:30.502850+00:00"
+    },
+    {
+      "entity_id": "update.go2rtc_update",
+      "domain": "update",
+      "name": "go2rtc Update",
+      "state": "on",
+      "attributes": [
+        "auto_update",
+        "display_precision",
+        "installed_version",
+        "in_progress",
+        "latest_version",
+        "release_summary",
+        "release_url",
+        "skipped_version",
+        "title",
+        "update_percentage",
+        "entity_picture",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:30.503022+00:00",
+      "last_updated": "2026-01-19T11:58:30.503022+00:00"
+    },
+    {
+      "entity_id": "update.esphome_device_builder_update",
+      "domain": "update",
+      "name": "ESPHome Device Builder Update",
+      "state": "off",
+      "attributes": [
+        "auto_update",
+        "display_precision",
+        "installed_version",
+        "in_progress",
+        "latest_version",
+        "release_summary",
+        "release_url",
+        "skipped_version",
+        "title",
+        "update_percentage",
+        "entity_picture",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:30.503103+00:00",
+      "last_updated": "2026-01-19T11:58:30.503103+00:00"
+    },
+    {
+      "entity_id": "update.spotify_connect_update",
+      "domain": "update",
+      "name": "Spotify Connect Update",
+      "state": "off",
+      "attributes": [
+        "auto_update",
+        "display_precision",
+        "installed_version",
+        "in_progress",
+        "latest_version",
+        "release_summary",
+        "release_url",
+        "skipped_version",
+        "title",
+        "update_percentage",
+        "entity_picture",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:30.503171+00:00",
+      "last_updated": "2026-01-19T11:58:30.503171+00:00"
+    },
+    {
+      "entity_id": "update.glasshome_dashboard_update",
+      "domain": "update",
+      "name": "GlassHome Dashboard Update",
+      "state": "off",
+      "attributes": [
+        "auto_update",
+        "display_precision",
+        "installed_version",
+        "in_progress",
+        "latest_version",
+        "release_summary",
+        "release_url",
+        "skipped_version",
+        "title",
+        "update_percentage",
+        "entity_picture",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:30.503226+00:00",
+      "last_updated": "2026-01-19T11:58:30.503226+00:00"
+    },
+    {
+      "entity_id": "update.matter_server_update",
+      "domain": "update",
+      "name": "Matter Server Update",
+      "state": "off",
+      "attributes": [
+        "auto_update",
+        "display_precision",
+        "installed_version",
+        "in_progress",
+        "latest_version",
+        "release_summary",
+        "release_url",
+        "skipped_version",
+        "title",
+        "update_percentage",
+        "entity_picture",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:30.503278+00:00",
+      "last_updated": "2026-01-19T11:58:30.503278+00:00"
+    },
+    {
+      "entity_id": "update.home_assistant_operating_system_update",
+      "domain": "update",
+      "name": "Home Assistant Operating System Update",
+      "state": "off",
+      "attributes": [
+        "auto_update",
+        "display_precision",
+        "installed_version",
+        "in_progress",
+        "latest_version",
+        "release_summary",
+        "release_url",
+        "skipped_version",
+        "title",
+        "update_percentage",
+        "entity_picture",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:30.503360+00:00",
+      "last_updated": "2026-01-19T11:58:30.503360+00:00"
+    },
+    {
+      "entity_id": "conversation.home_assistant",
+      "domain": "conversation",
+      "name": "Home Assistant",
+      "state": "2025-10-08T21:22:46.633272+00:00",
+      "attributes": [
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:30.665711+00:00",
+      "last_updated": "2026-01-19T11:58:30.665711+00:00"
+    },
+    {
+      "entity_id": "light.dial_display",
+      "domain": "light",
+      "name": "Dial Display",
+      "state": "unavailable",
+      "attributes": [
+        "supported_color_modes",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:30.736088+00:00",
+      "last_updated": "2026-01-19T11:58:30.736088+00:00",
+      "suggested_actions": [
+        "Turn On",
+        "Turn Off",
+        "Toggle",
+        "Set Brightness",
+        "Set Color"
+      ],
+      "state_options": [
+        "on",
+        "off"
+      ]
+    },
+    {
+      "entity_id": "switch.spotify_connect",
+      "domain": "switch",
+      "name": "Spotify Connect",
+      "state": "off",
+      "attributes": [
+        "entity_picture",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:30.736872+00:00",
+      "last_updated": "2026-01-19T11:58:30.736872+00:00",
+      "icon": "mdi:puzzle",
+      "suggested_actions": [
+        "Turn On",
+        "Turn Off",
+        "Toggle"
+      ],
+      "state_options": [
+        "on",
+        "off"
+      ]
+    },
+    {
+      "entity_id": "event.backup_automatic_backup",
+      "domain": "event",
+      "name": "Backup Automatic backup",
+      "state": "2026-01-19T03:52:42.468+00:00",
+      "attributes": [
+        "event_types",
+        "event_type",
+        "backup_stage",
+        "failed_reason",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.897084+00:00",
+      "last_updated": "2026-01-19T11:58:31.897084+00:00"
+    },
+    {
+      "entity_id": "sensor.backup_backup_manager_state",
+      "domain": "sensor",
+      "name": "Backup Backup Manager state",
+      "state": "blocked",
+      "attributes": [
+        "options",
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.897322+00:00",
+      "last_updated": "2026-01-19T11:58:31.897322+00:00",
+      "device_class": "enum",
+      "state_options": [
+        "idle",
+        "create_backup",
+        "blocked",
+        "receive_backup",
+        "restore_backup"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.backup_next_scheduled_automatic_backup",
+      "domain": "sensor",
+      "name": "Backup Next scheduled automatic backup",
+      "state": "2026-01-20T04:11:05+00:00",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.897408+00:00",
+      "last_updated": "2026-01-19T11:58:31.897408+00:00",
+      "device_class": "timestamp",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.backup_last_successful_automatic_backup",
+      "domain": "sensor",
+      "name": "Backup Last successful automatic backup",
+      "state": "2026-01-19T03:52:42+00:00",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.897470+00:00",
+      "last_updated": "2026-01-19T11:58:31.897470+00:00",
+      "device_class": "timestamp",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.backup_last_attempted_automatic_backup",
+      "domain": "sensor",
+      "name": "Backup Last attempted automatic backup",
+      "state": "2026-01-19T03:52:09+00:00",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.897525+00:00",
+      "last_updated": "2026-01-19T11:58:31.897525+00:00",
+      "device_class": "timestamp",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "calendar.landkreis_ravensburg",
+      "domain": "calendar",
+      "name": "Landkreis Ravensburg",
+      "state": "on",
+      "attributes": [
+        "message",
+        "all_day",
+        "start_time",
+        "end_time",
+        "location",
+        "description",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.898551+00:00",
+      "last_updated": "2026-01-19T11:58:31.898551+00:00",
+      "area": "Kitchen"
+    },
+    {
+      "entity_id": "sensor.wastesensor",
+      "domain": "sensor",
+      "name": "WasteSensor",
+      "state": "Biotonne in 1 days",
+      "attributes": [
+        "Biotonne",
+        "Restmüll",
+        "Gelbe Tonne",
+        "Papiertonne",
+        "daysTo",
+        "attribution",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.901207+00:00",
+      "last_updated": "2026-01-19T11:58:31.901207+00:00",
+      "icon": "mdi:leaf",
+      "area": "Kitchen",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "button.synchronize_devices",
+      "domain": "button",
+      "name": "Google Assistant Synchronize devices",
+      "state": "2024-04-04T17:24:20.217671+00:00",
+      "attributes": [
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.923901+00:00",
+      "last_updated": "2026-01-19T11:58:31.923901+00:00",
+      "suggested_actions": [
+        "Press"
+      ]
+    },
+    {
+      "entity_id": "scene.gemutlich",
+      "domain": "scene",
+      "name": "Gemütlich",
+      "state": "2026-01-14T23:30:03.125760+00:00",
+      "attributes": [
+        "entity_id",
+        "id",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.942163+00:00",
+      "last_updated": "2026-01-19T11:58:31.942163+00:00",
+      "icon": "mdi:candelabra-fire",
+      "area": "Living Room",
+      "suggested_actions": [
+        "Activate"
+      ]
+    },
+    {
+      "entity_id": "scene.gemutlich_beamer",
+      "domain": "scene",
+      "name": "Gemütlich Beamer",
+      "state": "2026-01-14T21:12:48.536488+00:00",
+      "attributes": [
+        "entity_id",
+        "id",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.942354+00:00",
+      "last_updated": "2026-01-19T11:58:31.942354+00:00",
+      "icon": "mdi:television",
+      "area": "Living Room",
+      "suggested_actions": [
+        "Activate"
+      ]
+    },
+    {
+      "entity_id": "scene.tageslicht",
+      "domain": "scene",
+      "name": "Tageslicht",
+      "state": "2026-01-13T16:31:13.316978+00:00",
+      "attributes": [
+        "entity_id",
+        "id",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.942585+00:00",
+      "last_updated": "2026-01-19T11:58:31.942585+00:00",
+      "icon": "mdi:sun-wireless",
+      "area": "Living Room",
+      "suggested_actions": [
+        "Activate"
+      ]
+    },
+    {
+      "entity_id": "scene.alles_aus",
+      "domain": "scene",
+      "name": "Alles Aus",
+      "state": "2026-01-19T07:03:01.204786+00:00",
+      "attributes": [
+        "entity_id",
+        "id",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.942671+00:00",
+      "last_updated": "2026-01-19T11:58:31.942671+00:00",
+      "icon": "mdi:power",
+      "suggested_actions": [
+        "Activate"
+      ]
+    },
+    {
+      "entity_id": "binary_sensor.bewegung_im_wohnzimmer",
+      "domain": "binary_sensor",
+      "name": "Bewegung im Wohnzimmer",
+      "state": "unavailable",
+      "attributes": [
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.948356+00:00",
+      "last_updated": "2026-01-19T11:58:31.948356+00:00",
+      "state_options": [
+        "on",
+        "off"
+      ]
+    },
+    {
+      "entity_id": "sensor.avg_temp_innen",
+      "domain": "sensor",
+      "name": "Avg Temp Innen",
+      "state": "unavailable",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.948716+00:00",
+      "last_updated": "2026-01-19T11:58:31.948716+00:00",
+      "icon": "mdi:calculator",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.avg_luftfeuchtigkeit_innen",
+      "domain": "sensor",
+      "name": "Avg Luftfeuchtigkeit Innen",
+      "state": "unavailable",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.948910+00:00",
+      "last_updated": "2026-01-19T11:58:31.948910+00:00",
+      "icon": "mdi:calculator",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "tts.google_en_com",
+      "domain": "tts",
+      "name": "Google Translate en com",
+      "state": "2025-10-08T21:20:02.054145+00:00",
+      "attributes": [
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.958657+00:00",
+      "last_updated": "2026-01-19T11:58:31.958657+00:00"
+    },
+    {
+      "entity_id": "zone.edeka",
+      "domain": "zone",
+      "name": "Edeka ",
+      "state": "0",
+      "attributes": [
+        "radius",
+        "passive",
+        "persons",
+        "editable",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.959323+00:00",
+      "last_updated": "2026-01-19T11:58:31.959323+00:00",
+      "numeric_state": 0,
+      "icon": "mdi:map-marker"
+    },
+    {
+      "entity_id": "zone.rewe_co",
+      "domain": "zone",
+      "name": "Rewe & Co",
+      "state": "0",
+      "attributes": [
+        "radius",
+        "passive",
+        "persons",
+        "editable",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.959419+00:00",
+      "last_updated": "2026-01-19T11:58:31.959419+00:00",
+      "numeric_state": 0,
+      "icon": "mdi:map-marker"
+    },
+    {
+      "entity_id": "zone.lidl",
+      "domain": "zone",
+      "name": "Lidl",
+      "state": "0",
+      "attributes": [
+        "radius",
+        "passive",
+        "persons",
+        "editable",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.959470+00:00",
+      "last_updated": "2026-01-19T11:58:31.959470+00:00",
+      "numeric_state": 0,
+      "icon": "mdi:map-marker"
+    },
+    {
+      "entity_id": "input_select.washing_machine_run_status",
+      "domain": "input_select",
+      "name": "Washing Machine Run Status",
+      "state": "All Done!",
+      "attributes": [
+        "options",
+        "editable",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.959570+00:00",
+      "last_updated": "2026-01-19T11:58:31.959570+00:00",
+      "icon": "mdi:washing-machine",
+      "suggested_actions": [
+        "Select Option"
+      ],
+      "state_options": [
+        "Scrubbing Away!",
+        "Drama in the Drum!",
+        "All Done!",
+        " Wrinkle Risk Rising!",
+        "Next Load Please!"
+      ]
+    },
+    {
+      "entity_id": "input_select.display_notification_severity",
+      "domain": "input_select",
+      "name": "Display Notification Severity",
+      "state": "info",
+      "attributes": [
+        "options",
+        "editable",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.959613+00:00",
+      "last_updated": "2026-01-19T11:58:31.959613+00:00",
+      "icon": "mdi:alert-circle",
+      "suggested_actions": [
+        "Select Option"
+      ],
+      "state_options": [
+        "info",
+        "warn",
+        "alert",
+        "question"
+      ]
+    },
+    {
+      "entity_id": "input_number.co2_number",
+      "domain": "input_number",
+      "name": "CO2 number",
+      "state": "0.0",
+      "attributes": [
+        "initial",
+        "editable",
+        "min",
+        "max",
+        "step",
+        "mode",
+        "unit_of_measurement",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.959701+00:00",
+      "last_updated": "2026-01-19T11:58:31.959701+00:00",
+      "numeric_state": 0,
+      "unit": "ppm",
+      "icon": "mdi:molecule-co2",
+      "suggested_actions": [
+        "Set Value"
+      ]
+    },
+    {
+      "entity_id": "input_number.wohnzimmer_fester_zu_winkel",
+      "domain": "input_number",
+      "name": "Wohnzimmer Fester Zu Winkel",
+      "state": "15.0",
+      "attributes": [
+        "initial",
+        "editable",
+        "min",
+        "max",
+        "step",
+        "mode",
+        "unit_of_measurement",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.959738+00:00",
+      "last_updated": "2026-01-19T11:58:31.959738+00:00",
+      "numeric_state": 15,
+      "unit": "deg",
+      "icon": "mdi:angle-acute",
+      "suggested_actions": [
+        "Set Value"
+      ]
+    },
+    {
+      "entity_id": "input_number.work_fenster_zu_winkel",
+      "domain": "input_number",
+      "name": "Work Fenster Zu Winkel",
+      "state": "32.0",
+      "attributes": [
+        "initial",
+        "editable",
+        "min",
+        "max",
+        "step",
+        "mode",
+        "unit_of_measurement",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.959769+00:00",
+      "last_updated": "2026-01-19T11:58:31.959769+00:00",
+      "numeric_state": 32,
+      "unit": "deg",
+      "icon": "mdi:angle-acute",
+      "suggested_actions": [
+        "Set Value"
+      ]
+    },
+    {
+      "entity_id": "input_number.bad_fenster_zu_winkel",
+      "domain": "input_number",
+      "name": "Bad Fenster Zu Winkel",
+      "state": "20.0",
+      "attributes": [
+        "initial",
+        "editable",
+        "min",
+        "max",
+        "step",
+        "mode",
+        "unit_of_measurement",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.959795+00:00",
+      "last_updated": "2026-01-19T11:58:31.959795+00:00",
+      "numeric_state": 20,
+      "unit": "deg",
+      "icon": "mdi:angle-acute",
+      "suggested_actions": [
+        "Set Value"
+      ]
+    },
+    {
+      "entity_id": "input_number.stromkosten",
+      "domain": "input_number",
+      "name": "Stromkosten",
+      "state": "0.0",
+      "attributes": [
+        "initial",
+        "editable",
+        "min",
+        "max",
+        "step",
+        "mode",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.959821+00:00",
+      "last_updated": "2026-01-19T11:58:31.959821+00:00",
+      "numeric_state": 0,
+      "icon": "mdi:currency-usd",
+      "suggested_actions": [
+        "Set Value"
+      ]
+    },
+    {
+      "entity_id": "input_number.start_wash_run_energy",
+      "domain": "input_number",
+      "name": "Start Wash run Energy",
+      "state": "0.0",
+      "attributes": [
+        "initial",
+        "editable",
+        "min",
+        "max",
+        "step",
+        "mode",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.959845+00:00",
+      "last_updated": "2026-01-19T11:58:31.959845+00:00",
+      "numeric_state": 0,
+      "icon": "mdi:lightning-bolt",
+      "suggested_actions": [
+        "Set Value"
+      ]
+    },
+    {
+      "entity_id": "input_number.end_wash_run_energy",
+      "domain": "input_number",
+      "name": "End Wash Run Energy",
+      "state": "0.0",
+      "attributes": [
+        "initial",
+        "editable",
+        "min",
+        "max",
+        "step",
+        "mode",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.959870+00:00",
+      "last_updated": "2026-01-19T11:58:31.959870+00:00",
+      "numeric_state": 0,
+      "icon": "mdi:lightning-bolt",
+      "suggested_actions": [
+        "Set Value"
+      ]
+    },
+    {
+      "entity_id": "input_boolean.dummmode",
+      "domain": "input_boolean",
+      "name": "DummMode",
+      "state": "off",
+      "attributes": [
+        "editable",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.959944+00:00",
+      "last_updated": "2026-01-19T11:58:31.959944+00:00",
+      "icon": "mdi:lightbulb",
+      "suggested_actions": [
+        "Turn On",
+        "Turn Off",
+        "Toggle"
+      ],
+      "state_options": [
+        "on",
+        "off"
+      ]
+    },
+    {
+      "entity_id": "zone.home",
+      "domain": "zone",
+      "name": "Home",
+      "state": "0",
+      "attributes": [
+        "radius",
+        "passive",
+        "persons",
+        "editable",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.960265+00:00",
+      "last_updated": "2026-01-19T11:58:31.960265+00:00",
+      "numeric_state": 0,
+      "icon": "mdi:home"
+    },
+    {
+      "entity_id": "person.philip_oesterlin",
+      "domain": "person",
+      "name": "Philip Oesterlin",
+      "state": "not_home",
+      "attributes": [
+        "editable",
+        "id",
+        "device_trackers",
+        "gps_accuracy",
+        "source",
+        "user_id",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.963416+00:00",
+      "last_updated": "2026-01-19T11:58:31.963416+00:00",
+      "state_options": [
+        "home",
+        "not_home"
+      ]
+    },
+    {
+      "entity_id": "person.sophie",
+      "domain": "person",
+      "name": "Sophie",
+      "state": "unknown",
+      "attributes": [
+        "editable",
+        "id",
+        "device_trackers",
+        "source",
+        "user_id",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.963521+00:00",
+      "last_updated": "2026-01-19T11:58:31.963521+00:00",
+      "state_options": [
+        "home",
+        "not_home"
+      ]
+    },
+    {
+      "entity_id": "device_tracker.philip",
+      "domain": "device_tracker",
+      "name": "Philip",
+      "state": "not_home",
+      "attributes": [
+        "source_type",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.964762+00:00",
+      "last_updated": "2026-01-19T11:58:31.964762+00:00",
+      "state_options": [
+        "home",
+        "not_home"
+      ]
+    },
+    {
+      "entity_id": "device_tracker.verstarker",
+      "domain": "device_tracker",
+      "name": "Verstärker",
+      "state": "not_home",
+      "attributes": [
+        "source_type",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.964800+00:00",
+      "last_updated": "2026-01-19T11:58:31.964800+00:00",
+      "state_options": [
+        "home",
+        "not_home"
+      ]
+    },
+    {
+      "entity_id": "device_tracker.broadlink",
+      "domain": "device_tracker",
+      "name": "Broadlink",
+      "state": "not_home",
+      "attributes": [
+        "source_type",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:31.964822+00:00",
+      "last_updated": "2026-01-19T11:58:31.964822+00:00",
+      "state_options": [
+        "home",
+        "not_home"
+      ]
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_absolute_humidity",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Absolute humidity",
+      "state": "unknown",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042000+00:00",
+      "last_updated": "2026-01-19T11:58:32.042000+00:00",
+      "unit": "g/m³",
+      "icon": "mdi:water",
+      "state_class": "measurement",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_dew_point",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Dew point",
+      "state": "unknown",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042133+00:00",
+      "last_updated": "2026-01-19T11:58:32.042133+00:00",
+      "device_class": "temperature",
+      "unit": "°C",
+      "icon": "mdi:thermometer-water",
+      "state_class": "measurement",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_dew_point_perception",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Dew point perception",
+      "state": "unknown",
+      "attributes": [
+        "options",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042208+00:00",
+      "last_updated": "2026-01-19T11:58:32.042208+00:00",
+      "device_class": "enum",
+      "icon": "mdi:sun-thermometer",
+      "state_options": [
+        "dry",
+        "very_comfortable",
+        "comfortable",
+        "ok_but_humid",
+        "somewhat_uncomfortable",
+        "quite_uncomfortable",
+        "extremely_uncomfortable",
+        "severely_high"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_frost_point",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Frost point",
+      "state": "unknown",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042271+00:00",
+      "last_updated": "2026-01-19T11:58:32.042271+00:00",
+      "device_class": "temperature",
+      "unit": "°C",
+      "icon": "mdi:snowflake-thermometer",
+      "state_class": "measurement",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_frost_risk",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Frost risk",
+      "state": "unknown",
+      "attributes": [
+        "options",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042324+00:00",
+      "last_updated": "2026-01-19T11:58:32.042324+00:00",
+      "device_class": "enum",
+      "icon": "mdi:snowflake-alert",
+      "state_options": [
+        "no_risk",
+        "unlikely",
+        "probable",
+        "high"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_heat_index",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Heat index",
+      "state": "unknown",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042375+00:00",
+      "last_updated": "2026-01-19T11:58:32.042375+00:00",
+      "device_class": "temperature",
+      "unit": "°C",
+      "icon": "mdi:sun-thermometer",
+      "state_class": "measurement",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_humidex",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Humidex",
+      "state": "unknown",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042428+00:00",
+      "last_updated": "2026-01-19T11:58:32.042428+00:00",
+      "device_class": "temperature",
+      "unit": "°C",
+      "icon": "mdi:sun-thermometer",
+      "state_class": "measurement",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_humidex_perception",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Humidex perception",
+      "state": "unknown",
+      "attributes": [
+        "options",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042476+00:00",
+      "last_updated": "2026-01-19T11:58:32.042476+00:00",
+      "device_class": "enum",
+      "icon": "mdi:sun-thermometer",
+      "state_options": [
+        "comfortable",
+        "noticable_discomfort",
+        "evident_discomfort",
+        "great_discomfort",
+        "dangerous_discomfort",
+        "heat_stroke"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_moist_air_enthalpy",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Moist air enthalpy",
+      "state": "unknown",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042523+00:00",
+      "last_updated": "2026-01-19T11:58:32.042523+00:00",
+      "unit": "kJ/kg",
+      "icon": "mdi:water-circle",
+      "state_class": "measurement",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_relative_strain_perception",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Relative strain perception",
+      "state": "unknown",
+      "attributes": [
+        "options",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042570+00:00",
+      "last_updated": "2026-01-19T11:58:32.042570+00:00",
+      "device_class": "enum",
+      "icon": "mdi:sun-thermometer",
+      "state_options": [
+        "outside_calculable_range",
+        "comfortable",
+        "slight_discomfort",
+        "discomfort",
+        "significant_discomfort",
+        "extreme_discomfort"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_summer_scharlau_perception",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Summer Scharlau perception",
+      "state": "unknown",
+      "attributes": [
+        "options",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042617+00:00",
+      "last_updated": "2026-01-19T11:58:32.042617+00:00",
+      "device_class": "enum",
+      "icon": "mdi:sun-thermometer",
+      "state_options": [
+        "outside_calculable_range",
+        "comfortable",
+        "slightly_uncomfortable",
+        "moderately_uncomfortable",
+        "highly_uncomfortable"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_winter_scharlau_perception",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Winter Scharlau perception",
+      "state": "unknown",
+      "attributes": [
+        "options",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042668+00:00",
+      "last_updated": "2026-01-19T11:58:32.042668+00:00",
+      "device_class": "enum",
+      "icon": "mdi:snowflake-thermometer",
+      "state_options": [
+        "outside_calculable_range",
+        "comfortable",
+        "slightly_uncomfortable",
+        "moderately_uncomfortable",
+        "highly_uncomfortable"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_summer_simmer_index",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Summer Simmer index",
+      "state": "unknown",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042713+00:00",
+      "last_updated": "2026-01-19T11:58:32.042713+00:00",
+      "device_class": "temperature",
+      "unit": "°C",
+      "icon": "mdi:sun-thermometer",
+      "state_class": "measurement",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_summer_simmer_perception",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Summer Simmer perception",
+      "state": "unknown",
+      "attributes": [
+        "options",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042757+00:00",
+      "last_updated": "2026-01-19T11:58:32.042757+00:00",
+      "device_class": "enum",
+      "icon": "mdi:sun-thermometer",
+      "state_options": [
+        "cool",
+        "slightly_cool",
+        "comfortable",
+        "slightly_warm",
+        "increasing_discomfort",
+        "extremely_warm",
+        "danger_of_heatstroke",
+        "extreme_danger_of_heatstroke",
+        "circulatory_collapse_imminent"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.draussen_thermal_comfort_thoms_discomfort_perception",
+      "domain": "sensor",
+      "name": "Draußen Thermal Comfort Thoms discomfort perception",
+      "state": "unknown",
+      "attributes": [
+        "options",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.042797+00:00",
+      "last_updated": "2026-01-19T11:58:32.042797+00:00",
+      "device_class": "enum",
+      "icon": "mdi:sun-thermometer",
+      "state_options": [
+        "no_discomfort",
+        "less_than_half",
+        "more_than_half",
+        "most",
+        "everyone",
+        "dangerous"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sun.sun",
+      "domain": "sun",
+      "name": "Sun",
+      "state": "above_horizon",
+      "attributes": [
+        "next_dawn",
+        "next_dusk",
+        "next_midnight",
+        "next_noon",
+        "next_rising",
+        "next_setting",
+        "elevation",
+        "azimuth",
+        "rising",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.535034+00:00",
+      "last_updated": "2026-01-19T11:58:32.535034+00:00"
+    },
+    {
+      "entity_id": "sensor.sun_next_dawn",
+      "domain": "sensor",
+      "name": "Sun Next dawn",
+      "state": "2026-01-20T06:26:59+00:00",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.535498+00:00",
+      "last_updated": "2026-01-19T11:58:32.535498+00:00",
+      "device_class": "timestamp",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sun_next_dusk",
+      "domain": "sensor",
+      "name": "Sun Next dusk",
+      "state": "2026-01-19T16:36:06+00:00",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.535580+00:00",
+      "last_updated": "2026-01-19T11:58:32.535580+00:00",
+      "device_class": "timestamp",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sun_next_midnight",
+      "domain": "sensor",
+      "name": "Sun Next midnight",
+      "state": "2026-01-19T23:32:01+00:00",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.535640+00:00",
+      "last_updated": "2026-01-19T11:58:32.535640+00:00",
+      "device_class": "timestamp",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sun_next_noon",
+      "domain": "sensor",
+      "name": "Sun Next noon",
+      "state": "2026-01-20T11:31:52+00:00",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.535702+00:00",
+      "last_updated": "2026-01-19T11:58:32.535702+00:00",
+      "device_class": "timestamp",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sun_next_rising",
+      "domain": "sensor",
+      "name": "Sun Next rising",
+      "state": "2026-01-20T07:02:09+00:00",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.535754+00:00",
+      "last_updated": "2026-01-19T11:58:32.535754+00:00",
+      "device_class": "timestamp",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sun_next_setting",
+      "domain": "sensor",
+      "name": "Sun Next setting",
+      "state": "2026-01-19T16:00:49+00:00",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.535807+00:00",
+      "last_updated": "2026-01-19T11:58:32.535807+00:00",
+      "device_class": "timestamp",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.zeit_zuhause_stats",
+      "domain": "sensor",
+      "name": "Zeit im Büro",
+      "state": "0.0",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.885375+00:00",
+      "last_updated": "2026-01-19T11:58:32.885375+00:00",
+      "numeric_state": 0,
+      "device_class": "duration",
+      "unit": "h",
+      "icon": "mdi:chart-line",
+      "area": "Arbeitszimmer",
+      "state_class": "measurement",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.raum_anteil",
+      "domain": "sensor",
+      "name": "Raum Anteil",
+      "state": "0.0",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:32.885707+00:00",
+      "last_updated": "2026-01-19T11:58:32.885707+00:00",
+      "numeric_state": 0,
+      "device_class": "duration",
+      "unit": "h",
+      "icon": "mdi:chart-line",
+      "state_class": "measurement",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.schimmelsensor",
+      "domain": "sensor",
+      "name": "Schimmelsensor",
+      "state": "unavailable",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:33.493397+00:00",
+      "last_updated": "2026-01-19T11:58:33.493397+00:00",
+      "device_class": "humidity",
+      "unit": "%",
+      "area": "Klo",
+      "state_class": "measurement",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.mold_indicator",
+      "domain": "sensor",
+      "name": "Schimmel im Kino",
+      "state": "unavailable",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:33.493654+00:00",
+      "last_updated": "2026-01-19T11:58:33.493654+00:00",
+      "device_class": "humidity",
+      "unit": "%",
+      "state_class": "measurement",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "input_text.waschmaschiene_zeit",
+      "domain": "input_text",
+      "name": "Waschmaschiene Zeit",
+      "state": "13:12:36",
+      "attributes": [
+        "editable",
+        "min",
+        "max",
+        "pattern",
+        "mode",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:34.359159+00:00",
+      "last_updated": "2026-01-19T11:58:34.359159+00:00",
+      "icon": "mdi:clock-time-eight-outline"
+    },
+    {
+      "entity_id": "input_text.display_notification",
+      "domain": "input_text",
+      "name": "Display Notification",
+      "state": "",
+      "attributes": [
+        "editable",
+        "min",
+        "max",
+        "pattern",
+        "mode",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:34.359247+00:00",
+      "last_updated": "2026-01-19T11:58:34.359247+00:00",
+      "icon": "mdi:bell"
+    },
+    {
+      "entity_id": "input_text.display_notification_title",
+      "domain": "input_text",
+      "name": "Display Notification Title",
+      "state": "",
+      "attributes": [
+        "editable",
+        "min",
+        "max",
+        "pattern",
+        "mode",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:34.359292+00:00",
+      "last_updated": "2026-01-19T11:58:34.359292+00:00",
+      "icon": "mdi:bell-outline"
+    },
+    {
+      "entity_id": "sensor.dn2103_battery_level",
+      "domain": "sensor",
+      "name": "OnePlus Battery level",
+      "state": "22",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.801574+00:00",
+      "last_updated": "2026-01-19T11:58:35.801574+00:00",
+      "numeric_state": 22,
+      "device_class": "battery",
+      "unit": "%",
+      "icon": "mdi:battery-charging-20",
+      "state_class": "measurement",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.dn2103_battery_state",
+      "domain": "sensor",
+      "name": "OnePlus Battery state",
+      "state": "charging",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.801724+00:00",
+      "last_updated": "2026-01-19T11:58:35.801724+00:00",
+      "icon": "mdi:battery-plus",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.dn2103_charger_type",
+      "domain": "sensor",
+      "name": "OnePlus Charger type",
+      "state": "ac",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.801797+00:00",
+      "last_updated": "2026-01-19T11:58:35.801797+00:00",
+      "icon": "mdi:power-plug",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "device_tracker.iphone_168",
+      "domain": "device_tracker",
+      "name": "iPhone (168)",
+      "state": "unknown",
+      "attributes": [
+        "source_type",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.802073+00:00",
+      "last_updated": "2026-01-19T11:58:35.802073+00:00",
+      "state_options": [
+        "home",
+        "not_home"
+      ]
+    },
+    {
+      "entity_id": "sensor.iphone_168_storage",
+      "domain": "sensor",
+      "name": "iPhone (168) Storage",
+      "state": "33.09",
+      "attributes": [
+        "Available",
+        "Available (Important)",
+        "Available (Opportunistic)",
+        "Total",
+        "unit_of_measurement",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.802420+00:00",
+      "last_updated": "2026-01-19T11:58:35.802420+00:00",
+      "numeric_state": 33.09,
+      "unit": "% available",
+      "icon": "mdi:database",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_battery_level",
+      "domain": "sensor",
+      "name": "iPhone (168) Battery Level",
+      "state": "100",
+      "attributes": [
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.802510+00:00",
+      "last_updated": "2026-01-19T11:58:35.802510+00:00",
+      "numeric_state": 100,
+      "device_class": "battery",
+      "unit": "%",
+      "icon": "mdi:battery",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.iphone_168_ssid",
+      "domain": "sensor",
+      "name": "iPhone (168) SSID",
+      "state": "Not Connected",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.802575+00:00",
+      "last_updated": "2026-01-19T11:58:35.802575+00:00",
+      "icon": "mdi:wifi-off",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_battery_state",
+      "domain": "sensor",
+      "name": "iPhone (168) Battery State",
+      "state": "Full",
+      "attributes": [
+        "Low Power Mode",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.802634+00:00",
+      "last_updated": "2026-01-19T11:58:35.802634+00:00",
+      "icon": "mdi:battery",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_last_update_trigger",
+      "domain": "sensor",
+      "name": "iPhone (168) Last Update Trigger",
+      "state": "Signaled",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.802700+00:00",
+      "last_updated": "2026-01-19T11:58:35.802700+00:00",
+      "icon": "mdi:cellphone-wireless",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_connection_type",
+      "domain": "sensor",
+      "name": "iPhone (168) Connection Type",
+      "state": "Wi-Fi",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.802774+00:00",
+      "last_updated": "2026-01-19T11:58:35.802774+00:00",
+      "icon": "mdi:wifi",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_geocoded_location",
+      "domain": "sensor",
+      "name": "iPhone (168) Geocoded Location",
+      "state": "Unknown",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.802827+00:00",
+      "last_updated": "2026-01-19T11:58:35.802827+00:00",
+      "icon": "mdi:map",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_sim_2",
+      "domain": "sensor",
+      "name": "iPhone (168) SIM 2",
+      "state": "N/A",
+      "attributes": [
+        "Allows VoIP",
+        "Carrier ID",
+        "Carrier Name",
+        "ISO Country Code",
+        "Mobile Country Code",
+        "Mobile Network Code",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.802898+00:00",
+      "last_updated": "2026-01-19T11:58:35.802898+00:00",
+      "icon": "mdi:sim",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_bssid",
+      "domain": "sensor",
+      "name": "iPhone (168) BSSID",
+      "state": "Not Connected",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.802957+00:00",
+      "last_updated": "2026-01-19T11:58:35.802957+00:00",
+      "icon": "mdi:wifi-off",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_sim_1",
+      "domain": "sensor",
+      "name": "iPhone (168) SIM 1",
+      "state": "Vodafone.de",
+      "attributes": [
+        "Allows VoIP",
+        "Carrier ID",
+        "Carrier Name",
+        "Current Radio Technology",
+        "ISO Country Code",
+        "Mobile Country Code",
+        "Mobile Network Code",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.803009+00:00",
+      "last_updated": "2026-01-19T11:58:35.803009+00:00",
+      "icon": "mdi:sim",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "device_tracker.sophie",
+      "domain": "device_tracker",
+      "name": "Sophie",
+      "state": "unknown",
+      "attributes": [
+        "source_type",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.803237+00:00",
+      "last_updated": "2026-01-19T11:58:35.803237+00:00",
+      "state_options": [
+        "home",
+        "not_home"
+      ]
+    },
+    {
+      "entity_id": "sensor.sophie_battery_level",
+      "domain": "sensor",
+      "name": "Sophie Battery Level",
+      "state": "80",
+      "attributes": [
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.803423+00:00",
+      "last_updated": "2026-01-19T11:58:35.803423+00:00",
+      "numeric_state": 80,
+      "device_class": "battery",
+      "unit": "%",
+      "icon": "mdi:battery-charging-80",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.sophie_storage",
+      "domain": "sensor",
+      "name": "Sophie Storage",
+      "state": "21.69",
+      "attributes": [
+        "Available",
+        "Available (Important)",
+        "Available (Opportunistic)",
+        "Total",
+        "unit_of_measurement",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.803489+00:00",
+      "last_updated": "2026-01-19T11:58:35.803489+00:00",
+      "numeric_state": 21.69,
+      "unit": "% available",
+      "icon": "mdi:database",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sophie_ssid",
+      "domain": "sensor",
+      "name": "Sophie SSID",
+      "state": "Not Connected",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.803543+00:00",
+      "last_updated": "2026-01-19T11:58:35.803543+00:00",
+      "icon": "mdi:wifi-off",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sophie_battery_state",
+      "domain": "sensor",
+      "name": "Sophie Battery State",
+      "state": "Charging",
+      "attributes": [
+        "Low Power Mode",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.803596+00:00",
+      "last_updated": "2026-01-19T11:58:35.803596+00:00",
+      "icon": "mdi:battery-charging-80",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sophie_bssid",
+      "domain": "sensor",
+      "name": "Sophie BSSID",
+      "state": "Not Connected",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.803648+00:00",
+      "last_updated": "2026-01-19T11:58:35.803648+00:00",
+      "icon": "mdi:wifi-off",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sophie_connection_type",
+      "domain": "sensor",
+      "name": "Sophie Connection Type",
+      "state": "Wi-Fi",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.803703+00:00",
+      "last_updated": "2026-01-19T11:58:35.803703+00:00",
+      "icon": "mdi:wifi",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sophie_sim_2",
+      "domain": "sensor",
+      "name": "Sophie SIM 2",
+      "state": "--",
+      "attributes": [
+        "Allows VoIP",
+        "Carrier ID",
+        "Carrier Name",
+        "ISO Country Code",
+        "Mobile Country Code",
+        "Mobile Network Code",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.803753+00:00",
+      "last_updated": "2026-01-19T11:58:35.803753+00:00",
+      "icon": "mdi:sim",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sophie_sim_1",
+      "domain": "sensor",
+      "name": "Sophie SIM 1",
+      "state": "--",
+      "attributes": [
+        "Allows VoIP",
+        "Carrier ID",
+        "Carrier Name",
+        "Current Radio Technology",
+        "ISO Country Code",
+        "Mobile Country Code",
+        "Mobile Network Code",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.803802+00:00",
+      "last_updated": "2026-01-19T11:58:35.803802+00:00",
+      "icon": "mdi:sim",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sophie_geocoded_location",
+      "domain": "sensor",
+      "name": "Sophie Geocoded Location",
+      "state": "Unknown",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.803854+00:00",
+      "last_updated": "2026-01-19T11:58:35.803854+00:00",
+      "icon": "mdi:map",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sophie_last_update_trigger",
+      "domain": "sensor",
+      "name": "Sophie Last Update Trigger",
+      "state": "Signaled",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.803913+00:00",
+      "last_updated": "2026-01-19T11:58:35.803913+00:00",
+      "icon": "mdi:cellphone-wireless",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sophie_app_version",
+      "domain": "sensor",
+      "name": "Sophie App Version",
+      "state": "2024.9.4",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.803968+00:00",
+      "last_updated": "2026-01-19T11:58:35.803968+00:00",
+      "icon": "mdi:cellphone",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.sophie_location_permission",
+      "domain": "sensor",
+      "name": "Sophie Location permission",
+      "state": "Denied",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.804017+00:00",
+      "last_updated": "2026-01-19T11:58:35.804017+00:00",
+      "icon": "mdi:map",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "binary_sensor.pixel_8_bluetooth_state",
+      "domain": "binary_sensor",
+      "name": "Pixel 8 Bluetooth state",
+      "state": "on",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.804262+00:00",
+      "last_updated": "2026-01-19T11:58:35.804262+00:00",
+      "icon": "mdi:bluetooth",
+      "state_options": [
+        "on",
+        "off"
+      ]
+    },
+    {
+      "entity_id": "binary_sensor.pixel_8_device_locked",
+      "domain": "binary_sensor",
+      "name": "Pixel 8 Device locked",
+      "state": "off",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.804322+00:00",
+      "last_updated": "2026-01-19T11:58:35.804322+00:00",
+      "icon": "mdi:cellphone",
+      "state_options": [
+        "on",
+        "off"
+      ]
+    },
+    {
+      "entity_id": "device_tracker.pixel_8",
+      "domain": "device_tracker",
+      "name": "Philip",
+      "state": "not_home",
+      "attributes": [
+        "source_type",
+        "gps_accuracy",
+        "altitude",
+        "course",
+        "speed",
+        "vertical_accuracy",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.804481+00:00",
+      "last_updated": "2026-01-19T11:58:35.804481+00:00",
+      "state_options": [
+        "home",
+        "not_home"
+      ]
+    },
+    {
+      "entity_id": "sensor.pixel_8_sleep_confidence",
+      "domain": "sensor",
+      "name": "Pixel 8 Sleep confidence",
+      "state": "29",
+      "attributes": [
+        "state_class",
+        "light",
+        "motion",
+        "timestamp",
+        "unit_of_measurement",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.804705+00:00",
+      "last_updated": "2026-01-19T11:58:35.804705+00:00",
+      "numeric_state": 29,
+      "unit": "%",
+      "icon": "mdi:sleep",
+      "state_class": "measurement",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.pixel_8_sleep_segment",
+      "domain": "sensor",
+      "name": "Pixel 8 Sleep segment",
+      "state": "27360000.0",
+      "attributes": [
+        "end",
+        "start",
+        "status",
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.804790+00:00",
+      "last_updated": "2026-01-19T11:58:35.804790+00:00",
+      "numeric_state": 27360000,
+      "device_class": "duration",
+      "unit": "ms",
+      "icon": "mdi:sleep",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.pixel_8_volume_level_music",
+      "domain": "sensor",
+      "name": "Pixel 8 Volume level music",
+      "state": "14",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.804852+00:00",
+      "last_updated": "2026-01-19T11:58:35.804852+00:00",
+      "numeric_state": 14,
+      "icon": "mdi:music",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.pixel_8_volume_level_notification",
+      "domain": "sensor",
+      "name": "Pixel 8 Volume level notification",
+      "state": "0",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.804923+00:00",
+      "last_updated": "2026-01-19T11:58:35.804923+00:00",
+      "numeric_state": 0,
+      "icon": "mdi:bell-ring",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.pixel_8_battery_level",
+      "domain": "sensor",
+      "name": "Pixel 8 Battery level",
+      "state": "83",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.804987+00:00",
+      "last_updated": "2026-01-19T11:58:35.804987+00:00",
+      "numeric_state": 83,
+      "device_class": "battery",
+      "unit": "%",
+      "icon": "mdi:battery-80",
+      "state_class": "measurement",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.pixel_8_battery_state",
+      "domain": "sensor",
+      "name": "Pixel 8 Battery state",
+      "state": "discharging",
+      "attributes": [
+        "options",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.805048+00:00",
+      "last_updated": "2026-01-19T11:58:35.805048+00:00",
+      "device_class": "enum",
+      "icon": "mdi:battery-minus",
+      "state_options": [
+        "charging",
+        "discharging",
+        "full",
+        "not_charging"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.pixel_8_charger_type",
+      "domain": "sensor",
+      "name": "Pixel 8 Charger type",
+      "state": "none",
+      "attributes": [
+        "options",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.805102+00:00",
+      "last_updated": "2026-01-19T11:58:35.805102+00:00",
+      "device_class": "enum",
+      "icon": "mdi:battery",
+      "state_options": [
+        "ac",
+        "usb",
+        "wireless",
+        "dock",
+        "none"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.pixel_8_bluetooth_connection",
+      "domain": "sensor",
+      "name": "Pixel 8 Bluetooth connection",
+      "state": "0",
+      "attributes": [
+        "state_class",
+        "connected_not_paired_devices",
+        "connected_paired_devices",
+        "paired_devices",
+        "unit_of_measurement",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.805156+00:00",
+      "last_updated": "2026-01-19T11:58:35.805156+00:00",
+      "numeric_state": 0,
+      "unit": "connection(s)",
+      "icon": "mdi:bluetooth",
+      "state_class": "measurement",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.pixel_8_ble_transmitter",
+      "domain": "sensor",
+      "name": "Pixel 8 BLE transmitter",
+      "state": "Stopped",
+      "attributes": [
+        "Advertise mode",
+        "Measured power",
+        "Supports transmitter",
+        "Transmitting power",
+        "id",
+        "options",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.805210+00:00",
+      "last_updated": "2026-01-19T11:58:35.805210+00:00",
+      "device_class": "enum",
+      "icon": "mdi:bluetooth-off",
+      "state_options": [
+        "Transmitting",
+        "Bluetooth is turned off",
+        "Stopped",
+        "Unable to transmit"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.pixel_8_beacon_monitor",
+      "domain": "sensor",
+      "name": "Pixel 8 Beacon monitor",
+      "state": "Monitoring",
+      "attributes": [
+        "options",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.805263+00:00",
+      "last_updated": "2026-01-19T11:58:35.805263+00:00",
+      "device_class": "enum",
+      "icon": "mdi:bluetooth",
+      "state_options": [
+        "Monitoring",
+        "Stopped",
+        "Bluetooth is turned off"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.pixel_8_screen_brightness",
+      "domain": "sensor",
+      "name": "Pixel 8 Screen brightness",
+      "state": "7",
+      "attributes": [
+        "automatic",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.805315+00:00",
+      "last_updated": "2026-01-19T11:58:35.805315+00:00",
+      "numeric_state": 7,
+      "icon": "mdi:brightness-auto",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.pixel_8_light_sensor",
+      "domain": "sensor",
+      "name": "Pixel 8 Light sensor",
+      "state": "21",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.805380+00:00",
+      "last_updated": "2026-01-19T11:58:35.805380+00:00",
+      "numeric_state": 21,
+      "device_class": "illuminance",
+      "unit": "lx",
+      "icon": "mdi:brightness-5",
+      "state_class": "measurement",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.pixel_8_high_accuracy_update_interval",
+      "domain": "sensor",
+      "name": "Pixel 8 High accuracy update interval",
+      "state": "unknown",
+      "attributes": [
+        "unit_of_measurement",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.805434+00:00",
+      "last_updated": "2026-01-19T11:58:35.805434+00:00",
+      "unit": "seconds",
+      "icon": "mdi:timer",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.pixel_8_wifi_connection",
+      "domain": "sensor",
+      "name": "Pixel 8 Wi-Fi connection",
+      "state": "W3",
+      "attributes": [
+        "is_hidden",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.805485+00:00",
+      "last_updated": "2026-01-19T11:58:35.805485+00:00",
+      "icon": "mdi:wifi",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.pixel_8_next_alarm",
+      "domain": "sensor",
+      "name": "Pixel 8 Next alarm",
+      "state": "unavailable",
+      "attributes": [
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.805544+00:00",
+      "last_updated": "2026-01-19T11:58:35.805544+00:00",
+      "device_class": "timestamp",
+      "icon": "mdi:alarm",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.dn2103_battery_level_2",
+      "domain": "sensor",
+      "name": "DN2103 Battery level",
+      "state": "1",
+      "attributes": [
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.805913+00:00",
+      "last_updated": "2026-01-19T11:58:35.805913+00:00",
+      "numeric_state": 1,
+      "device_class": "battery",
+      "unit": "%",
+      "icon": "mdi:battery-outline",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.dn2103_battery_state_2",
+      "domain": "sensor",
+      "name": "DN2103 Battery state",
+      "state": "not_charging",
+      "attributes": [
+        "options",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.805983+00:00",
+      "last_updated": "2026-01-19T11:58:35.805983+00:00",
+      "device_class": "enum",
+      "icon": "mdi:battery",
+      "state_options": [
+        "charging",
+        "discharging",
+        "full",
+        "not_charging"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.dn2103_charger_type_2",
+      "domain": "sensor",
+      "name": "DN2103 Charger type",
+      "state": "none",
+      "attributes": [
+        "options",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.806040+00:00",
+      "last_updated": "2026-01-19T11:58:35.806040+00:00",
+      "device_class": "enum",
+      "icon": "mdi:battery",
+      "state_options": [
+        "ac",
+        "usb",
+        "wireless",
+        "dock",
+        "none"
+      ],
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "device_tracker.iphone_sophie",
+      "domain": "device_tracker",
+      "name": "iPhone (168)",
+      "state": "unknown",
+      "attributes": [
+        "source_type",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.806229+00:00",
+      "last_updated": "2026-01-19T11:58:35.806229+00:00",
+      "state_options": [
+        "home",
+        "not_home"
+      ]
+    },
+    {
+      "entity_id": "sensor.iphone_168_sim_2_2",
+      "domain": "sensor",
+      "name": "iPhone (168) SIM 2",
+      "state": "--",
+      "attributes": [
+        "Allows VoIP",
+        "Carrier ID",
+        "Carrier Name",
+        "ISO Country Code",
+        "Mobile Country Code",
+        "Mobile Network Code",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.806502+00:00",
+      "last_updated": "2026-01-19T11:58:35.806502+00:00",
+      "icon": "mdi:sim",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_battery_level_2",
+      "domain": "sensor",
+      "name": "iPhone (168) Battery Level",
+      "state": "40",
+      "attributes": [
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.806578+00:00",
+      "last_updated": "2026-01-19T11:58:35.806578+00:00",
+      "numeric_state": 40,
+      "device_class": "battery",
+      "unit": "%",
+      "icon": "mdi:battery-40",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.iphone_168_connection_type_2",
+      "domain": "sensor",
+      "name": "iPhone (168) Connection Type",
+      "state": "Wi-Fi",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.806638+00:00",
+      "last_updated": "2026-01-19T11:58:35.806638+00:00",
+      "icon": "mdi:wifi",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_bssid_2",
+      "domain": "sensor",
+      "name": "iPhone (168) BSSID",
+      "state": "Not Connected",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.806694+00:00",
+      "last_updated": "2026-01-19T11:58:35.806694+00:00",
+      "icon": "mdi:wifi-off",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_battery_state_2",
+      "domain": "sensor",
+      "name": "iPhone (168) Battery State",
+      "state": "Not Charging",
+      "attributes": [
+        "Low Power Mode",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.806744+00:00",
+      "last_updated": "2026-01-19T11:58:35.806744+00:00",
+      "icon": "mdi:battery-40",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_ssid_2",
+      "domain": "sensor",
+      "name": "iPhone (168) SSID",
+      "state": "Not Connected",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.806796+00:00",
+      "last_updated": "2026-01-19T11:58:35.806796+00:00",
+      "icon": "mdi:wifi-off",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_geocoded_location_2",
+      "domain": "sensor",
+      "name": "iPhone (168) Geocoded Location",
+      "state": "Unknown",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.806847+00:00",
+      "last_updated": "2026-01-19T11:58:35.806847+00:00",
+      "icon": "mdi:map",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_sim_1_2",
+      "domain": "sensor",
+      "name": "iPhone (168) SIM 1",
+      "state": "--",
+      "attributes": [
+        "Allows VoIP",
+        "Carrier ID",
+        "Carrier Name",
+        "ISO Country Code",
+        "Mobile Country Code",
+        "Mobile Network Code",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.806908+00:00",
+      "last_updated": "2026-01-19T11:58:35.806908+00:00",
+      "icon": "mdi:sim",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_audio_output",
+      "domain": "sensor",
+      "name": "iPhone (168) Audio Output",
+      "state": "Built-in Speaker",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.806959+00:00",
+      "last_updated": "2026-01-19T11:58:35.806959+00:00",
+      "icon": "mdi:volume-high",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_app_version",
+      "domain": "sensor",
+      "name": "iPhone (168) App Version",
+      "state": "2025.5",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.807007+00:00",
+      "last_updated": "2026-01-19T11:58:35.807007+00:00",
+      "numeric_state": 2025.5,
+      "icon": "mdi:cellphone",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_last_update_trigger_2",
+      "domain": "sensor",
+      "name": "iPhone (168) Last Update Trigger",
+      "state": "Launch",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.807055+00:00",
+      "last_updated": "2026-01-19T11:58:35.807055+00:00",
+      "icon": "mdi:cellphone-wireless",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_location_permission",
+      "domain": "sensor",
+      "name": "iPhone (168) Location permission",
+      "state": "Denied",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.807103+00:00",
+      "last_updated": "2026-01-19T11:58:35.807103+00:00",
+      "icon": "mdi:map",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_168_storage_2",
+      "domain": "sensor",
+      "name": "iPhone (168) Storage",
+      "state": "0.72",
+      "attributes": [
+        "Available",
+        "Available (Important)",
+        "Available (Opportunistic)",
+        "Total",
+        "unit_of_measurement",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.807153+00:00",
+      "last_updated": "2026-01-19T11:58:35.807153+00:00",
+      "numeric_state": 0.72,
+      "unit": "% available",
+      "icon": "mdi:database",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "device_tracker.iphone_sophie_2",
+      "domain": "device_tracker",
+      "name": "iPhone Sophie",
+      "state": "unknown",
+      "attributes": [
+        "source_type",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.807360+00:00",
+      "last_updated": "2026-01-19T11:58:35.807360+00:00",
+      "state_options": [
+        "home",
+        "not_home"
+      ]
+    },
+    {
+      "entity_id": "sensor.iphone_sophie_storage",
+      "domain": "sensor",
+      "name": "iPhone Sophie Storage",
+      "state": "unavailable",
+      "attributes": [
+        "unit_of_measurement",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.807528+00:00",
+      "last_updated": "2026-01-19T11:58:35.807528+00:00",
+      "unit": "% available",
+      "icon": "mdi:dots-square",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_sophie_battery_level",
+      "domain": "sensor",
+      "name": "iPhone Sophie Battery Level",
+      "state": "40",
+      "attributes": [
+        "unit_of_measurement",
+        "device_class",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.807597+00:00",
+      "last_updated": "2026-01-19T11:58:35.807597+00:00",
+      "numeric_state": 40,
+      "device_class": "battery",
+      "unit": "%",
+      "icon": "mdi:battery-40",
+      "suggested_display": "gauge"
+    },
+    {
+      "entity_id": "sensor.iphone_sophie_battery_state",
+      "domain": "sensor",
+      "name": "iPhone Sophie Battery State",
+      "state": "Not Charging",
+      "attributes": [
+        "Low Power Mode",
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.807650+00:00",
+      "last_updated": "2026-01-19T11:58:35.807650+00:00",
+      "icon": "mdi:battery-40",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_sophie_ssid",
+      "domain": "sensor",
+      "name": "iPhone Sophie SSID",
+      "state": "unavailable",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.807703+00:00",
+      "last_updated": "2026-01-19T11:58:35.807703+00:00",
+      "icon": "mdi:dots-square",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_sophie_bssid",
+      "domain": "sensor",
+      "name": "iPhone Sophie BSSID",
+      "state": "unavailable",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.807751+00:00",
+      "last_updated": "2026-01-19T11:58:35.807751+00:00",
+      "icon": "mdi:dots-square",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_sophie_connection_type",
+      "domain": "sensor",
+      "name": "iPhone Sophie Connection Type",
+      "state": "unavailable",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.807798+00:00",
+      "last_updated": "2026-01-19T11:58:35.807798+00:00",
+      "icon": "mdi:dots-square",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_sophie_sim_1",
+      "domain": "sensor",
+      "name": "iPhone Sophie SIM 1",
+      "state": "unavailable",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.807841+00:00",
+      "last_updated": "2026-01-19T11:58:35.807841+00:00",
+      "icon": "mdi:dots-square",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_sophie_geocoded_location",
+      "domain": "sensor",
+      "name": "iPhone Sophie Geocoded Location",
+      "state": "Unknown",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.807903+00:00",
+      "last_updated": "2026-01-19T11:58:35.807903+00:00",
+      "icon": "mdi:map",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_sophie_location_permission",
+      "domain": "sensor",
+      "name": "iPhone Sophie Location permission",
+      "state": "Denied",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.807964+00:00",
+      "last_updated": "2026-01-19T11:58:35.807964+00:00",
+      "icon": "mdi:map",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_sophie_sim_2",
+      "domain": "sensor",
+      "name": "iPhone Sophie SIM 2",
+      "state": "unavailable",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.808150+00:00",
+      "last_updated": "2026-01-19T11:58:35.808150+00:00",
+      "icon": "mdi:dots-square",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_sophie_audio_output",
+      "domain": "sensor",
+      "name": "iPhone Sophie Audio Output",
+      "state": "unavailable",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.808204+00:00",
+      "last_updated": "2026-01-19T11:58:35.808204+00:00",
+      "icon": "mdi:dots-square",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_sophie_last_update_trigger",
+      "domain": "sensor",
+      "name": "iPhone Sophie Last Update Trigger",
+      "state": "unavailable",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.808255+00:00",
+      "last_updated": "2026-01-19T11:58:35.808255+00:00",
+      "icon": "mdi:dots-square",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "sensor.iphone_sophie_app_version",
+      "domain": "sensor",
+      "name": "iPhone Sophie App Version",
+      "state": "2026.1.1",
+      "attributes": [
+        "icon",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.808306+00:00",
+      "last_updated": "2026-01-19T11:58:35.808306+00:00",
+      "icon": "mdi:cellphone",
+      "suggested_display": "value"
+    },
+    {
+      "entity_id": "binary_sensor.waschmaschiene_overheating",
+      "domain": "binary_sensor",
+      "name": "Waschmaschiene Overheating",
+      "state": "off",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.936189+00:00",
+      "last_updated": "2026-01-19T11:58:35.936189+00:00",
+      "device_class": "problem",
+      "area": "Waschraum",
+      "state_options": [
+        "on",
+        "off"
+      ]
+    },
+    {
+      "entity_id": "binary_sensor.waschmaschiene_overpowering",
+      "domain": "binary_sensor",
+      "name": "Waschmaschiene Overpowering",
+      "state": "off",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.936369+00:00",
+      "last_updated": "2026-01-19T11:58:35.936369+00:00",
+      "device_class": "problem",
+      "area": "Waschraum",
+      "state_options": [
+        "on",
+        "off"
+      ]
+    },
+    {
+      "entity_id": "binary_sensor.waschmaschiene_overvoltage",
+      "domain": "binary_sensor",
+      "name": "Waschmaschiene Overvoltage",
+      "state": "off",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.936464+00:00",
+      "last_updated": "2026-01-19T11:58:35.936464+00:00",
+      "device_class": "problem",
+      "area": "Waschraum",
+      "state_options": [
+        "on",
+        "off"
+      ]
+    },
+    {
+      "entity_id": "binary_sensor.waschmaschiene_overcurrent",
+      "domain": "binary_sensor",
+      "name": "Waschmaschiene Overcurrent",
+      "state": "off",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.936532+00:00",
+      "last_updated": "2026-01-19T11:58:35.936532+00:00",
+      "device_class": "problem",
+      "area": "Waschraum",
+      "state_options": [
+        "on",
+        "off"
+      ]
+    },
+    {
+      "entity_id": "button.waschmaschiene_reboot",
+      "domain": "button",
+      "name": "Waschmaschiene Restart",
+      "state": "unknown",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.936825+00:00",
+      "last_updated": "2026-01-19T11:58:35.936825+00:00",
+      "device_class": "restart",
+      "area": "Waschraum",
+      "suggested_actions": [
+        "Press"
+      ]
+    },
+    {
+      "entity_id": "sensor.waschmaschiene_power",
+      "domain": "sensor",
+      "name": "Waschmaschiene Power",
+      "state": "0.0",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.937765+00:00",
+      "last_updated": "2026-01-19T11:58:35.937765+00:00",
+      "numeric_state": 0,
+      "device_class": "power",
+      "unit": "W",
+      "area": "Waschraum",
+      "state_class": "measurement",
+      "suggested_display": "graph"
+    },
+    {
+      "entity_id": "sensor.waschmaschiene_total_energy",
+      "domain": "sensor",
+      "name": "Waschmaschiene Energy",
+      "state": "7098.405586",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.938067+00:00",
+      "last_updated": "2026-01-19T11:58:35.938067+00:00",
+      "numeric_state": 7098.405586,
+      "device_class": "energy",
+      "unit": "kWh",
+      "area": "Waschraum",
+      "state_class": "total_increasing",
+      "suggested_display": "graph"
+    },
+    {
+      "entity_id": "sensor.waschmaschiene_returned_energy",
+      "domain": "sensor",
+      "name": "Waschmaschiene Energy returned",
+      "state": "0.0",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.938248+00:00",
+      "last_updated": "2026-01-19T11:58:35.938248+00:00",
+      "numeric_state": 0,
+      "device_class": "energy",
+      "unit": "kWh",
+      "area": "Waschraum",
+      "state_class": "total_increasing",
+      "suggested_display": "graph"
+    },
+    {
+      "entity_id": "switch.waschmaschiene",
+      "domain": "switch",
+      "name": "Waschmaschiene",
+      "state": "on",
+      "attributes": [
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.938626+00:00",
+      "last_updated": "2026-01-19T11:58:35.938626+00:00",
+      "area": "Waschraum",
+      "suggested_actions": [
+        "Turn On",
+        "Turn Off",
+        "Toggle"
+      ],
+      "state_options": [
+        "on",
+        "off"
+      ]
+    },
+    {
+      "entity_id": "update.waschmaschiene_firmware",
+      "domain": "update",
+      "name": "Waschmaschiene Firmware",
+      "state": "off",
+      "attributes": [
+        "auto_update",
+        "display_precision",
+        "installed_version",
+        "in_progress",
+        "latest_version",
+        "release_summary",
+        "release_url",
+        "skipped_version",
+        "title",
+        "update_percentage",
+        "device_class",
+        "entity_picture",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:35.939358+00:00",
+      "last_updated": "2026-01-19T11:58:35.939358+00:00",
+      "device_class": "firmware",
+      "area": "Waschraum"
+    },
+    {
+      "entity_id": "button.shellypmminig3_5432044defb4_reboot",
+      "domain": "button",
+      "name": "shellypmminig3-5432044defb4 Restart",
+      "state": "unknown",
+      "attributes": [
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.940066+00:00",
+      "last_updated": "2026-01-19T11:58:35.940066+00:00",
+      "device_class": "restart",
+      "suggested_actions": [
+        "Press"
+      ]
+    },
+    {
+      "entity_id": "sensor.shellypmminig3_5432044defb4_power",
+      "domain": "sensor",
+      "name": "shellypmminig3-5432044defb4 Power",
+      "state": "2.3",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.940575+00:00",
+      "last_updated": "2026-01-19T11:58:35.940575+00:00",
+      "numeric_state": 2.3,
+      "device_class": "power",
+      "unit": "W",
+      "state_class": "measurement",
+      "suggested_display": "graph"
+    },
+    {
+      "entity_id": "sensor.shellypmminig3_5432044defb4_total_energy",
+      "domain": "sensor",
+      "name": "shellypmminig3-5432044defb4 Energy",
+      "state": "4.664516",
+      "attributes": [
+        "state_class",
+        "unit_of_measurement",
+        "device_class",
+        "friendly_name"
+      ],
+      "last_changed": "2026-01-19T11:58:35.940717+00:00",
+      "last_updated": "2026-01-19T11:58:35.940717+00:00",
+      "numeric_state": 4.664516,
+      "device_class": "energy",
+      "unit": "kWh",
+      "state_class": "total_increasing",
+      "suggested_display": "graph"
+    },
+    {
+      "entity_id": "update.shellypmminig3_5432044defb4_firmware",
+      "domain": "update",
+      "name": "shellypmminig3-5432044defb4 Firmware",
+      "state": "off",
+      "attributes": [
+        "auto_update",
+        "display_precision",
+        "installed_version",
+        "in_progress",
+        "latest_version",
+        "release_summary",
+        "release_url",
+        "skipped_version",
+        "title",
+        "update_percentage",
+        "device_class",
+        "entity_picture",
+        "friendly_name",
+        "supported_features"
+      ],
+      "last_changed": "2026-01-19T11:58:35.941111+00:00",
+      "last_updated": "2026-01-19T11:58:35.941111+00:00",
+      "device_class": "firmware"
+    }
+  ],
+  "services": {
+    "persistent_notification": {
+      "create": {
+        "name": "create",
+        "friendly_name": "Create",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "title": {
+            "name": "title",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "notification_id": {
+            "name": "notification_id",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      },
+      "dismiss": {
+        "name": "dismiss",
+        "friendly_name": "Dismiss",
+        "fields": {
+          "notification_id": {
+            "name": "notification_id",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      },
+      "dismiss_all": {
+        "name": "dismiss_all",
+        "friendly_name": "Dismiss All"
+      }
+    },
+    "homeassistant": {
+      "save_persistent_states": {
+        "name": "save_persistent_states",
+        "friendly_name": "Save Persistent States"
+      },
+      "turn_off": {
+        "name": "turn_off",
+        "friendly_name": "Turn Off",
+        "icon": "mdi:power-off",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ],
+        "fields": {
+          "entity_id": {
+            "name": "entity_id"
+          }
+        }
+      },
+      "turn_on": {
+        "name": "turn_on",
+        "friendly_name": "Turn On",
+        "icon": "mdi:power-on",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ],
+        "fields": {
+          "entity_id": {
+            "name": "entity_id"
+          }
+        }
+      },
+      "toggle": {
+        "name": "toggle",
+        "friendly_name": "Toggle",
+        "icon": "mdi:toggle-switch",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "input_boolean"
+        ],
+        "fields": {
+          "entity_id": {
+            "name": "entity_id"
+          }
+        }
+      },
+      "stop": {
+        "name": "stop",
+        "friendly_name": "Stop"
+      },
+      "restart": {
+        "name": "restart",
+        "friendly_name": "Restart",
+        "fields": {
+          "safe_mode": {
+            "name": "safe_mode",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          }
+        }
+      },
+      "check_config": {
+        "name": "check_config",
+        "friendly_name": "Check Config"
+      },
+      "update_entity": {
+        "name": "update_entity",
+        "friendly_name": "Update Entity",
+        "fields": {
+          "entity_id": {
+            "name": "entity_id"
+          }
+        }
+      },
+      "reload_core_config": {
+        "name": "reload_core_config",
+        "friendly_name": "Reload Core Config"
+      },
+      "set_location": {
+        "name": "set_location",
+        "friendly_name": "Set Location",
+        "fields": {
+          "latitude": {
+            "name": "latitude",
+            "required": true
+          },
+          "longitude": {
+            "name": "longitude",
+            "required": true
+          },
+          "elevation": {
+            "name": "elevation",
+            "required": false
+          }
+        }
+      },
+      "reload_custom_templates": {
+        "name": "reload_custom_templates",
+        "friendly_name": "Reload Custom Templates"
+      },
+      "reload_config_entry": {
+        "name": "reload_config_entry",
+        "friendly_name": "Reload Config Entry"
+      },
+      "reload_all": {
+        "name": "reload_all",
+        "friendly_name": "Reload All"
+      }
+    },
+    "system_log": {
+      "clear": {
+        "name": "clear",
+        "friendly_name": "Clear"
+      },
+      "write": {
+        "name": "write",
+        "friendly_name": "Write",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "level": {
+            "name": "level",
+            "required": false,
+            "selector": {
+              "select": {
+                "options": [
+                  "debug",
+                  "info",
+                  "warning",
+                  "error",
+                  "critical"
+                ]
+              }
+            }
+          },
+          "logger": {
+            "name": "logger",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      }
+    },
+    "logger": {
+      "set_default_level": {
+        "name": "set_default_level",
+        "friendly_name": "Set Default Level",
+        "fields": {
+          "level": {
+            "name": "level"
+          }
+        }
+      },
+      "set_level": {
+        "name": "set_level",
+        "friendly_name": "Set Level",
+        "fields": {
+          "<function string at 0x7f93a4aa4040>": {
+            "name": "<function string at 0x7f93a4aa4040>"
+          }
+        }
+      }
+    },
+    "frontend": {
+      "set_theme": {
+        "name": "set_theme",
+        "friendly_name": "Set Theme"
+      },
+      "reload_themes": {
+        "name": "reload_themes",
+        "friendly_name": "Reload Themes"
+      }
+    },
+    "recorder": {
+      "purge": {
+        "name": "purge",
+        "friendly_name": "Purge",
+        "fields": {
+          "keep_days": {
+            "name": "keep_days",
+            "required": false,
+            "selector": {
+              "number": {
+                "min": 0,
+                "mode": "box"
+              }
+            }
+          },
+          "repack": {
+            "name": "repack",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          },
+          "apply_filter": {
+            "name": "apply_filter",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          }
+        }
+      },
+      "purge_entities": {
+        "name": "purge_entities",
+        "friendly_name": "Purge Entities"
+      },
+      "enable": {
+        "name": "enable",
+        "friendly_name": "Enable"
+      },
+      "disable": {
+        "name": "disable",
+        "friendly_name": "Disable"
+      },
+      "get_statistics": {
+        "name": "get_statistics",
+        "friendly_name": "Get Statistics",
+        "fields": {
+          "start_time": {
+            "name": "start_time",
+            "required": true
+          },
+          "end_time": {
+            "name": "end_time",
+            "required": false
+          },
+          "statistic_ids": {
+            "name": "statistic_ids",
+            "required": true
+          },
+          "period": {
+            "name": "period",
+            "required": true,
+            "selector": {
+              "select": {
+                "options": [
+                  "5minute",
+                  "hour",
+                  "day",
+                  "week",
+                  "month"
+                ]
+              }
+            }
+          },
+          "types": {
+            "name": "types",
+            "required": true
+          },
+          "units": {
+            "name": "units",
+            "required": false
+          }
+        }
+      }
+    },
+    "hassio": {
+      "addon_start": {
+        "name": "addon_start",
+        "friendly_name": "Addon Start",
+        "fields": {
+          "addon": {
+            "name": "addon",
+            "required": true
+          }
+        }
+      },
+      "addon_stop": {
+        "name": "addon_stop",
+        "friendly_name": "Addon Stop",
+        "fields": {
+          "addon": {
+            "name": "addon",
+            "required": true
+          }
+        }
+      },
+      "addon_restart": {
+        "name": "addon_restart",
+        "friendly_name": "Addon Restart",
+        "fields": {
+          "addon": {
+            "name": "addon",
+            "required": true
+          }
+        }
+      },
+      "addon_stdin": {
+        "name": "addon_stdin",
+        "friendly_name": "Addon Stdin",
+        "fields": {
+          "addon": {
+            "name": "addon",
+            "required": true
+          },
+          "input": {
+            "name": "input",
+            "required": true
+          }
+        }
+      },
+      "host_shutdown": {
+        "name": "host_shutdown",
+        "friendly_name": "Host Shutdown"
+      },
+      "host_reboot": {
+        "name": "host_reboot",
+        "friendly_name": "Host Reboot"
+      },
+      "backup_full": {
+        "name": "backup_full",
+        "friendly_name": "Backup Full",
+        "fields": {
+          "name": {
+            "name": "name",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "password": {
+            "name": "password",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "compressed": {
+            "name": "compressed",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          },
+          "location": {
+            "name": "location",
+            "required": false
+          },
+          "homeassistant_exclude_database": {
+            "name": "homeassistant_exclude_database",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          }
+        }
+      },
+      "backup_partial": {
+        "name": "backup_partial",
+        "friendly_name": "Backup Partial",
+        "fields": {
+          "name": {
+            "name": "name",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "password": {
+            "name": "password",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "compressed": {
+            "name": "compressed",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          },
+          "location": {
+            "name": "location",
+            "required": false
+          },
+          "homeassistant_exclude_database": {
+            "name": "homeassistant_exclude_database",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          },
+          "homeassistant": {
+            "name": "homeassistant",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          },
+          "folders": {
+            "name": "folders",
+            "required": false
+          },
+          "addons": {
+            "name": "addons",
+            "required": false
+          }
+        }
+      },
+      "restore_full": {
+        "name": "restore_full",
+        "friendly_name": "Restore Full",
+        "fields": {
+          "slug": {
+            "name": "slug",
+            "required": true
+          },
+          "password": {
+            "name": "password",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      },
+      "restore_partial": {
+        "name": "restore_partial",
+        "friendly_name": "Restore Partial",
+        "fields": {
+          "slug": {
+            "name": "slug",
+            "required": true
+          },
+          "password": {
+            "name": "password",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "homeassistant": {
+            "name": "homeassistant",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          },
+          "folders": {
+            "name": "folders",
+            "required": false
+          },
+          "addons": {
+            "name": "addons",
+            "required": false
+          }
+        }
+      }
+    },
+    "ffmpeg": {
+      "start": {
+        "name": "start",
+        "friendly_name": "Start",
+        "icon": "mdi:play",
+        "common_targets": [
+          "vacuum",
+          "script"
+        ],
+        "fields": {
+          "entity_id": {
+            "name": "entity_id",
+            "required": false
+          }
+        }
+      },
+      "stop": {
+        "name": "stop",
+        "friendly_name": "Stop",
+        "fields": {
+          "entity_id": {
+            "name": "entity_id",
+            "required": false
+          }
+        }
+      },
+      "restart": {
+        "name": "restart",
+        "friendly_name": "Restart",
+        "fields": {
+          "entity_id": {
+            "name": "entity_id",
+            "required": false
+          }
+        }
+      }
+    },
+    "update": {
+      "install": {
+        "name": "install",
+        "friendly_name": "Install"
+      },
+      "skip": {
+        "name": "skip",
+        "friendly_name": "Skip"
+      },
+      "clear_skipped": {
+        "name": "clear_skipped",
+        "friendly_name": "Clear Skipped"
+      }
+    },
+    "camera": {
+      "enable_motion_detection": {
+        "name": "enable_motion_detection",
+        "friendly_name": "Enable Motion Detection"
+      },
+      "disable_motion_detection": {
+        "name": "disable_motion_detection",
+        "friendly_name": "Disable Motion Detection"
+      },
+      "turn_off": {
+        "name": "turn_off",
+        "friendly_name": "Turn Off",
+        "icon": "mdi:power-off",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      },
+      "turn_on": {
+        "name": "turn_on",
+        "friendly_name": "Turn On",
+        "icon": "mdi:power-on",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      },
+      "snapshot": {
+        "name": "snapshot",
+        "friendly_name": "Snapshot"
+      },
+      "play_stream": {
+        "name": "play_stream",
+        "friendly_name": "Play Stream"
+      },
+      "record": {
+        "name": "record",
+        "friendly_name": "Record"
+      }
+    },
+    "conversation": {
+      "process": {
+        "name": "process",
+        "friendly_name": "Process",
+        "fields": {
+          "text": {
+            "name": "text",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "language": {
+            "name": "language",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "agent_id": {
+            "name": "agent_id",
+            "required": false
+          },
+          "conversation_id": {
+            "name": "conversation_id",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      },
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ],
+        "fields": {
+          "language": {
+            "name": "language",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "agent_id": {
+            "name": "agent_id",
+            "required": false
+          }
+        }
+      }
+    },
+    "tts": {
+      "speak": {
+        "name": "speak",
+        "friendly_name": "Speak"
+      },
+      "clear_cache": {
+        "name": "clear_cache",
+        "friendly_name": "Clear Cache"
+      },
+      "picotts_say": {
+        "name": "picotts_say",
+        "friendly_name": "Picotts Say",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "cache": {
+            "name": "cache",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          },
+          "entity_id": {
+            "name": "entity_id",
+            "required": true
+          },
+          "language": {
+            "name": "language",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "options": {
+            "name": "options",
+            "required": false
+          }
+        }
+      },
+      "google_say": {
+        "name": "google_say",
+        "friendly_name": "Google Say",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "cache": {
+            "name": "cache",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          },
+          "entity_id": {
+            "name": "entity_id",
+            "required": true
+          },
+          "language": {
+            "name": "language",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "options": {
+            "name": "options",
+            "required": false
+          }
+        }
+      },
+      "cloud_say": {
+        "name": "cloud_say",
+        "friendly_name": "Cloud Say",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "cache": {
+            "name": "cache",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          },
+          "entity_id": {
+            "name": "entity_id",
+            "required": true
+          },
+          "language": {
+            "name": "language",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "options": {
+            "name": "options",
+            "required": false
+          }
+        }
+      }
+    },
+    "light": {
+      "turn_on": {
+        "name": "turn_on",
+        "friendly_name": "Turn On",
+        "icon": "mdi:power-on",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      },
+      "turn_off": {
+        "name": "turn_off",
+        "friendly_name": "Turn Off",
+        "icon": "mdi:power-off",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      },
+      "toggle": {
+        "name": "toggle",
+        "friendly_name": "Toggle",
+        "icon": "mdi:toggle-switch",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "input_boolean"
+        ]
+      }
+    },
+    "switch": {
+      "turn_off": {
+        "name": "turn_off",
+        "friendly_name": "Turn Off",
+        "icon": "mdi:power-off",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      },
+      "turn_on": {
+        "name": "turn_on",
+        "friendly_name": "Turn On",
+        "icon": "mdi:power-on",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      },
+      "toggle": {
+        "name": "toggle",
+        "friendly_name": "Toggle",
+        "icon": "mdi:toggle-switch",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "input_boolean"
+        ]
+      }
+    },
+    "backup": {
+      "create_automatic": {
+        "name": "create_automatic",
+        "friendly_name": "Create Automatic"
+      }
+    },
+    "matter": {
+      "water_heater_boost": {
+        "name": "water_heater_boost",
+        "friendly_name": "Water Heater Boost"
+      }
+    },
+    "calendar": {
+      "create_event": {
+        "name": "create_event",
+        "friendly_name": "Create Event"
+      },
+      "get_events": {
+        "name": "get_events",
+        "friendly_name": "Get Events"
+      }
+    },
+    "waste_collection_schedule": {
+      "fetch_data": {
+        "name": "fetch_data",
+        "friendly_name": "Fetch Data"
+      }
+    },
+    "button": {
+      "press": {
+        "name": "press",
+        "friendly_name": "Press",
+        "icon": "mdi:gesture-tap-button",
+        "common_targets": [
+          "button"
+        ]
+      }
+    },
+    "climate": {
+      "turn_on": {
+        "name": "turn_on",
+        "friendly_name": "Turn On",
+        "icon": "mdi:power-on",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      },
+      "turn_off": {
+        "name": "turn_off",
+        "friendly_name": "Turn Off",
+        "icon": "mdi:power-off",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      },
+      "toggle": {
+        "name": "toggle",
+        "friendly_name": "Toggle",
+        "icon": "mdi:toggle-switch",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "input_boolean"
+        ]
+      },
+      "set_hvac_mode": {
+        "name": "set_hvac_mode",
+        "friendly_name": "Set Hvac Mode",
+        "icon": "mdi:hvac",
+        "common_targets": [
+          "climate"
+        ]
+      },
+      "set_preset_mode": {
+        "name": "set_preset_mode",
+        "friendly_name": "Set Preset Mode"
+      },
+      "set_temperature": {
+        "name": "set_temperature",
+        "friendly_name": "Set Temperature",
+        "icon": "mdi:thermometer",
+        "common_targets": [
+          "climate",
+          "water_heater"
+        ]
+      },
+      "set_humidity": {
+        "name": "set_humidity",
+        "friendly_name": "Set Humidity"
+      },
+      "set_fan_mode": {
+        "name": "set_fan_mode",
+        "friendly_name": "Set Fan Mode"
+      },
+      "set_swing_mode": {
+        "name": "set_swing_mode",
+        "friendly_name": "Set Swing Mode"
+      },
+      "set_swing_horizontal_mode": {
+        "name": "set_swing_horizontal_mode",
+        "friendly_name": "Set Swing Horizontal Mode"
+      }
+    },
+    "cover": {
+      "open_cover": {
+        "name": "open_cover",
+        "friendly_name": "Open Cover",
+        "icon": "mdi:arrow-up-box",
+        "common_targets": [
+          "cover"
+        ]
+      },
+      "close_cover": {
+        "name": "close_cover",
+        "friendly_name": "Close Cover",
+        "icon": "mdi:arrow-down-box",
+        "common_targets": [
+          "cover"
+        ]
+      },
+      "set_cover_position": {
+        "name": "set_cover_position",
+        "friendly_name": "Set Cover Position",
+        "icon": "mdi:arrow-expand-vertical",
+        "common_targets": [
+          "cover"
+        ]
+      },
+      "stop_cover": {
+        "name": "stop_cover",
+        "friendly_name": "Stop Cover",
+        "icon": "mdi:stop",
+        "common_targets": [
+          "cover"
+        ]
+      },
+      "toggle": {
+        "name": "toggle",
+        "friendly_name": "Toggle",
+        "icon": "mdi:toggle-switch",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "input_boolean"
+        ]
+      },
+      "open_cover_tilt": {
+        "name": "open_cover_tilt",
+        "friendly_name": "Open Cover Tilt"
+      },
+      "close_cover_tilt": {
+        "name": "close_cover_tilt",
+        "friendly_name": "Close Cover Tilt"
+      },
+      "stop_cover_tilt": {
+        "name": "stop_cover_tilt",
+        "friendly_name": "Stop Cover Tilt"
+      },
+      "set_cover_tilt_position": {
+        "name": "set_cover_tilt_position",
+        "friendly_name": "Set Cover Tilt Position"
+      },
+      "toggle_cover_tilt": {
+        "name": "toggle_cover_tilt",
+        "friendly_name": "Toggle Cover Tilt"
+      }
+    },
+    "fan": {
+      "turn_on": {
+        "name": "turn_on",
+        "friendly_name": "Turn On",
+        "icon": "mdi:power-on",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      },
+      "turn_off": {
+        "name": "turn_off",
+        "friendly_name": "Turn Off",
+        "icon": "mdi:power-off",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      },
+      "toggle": {
+        "name": "toggle",
+        "friendly_name": "Toggle",
+        "icon": "mdi:toggle-switch",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "input_boolean"
+        ]
+      },
+      "increase_speed": {
+        "name": "increase_speed",
+        "friendly_name": "Increase Speed"
+      },
+      "decrease_speed": {
+        "name": "decrease_speed",
+        "friendly_name": "Decrease Speed"
+      },
+      "oscillate": {
+        "name": "oscillate",
+        "friendly_name": "Oscillate"
+      },
+      "set_direction": {
+        "name": "set_direction",
+        "friendly_name": "Set Direction"
+      },
+      "set_percentage": {
+        "name": "set_percentage",
+        "friendly_name": "Set Percentage"
+      },
+      "set_preset_mode": {
+        "name": "set_preset_mode",
+        "friendly_name": "Set Preset Mode"
+      }
+    },
+    "lock": {
+      "unlock": {
+        "name": "unlock",
+        "friendly_name": "Unlock",
+        "icon": "mdi:lock-open",
+        "common_targets": [
+          "lock"
+        ]
+      },
+      "lock": {
+        "name": "lock",
+        "friendly_name": "Lock",
+        "icon": "mdi:lock",
+        "common_targets": [
+          "lock"
+        ]
+      },
+      "open": {
+        "name": "open",
+        "friendly_name": "Open"
+      }
+    },
+    "number": {
+      "set_value": {
+        "name": "set_value",
+        "friendly_name": "Set Value",
+        "icon": "mdi:numeric",
+        "common_targets": [
+          "input_number",
+          "number"
+        ]
+      }
+    },
+    "select": {
+      "select_first": {
+        "name": "select_first",
+        "friendly_name": "Select First"
+      },
+      "select_last": {
+        "name": "select_last",
+        "friendly_name": "Select Last"
+      },
+      "select_next": {
+        "name": "select_next",
+        "friendly_name": "Select Next"
+      },
+      "select_option": {
+        "name": "select_option",
+        "friendly_name": "Select Option",
+        "icon": "mdi:form-select",
+        "common_targets": [
+          "input_select",
+          "select"
+        ]
+      },
+      "select_previous": {
+        "name": "select_previous",
+        "friendly_name": "Select Previous"
+      }
+    },
+    "vacuum": {
+      "start": {
+        "name": "start",
+        "friendly_name": "Start",
+        "icon": "mdi:play",
+        "common_targets": [
+          "vacuum",
+          "script"
+        ]
+      },
+      "pause": {
+        "name": "pause",
+        "friendly_name": "Pause",
+        "icon": "mdi:pause",
+        "common_targets": [
+          "vacuum"
+        ]
+      },
+      "return_to_base": {
+        "name": "return_to_base",
+        "friendly_name": "Return To Base",
+        "icon": "mdi:home",
+        "common_targets": [
+          "vacuum"
+        ]
+      },
+      "clean_spot": {
+        "name": "clean_spot",
+        "friendly_name": "Clean Spot"
+      },
+      "locate": {
+        "name": "locate",
+        "friendly_name": "Locate"
+      },
+      "stop": {
+        "name": "stop",
+        "friendly_name": "Stop"
+      },
+      "set_fan_speed": {
+        "name": "set_fan_speed",
+        "friendly_name": "Set Fan Speed"
+      },
+      "send_command": {
+        "name": "send_command",
+        "friendly_name": "Send Command"
+      }
+    },
+    "valve": {
+      "open_valve": {
+        "name": "open_valve",
+        "friendly_name": "Open Valve"
+      },
+      "close_valve": {
+        "name": "close_valve",
+        "friendly_name": "Close Valve"
+      },
+      "set_valve_position": {
+        "name": "set_valve_position",
+        "friendly_name": "Set Valve Position"
+      },
+      "stop_valve": {
+        "name": "stop_valve",
+        "friendly_name": "Stop Valve"
+      },
+      "toggle": {
+        "name": "toggle",
+        "friendly_name": "Toggle",
+        "icon": "mdi:toggle-switch",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "input_boolean"
+        ]
+      }
+    },
+    "water_heater": {
+      "turn_on": {
+        "name": "turn_on",
+        "friendly_name": "Turn On",
+        "icon": "mdi:power-on",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      },
+      "turn_off": {
+        "name": "turn_off",
+        "friendly_name": "Turn Off",
+        "icon": "mdi:power-off",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      },
+      "set_away_mode": {
+        "name": "set_away_mode",
+        "friendly_name": "Set Away Mode"
+      },
+      "set_temperature": {
+        "name": "set_temperature",
+        "friendly_name": "Set Temperature",
+        "icon": "mdi:thermometer",
+        "common_targets": [
+          "climate",
+          "water_heater"
+        ]
+      },
+      "set_operation_mode": {
+        "name": "set_operation_mode",
+        "friendly_name": "Set Operation Mode"
+      }
+    },
+    "google_assistant": {
+      "request_sync": {
+        "name": "request_sync",
+        "friendly_name": "Request Sync"
+      }
+    },
+    "cloud": {
+      "remote_connect": {
+        "name": "remote_connect",
+        "friendly_name": "Remote Connect"
+      },
+      "remote_disconnect": {
+        "name": "remote_disconnect",
+        "friendly_name": "Remote Disconnect"
+      }
+    },
+    "scene": {
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ]
+      },
+      "apply": {
+        "name": "apply",
+        "friendly_name": "Apply",
+        "fields": {
+          "transition": {
+            "name": "transition",
+            "required": false
+          },
+          "entities": {
+            "name": "entities",
+            "required": true
+          }
+        }
+      },
+      "create": {
+        "name": "create",
+        "friendly_name": "Create"
+      },
+      "delete": {
+        "name": "delete",
+        "friendly_name": "Delete"
+      },
+      "turn_on": {
+        "name": "turn_on",
+        "friendly_name": "Turn On",
+        "icon": "mdi:power-on",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      }
+    },
+    "group": {
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ]
+      },
+      "set": {
+        "name": "set",
+        "friendly_name": "Set"
+      },
+      "remove": {
+        "name": "remove",
+        "friendly_name": "Remove",
+        "fields": {
+          "object_id": {
+            "name": "object_id",
+            "required": true
+          }
+        }
+      }
+    },
+    "logbook": {
+      "log": {
+        "name": "log",
+        "friendly_name": "Log",
+        "fields": {
+          "name": {
+            "name": "name",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "domain": {
+            "name": "domain",
+            "required": false
+          },
+          "entity_id": {
+            "name": "entity_id",
+            "required": false,
+            "selector": {
+              "entity": {}
+            }
+          }
+        }
+      }
+    },
+    "zone": {
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ]
+      }
+    },
+    "input_select": {
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ]
+      },
+      "select_first": {
+        "name": "select_first",
+        "friendly_name": "Select First"
+      },
+      "select_last": {
+        "name": "select_last",
+        "friendly_name": "Select Last"
+      },
+      "select_next": {
+        "name": "select_next",
+        "friendly_name": "Select Next"
+      },
+      "select_option": {
+        "name": "select_option",
+        "friendly_name": "Select Option",
+        "icon": "mdi:form-select",
+        "common_targets": [
+          "input_select",
+          "select"
+        ]
+      },
+      "select_previous": {
+        "name": "select_previous",
+        "friendly_name": "Select Previous"
+      },
+      "set_options": {
+        "name": "set_options",
+        "friendly_name": "Set Options"
+      }
+    },
+    "timer": {
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ]
+      },
+      "start": {
+        "name": "start",
+        "friendly_name": "Start",
+        "icon": "mdi:play",
+        "common_targets": [
+          "vacuum",
+          "script"
+        ]
+      },
+      "pause": {
+        "name": "pause",
+        "friendly_name": "Pause",
+        "icon": "mdi:pause",
+        "common_targets": [
+          "vacuum"
+        ]
+      },
+      "cancel": {
+        "name": "cancel",
+        "friendly_name": "Cancel"
+      },
+      "finish": {
+        "name": "finish",
+        "friendly_name": "Finish"
+      },
+      "change": {
+        "name": "change",
+        "friendly_name": "Change"
+      }
+    },
+    "input_number": {
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ]
+      },
+      "set_value": {
+        "name": "set_value",
+        "friendly_name": "Set Value",
+        "icon": "mdi:numeric",
+        "common_targets": [
+          "input_number",
+          "number"
+        ]
+      },
+      "increment": {
+        "name": "increment",
+        "friendly_name": "Increment"
+      },
+      "decrement": {
+        "name": "decrement",
+        "friendly_name": "Decrement"
+      }
+    },
+    "input_boolean": {
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ]
+      },
+      "turn_on": {
+        "name": "turn_on",
+        "friendly_name": "Turn On",
+        "icon": "mdi:power-on",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      },
+      "turn_off": {
+        "name": "turn_off",
+        "friendly_name": "Turn Off",
+        "icon": "mdi:power-off",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "media_player",
+          "input_boolean",
+          "automation",
+          "camera"
+        ]
+      },
+      "toggle": {
+        "name": "toggle",
+        "friendly_name": "Toggle",
+        "icon": "mdi:toggle-switch",
+        "common_targets": [
+          "light",
+          "switch",
+          "fan",
+          "input_boolean"
+        ]
+      }
+    },
+    "input_button": {
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ]
+      },
+      "press": {
+        "name": "press",
+        "friendly_name": "Press",
+        "icon": "mdi:gesture-tap-button",
+        "common_targets": [
+          "button"
+        ]
+      }
+    },
+    "person": {
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ]
+      }
+    },
+    "device_tracker": {
+      "see": {
+        "name": "see",
+        "friendly_name": "See"
+      }
+    },
+    "assist_satellite": {
+      "announce": {
+        "name": "announce",
+        "friendly_name": "Announce"
+      },
+      "start_conversation": {
+        "name": "start_conversation",
+        "friendly_name": "Start Conversation"
+      },
+      "ask_question": {
+        "name": "ask_question",
+        "friendly_name": "Ask Question"
+      }
+    },
+    "notify": {
+      "send_message": {
+        "name": "send_message",
+        "friendly_name": "Send Message"
+      },
+      "persistent_notification": {
+        "name": "persistent_notification",
+        "friendly_name": "Persistent Notification",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "title": {
+            "name": "title",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "target": {
+            "name": "target",
+            "required": false
+          },
+          "data": {
+            "name": "data",
+            "required": false
+          }
+        }
+      },
+      "twilio_whatsapp": {
+        "name": "twilio_whatsapp",
+        "friendly_name": "Twilio Whatsapp",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "title": {
+            "name": "title",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "target": {
+            "name": "target",
+            "required": false
+          },
+          "data": {
+            "name": "data",
+            "required": false
+          }
+        }
+      },
+      "twilio_sms": {
+        "name": "twilio_sms",
+        "friendly_name": "Twilio Sms",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "title": {
+            "name": "title",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "target": {
+            "name": "target",
+            "required": false
+          },
+          "data": {
+            "name": "data",
+            "required": false
+          }
+        }
+      },
+      "mobile_app_oneplus": {
+        "name": "mobile_app_oneplus",
+        "friendly_name": "Mobile App Oneplus",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "title": {
+            "name": "title",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "target": {
+            "name": "target",
+            "required": false
+          },
+          "data": {
+            "name": "data",
+            "required": false
+          }
+        }
+      },
+      "mobile_app_iphone_168": {
+        "name": "mobile_app_iphone_168",
+        "friendly_name": "Mobile App Iphone 168",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "title": {
+            "name": "title",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "target": {
+            "name": "target",
+            "required": false
+          },
+          "data": {
+            "name": "data",
+            "required": false
+          }
+        }
+      },
+      "mobile_app_sophie": {
+        "name": "mobile_app_sophie",
+        "friendly_name": "Mobile App Sophie",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "title": {
+            "name": "title",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "target": {
+            "name": "target",
+            "required": false
+          },
+          "data": {
+            "name": "data",
+            "required": false
+          }
+        }
+      },
+      "mobile_app_pixel_8": {
+        "name": "mobile_app_pixel_8",
+        "friendly_name": "Mobile App Pixel 8",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "title": {
+            "name": "title",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "target": {
+            "name": "target",
+            "required": false
+          },
+          "data": {
+            "name": "data",
+            "required": false
+          }
+        }
+      },
+      "mobile_app_dn2103": {
+        "name": "mobile_app_dn2103",
+        "friendly_name": "Mobile App Dn2103",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "title": {
+            "name": "title",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "target": {
+            "name": "target",
+            "required": false
+          },
+          "data": {
+            "name": "data",
+            "required": false
+          }
+        }
+      },
+      "mobile_app_iphone_sophie": {
+        "name": "mobile_app_iphone_sophie",
+        "friendly_name": "Mobile App Iphone Sophie",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "title": {
+            "name": "title",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "target": {
+            "name": "target",
+            "required": false
+          },
+          "data": {
+            "name": "data",
+            "required": false
+          }
+        }
+      },
+      "notify": {
+        "name": "notify",
+        "friendly_name": "Notify",
+        "fields": {
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "title": {
+            "name": "title",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "target": {
+            "name": "target",
+            "required": false
+          },
+          "data": {
+            "name": "data",
+            "required": false
+          }
+        }
+      }
+    },
+    "shelly": {
+      "get_kvs_value": {
+        "name": "get_kvs_value",
+        "friendly_name": "Get Kvs Value",
+        "fields": {
+          "device_id": {
+            "name": "device_id",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "key": {
+            "name": "key",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      },
+      "set_kvs_value": {
+        "name": "set_kvs_value",
+        "friendly_name": "Set Kvs Value",
+        "fields": {
+          "device_id": {
+            "name": "device_id",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "key": {
+            "name": "key",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "value": {
+            "name": "value",
+            "required": true
+          }
+        }
+      }
+    },
+    "thermal_comfort": {
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ]
+      }
+    },
+    "plex": {
+      "refresh_library": {
+        "name": "refresh_library",
+        "friendly_name": "Refresh Library",
+        "fields": {
+          "server_name": {
+            "name": "server_name",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "library_name": {
+            "name": "library_name",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      }
+    },
+    "counter": {
+      "increment": {
+        "name": "increment",
+        "friendly_name": "Increment"
+      },
+      "decrement": {
+        "name": "decrement",
+        "friendly_name": "Decrement"
+      },
+      "reset": {
+        "name": "reset",
+        "friendly_name": "Reset"
+      },
+      "set_value": {
+        "name": "set_value",
+        "friendly_name": "Set Value",
+        "icon": "mdi:numeric",
+        "common_targets": [
+          "input_number",
+          "number"
+        ]
+      }
+    },
+    "input_datetime": {
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ]
+      },
+      "set_datetime": {
+        "name": "set_datetime",
+        "friendly_name": "Set Datetime"
+      }
+    },
+    "file": {
+      "read_file": {
+        "name": "read_file",
+        "friendly_name": "Read File",
+        "fields": {
+          "file_name": {
+            "name": "file_name",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "file_encoding": {
+            "name": "file_encoding",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      }
+    },
+    "esphome_display": {
+      "notify": {
+        "name": "notify",
+        "friendly_name": "Notify",
+        "fields": {
+          "device": {
+            "name": "device",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "title": {
+            "name": "title",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "severity": {
+            "name": "severity",
+            "required": false,
+            "selector": {
+              "select": {
+                "options": [
+                  "info",
+                  "warn",
+                  "alert",
+                  "question"
+                ]
+              }
+            }
+          },
+          "timeout": {
+            "name": "timeout",
+            "required": false,
+            "selector": {
+              "number": {
+                "min": 0,
+                "mode": "box"
+              }
+            }
+          }
+        }
+      }
+    },
+    "utility_meter": {
+      "reset": {
+        "name": "reset",
+        "friendly_name": "Reset",
+        "fields": {
+          "entity_id": {
+            "name": "entity_id"
+          }
+        }
+      }
+    },
+    "rest_command": {
+      "play_music": {
+        "name": "play_music",
+        "friendly_name": "Play Music"
+      },
+      "skip_track": {
+        "name": "skip_track",
+        "friendly_name": "Skip Track"
+      },
+      "play_music_vibe": {
+        "name": "play_music_vibe",
+        "friendly_name": "Play Music Vibe"
+      },
+      "like_current_track": {
+        "name": "like_current_track",
+        "friendly_name": "Like Current Track"
+      },
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ]
+      }
+    },
+    "music_assistant": {
+      "search": {
+        "name": "search",
+        "friendly_name": "Search",
+        "fields": {
+          "config_entry_id": {
+            "name": "config_entry_id",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "name": {
+            "name": "name",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "media_type": {
+            "name": "media_type",
+            "required": false
+          },
+          "artist": {
+            "name": "artist",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "album": {
+            "name": "album",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "limit": {
+            "name": "limit",
+            "required": false
+          },
+          "library_only": {
+            "name": "library_only",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          }
+        }
+      },
+      "get_library": {
+        "name": "get_library",
+        "friendly_name": "Get Library",
+        "fields": {
+          "config_entry_id": {
+            "name": "config_entry_id",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "media_type": {
+            "name": "media_type",
+            "required": true
+          },
+          "favorite": {
+            "name": "favorite",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          },
+          "search": {
+            "name": "search",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "limit": {
+            "name": "limit",
+            "required": false,
+            "selector": {
+              "number": {
+                "min": 0,
+                "mode": "box"
+              }
+            }
+          },
+          "offset": {
+            "name": "offset",
+            "required": false
+          },
+          "order_by": {
+            "name": "order_by",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "album_type": {
+            "name": "album_type",
+            "required": false
+          },
+          "album_artists_only": {
+            "name": "album_artists_only",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          }
+        }
+      },
+      "play_media": {
+        "name": "play_media",
+        "friendly_name": "Play Media"
+      },
+      "play_announcement": {
+        "name": "play_announcement",
+        "friendly_name": "Play Announcement"
+      },
+      "transfer_queue": {
+        "name": "transfer_queue",
+        "friendly_name": "Transfer Queue"
+      },
+      "get_queue": {
+        "name": "get_queue",
+        "friendly_name": "Get Queue"
+      }
+    },
+    "webrtc": {
+      "create_link": {
+        "name": "create_link",
+        "friendly_name": "Create Link",
+        "fields": {
+          "link_id": {
+            "name": "link_id",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "url": {
+            "name": "url",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "entity": {
+            "name": "entity",
+            "required": false,
+            "selector": {
+              "entity": {}
+            }
+          },
+          "open_limit": {
+            "name": "open_limit",
+            "required": false,
+            "selector": {
+              "number": {
+                "min": 0,
+                "mode": "box"
+              }
+            }
+          },
+          "time_to_live": {
+            "name": "time_to_live",
+            "required": false,
+            "selector": {
+              "number": {
+                "min": 0,
+                "mode": "box"
+              }
+            }
+          }
+        }
+      },
+      "dash_cast": {
+        "name": "dash_cast",
+        "friendly_name": "Dash Cast",
+        "fields": {
+          "entity_id": {
+            "name": "entity_id",
+            "required": true
+          },
+          "url": {
+            "name": "url",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "entity": {
+            "name": "entity",
+            "required": false,
+            "selector": {
+              "entity": {}
+            }
+          },
+          "extra": {
+            "name": "extra",
+            "required": false
+          },
+          "force": {
+            "name": "force",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          },
+          "hass_url": {
+            "name": "hass_url",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      }
+    },
+    "immich": {
+      "upload_file": {
+        "name": "upload_file",
+        "friendly_name": "Upload File",
+        "fields": {
+          "config_entry_id": {
+            "name": "config_entry_id",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "file": {
+            "name": "file",
+            "required": true
+          },
+          "album_id": {
+            "name": "album_id",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      }
+    },
+    "soundtouch": {
+      "play_everywhere": {
+        "name": "play_everywhere",
+        "friendly_name": "Play Everywhere",
+        "fields": {
+          "master": {
+            "name": "master",
+            "required": true,
+            "selector": {
+              "entity": {}
+            }
+          }
+        }
+      },
+      "create_zone": {
+        "name": "create_zone",
+        "friendly_name": "Create Zone",
+        "fields": {
+          "master": {
+            "name": "master",
+            "required": true,
+            "selector": {
+              "entity": {}
+            }
+          },
+          "slaves": {
+            "name": "slaves",
+            "required": true
+          }
+        }
+      },
+      "remove_zone_slave": {
+        "name": "remove_zone_slave",
+        "friendly_name": "Remove Zone Slave",
+        "fields": {
+          "master": {
+            "name": "master",
+            "required": true,
+            "selector": {
+              "entity": {}
+            }
+          },
+          "slaves": {
+            "name": "slaves",
+            "required": true
+          }
+        }
+      },
+      "add_zone_slave": {
+        "name": "add_zone_slave",
+        "friendly_name": "Add Zone Slave",
+        "fields": {
+          "master": {
+            "name": "master",
+            "required": true,
+            "selector": {
+              "entity": {}
+            }
+          },
+          "slaves": {
+            "name": "slaves",
+            "required": true
+          }
+        }
+      }
+    },
+    "shopping_list": {
+      "add_item": {
+        "name": "add_item",
+        "friendly_name": "Add Item",
+        "fields": {
+          "name": {
+            "name": "name",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      },
+      "remove_item": {
+        "name": "remove_item",
+        "friendly_name": "Remove Item",
+        "fields": {
+          "name": {
+            "name": "name",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      },
+      "complete_item": {
+        "name": "complete_item",
+        "friendly_name": "Complete Item",
+        "fields": {
+          "name": {
+            "name": "name",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      },
+      "incomplete_item": {
+        "name": "incomplete_item",
+        "friendly_name": "Incomplete Item",
+        "fields": {
+          "name": {
+            "name": "name",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      },
+      "complete_all": {
+        "name": "complete_all",
+        "friendly_name": "Complete All"
+      },
+      "incomplete_all": {
+        "name": "incomplete_all",
+        "friendly_name": "Incomplete All"
+      },
+      "clear_completed_items": {
+        "name": "clear_completed_items",
+        "friendly_name": "Clear Completed Items"
+      },
+      "sort": {
+        "name": "sort",
+        "friendly_name": "Sort",
+        "fields": {
+          "reverse": {
+            "name": "reverse",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          }
+        }
+      }
+    },
+    "telegram_bot": {
+      "send_message": {
+        "name": "send_message",
+        "friendly_name": "Send Message"
+      },
+      "send_chat_action": {
+        "name": "send_chat_action",
+        "friendly_name": "Send Chat Action"
+      },
+      "send_photo": {
+        "name": "send_photo",
+        "friendly_name": "Send Photo"
+      },
+      "send_sticker": {
+        "name": "send_sticker",
+        "friendly_name": "Send Sticker"
+      },
+      "send_animation": {
+        "name": "send_animation",
+        "friendly_name": "Send Animation"
+      },
+      "send_video": {
+        "name": "send_video",
+        "friendly_name": "Send Video"
+      },
+      "send_voice": {
+        "name": "send_voice",
+        "friendly_name": "Send Voice"
+      },
+      "send_document": {
+        "name": "send_document",
+        "friendly_name": "Send Document"
+      },
+      "send_location": {
+        "name": "send_location",
+        "friendly_name": "Send Location"
+      },
+      "send_poll": {
+        "name": "send_poll",
+        "friendly_name": "Send Poll"
+      },
+      "edit_message": {
+        "name": "edit_message",
+        "friendly_name": "Edit Message"
+      },
+      "edit_message_media": {
+        "name": "edit_message_media",
+        "friendly_name": "Edit Message Media"
+      },
+      "edit_caption": {
+        "name": "edit_caption",
+        "friendly_name": "Edit Caption",
+        "fields": {
+          "config_entry_id": {
+            "name": "config_entry_id",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "message_id": {
+            "name": "message_id",
+            "required": true
+          },
+          "chat_id": {
+            "name": "chat_id",
+            "required": true
+          },
+          "caption": {
+            "name": "caption",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "inline_keyboard": {
+            "name": "inline_keyboard",
+            "required": false
+          }
+        }
+      },
+      "edit_replymarkup": {
+        "name": "edit_replymarkup",
+        "friendly_name": "Edit Replymarkup",
+        "fields": {
+          "config_entry_id": {
+            "name": "config_entry_id",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "message_id": {
+            "name": "message_id",
+            "required": true
+          },
+          "chat_id": {
+            "name": "chat_id",
+            "required": true
+          },
+          "inline_keyboard": {
+            "name": "inline_keyboard",
+            "required": true
+          }
+        }
+      },
+      "answer_callback_query": {
+        "name": "answer_callback_query",
+        "friendly_name": "Answer Callback Query",
+        "fields": {
+          "config_entry_id": {
+            "name": "config_entry_id",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "message": {
+            "name": "message",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "callback_query_id": {
+            "name": "callback_query_id",
+            "required": true
+          },
+          "show_alert": {
+            "name": "show_alert",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          }
+        }
+      },
+      "delete_message": {
+        "name": "delete_message",
+        "friendly_name": "Delete Message",
+        "fields": {
+          "config_entry_id": {
+            "name": "config_entry_id",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "chat_id": {
+            "name": "chat_id",
+            "required": true
+          },
+          "message_id": {
+            "name": "message_id",
+            "required": true
+          }
+        }
+      },
+      "leave_chat": {
+        "name": "leave_chat",
+        "friendly_name": "Leave Chat",
+        "fields": {
+          "config_entry_id": {
+            "name": "config_entry_id",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "chat_id": {
+            "name": "chat_id",
+            "required": true
+          }
+        }
+      },
+      "set_message_reaction": {
+        "name": "set_message_reaction",
+        "friendly_name": "Set Message Reaction",
+        "fields": {
+          "config_entry_id": {
+            "name": "config_entry_id",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "message_id": {
+            "name": "message_id",
+            "required": true
+          },
+          "chat_id": {
+            "name": "chat_id",
+            "required": true
+          },
+          "reaction": {
+            "name": "reaction",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "is_big": {
+            "name": "is_big",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          }
+        }
+      },
+      "download_file": {
+        "name": "download_file",
+        "friendly_name": "Download File",
+        "fields": {
+          "config_entry_id": {
+            "name": "config_entry_id",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "file_id": {
+            "name": "file_id",
+            "required": true,
+            "selector": {
+              "text": {}
+            }
+          },
+          "directory_path": {
+            "name": "directory_path",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          },
+          "file_name": {
+            "name": "file_name",
+            "required": false,
+            "selector": {
+              "text": {}
+            }
+          }
+        }
+      }
+    },
+    "mqtt": {
+      "publish": {
+        "name": "publish",
+        "friendly_name": "Publish",
+        "fields": {
+          "topic": {
+            "name": "topic",
+            "required": true
+          },
+          "payload": {
+            "name": "payload",
+            "required": true
+          },
+          "evaluate_payload": {
+            "name": "evaluate_payload",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          },
+          "qos": {
+            "name": "qos",
+            "required": false
+          },
+          "retain": {
+            "name": "retain",
+            "required": false,
+            "selector": {
+              "boolean": {}
+            }
+          }
+        }
+      },
+      "dump": {
+        "name": "dump",
+        "friendly_name": "Dump",
+        "fields": {
+          "topic": {
+            "name": "topic",
+            "required": true
+          },
+          "duration": {
+            "name": "duration",
+            "required": false
+          }
+        }
+      }
+    },
+    "input_text": {
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ]
+      },
+      "set_value": {
+        "name": "set_value",
+        "friendly_name": "Set Value",
+        "icon": "mdi:numeric",
+        "common_targets": [
+          "input_number",
+          "number"
+        ]
+      }
+    },
+    "chime_tts": {
+      "replay": {
+        "name": "replay",
+        "friendly_name": "Replay"
+      },
+      "clear_cache": {
+        "name": "clear_cache",
+        "friendly_name": "Clear Cache"
+      },
+      "say": {
+        "name": "say",
+        "friendly_name": "Say"
+      },
+      "say_url": {
+        "name": "say_url",
+        "friendly_name": "Say Url"
+      }
+    },
+    "schedule": {
+      "reload": {
+        "name": "reload",
+        "friendly_name": "Reload",
+        "icon": "mdi:reload",
+        "common_targets": [
+          "automation",
+          "script",
+          "scene"
+        ]
+      },
+      "get_schedule": {
+        "name": "get_schedule",
+        "friendly_name": "Get Schedule"
+      }
+    },
+    "text": {
+      "set_value": {
+        "name": "set_value",
+        "friendly_name": "Set Value",
+        "icon": "mdi:numeric",
+        "common_targets": [
+          "input_number",
+          "number"
+        ]
+      }
+    }
+  },
+  "devices": [
+    {
+      "name": "Google Assistant",
+      "friendly_name": "Google Assistant"
+    },
+    {
+      "name": "Sun",
+      "friendly_name": "Sun"
+    },
+    {
+      "name": "OnePlus",
+      "friendly_name": "OnePlus"
+    },
+    {
+      "name": "WLED",
+      "friendly_name": "WLED",
+      "area_id": "bedroom"
+    },
+    {
+      "name": "Nebula",
+      "friendly_name": "Nebula"
+    },
+    {
+      "name": "HACS",
+      "friendly_name": "HACS"
+    },
+    {
+      "name": "Remote",
+      "friendly_name": "Remote",
+      "area_id": "kino_raum"
+    },
+    {
+      "name": "Spotify Ph Oe",
+      "friendly_name": "Spotify Ph Oe"
+    },
+    {
+      "name": "iPhone (168)",
+      "friendly_name": "iPhone (168)"
+    },
+    {
+      "name": "Sophie",
+      "friendly_name": "Sophie"
+    },
+    {
+      "name": "Philips Google Home",
+      "friendly_name": "Philips Google Home"
+    },
+    {
+      "name": "Pixel 8",
+      "friendly_name": "Philip Pixel 8"
+    },
+    {
+      "name": "Forecast",
+      "friendly_name": "Forecast"
+    },
+    {
+      "name": "Nebula",
+      "friendly_name": "Nebula"
+    },
+    {
+      "name": "Apollo Multisensor Mk1 (MSR-1) dc534c",
+      "friendly_name": "Apollo Multisensor",
+      "area_id": "arbeitszimmer"
+    },
+    {
+      "name": "Anlage",
+      "friendly_name": "Anlage"
+    },
+    {
+      "name": "Verstärker",
+      "friendly_name": "Verstärker"
+    },
+    {
+      "name": "Verstärker",
+      "friendly_name": "Verstärker"
+    },
+    {
+      "name": "Verstärker",
+      "friendly_name": "Verstärker",
+      "area_id": "kino_raum"
+    },
+    {
+      "name": "Bose SoundTouch 4956E2",
+      "friendly_name": "Bose SoundTouch 4956E2",
+      "area_id": "bedroom"
+    },
+    {
+      "name": "Standardgruppe",
+      "friendly_name": "Standardgruppe"
+    },
+    {
+      "name": "DN2103",
+      "friendly_name": "DN2103"
+    },
+    {
+      "name": "button-card",
+      "friendly_name": "button-card"
+    },
+    {
+      "name": "ytube_music_player",
+      "friendly_name": "ytube_music_player"
+    },
+    {
+      "name": "TP-Link Deco",
+      "friendly_name": "TP-Link Deco"
+    },
+    {
+      "name": "Mushroom",
+      "friendly_name": "Mushroom"
+    },
+    {
+      "name": "Dwains Dashboard",
+      "friendly_name": "Dwains Dashboard"
+    },
+    {
+      "name": "Config Editor",
+      "friendly_name": "Config Editor"
+    },
+    {
+      "name": "mini-graph-card",
+      "friendly_name": "mini-graph-card"
+    },
+    {
+      "name": "Portainer",
+      "friendly_name": "Portainer"
+    },
+    {
+      "name": "Adaptive Lighting",
+      "friendly_name": "Adaptive Lighting"
+    },
+    {
+      "name": "Chime TTS",
+      "friendly_name": "Chime TTS"
+    },
+    {
+      "name": "SHIELD",
+      "friendly_name": "SHIELD"
+    },
+    {
+      "name": "43PUS7394/12",
+      "friendly_name": "43PUS7394/12"
+    },
+    {
+      "name": "iPhone (168)",
+      "friendly_name": "iPhone (168)"
+    },
+    {
+      "name": "Home und Box",
+      "friendly_name": "Home und Box"
+    },
+    {
+      "name": "Mini Media Player",
+      "friendly_name": "Mini Media Player"
+    },
+    {
+      "name": "PoLR YTube Media Card",
+      "friendly_name": "PoLR YTube Media Card"
+    },
+    {
+      "name": "expander-card",
+      "friendly_name": "expander-card"
+    },
+    {
+      "name": "Aurora visibility",
+      "friendly_name": "Aurora visibility"
+    },
+    {
+      "name": "Stateful Scenes",
+      "friendly_name": "Stateful Scenes"
+    },
+    {
+      "name": "Google Cloud",
+      "friendly_name": "Google Cloud"
+    },
+    {
+      "name": "Woonkamer 2",
+      "friendly_name": "Woonkamer 2"
+    },
+    {
+      "name": "Living Room",
+      "friendly_name": "Living Room"
+    },
+    {
+      "name": "Living Room",
+      "friendly_name": "Living Room",
+      "area_id": "living_room"
+    },
+    {
+      "name": "Nest",
+      "friendly_name": "Nest"
+    },
+    {
+      "name": "Gruppe",
+      "friendly_name": "Gruppe"
+    },
+    {
+      "name": "Verstärker",
+      "friendly_name": "Verstärker"
+    },
+    {
+      "name": "Backup",
+      "friendly_name": "Backup"
+    },
+    {
+      "name": "Piper",
+      "friendly_name": "Piper"
+    },
+    {
+      "name": "Tailscale",
+      "friendly_name": "Tailscale"
+    },
+    {
+      "name": "Home Assistant Core",
+      "friendly_name": "Home Assistant Core"
+    },
+    {
+      "name": "Home Assistant Supervisor",
+      "friendly_name": "Home Assistant Supervisor"
+    },
+    {
+      "name": "Home Assistant Host",
+      "friendly_name": "Home Assistant Host"
+    },
+    {
+      "name": "Home Assistant Operating System",
+      "friendly_name": "Home Assistant Operating System"
+    },
+    {
+      "name": "Studio Code Server",
+      "friendly_name": "Studio Code Server"
+    },
+    {
+      "name": "Music Assistant (BETA)",
+      "friendly_name": "Music Assistant (BETA)"
+    },
+    {
+      "name": "iPhone Sophie",
+      "friendly_name": "iPhone Sophie"
+    },
+    {
+      "name": "Bose SoundTouch 4956E2",
+      "friendly_name": "Bose SoundTouch 4956E2"
+    },
+    {
+      "name": "Bubble Card",
+      "friendly_name": "Bubble Card"
+    },
+    {
+      "name": "Advanced Camera Card",
+      "friendly_name": "Advanced Camera Card"
+    },
+    {
+      "name": "WebRTC Camera",
+      "friendly_name": "WebRTC Camera"
+    },
+    {
+      "name": "go2rtc",
+      "friendly_name": "go2rtc"
+    },
+    {
+      "name": "StinkBot",
+      "friendly_name": "StinkBot"
+    },
+    {
+      "name": "Schlafzimmer - Home",
+      "friendly_name": "Schlafzimmer - Home"
+    },
+    {
+      "name": "Texas Instruments CC2652",
+      "friendly_name": "Coordinator"
+    },
+    {
+      "name": "_TZ3000_kdi2o9m6 TS011F",
+      "friendly_name": "Grosse LED",
+      "area_id": "woonkamer"
+    },
+    {
+      "name": "_TZ3000_gjnozsaz TS011F",
+      "friendly_name": "Beamer",
+      "area_id": "woonkamer"
+    },
+    {
+      "name": "_TZ3000_qd7hej8u TS0505B",
+      "friendly_name": "Schlafzimmer Licht",
+      "area_id": "arbeitszimmer"
+    },
+    {
+      "name": "_TZ3000_qd7hej8u TS0505B",
+      "friendly_name": "Wohnzimmer Licht",
+      "area_id": "living_room"
+    },
+    {
+      "name": "LUMI lumi.remote.b1acn01",
+      "friendly_name": "Button 2"
+    },
+    {
+      "name": "LUMI lumi.remote.b1acn01",
+      "friendly_name": "Button 1"
+    },
+    {
+      "name": "_TZ3000_w0qqde0g TS011F",
+      "friendly_name": "Stehlampe",
+      "area_id": "living_room"
+    },
+    {
+      "name": "_TZ3000_rco1yzb1 TS004F",
+      "friendly_name": "Button Rund"
+    },
+    {
+      "name": "LUMI lumi.remote.b1acn01",
+      "friendly_name": "Panik Button"
+    },
+    {
+      "name": "_TZ3000_gjnozsaz TS011F",
+      "friendly_name": "Kleine Lampe",
+      "area_id": "living_room"
+    },
+    {
+      "name": "SONOFF SNZB-06P",
+      "friendly_name": "Radar",
+      "area_id": "arbeitszimmer"
+    },
+    {
+      "name": "_TZ3000_1obwwnmq TS011F",
+      "friendly_name": "Leiste",
+      "area_id": "bedroom"
+    },
+    {
+      "name": "eWeLink SNZB-03",
+      "friendly_name": "IR Radar"
+    },
+    {
+      "name": "innr RF 262",
+      "friendly_name": "Kamera Licht",
+      "area_id": "woonkamer"
+    },
+    {
+      "name": "innr RF 262",
+      "friendly_name": "Stehlampe Oben",
+      "area_id": "woonkamer"
+    },
+    {
+      "name": "LUMI lumi.weather",
+      "friendly_name": "Bad Temp",
+      "area_id": "klo"
+    },
+    {
+      "name": "_TZ3000_kdi2o9m6 TS011F",
+      "friendly_name": "Bildschirm Schalter",
+      "area_id": "arbeitszimmer"
+    },
+    {
+      "name": "TrashCard",
+      "friendly_name": "TrashCard"
+    },
+    {
+      "name": "Waste Collection Schedule",
+      "friendly_name": "Waste Collection Schedule"
+    },
+    {
+      "name": "Waste Collection Schedule",
+      "friendly_name": "Waste Collection Schedule",
+      "area_id": "kitchen"
+    },
+    {
+      "name": "Pi-hole V6 Integration",
+      "friendly_name": "Pi-hole V6 Integration"
+    },
+    {
+      "name": "Pi-hole",
+      "friendly_name": "Pi-hole"
+    },
+    {
+      "name": "ESPHome Device Builder",
+      "friendly_name": "ESPHome Device Builder"
+    },
+    {
+      "name": "Ble-Tracker-05C9A4",
+      "friendly_name": "Kino-Tracker",
+      "area_id": "kino_raum"
+    },
+    {
+      "name": "Bose",
+      "friendly_name": "Bose"
+    },
+    {
+      "name": "Modern Circular Gauge",
+      "friendly_name": "Modern Circular Gauge"
+    },
+    {
+      "name": "Living Room",
+      "friendly_name": "Living Room"
+    },
+    {
+      "name": "WLED",
+      "friendly_name": "WLED",
+      "area_id": "kino_raum"
+    },
+    {
+      "name": "LUMI lumi.vibration.aq1",
+      "friendly_name": "Fenster",
+      "area_id": "klo"
+    },
+    {
+      "name": "SONOFF SNZB-02WD",
+      "friendly_name": "Draußen Temp"
+    },
+    {
+      "name": "Hourly Weather Card",
+      "friendly_name": "Hourly Weather Card"
+    },
+    {
+      "name": "Living Room",
+      "friendly_name": "Verstärker",
+      "area_id": "living_room"
+    },
+    {
+      "name": "Relative Time Plus",
+      "friendly_name": "Relative Time Plus"
+    },
+    {
+      "name": "LUMI lumi.vibration.aq1",
+      "friendly_name": "Fenster",
+      "area_id": "arbeitszimmer"
+    },
+    {
+      "name": "LUMI lumi.vibration.aq1",
+      "friendly_name": "Fenster",
+      "area_id": "living_room"
+    },
+    {
+      "name": "co2-bird",
+      "friendly_name": "CO2 Bird",
+      "area_id": "living_room"
+    },
+    {
+      "name": "Thermal Comfort",
+      "friendly_name": "Thermal Comfort"
+    },
+    {
+      "name": "Thermal Comfort",
+      "friendly_name": "Draußen Thermal Comfort"
+    },
+    {
+      "name": "Catppuccin Theme",
+      "friendly_name": "Catppuccin Theme"
+    },
+    {
+      "name": "Graphite Theme",
+      "friendly_name": "Graphite Theme"
+    },
+    {
+      "name": "Dark Teal",
+      "friendly_name": "Dark Teal"
+    },
+    {
+      "name": "Whatsapp Theme",
+      "friendly_name": "Whatsapp Theme"
+    },
+    {
+      "name": "Gemütlich",
+      "friendly_name": "Gemütlich",
+      "area_id": "living_room"
+    },
+    {
+      "name": "Gemütlich Beamer",
+      "friendly_name": "Gemütlich Beamer",
+      "area_id": "living_room"
+    },
+    {
+      "name": "Tageslicht",
+      "friendly_name": "Tageslicht",
+      "area_id": "living_room"
+    },
+    {
+      "name": "Alles Aus",
+      "friendly_name": "Alles Aus"
+    },
+    {
+      "name": "Philip Oesterlin",
+      "friendly_name": "Immich"
+    },
+    {
+      "name": "shellyazplug-e4b3232e44f0",
+      "friendly_name": "Waschmaschiene",
+      "area_id": "waschraum"
+    },
+    {
+      "name": "HVAC Group",
+      "friendly_name": "HVAC Group"
+    },
+    {
+      "name": "Big Slider Card",
+      "friendly_name": "Big Slider Card"
+    },
+    {
+      "name": "Google: Gemini 2.5 Flash",
+      "friendly_name": "Google: Gemini 2.5 Flash"
+    },
+    {
+      "name": "Spotify Connect",
+      "friendly_name": "Spotify Connect"
+    },
+    {
+      "name": "ha-floorplan 🖌🎨 | Your imagination (almost) defines the limits",
+      "friendly_name": "ha-floorplan 🖌🎨 | Your imagination (almost) defines the limits"
+    },
+    {
+      "name": "prusa-mini",
+      "friendly_name": "prusa-mini",
+      "area_id": "arbeitszimmer"
+    },
+    {
+      "name": "_TZ3000_w0qqde0g TS011F",
+      "friendly_name": "Dial Display"
+    },
+    {
+      "name": "plex.oesterlin.dev",
+      "friendly_name": "plex.oesterlin.dev",
+      "area_id": "living_room"
+    },
+    {
+      "name": "Plex (Plex for Android (TV) - D0480)",
+      "friendly_name": "Plex (Plex for Android (TV) - D0480)",
+      "area_id": "living_room"
+    },
+    {
+      "name": "Plex (Plex for Android (Mobile) - Pixel 8)",
+      "friendly_name": "Plex (Plex for Android (Mobile) - Pixel 8)"
+    },
+    {
+      "name": "Home",
+      "friendly_name": "Home"
+    },
+    {
+      "name": "Plex Client Service",
+      "friendly_name": "Plex Client Service"
+    },
+    {
+      "name": "Bermuda BLE Trilateration",
+      "friendly_name": "Bermuda BLE Trilateration"
+    },
+    {
+      "name": "co2-bird (F4:12:FA:5A:57:9A)",
+      "friendly_name": "co2-bird (F4:12:FA:5A:57:9A)",
+      "area_id": "living_room"
+    },
+    {
+      "name": "Plex (Plexamp - Android)",
+      "friendly_name": "Plex (Plexamp - Android)"
+    },
+    {
+      "name": "Plex (Plex Cast - Chromecast)",
+      "friendly_name": "Plex (Plex Cast - Chromecast)"
+    },
+    {
+      "name": "Ble-Tracker-E6Efdc",
+      "friendly_name": "Büro Tracker",
+      "area_id": "arbeitszimmer"
+    },
+    {
+      "name": "M5_RFID_Reader",
+      "friendly_name": "M5_RFID_Reader"
+    },
+    {
+      "name": "ble-tracker-05c9a4 (34:85:18:05:C9:A6)",
+      "friendly_name": "Kino Tracker",
+      "area_id": "kino_raum"
+    },
+    {
+      "name": "ble-tracker-e6efdc (48:27:E2:E6:EF:DE)",
+      "friendly_name": "Schlafzimmer Tracker!",
+      "area_id": "schlafzimmer"
+    },
+    {
+      "name": "Canon SELPHY CP1500 HTTP",
+      "friendly_name": "Canon SELPHY CP1500 HTTP"
+    },
+    {
+      "name": "shellypmminig3-5432044defb4",
+      "friendly_name": "shellypmminig3-5432044defb4"
+    },
+    {
+      "name": "GlassHome Dashboard",
+      "friendly_name": "GlassHome Dashboard"
+    },
+    {
+      "name": "Living Room",
+      "friendly_name": "Living Room"
+    },
+    {
+      "name": "Yet Another Media Player",
+      "friendly_name": "Yet Another Media Player"
+    },
+    {
+      "name": "Music Assistant Queue Actions",
+      "friendly_name": "Music Assistant Queue Actions"
+    },
+    {
+      "name": "Plex (Plex for iOS - iPad)",
+      "friendly_name": "Plex (Plex for iOS - iPad)"
+    },
+    {
+      "name": "Plex (Plex for VIDAA - CAIXUN VT0332FC1_0100)",
+      "friendly_name": "Plex (Plex for VIDAA - CAIXUN VT0332FC1_0100)"
+    },
+    {
+      "name": "Matter Server",
+      "friendly_name": "Matter Server"
+    },
+    {
+      "name": "Plex (Plex for Samsung - TV 2018)",
+      "friendly_name": "Plex (Plex for Samsung - TV 2018)"
+    },
+    {
+      "name": "Plex (job.0 - Plex for Android (TV) - TPM191E)",
+      "friendly_name": "Plex (job.0 - Plex for Android (TV) - TPM191E)"
+    },
+    {
+      "name": "gruppe dynamic",
+      "friendly_name": "gruppe dynamic"
+    },
+    {
+      "name": "Living Room DLNA 1",
+      "friendly_name": "Living Room DLNA 1"
+    },
+    {
+      "name": "Roborock Qrevo Curv Series Dock",
+      "friendly_name": "Roborock Qrevo Curv Series Dock",
+      "area_id": "arbeitszimmer"
+    },
+    {
+      "name": "Roborock Qrevo Curv Series",
+      "friendly_name": "Roborock Qrevo Curv Series",
+      "area_id": "arbeitszimmer"
+    },
+    {
+      "name": "Xiaomi Vacuum Map Card",
+      "friendly_name": "Xiaomi Vacuum Map Card"
+    },
+    {
+      "name": "Roborock Custom Map",
+      "friendly_name": "Roborock Custom Map"
+    },
+    {
+      "name": "Bermuda Global",
+      "friendly_name": "Bermuda Global"
+    },
+    {
+      "name": "bermuda_431d2f7ddbc4440c80165fcb3ccc82a2_100_1",
+      "friendly_name": "Pixel BLE Tracker"
+    },
+    {
+      "name": "Apollo Multisensor Mk1 (MSR-1) dc534c (30:30:F9:DC:53:4E)",
+      "friendly_name": "Apollo Multisensor Mk1 (MSR-1) dc534c (30:30:F9:DC:53:4E)",
+      "area_id": "arbeitszimmer"
+    },
+    {
+      "name": "BLE Positioning System",
+      "friendly_name": "BLE Positioning System"
+    },
+    {
+      "name": "5179 1D3D",
+      "friendly_name": "5179 1D3D"
+    },
+    {
+      "name": "GV5179_1D3D",
+      "friendly_name": "GV5179_1D3D"
+    },
+    {
+      "name": "Nebula",
+      "friendly_name": "Nebula"
+    },
+    {
+      "name": "Workday Sensor",
+      "friendly_name": "Workday Sensor"
+    },
+    {
+      "name": "Uptime",
+      "friendly_name": "Uptime"
+    },
+    {
+      "name": "Germany, BW",
+      "friendly_name": "Germany, BW"
+    },
+    {
+      "name": "Status-Display",
+      "friendly_name": "Status-Display",
+      "area_id": "kuche"
+    },
+    {
+      "name": "Config Template Card",
+      "friendly_name": "Config Template Card"
+    },
+    {
+      "name": "BLESmart_0000025A005FBFA2364A",
+      "friendly_name": "BLESmart_0000025A005FBFA2364A"
+    },
+    {
+      "name": "LE-Bose Revolve+ SoundLink",
+      "friendly_name": "LE-Bose Revolve+ SoundLink"
+    },
+    {
+      "name": "bermuda_80_e1_27_f3_8c_74",
+      "friendly_name": "bermuda_80_e1_27_f3_8c_74"
+    },
+    {
+      "name": "Sc11ad0ecac414429C 29DA",
+      "friendly_name": "Sc11ad0ecac414429C 29DA"
+    },
+    {
+      "name": "DriveDot-9118 10F4",
+      "friendly_name": "DriveDot-9118 10F4"
+    },
+    {
+      "name": "Bubble Card Tools",
+      "friendly_name": "Bubble Card Tools"
+    },
+    {
+      "name": "status-display (FC:01:2C:DA:20:5E)",
+      "friendly_name": "status-display (FC:01:2C:DA:20:5E)",
+      "area_id": "kuche"
+    },
+    {
+      "name": "Niimbot",
+      "friendly_name": "Niimbot"
+    },
+    {
+      "name": "bermuda_19_0b_12_e9_01_a7",
+      "friendly_name": "bermuda_19_0b_12_e9_01_a7"
+    },
+    {
+      "name": "ntfy.oesterlin.dev",
+      "friendly_name": "ntfy.oesterlin.dev"
+    },
+    {
+      "name": "Homeassistent",
+      "friendly_name": "Homeassistent"
+    },
+    {
+      "name": "C.A.F.E.",
+      "friendly_name": "C.A.F.E."
+    },
+    {
+      "name": "niimbot",
+      "friendly_name": "niimbot"
+    },
+    {
+      "name": "S5e4970ee022e61eaC D7E1",
+      "friendly_name": "S5e4970ee022e61eaC D7E1"
+    }
+  ]
+}

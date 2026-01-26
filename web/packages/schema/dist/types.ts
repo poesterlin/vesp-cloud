@@ -96,10 +96,7 @@ export type ImageComponent = BaseComponent & {
 };
 export type ConditionalAreaComponent = BaseComponent & {
   type: "conditional_area";
-  /**
-   * @minItems 1
-   */
-  variants: [ConditionalVariant, ...ConditionalVariant[]];
+  variants: ConditionalVariant[];
   /**
    * ID of variant to show when no conditions match
    */
@@ -307,10 +304,7 @@ export interface TimeCondition {
 export interface CompoundCondition {
   type: "compound";
   operator: LogicalOperator;
-  /**
-   * @minItems 2
-   */
-  conditions: [Condition, Condition, ...Condition[]];
+  conditions: Condition[];
 }
 /**
  * Negates a condition

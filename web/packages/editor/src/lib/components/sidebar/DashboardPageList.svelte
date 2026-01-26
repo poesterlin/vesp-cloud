@@ -29,31 +29,42 @@
 <div class="list-container">
   <div class="header">
     <h3>DASHBOARD PAGES</h3>
-    <button class="add-btn" onclick={() => projectStore.addDashboardPage()}>+</button>
+    <button class="add-btn" onclick={() => projectStore.addDashboardPage()}
+      >+</button
+    >
   </div>
-  
+
   <div class="items">
     {#each projectStore.dashboardPages as page, i}
-      <div 
-        class="item" 
+      <div
+        role="button"
+        tabindex="0"
+        onkeydown={() => {}}
+        class="item"
         class:active={projectStore.currentDashboardPageId === page.id}
         onclick={() => projectStore.setDashboardPage(page.id)}
         ondblclick={() => startEditing(page.id, page.name)}
       >
         <div class="item-left">
           <div class="move-btns">
-            <button 
-              class="move-btn" 
-              disabled={i === 0} 
-              onclick={(e) => { e.stopPropagation(); projectStore.reorderDashboardPage(i, i - 1); }}
-              title="Move Up"
-            >▲</button>
-            <button 
-              class="move-btn" 
-              disabled={i === projectStore.dashboardPages.length - 1} 
-              onclick={(e) => { e.stopPropagation(); projectStore.reorderDashboardPage(i, i + 1); }}
-              title="Move Down"
-            >▼</button>
+            <button
+              class="move-btn"
+              disabled={i === 0}
+              onclick={(e) => {
+                e.stopPropagation();
+                projectStore.reorderDashboardPage(i, i - 1);
+              }}
+              title="Move Up">▲</button
+            >
+            <button
+              class="move-btn"
+              disabled={i === projectStore.dashboardPages.length - 1}
+              onclick={(e) => {
+                e.stopPropagation();
+                projectStore.reorderDashboardPage(i, i + 1);
+              }}
+              title="Move Down">▼</button
+            >
           </div>
           {#if editingId === page.id}
             <input
@@ -69,15 +80,21 @@
             <span class="name">{page.name}</span>
           {/if}
         </div>
-        <button class="delete-btn" onclick={(e) => { e.stopPropagation(); projectStore.deleteDashboardPage(page.id); }}>×</button>
+        <button
+          class="delete-btn"
+          onclick={(e) => {
+            e.stopPropagation();
+            projectStore.deleteDashboardPage(page.id);
+          }}>×</button
+        >
       </div>
     {/each}
   </div>
 
   <div class="indicator-preview">
-    <PageIndicator 
-      count={projectStore.dashboardPages.length} 
-      currentIndex={projectStore.currentPageIndex} 
+    <PageIndicator
+      count={projectStore.dashboardPages.length}
+      currentIndex={projectStore.currentPageIndex}
       isStatic={true}
     />
   </div>

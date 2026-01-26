@@ -104,7 +104,22 @@ function generateViewRenderer(view: any, name: string, project: Project, stateFi
   return lines.join("\n");
 }
 
-function generateComponentCode(comp: Component, project: Project, stateFields: StateFieldMap, isDetail: boolean): string {
+function entityToId(entity: string): string {
+  return "ha_" + entity.replace(/\./g, "_");
+}
+
+function iconToId(icon: string): string {
+  return (
+    "icon_" +
+    icon
+      .replace(/^mdi:/, "")
+      .replace(/^mdil:/, "")
+      .replace(/^memory:/, "")
+      .replace(/[^a-zA-Z0-9]/g, "_")
+  );
+}
+
+export function generateComponentCode(comp: Component, project: Project, stateFields: StateFieldMap, isDetail: boolean): string {
   const yCoord = isDetail ? `getSY(${comp.position.y})` : comp.position.y;
 
   switch (comp.type) {

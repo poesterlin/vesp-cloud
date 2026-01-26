@@ -39,9 +39,11 @@
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to start compilation");
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.error || "Failed to start compilation");
 
-      const { jobId } = await response.json();
+      const { jobId } = data;
       pollStatus(jobId);
     } catch (err: any) {
       compilationStatus = `Error: ${err.message}`;
@@ -53,15 +55,15 @@
     const poll = async () => {
       try {
         const response = await fetch(`/api/compile?jobId=${jobId}`);
-        if (!response.ok) throw new Error("Failed to get status");
-
         const job = await response.json();
+        if (!response.ok) throw new Error(job.error || "Failed to get status");
         compilationStatus = job.status;
 
         if (job.status === "completed") {
           compiling = false;
           createManifest(jobId);
         } else if (job.status === "failed") {
+          compilationStatus = `Error: ${job.error || "Compilation failed"}`;
           compiling = false;
         } else {
           setTimeout(poll, 2000);
@@ -77,16 +79,18 @@
 
   async function downloadProject() {
     if (!projectStore.project) return;
-    
+
     try {
       const zip = new JSZip();
-      const fileName = projectStore.project.name.toLowerCase().replace(/\s+/g, "-");
+      const fileName = projectStore.project.name
+        .toLowerCase()
+        .replace(/\s+/g, "-");
       const project = projectStore.project;
-      
+
       // Main config
       zip.file(`${fileName}.yaml`, generateESPHomeYAML(project));
       zip.file("sensors.yaml", generateSensorsYAML(project));
-      
+
       // Includes directory
       const includes = zip.folder("includes");
       if (includes) {
@@ -97,10 +101,13 @@
         includes.file("display_renderer.h", generateCppRenderer(project));
         includes.file("touch_handler.h", generateTouchHandler(project));
       }
-      
+
       // Add a README
-      zip.file("README.md", `# ${projectStore.project.name}\n\nThis project was exported from the Home Display Designer.\n\n## How to use\n1. Install ESPHome: \`pip install esphome\`\n2. Run: \`esphome run ${fileName}.yaml\``);
-      
+      zip.file(
+        "README.md",
+        `# ${projectStore.project.name}\n\nThis project was exported from the Home Display Designer.\n\n## How to use\n1. Install ESPHome: \`pip install esphome\`\n2. Run: \`esphome run ${fileName}.yaml\``,
+      );
+
       const content = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");
@@ -117,16 +124,14 @@
     const firmware = `/builds/${jobId}.bin`;
     const manifest = {
       name: projectStore.project?.name || "ESP32 Firmware",
-      version: new Date().toISOString().split('T')[0],
+      version: new Date().toISOString().split("T")[0],
       new_install_prompt_erase: true,
       builds: [
         {
           chipFamily: "ESP32-S3",
-          parts: [
-            { path: firmware, offset: 0 }
-          ]
-        }
-      ]
+          parts: [{ path: firmware, offset: 0 }],
+        },
+      ],
     };
 
     const json = JSON.stringify(manifest);
@@ -135,14 +140,16 @@
 
     // Initialize the ESP Web Tools button after manifest is ready
     setTimeout(() => {
-      const button = document.querySelector('esp-web-install-button') as any;
+      const button = document.querySelector("esp-web-install-button") as any;
       if (button) {
         button.manifest = manifestUrl;
       }
     }, 100);
   }
 
-  const showFlashButton = $derived(compilationStatus === "completed" && manifestUrl);
+  const showFlashButton = $derived(
+    compilationStatus === "completed" && manifestUrl,
+  );
 </script>
 
 <svelte:head>
@@ -159,13 +166,27 @@
   </div>
 
   <div class="actions">
-      <button class="compile-btn" class:loading={compiling} disabled={compiling} onclick={compile}>
+    <button
+      class="compile-btn"
+      class:loading={compiling}
+      disabled={compiling}
+      onclick={compile}
+    >
       <span class="btn-title">Prepare Firmware</span>
-      <span class="btn-desc">Create the software for your display so it's ready to be installed</span>
-      {#if compiling}
-        <div class="status-text">{compilationStatus}</div>
+      <span class="btn-desc"
+        >Create the software for your display so it's ready to be installed</span
+      >
+      {#if compiling || compilationStatus?.startsWith("Error:")}
+        <div
+          class="status-text"
+          class:error={compilationStatus?.startsWith("Error:")}
+        >
+          {compilationStatus}
+        </div>
       {:else}
-        <span class="btn-note">Note: The first time usually takes a few minutes</span>
+        <span class="btn-note"
+          >Note: The first time usually takes a few minutes</span
+        >
       {/if}
     </button>
 
@@ -173,14 +194,18 @@
       <esp-web-install-button>
         <div slot="activate" class="flash-btn-content">
           <span class="btn-title">Install to Display</span>
-          <span class="btn-desc">Plug in your display via USB to send the software directly to it</span>
+          <span class="btn-desc"
+            >Plug in your display via USB to send the software directly to it</span
+          >
         </div>
       </esp-web-install-button>
     {/if}
 
     <button class="download-btn" onclick={downloadProject}>
       <span class="btn-title">Download Project</span>
-      <span class="btn-desc">Get a ZIP file with the code and instructions for manual setup</span>
+      <span class="btn-desc"
+        >Get a ZIP file with the code and instructions for manual setup</span
+      >
     </button>
   </div>
 </div>
@@ -316,6 +341,11 @@
     background: rgba(0, 0, 0, 0.2);
     padding: 4px 12px;
     border-radius: 20px;
+  }
+
+  .status-text.error {
+    background: white;
+    color: #f44336;
   }
 
   :global(esp-web-install-button) {

@@ -152,8 +152,7 @@
         "operator": { "$ref": "#/definitions/LogicalOperator" },
         "conditions": {
           "type": "array",
-          "items": { "$ref": "#/definitions/Condition" },
-          "minItems": 2
+          "items": { "$ref": "#/definitions/Condition" }
         }
       },
       "required": ["type", "operator", "conditions"],
@@ -221,8 +220,7 @@
             "type": { "const": "conditional_area" },
             "variants": {
               "type": "array",
-              "items": { "$ref": "#/definitions/ConditionalVariant" },
-              "minItems": 1
+              "items": { "$ref": "#/definitions/ConditionalVariant" }
             },
             "defaultVariantId": {
               "type": "string",

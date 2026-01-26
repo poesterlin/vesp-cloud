@@ -18,9 +18,10 @@
     "db:push": "cd packages/editor && bun run db:push"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
+    "@mdi/js": "^7.4.47",
     "@types/bun": "latest",
-    "@mdi/js": "^7.4.47"
+    "typescript": "^5.7.0",
+    "vite-plugin-devtools-json": "1.0.0"
   },
   "module": "index.ts",
   "type": "module"

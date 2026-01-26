@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Component, EntityBinding } from "@esphome-designer/schema";
   import { homeAssistantStore } from "$lib/stores/homeassistant.svelte";
-  import type { Entity, Device } from "@esphome-designer/schema/homeassistant-dump";
+  import type { Entity, Device } from "@esphome-designer/schema/homeassistant";
 
   interface DeviceSelection {
     deviceId: string;

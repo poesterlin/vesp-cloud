@@ -184,9 +184,11 @@ export class CompilationQueue extends EventEmitter {
         if (code === 0) {
           // .esphome/build/testing/.pioenvs/testing/firmware.bin
           const binPath = join(tempDir, '.esphome', 'build', job.projectName, '.pioenvs', job.projectName, 'firmware.bin');
-          const publicDest = join(process.cwd(), 'static', 'builds', `${job.id}.bin`);
+          const buildsDir = join(process.cwd(), 'static', 'builds');
+          const publicDest = join(buildsDir, `${job.id}.bin`);
           try {
             // TODO: upload to s3
+            await fs.mkdir(buildsDir, { recursive: true });
             await fs.copyFile(binPath, publicDest);
             console.log(`Binary saved to ${publicDest}`);
           } catch (e) {

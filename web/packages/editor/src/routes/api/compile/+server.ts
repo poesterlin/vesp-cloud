@@ -1,10 +1,16 @@
 import { json } from "@sveltejs/kit";
+import { existsSync } from "fs";
+import { join } from "path";
 import type { RequestHandler } from "./$types";
 import { getAllJobs, getJobStatus, submitCompilationJob } from "$lib/utils/worker";
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
+  if (!locals.user) {
+    return json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const { projectId, projectName, config, configPath } = await request.json();
+    const { projectId, projectName, config, configPath, template } = await request.json();
 
     if (!projectId || !projectName || !config) {
       return json(
@@ -17,7 +23,9 @@ export const POST: RequestHandler = async ({ request }) => {
       projectId,
       projectName,
       config,
-      configPath || ""
+      configPath || "",
+      locals.user.id,
+      template
     );
 
     return json(result);
@@ -36,6 +44,20 @@ export const GET: RequestHandler = async ({ url }) => {
     if (jobId) {
       const status = await getJobStatus(jobId);
       return json(status);
+    }
+
+    const projectId = url.searchParams.get("projectId");
+    const latest = url.searchParams.get("latest");
+
+    if (projectId && latest) {
+      const allJobs = await getAllJobs();
+      const found = allJobs.find(
+        (j) =>
+          j.projectId === projectId &&
+          j.status === "completed" &&
+          existsSync(join(process.cwd(), "static", "builds", `${j.id}.bin`)),
+      );
+      return found ? json(found) : json(null);
     }
 
     const allJobs = await getAllJobs();

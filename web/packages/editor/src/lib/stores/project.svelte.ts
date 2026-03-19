@@ -15,6 +15,8 @@ const LATEST_VERSION = "1.0.0";
 const PROJECTS_INDEX_KEY = "esphome-designer-projects-index";
 const PROJECT_PREFIX = "esphome-designer-project-";
 
+const SAVE_DEBOUNCE_MS = 1500;
+
 export type ProjectConfig = {
   display?: Partial<DisplayConfig>,
   theme?: Theme
@@ -23,38 +25,42 @@ export type ProjectConfig = {
 function createProjectStore() {
   // Core project state
   let project = $state<Project | null>(null);
+  let serverProjectId = $state<string | null>(null);
+  let firmwareToken = $state<string | null>(null);
 
   // Current view tracking
   let currentDashboardPageId = $state<string | null>(null);
   let currentDetailViewId = $state<string | null>(null);
   let viewMode = $state<"dashboard" | "detail">("dashboard");
 
-  function saveToLocalStorage() {
-    if (typeof window === "undefined" || !project) return;
+  // Debounced save
+  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  let saving = $state(false);
 
-    assert(project.id, "Project must have an ID to be saved");
-
-    // Save project data
-    localStorage.setItem(`${PROJECT_PREFIX}${project.id}`, JSON.stringify(project));
-
-    // Update index
-    const index = getProjectsIndex();
-    const existing = index.find(p => p.id === project!.id);
-    if (existing) {
-      existing.name = project.name;
-      existing.updatedAt = new Date().toISOString();
-    } else {
-      index.push({
-        id: project.id,
-        name: project.name,
-        updatedAt: new Date().toISOString()
-      });
-    }
-    localStorage.setItem(PROJECTS_INDEX_KEY, JSON.stringify(index));
+  function scheduleSave() {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => saveToServer(), SAVE_DEBOUNCE_MS);
   }
 
+  async function saveToServer() {
+    if (!project || !serverProjectId) return;
+    saving = true;
+    try {
+      await fetch(`/api/projects/${serverProjectId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: project.name, data: project }),
+      });
+    } catch (e) {
+      console.error('Failed to save project', e);
+    } finally {
+      saving = false;
+    }
+  }
+
+  // localStorage helpers for migration
   function getProjectsIndex(): { id: string, name: string, updatedAt: string }[] {
-    if (typeof window === "undefined") return [];
+    if (!browser) return [];
     const saved = localStorage.getItem(PROJECTS_INDEX_KEY);
     return saved ? JSON.parse(saved) : [];
   }
@@ -90,6 +96,10 @@ function createProjectStore() {
     },
     get detailViews() { return project?.detailViews ?? []; },
     get fonts() { return project?.fonts ?? []; },
+    get secrets() { return project?.secrets; },
+    get serverProjectId() { return serverProjectId; },
+    get firmwareToken() { return firmwareToken; },
+    get saving() { return saving; },
 
     // Navigation
     setViewMode(mode: "dashboard" | "detail") {
@@ -131,7 +141,7 @@ function createProjectStore() {
       project.dashboardPages.push(newPage);
       currentDashboardPageId = newPage.id;
       viewMode = "dashboard";
-      saveToLocalStorage();
+      scheduleSave();
       return newPage;
     },
 
@@ -143,17 +153,17 @@ function createProjectStore() {
         if (currentDashboardPageId === id) {
           currentDashboardPageId = project.dashboardPages[0].id;
         }
-        saveToLocalStorage();
+        scheduleSave();
       }
     },
 
     reorderDashboardPage(oldIndex: number, newIndex: number) {
       if (!project) return;
       if (newIndex < 0 || newIndex >= project.dashboardPages.length) return;
-      
+
       const page = project.dashboardPages.splice(oldIndex, 1)[0];
       project.dashboardPages.splice(newIndex, 0, page);
-      saveToLocalStorage();
+      scheduleSave();
     },
 
     renameDashboardPage(id: string, newName: string) {
@@ -161,7 +171,7 @@ function createProjectStore() {
       const page = project.dashboardPages.find(p => p.id === id);
       if (page) {
         page.name = newName;
-        saveToLocalStorage();
+        scheduleSave();
       }
     },
 
@@ -170,7 +180,7 @@ function createProjectStore() {
       if (!project) return;
       const title = view?.title ?? `Detail ${project.detailViews.length + 1}`;
       const newView: DetailView = {
-        id: view?.id ?? toUpperSnakeCase(title), // Use toUpperSnakeCase for the ID
+        id: view?.id ?? toUpperSnakeCase(title),
         title: title,
         height: view?.height ?? 640,
         components: view?.components ?? [],
@@ -178,7 +188,7 @@ function createProjectStore() {
       project.detailViews.push(newView);
       currentDetailViewId = newView.id;
       viewMode = "detail";
-      saveToLocalStorage();
+      scheduleSave();
       return newView;
     },
 
@@ -187,7 +197,7 @@ function createProjectStore() {
       const view = project.detailViews.find((v) => v.id === id);
       if (view) {
         Object.assign(view, updates);
-        saveToLocalStorage();
+        scheduleSave();
       }
     },
 
@@ -200,17 +210,17 @@ function createProjectStore() {
           currentDetailViewId = null;
           viewMode = "dashboard";
         }
-        saveToLocalStorage();
+        scheduleSave();
       }
     },
 
     reorderDetailView(oldIndex: number, newIndex: number) {
       if (!project) return;
       if (newIndex < 0 || newIndex >= project.detailViews.length) return;
-      
+
       const view = project.detailViews.splice(oldIndex, 1)[0];
       project.detailViews.splice(newIndex, 0, view);
-      saveToLocalStorage();
+      scheduleSave();
     },
 
     renameDetailView(id: string, newTitle: string) {
@@ -218,7 +228,7 @@ function createProjectStore() {
       const view = project.detailViews.find(v => v.id === id);
       if (view) {
         view.title = newTitle;
-        saveToLocalStorage();
+        scheduleSave();
       }
     },
 
@@ -230,7 +240,7 @@ function createProjectStore() {
       } else if (currentDetailView) {
         currentDetailView.components.push(component);
       }
-      saveToLocalStorage();
+      scheduleSave();
       return component;
     },
 
@@ -240,7 +250,7 @@ function createProjectStore() {
         const variant = parent.variants.find(v => v.id === variantId);
         if (variant) {
           variant.components.push(component);
-          saveToLocalStorage();
+          scheduleSave();
           return component;
         }
       }
@@ -249,14 +259,12 @@ function createProjectStore() {
     updateComponent(id: string, updates: Partial<Component>) {
       if (!project) return;
 
-      // Helper to update component in an array, including nested conditional areas
       const updateInComponents = (components: Component[]): boolean => {
         const idx = components.findIndex((c) => c.id === id);
         if (idx !== -1) {
           components[idx] = { ...components[idx], ...updates } as Component;
           return true;
         }
-        // Search in conditional areas
         for (const comp of components) {
           if (comp.type === "conditional_area") {
             for (const variant of comp.variants) {
@@ -269,53 +277,48 @@ function createProjectStore() {
         return false;
       };
 
-      // Search in current view
       const components = viewMode === "dashboard" ? currentDashboardPage?.components : currentDetailView?.components;
       if (components && updateInComponents(components)) {
-        saveToLocalStorage();
+        scheduleSave();
       }
     },
 
     deleteComponent(id: string) {
       if (!project) return;
-      // Search in pages
       for (const page of project.dashboardPages) {
         const idx = page.components.findIndex((c) => c.id === id);
         if (idx !== -1) {
           page.components.splice(idx, 1);
-          saveToLocalStorage();
+          scheduleSave();
           return;
         }
-        // Search in conditional areas
         for (const comp of page.components) {
           if (comp.type === "conditional_area") {
             for (const variant of comp.variants) {
               const cIdx = variant.components.findIndex(c => c.id === id);
               if (cIdx !== -1) {
                 variant.components.splice(cIdx, 1);
-                saveToLocalStorage();
+                scheduleSave();
                 return;
               }
             }
           }
         }
       }
-      // Search in detail views
       for (const view of project.detailViews) {
         const idx = view.components.findIndex((c) => c.id === id);
         if (idx !== -1) {
           view.components.splice(idx, 1);
-          saveToLocalStorage();
+          scheduleSave();
           return;
         }
-        // Search in conditional areas
         for (const comp of view.components) {
           if (comp.type === "conditional_area") {
             for (const variant of comp.variants) {
               const cIdx = variant.components.findIndex(c => c.id === id);
               if (cIdx !== -1) {
                 variant.components.splice(cIdx, 1);
-                saveToLocalStorage();
+                scheduleSave();
                 return;
               }
             }
@@ -325,7 +328,6 @@ function createProjectStore() {
     },
 
     getComponent(id: string): Component | undefined {
-      // Helper to search recursively
       const findInComponents = (components: Component[]): Component | undefined => {
         for (const c of components) {
           if (c.id === id) return c;
@@ -358,7 +360,6 @@ function createProjectStore() {
       let x = component.position.x;
       let y = component.position.y;
 
-      // Find if this component is inside a conditional area
       const findParent = (components: Component[], targetId: string): Component | null => {
         for (const c of components) {
           if (c.type === "conditional_area") {
@@ -405,7 +406,7 @@ function createProjectStore() {
           priority: 0,
         };
         component.variants.push(newVariant);
-        saveToLocalStorage();
+        scheduleSave();
         return newVariant;
       }
     },
@@ -416,7 +417,7 @@ function createProjectStore() {
         const variant = component.variants.find(v => v.id === variantId);
         if (variant) {
           Object.assign(variant, updates);
-          saveToLocalStorage();
+          scheduleSave();
         }
       }
     },
@@ -427,7 +428,7 @@ function createProjectStore() {
         const idx = component.variants.findIndex(v => v.id === variantId);
         if (idx !== -1) {
           component.variants.splice(idx, 1);
-          saveToLocalStorage();
+          scheduleSave();
         }
       }
     },
@@ -440,7 +441,7 @@ function createProjectStore() {
       if (component) {
         component.position.x = Math.max(0, Math.min(component.position.x + dx, project.display.width - 1));
         component.position.y = Math.max(0, Math.min(component.position.y + dy, project.display.height - 1));
-        saveToLocalStorage();
+        scheduleSave();
       }
     },
 
@@ -448,11 +449,11 @@ function createProjectStore() {
     updateProject(updates: Partial<Project>) {
       if (project) {
         Object.assign(project, updates);
-        saveToLocalStorage();
+        scheduleSave();
       }
     },
 
-    createNewProject(name: string, config?: ProjectConfig): Project {
+    async createNewProject(name: string, config?: ProjectConfig): Promise<Project> {
       const display = {
         width: config?.display?.width ?? 240,
         height: config?.display?.height ?? 320,
@@ -469,14 +470,35 @@ function createProjectStore() {
         detailViews: [],
         fonts: [],
       };
+
+      // Save to server
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, data: newProject }),
+      });
+      const saved = await res.json();
+
       project = newProject;
+      serverProjectId = saved.id;
+      firmwareToken = saved.firmwareToken;
       currentDashboardPageId = newProject.dashboardPages[0].id;
       currentDetailViewId = null;
       viewMode = "dashboard";
-      saveToLocalStorage();
       return newProject;
     },
 
+    loadFromServer(serverProject: { id: string; name: string; data: any; firmwareToken: string }) {
+      const parsed = serverProject.data as Project;
+      project = parsed;
+      serverProjectId = serverProject.id;
+      firmwareToken = serverProject.firmwareToken;
+      currentDashboardPageId = parsed.dashboardPages[0]?.id ?? "";
+      currentDetailViewId = null;
+      viewMode = "dashboard";
+    },
+
+    // Keep for backward compatibility during migration
     loadProjectById(id: string): boolean {
       if (!browser) return false;
       const saved = localStorage.getItem(`${PROJECT_PREFIX}${id}`);
@@ -495,18 +517,39 @@ function createProjectStore() {
       return false;
     },
 
-    deleteProject(id: string) {
-      if (!browser) return;
-      localStorage.removeItem(`${PROJECT_PREFIX}${id}`);
-      const index = getProjectsIndex().filter(p => p.id !== id);
-      localStorage.setItem(PROJECTS_INDEX_KEY, JSON.stringify(index));
-      if (project?.id === id) {
+    async deleteProject(id: string) {
+      await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+      if (serverProjectId === id) {
         project = null;
+        serverProjectId = null;
+        firmwareToken = null;
       }
     },
 
-    listProjects() {
+    async listProjects(): Promise<{ id: string; name: string; updatedAt: string }[]> {
+      const res = await fetch('/api/projects');
+      if (!res.ok) return [];
+      return res.json();
+    },
+
+    // localStorage migration
+    getLocalStorageProjects() {
       return getProjectsIndex();
+    },
+
+    clearLocalStorage() {
+      if (!browser) return;
+      const index = getProjectsIndex();
+      for (const p of index) {
+        localStorage.removeItem(`${PROJECT_PREFIX}${p.id}`);
+      }
+      localStorage.removeItem(PROJECTS_INDEX_KEY);
+    },
+
+    getLocalProjectData(id: string): Project | null {
+      if (!browser) return null;
+      const saved = localStorage.getItem(`${PROJECT_PREFIX}${id}`);
+      return saved ? JSON.parse(saved) : null;
     },
 
     exportJSON(): string {
@@ -516,14 +559,13 @@ function createProjectStore() {
     importJSON(json: string): boolean {
       try {
         const parsed = JSON.parse(json);
-        // Simple validation
         if (!parsed.id || !parsed.name || !parsed.display) return false;
 
         project = parsed;
         currentDashboardPageId = parsed.dashboardPages[0]?.id ?? "";
         currentDetailViewId = null;
         viewMode = "dashboard";
-        saveToLocalStorage();
+        scheduleSave();
         return true;
       } catch (e) {
         console.error("Failed to import project", e);

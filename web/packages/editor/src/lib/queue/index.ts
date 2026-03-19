@@ -4,17 +4,13 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { getDb, schema } from '$lib/db/index.js';
 import { eq, desc } from 'drizzle-orm';
-import type { CompilationJob } from '$lib/db/schema';
+import type { CompilationJob, NewCompilationJob } from '$lib/db/schema';
 import { env } from '$env/dynamic/private';
 import type { Project } from '@esphome-designer/schema';
 import { generateESPHomeYAML } from '$lib/codegen/esphome';
-import { generateCppRenderer } from '$lib/codegen/cpp';
-import { generateStateHeader } from '$lib/codegen/state-manager';
-import { generateTouchHandler } from '$lib/codegen/touch-handler';
-import { generateSensorsYAML } from '$lib/codegen/sensors';
-import { generateRenderHelpers } from '$lib/codegen/render-helpers';
-import { generateRenderPages } from '$lib/codegen/render-pages';
-import { generateRenderDetails } from '$lib/codegen/render-details';
+import { generateSecretsYAML } from '$lib/codegen/secrets';
+import { generateHardwareYAML } from '$lib/codegen/hardware';
+import { generateInitialFlashYAML } from '$lib/codegen/initial-flash';
 
 interface ActiveJob {
   job: CompilationJob;
@@ -51,18 +47,21 @@ export class CompilationQueue extends EventEmitter {
     this.jobs.clear();
   }
 
-  async addJob(job: CompilationJob): Promise<void> {
-    this.jobs.set(job.id, job);
-    this.queue.push(job);
+  async addJob(job: CompilationJob | NewCompilationJob): Promise<void> {
+    const fullJob = job as CompilationJob;
+    this.jobs.set(fullJob.id, fullJob);
+    this.queue.push(fullJob);
 
     // Persist to database
     const db = getDb();
     await db.insert(schema.compilationJobs).values({
       id: job.id,
       projectId: job.projectId,
+      userId: job.userId,
       projectName: job.projectName,
       config: job.config,
       configPath: job.configPath,
+      template: job.template,
       status: job.status,
       createdAt: job.createdAt,
     });
@@ -97,47 +96,58 @@ export class CompilationQueue extends EventEmitter {
   }
 
   private async runCompilation(job: CompilationJob): Promise<void> {
-    const tempDir = join('/tmp/esphome-builds', job.projectId);
+    const tempDir = join('/tmp/esphome-builds', job.projectId ?? job.id);
     const configFile = join(tempDir, 'config.yaml');
 
     try {
       await fs.mkdir(tempDir, { recursive: true });
-      const includesDir = join(tempDir, 'includes');
-      await fs.mkdir(includesDir, { recursive: true });
 
-      const project = JSON.parse(job.config) as Project;
+      // Create packages directory for hardware config
+      const packagesDir = join(tempDir, 'packages');
+      await fs.mkdir(packagesDir, { recursive: true });
 
-      // Generate ESPHome YAML
-      const esphomeYaml = generateESPHomeYAML(project);
+      // Look up firmware token to generate the OTA update URL
+      let firmwareUpdateUrl: string | undefined;
+      if (job.projectId) {
+        const db = getDb();
+        const [proj] = await db.select({ firmwareToken: schema.projects.firmwareToken })
+          .from(schema.projects)
+          .where(eq(schema.projects.id, job.projectId));
+        if (proj?.firmwareToken) {
+          const baseUrl = env.PUBLIC_BASE_URL || `http://localhost:5173`;
+          firmwareUpdateUrl = `${baseUrl}/api/firmware/${proj.firmwareToken}`;
+        }
+      }
+
+      let esphomeYaml: string;
+      let secretsYaml: string;
+
+      if (job.template === 'initial') {
+        // Initial flash mode: use the lightweight setup firmware
+        esphomeYaml = generateInitialFlashYAML(job.projectName);
+        // Generate minimal secrets with just the firmware URL
+        secretsYaml = `# ESPHome Secrets (Initial Flash)\nfirmware_update_url: "${firmwareUpdateUrl ?? "http://YOUR_SERVER/api/firmware/YOUR_TOKEN"}"`;
+      } else {
+        // Full dashboard mode: generate from project config
+        const project = JSON.parse(job.config) as Project;
+        if (firmwareUpdateUrl) {
+          project.secrets = {
+            ...project.secrets,
+            firmwareUpdateUrl,
+          };
+        }
+        esphomeYaml = generateESPHomeYAML(project);
+        secretsYaml = generateSecretsYAML(project);
+      }
+
+      // Write ESPHome YAML
       await fs.writeFile(configFile, esphomeYaml);
 
-      // Generate State Manager (dependency)
-      const stateManager = generateStateHeader(project);
-      await fs.writeFile(join(includesDir, 'state_manager.h'), stateManager);
+      // Write LVGL hardware package
+      await fs.writeFile(join(packagesDir, 'lvgl_hardware.yaml'), generateHardwareYAML());
 
-      // Generate Render Helpers (dependency)
-      const renderHelpers = generateRenderHelpers(project);
-      await fs.writeFile(join(includesDir, 'render_helpers.h'), renderHelpers);
-
-      // Generate Pages (dependency)
-      const renderPages = generateRenderPages(project);
-      await fs.writeFile(join(includesDir, 'render_pages.h'), renderPages);
-
-      // Generate Details (dependency)
-      const renderDetails = generateRenderDetails(project);
-      await fs.writeFile(join(includesDir, 'render_details.h'), renderDetails);
-
-      // Generate C++ Renderer (main entry point)
-      const cppRenderer = generateCppRenderer(project);
-      await fs.writeFile(join(includesDir, 'display_renderer.h'), cppRenderer);
-
-      // Generate Touch Handler
-      const touchHandler = generateTouchHandler(project);
-      await fs.writeFile(join(includesDir, 'touch_handler.h'), touchHandler);
-
-      // Generate Sensors YAML
-      const sensorsYaml = generateSensorsYAML(project);
-      await fs.writeFile(join(tempDir, 'sensors.yaml'), sensorsYaml);
+      // Write Secrets YAML
+      await fs.writeFile(join(tempDir, 'secrets.yaml'), secretsYaml);
 
       const venvPath = env.ESPHOME_VENV;
         const childProcess = spawn(`${venvPath}/bin/python`,
@@ -182,17 +192,31 @@ export class CompilationQueue extends EventEmitter {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         if (code === 0) {
-          // .esphome/build/testing/.pioenvs/testing/firmware.bin
-          const binPath = join(tempDir, '.esphome', 'build', job.projectName, '.pioenvs', job.projectName, 'firmware.bin');
+          // ESPHome uses sanitized device name for build directory
+          const deviceName = job.projectName
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9-]/g, '');
+          const pioDir = join(tempDir, '.esphome', 'build', deviceName, '.pioenvs', deviceName);
+          const candidates = ['firmware.factory.bin', 'firmware.bin'];
           const buildsDir = join(process.cwd(), 'static', 'builds');
           const publicDest = join(buildsDir, `${job.id}.bin`);
-          try {
-            // TODO: upload to s3
-            await fs.mkdir(buildsDir, { recursive: true });
-            await fs.copyFile(binPath, publicDest);
-            console.log(`Binary saved to ${publicDest}`);
-          } catch (e) {
-            console.error('Binary not found. Check if it is an ESP8266 (firmware.bin) or ESP32 (firmware.factory.bin)', e);
+          await fs.mkdir(buildsDir, { recursive: true });
+
+          let copied = false;
+          for (const name of candidates) {
+            const binPath = join(pioDir, name);
+            try {
+              await fs.access(binPath);
+              await fs.copyFile(binPath, publicDest);
+              console.log(`Binary saved to ${publicDest} (from ${name})`);
+              copied = true;
+              break;
+            } catch {}
+          }
+          if (!copied) {
+            const files = await fs.readdir(pioDir).catch(() => []);
+            console.error(`No firmware binary found in ${pioDir}. Files: ${files.join(', ')}`);
           }
 
           await this.handleJobResult(job.id, { output: stdout });
@@ -264,41 +288,14 @@ export class CompilationQueue extends EventEmitter {
 
     if (dbJobs.length === 0) return undefined;
 
-    const dbJob = dbJobs[0];
-    return {
-      id: dbJob.id,
-      projectId: dbJob.projectId,
-      projectName: dbJob.projectName,
-      config: dbJob.config,
-      configPath: dbJob.configPath ?? '',
-      status: dbJob.status as any,
-      output: dbJob.output ?? null,
-      error: dbJob.error ?? null,
-      createdAt: dbJob.createdAt,
-      startedAt: dbJob.startedAt ?? null,
-      completedAt: dbJob.completedAt ?? null,
-    };
+    return dbJobs[0];
   }
 
   async getAllJobs(): Promise<CompilationJob[]> {
     const db = getDb();
-    const dbJobs = await db.select()
+    return db.select()
       .from(schema.compilationJobs)
       .orderBy(desc(schema.compilationJobs.createdAt));
-
-    return dbJobs.map(dbJob => ({
-      id: dbJob.id,
-      projectId: dbJob.projectId,
-      projectName: dbJob.projectName,
-      config: dbJob.config,
-      configPath: dbJob.configPath ?? '',
-      status: dbJob.status as any,
-      output: dbJob.output ?? null,
-      error: dbJob.error ?? null,
-      createdAt: dbJob.createdAt,
-      startedAt: dbJob.startedAt ?? null,
-      completedAt: dbJob.completedAt ?? null,
-    }));
   }
 
   getStats(): { total: number; pending: number; running: number; completed: number; failed: number } {

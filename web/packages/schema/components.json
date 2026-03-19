@@ -262,7 +262,10 @@
         "onHold": { "$ref": "#/definitions/OnTapAction" },
         "onDragStart": { "$ref": "#/definitions/OnTapAction" },
         "onDragEnd": { "$ref": "#/definitions/OnTapAction" },
-        "variant": { "enum": ["default", "retro", "minimal"], "default": "retro" }
+        "variant": { "enum": ["default", "retro", "minimal"], "default": "retro" },
+        "borderRadius": { "type": "integer", "description": "Corner radius in pixels" },
+        "padding": { "type": "integer", "description": "Padding in pixels (all sides)" },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1, "default": 1, "description": "Widget opacity (0-1)" }
       },
       "required": ["id", "type", "position"]
     },
@@ -295,6 +298,14 @@
             "backgroundColor": { "$ref": "#/definitions/Color" },
             "foregroundColor": { "$ref": "#/definitions/Color" },
             "borderColor": { "$ref": "#/definitions/Color" },
+            "checkedBackgroundColor": { 
+              "$ref": "#/definitions/Color",
+              "description": "Background color when button is in checked/active state (for toggle buttons)"
+            },
+            "checkedForegroundColor": { 
+              "$ref": "#/definitions/Color",
+              "description": "Text/icon color when button is in checked/active state"
+            },
             "pressAction": { "$ref": "#/definitions/ActionBinding" },
             "holdAction": { "$ref": "#/definitions/ActionBinding" }
           },
@@ -393,7 +404,12 @@
           "properties": {
             "type": { "const": "container" },
             "label": { "type": "string" },
-            "backgroundColor": { "$ref": "#/definitions/Color" }
+            "backgroundColor": { "$ref": "#/definitions/Color" },
+            "children": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/Component" },
+              "description": "Child components rendered inside this container"
+            }
           },
           "required": ["type", "size"]
         }
@@ -560,14 +576,24 @@
       "required": ["id", "file", "size"],
       "additionalProperties": false
     },
+    "SecretsConfig": {
+      "type": "object",
+      "description": "OTA update configuration",
+      "properties": {
+        "firmwareUpdateUrl": {
+          "type": "string",
+          "description": "Firmware update URL for OTA via HTTP (auto-populated from server)"
+        }
+      },
+      "additionalProperties": false
+    },
     "DisplayConfig": {
       "type": "object",
       "properties": {
-        "width": { "type": "integer" },
-        "height": { "type": "integer" },
-        "platform": { "enum": ["ili9xxx", "st7789", "ssd1306", "waveshare_epaper"] }
+        "width": { "type": "integer", "default": 480 },
+        "height": { "type": "integer", "default": 480 }
       },
-      "required": ["width", "height", "platform"],
+      "required": ["width", "height"],
       "additionalProperties": false
     },
     "Project": {
@@ -594,7 +620,8 @@
         "fonts": {
           "type": "array",
           "items": { "$ref": "#/definitions/FontDefinition" }
-        }
+        },
+        "secrets": { "$ref": "#/definitions/SecretsConfig" }
       },
       "required": ["name", "display", "dashboardPages", "detailViews"],
       "additionalProperties": false

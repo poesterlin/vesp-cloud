@@ -2,7 +2,7 @@
   import { projectStore } from "$lib/stores/project.svelte";
   import { RETRO_THEME } from "$lib/themes/retro";
   import { MODERN_THEME } from "$lib/themes/modern";
-  import type { DisplayConfig, Theme, FontDefinition } from "@esphome-designer/schema";
+  import type { Theme, FontDefinition } from "@esphome-designer/schema";
   import { fade, fly } from "svelte/transition";
 
   interface Props {
@@ -14,9 +14,6 @@
   const themes = [RETRO_THEME, MODERN_THEME];
   
   let projectName = $state(projectStore.project?.name ?? "");
-  let displayWidth = $state(projectStore.display?.width ?? 240);
-  let displayHeight = $state(projectStore.display?.height ?? 320);
-  let displayPlatform = $state<DisplayConfig["platform"]>(projectStore.display?.platform ?? "ili9xxx");
   let selectedThemeId = $state(projectStore.theme.id);
   
   let newFontId = $state("");
@@ -27,12 +24,8 @@
     const theme = themes.find(t => t.id === selectedThemeId) ?? RETRO_THEME;
     projectStore.updateProject({
       name: projectName,
-      display: {
-        width: displayWidth,
-        height: displayHeight,
-        platform: displayPlatform
-      },
-      theme
+      display: { width: 480, height: 480 },
+      theme,
     });
     onClose();
   }
@@ -82,25 +75,7 @@
 
     <section>
       <h3>Display Hardware</h3>
-      <div class="field-group">
-        <div class="field">
-          <label for="p-width">Width</label>
-          <input id="p-width" type="number" bind:value={displayWidth} />
-        </div>
-        <div class="field">
-          <label for="p-height">Height</label>
-          <input id="p-height" type="number" bind:value={displayHeight} />
-        </div>
-      </div>
-      <div class="field">
-        <label for="p-platform">Platform</label>
-        <select id="p-platform" bind:value={displayPlatform}>
-          <option value="ili9xxx">ILI9xxx (Common TFT)</option>
-          <option value="st7789">ST7789 (Compact IPS)</option>
-          <option value="ssd1306">SSD1306 (OLED)</option>
-          <option value="waveshare_epaper">Waveshare (E-Paper)</option>
-        </select>
-      </div>
+      <p class="section-hint">Guition ESP32-S3-4848S040 &mdash; 480 &times; 480 RGB (ST7701S + GT911 Touch)</p>
     </section>
 
     <section>
@@ -204,12 +179,6 @@
     margin-bottom: var(--spacing-md);
   }
 
-  .field-group {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-md);
-  }
-
   label { font-size: 0.9rem; color: var(--color-text-secondary); }
   
   input, select {
@@ -285,6 +254,13 @@
   }
 
   .add-font input { flex: 1; font-size: 0.8rem; }
+
+  .section-hint {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-bottom: var(--spacing-md);
+    line-height: 1.4;
+  }
 
   .danger-zone {
     padding: var(--spacing-lg);

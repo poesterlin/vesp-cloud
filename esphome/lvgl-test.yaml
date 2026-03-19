@@ -1,0 +1,216 @@
+substitutions:
+  device_name: status-display-lvgl
+  friendly_name: "Status Display LVGL"
+
+packages:
+  base: !include packages/base.yaml
+  hardware: !include packages/lvgl_hardware.yaml
+
+globals:
+  - id: touch_start_x
+    type: int
+    initial_value: "0"
+  - id: touch_last_x
+    type: int
+    initial_value: "0"
+
+sensor:
+  - platform: homeassistant
+    id: outside_temperature
+    entity_id: sensor.draussen_temp_temperature
+    on_value:
+      - lvgl.label.update:
+          id: lbl_outside_temp
+          text:
+            format: "Outside: %.1f°C"
+            args: [x]
+
+  - platform: homeassistant
+    id: indoor_temperature
+    entity_id: sensor.apollo_msr_1_dc534c_bme280_temperature
+    on_value:
+      - lvgl.label.update:
+          id: lbl_indoor_temp
+          text:
+            format: "Inside: %.1f°C"
+            args: [x]
+
+  - platform: homeassistant
+    id: co2_level
+    entity_id: sensor.apollo_msr_1_dc534c_co2
+    on_value:
+      - lvgl.label.update:
+          id: lbl_co2
+          text:
+            format: "CO2: %.0f ppm"
+            args: [x]
+
+binary_sensor:
+  - platform: homeassistant
+    id: light_wohnzimmer_state
+    entity_id: light.wohnzimmer_licht_light
+    on_state:
+      - lvgl.widget.update:
+          id: btn_wohnzimmer
+          state:
+            checked: !lambda return x;
+
+script:
+  - id: toggle_wohnzimmer
+    then:
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.wohnzimmer_licht_light
+
+lvgl:
+  page_wrap: true
+  pages:
+    # Page 1 - Sensors
+    - id: main_page
+      bg_color: 0x0000FF
+      widgets:
+        - label:
+            text: "Sensors"
+            align: TOP_MID
+            y: 20
+            text_color: 0xFFFFFF
+            text_font: montserrat_48
+
+        - label:
+            id: lbl_outside_temp
+            text: "Outside: --°C"
+            align: CENTER
+            y: -40
+            text_color: 0xFFFFFF
+            text_font: montserrat_24
+
+        - label:
+            id: lbl_indoor_temp
+            text: "Inside: --°C"
+            align: CENTER
+            y: 0
+            text_color: 0xFFFFFF
+            text_font: montserrat_24
+
+        - label:
+            id: lbl_co2
+            text: "CO2: -- ppm"
+            align: CENTER
+            y: 40
+            text_color: 0xFFFFFF
+            text_font: montserrat_24
+
+        - label:
+            text: "< swipe >"
+            align: BOTTOM_MID
+            y: -20
+            text_color: 0x8888FF
+            text_font: montserrat_24
+
+    # Page 2 - Controls
+    - id: controls_page
+      bg_color: 0x006600
+      widgets:
+        - label:
+            text: "Controls"
+            align: TOP_MID
+            y: 20
+            text_color: 0xFFFFFF
+            text_font: montserrat_48
+
+        - button:
+            id: btn_wohnzimmer
+            align: CENTER
+            y: -30
+            width: 280
+            height: 70
+            checkable: true
+            bg_color: 0x333333
+            on_click:
+              - script.execute: toggle_wohnzimmer
+            widgets:
+              - label:
+                  text: "Wohnzimmer"
+                  align: CENTER
+                  text_color: 0xFFFFFF
+
+        - label:
+            text: "< swipe >"
+            align: BOTTOM_MID
+            y: -20
+            text_color: 0x88FF88
+            text_font: montserrat_24
+
+    # Page 3 - Scrollable list
+    - id: scroll_page
+      bg_color: 0x660000
+      widgets:
+        - label:
+            text: "Scroll Demo"
+            align: TOP_MID
+            y: 20
+            text_color: 0xFFFFFF
+            text_font: montserrat_48
+
+        - obj:
+            align: CENTER
+            y: 30
+            width: 400
+            height: 300
+            bg_color: 0x330000
+            scrollbar_mode: auto
+            layout:
+              type: flex
+              flex_flow: COLUMN
+              flex_align_main: START
+              flex_align_cross: CENTER
+            pad_all: 10
+            widgets:
+              - label:
+                  text: "Item 1 - Scroll me!"
+                  text_color: 0xFFFFFF
+                  text_font: montserrat_24
+              - label:
+                  text: "Item 2 - Keep going"
+                  text_color: 0xFFCCCC
+                  text_font: montserrat_24
+              - label:
+                  text: "Item 3 - More items"
+                  text_color: 0xFFFFFF
+                  text_font: montserrat_24
+              - label:
+                  text: "Item 4 - Still here"
+                  text_color: 0xFFCCCC
+                  text_font: montserrat_24
+              - label:
+                  text: "Item 5 - Almost done"
+                  text_color: 0xFFFFFF
+                  text_font: montserrat_24
+              - label:
+                  text: "Item 6 - One more"
+                  text_color: 0xFFCCCC
+                  text_font: montserrat_24
+              - label:
+                  text: "Item 7 - The end!"
+                  text_color: 0xFFFFFF
+                  text_font: montserrat_24
+              - label:
+                  text: "Item 8 - Bonus"
+                  text_color: 0xFFCCCC
+                  text_font: montserrat_24
+              - label:
+                  text: "Item 9 - Extra"
+                  text_color: 0xFFFFFF
+                  text_font: montserrat_24
+              - label:
+                  text: "Item 10 - Final!"
+                  text_color: 0xFFCCCC
+                  text_font: montserrat_24
+
+        - label:
+            text: "< swipe >"
+            align: BOTTOM_MID
+            y: -20
+            text_color: 0xFF8888
+            text_font: montserrat_24

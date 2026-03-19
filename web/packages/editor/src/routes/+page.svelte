@@ -2,27 +2,33 @@
   import { projectStore } from "$lib/stores/project.svelte";
   import { homeAssistantStore } from "$lib/stores/homeassistant.svelte";
   import { onMount } from "svelte";
-  import type { DisplayConfig } from "@esphome-designer/schema";
   import { fade, fly, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import * as mdiIcons from '@mdi/js';
-  
-  // Define it here if the import fails
-  type ProjectConfig = { 
-    display?: Partial<DisplayConfig>, 
-    theme?: any, // Using any for Theme to avoid complex import for now
+  import { goto } from '$app/navigation';
+  import DeviceSetupWizard from '$lib/components/DeviceSetupWizard.svelte';
+
+  type ProjectConfig = {
+    display?: { width: number; height: number },
+    theme?: any,
     dashboardPages?: number,
-    detailViews?: string[] 
+    detailViews?: string[]
   };
 
+  let { data } = $props();
   let projects = $state<{ id: string; name: string; updatedAt: string }[]>([]);
+
+  $effect(() => {
+    projects = data.projects ?? [];
+  });
   let showModal = $state(false);
+
+  // Device setup wizard state
+  let showSetupWizard = $state(false);
+  let newlyCreatedProject = $state<{ id: string; name: string } | null>(null);
 
   // New Project Form State
   let newProjectName = $state("");
-  let displayWidth = $state(240);
-  let displayHeight = $state(320);
-  let displayPlatform = $state<DisplayConfig["platform"]>("ili9xxx");
 
   // HomeAssistant Import State
   let haFileInput: HTMLInputElement;
@@ -57,31 +63,73 @@
     homeAssistantStore.clear();
   }
 
-  onMount(() => {
-    projects = projectStore.listProjects();
+  // localStorage migration on first load
+  onMount(async () => {
+    const localProjects = projectStore.getLocalStorageProjects();
+    if (localProjects.length > 0) {
+      for (const lp of localProjects) {
+        const data = projectStore.getLocalProjectData(lp.id);
+        if (data) {
+          try {
+            await fetch('/api/projects', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: data.name, data }),
+            });
+          } catch (e) {
+            console.error('Migration failed for', lp.name, e);
+          }
+        }
+      }
+      projectStore.clearLocalStorage();
+      // Refresh the list
+      projects = await projectStore.listProjects();
+    }
   });
 
-  function createProject() {
+  async function createProject() {
     if (!newProjectName.trim()) return;
-    
+
     const config: ProjectConfig = {
-      display: {
-        width: displayWidth,
-        height: displayHeight,
-        platform: displayPlatform
-      }
+      display: { width: 480, height: 480 }
     };
 
-    const project = (projectStore.createNewProject as any)(newProjectName, config);
-    window.location.href = `/project/${project.id}`;
+    const project = await projectStore.createNewProject(newProjectName, config);
+    const projectId = projectStore.serverProjectId;
+    const createdName = newProjectName;
+    
+    // Reset form and show the device setup wizard instead of immediately navigating
+    newProjectName = "";
+    showModal = false;
+    newlyCreatedProject = { id: projectId!, name: createdName };
+    showSetupWizard = true;
+    
+    // Refresh the project list
+    projects = await projectStore.listProjects();
   }
 
-  function deleteProject(id: string, event: MouseEvent) {
+  function handleWizardClose() {
+    showSetupWizard = false;
+    if (newlyCreatedProject) {
+      goto(`/project/${newlyCreatedProject.id}`);
+    }
+    newlyCreatedProject = null;
+  }
+
+  function handleWizardSkip() {
+    showSetupWizard = false;
+    if (newlyCreatedProject) {
+      goto(`/project/${newlyCreatedProject.id}`);
+    }
+    newlyCreatedProject = null;
+  }
+
+  async function deleteProject(id: string, event: MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
     if (confirm("Are you sure you want to delete this project?")) {
-      projectStore.deleteProject(id);
-      projects = projectStore.listProjects();
+      await projectStore.deleteProject(id);
+      projects = await projectStore.listProjects();
     }
   }
 </script>
@@ -131,31 +179,9 @@
               />
             </div>
 
-            <div class="field-group">
-              <div class="field">
-                <label for="width">Width (px)</label>
-                <input id="width" type="number" bind:value={displayWidth} />
-              </div>
-              <div class="field">
-                <label for="height">Height (px)</label>
-                <input id="height" type="number" bind:value={displayHeight} />
-              </div>
-            </div>
-
             <div class="field">
-              <label for="platform">Hardware Platform</label>
-              <div class="select-wrapper">
-                <select id="platform" bind:value={displayPlatform}>
-                  <option value="ili9xxx">ILI9xxx (Common 2.4", 2.8", 3.5" TFT)</option>
-                  <option value="st7789">ST7789 (1.3", 2.0" IPS screens)</option>
-                  <option value="ssd1306">SSD1306 (Small 0.96" OLEDs)</option>
-                  <option value="waveshare_epaper">Waveshare (E-Ink / E-Paper)</option>
-                </select>
-                <svg class="select-arrow icon" width="12" height="12" viewBox="0 0 24 24">
-                  <path d={mdiIcons.mdiChevronDown} />
-                </svg>
-              </div>
-              <p class="field-hint">Identify your controller chip from your display's back PCB or datasheet.</p>
+              <label>Display</label>
+              <p class="hardware-info">Guition ESP32-S3-4848S040 &mdash; 480 &times; 480</p>
             </div>
           </div>
 
@@ -167,6 +193,15 @@
           </div>
         </div>
       </div>
+    {/if}
+
+    {#if showSetupWizard && newlyCreatedProject}
+      <DeviceSetupWizard
+        projectId={newlyCreatedProject.id}
+        projectName={newlyCreatedProject.name}
+        onClose={handleWizardClose}
+        onSkip={handleWizardSkip}
+      />
     {/if}
 
     <section class="ha-settings" in:fade={{ delay: 300, duration: 800 }}>
@@ -477,12 +512,6 @@
     gap: 1.5rem;
   }
 
-  .field-group {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-  }
-
   .field {
     display: flex;
     flex-direction: column;
@@ -514,30 +543,14 @@
     box-shadow: 0 0 0 3px rgba(74, 158, 254, 0.1);
   }
 
-  .select-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-
-  .select-wrapper select {
-    width: 100%;
-    appearance: none;
-  }
-
-  .select-arrow {
-    position: absolute;
-    right: 1rem;
-    pointer-events: none;
-    opacity: 0.5;
-  }
-
-  .field-hint {
-    font-size: 0.75rem;
-    color: var(--color-text-muted);
+  .hardware-info {
+    padding: 1rem;
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    font-size: 0.95rem;
     margin: 0;
-    line-height: 1.4;
-    font-style: italic;
   }
 
   .modal-actions {

@@ -3,6 +3,11 @@ import { CompilationQueue } from '$lib/queue/index.js';
 import { v4 as uuidv4 } from 'uuid';
 export { getDb, schema } from '$lib/db/index.js';
 
+interface CompilationResult {
+  jobId: string | undefined;
+  status: string;
+}
+
 let compilationQueue: CompilationQueue | null = null;
 
 export function startWorker(maxWorkers: number = 2): void {
@@ -29,19 +34,24 @@ export async function submitCompilationJob(
   projectId: string,
   projectName: string,
   config: string,
-  configPath: string = ''
+  configPath: string = '',
+  userId?: string,
+  template?: 'initial' | null
 ): Promise<CompilationResult> {
   if (!compilationQueue) {
     throw new Error('Compilation queue not started');
   }
-  
-  const job: NewCompilationJob = {
-    id: uuidv4(),
+
+  const id = uuidv4();
+  const job: NewCompilationJob & { id: string } = {
+    id,
     projectId,
     projectName,
     config,
     configPath,
+    template: template ?? null,
     status: 'pending',
+    userId: userId ?? null,
     createdAt: new Date()
   };
   
@@ -49,7 +59,7 @@ export async function submitCompilationJob(
   
   return {
     jobId: job.id,
-    status: job.status
+    status: 'pending'
   };
 }
 

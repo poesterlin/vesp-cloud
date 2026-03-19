@@ -19,24 +19,31 @@ psram:
   mode: octal
 
 wifi:
-  ssid: "MagentaWLAN-Z6R0"
-  password: "64991015981245893466"
-  
   ap:
     ssid: "${device_name} Fallback"
     password: "password"
+
+# Allow Bluetooth provisioning on current ESPHome builds.
+esp32_improv:
+  authorizer: none
 
 # Enable logging
 logger:
 
 # Enable Home Assistant API
 api:
-  password: ""
   reboot_timeout: 15min
 
 ota:
   - platform: esphome
-    password: ""
+  - platform: http_request
+
+http_request:
+
+update:
+  - platform: http_request
+    name: Firmware
+    source: !secret firmware_update_url
 
 time:
   - platform: sntp

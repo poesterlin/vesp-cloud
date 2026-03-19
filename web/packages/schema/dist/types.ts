@@ -31,6 +31,8 @@ export type ButtonComponent = BaseComponent & {
   backgroundColor?: Color;
   foregroundColor?: Color;
   borderColor?: Color;
+  checkedBackgroundColor?: Color1;
+  checkedForegroundColor?: Color2;
   pressAction?: ActionBinding;
   holdAction?: ActionBinding;
 };
@@ -78,6 +80,10 @@ export type ContainerComponent = BaseComponent & {
   type: "container";
   label?: string;
   backgroundColor?: Color;
+  /**
+   * Child components rendered inside this container
+   */
+  children?: Component[];
 };
 export type ImageComponent = BaseComponent & {
   type: "image";
@@ -127,6 +133,7 @@ export interface Project {
   dashboardPages: Page[];
   detailViews: DetailView[];
   fonts?: FontDefinition[];
+  secrets?: SecretsConfig;
 }
 export interface Theme {
   id: string;
@@ -162,7 +169,6 @@ export interface Color {
 export interface DisplayConfig {
   width: number;
   height: number;
-  platform: "ili9xxx" | "st7789" | "ssd1306" | "waveshare_epaper";
 }
 export interface StateConfig {
   /**
@@ -207,6 +213,18 @@ export interface BaseComponent {
   onDragStart?: OnTapAction;
   onDragEnd?: OnTapAction;
   variant?: "default" | "retro" | "minimal";
+  /**
+   * Corner radius in pixels
+   */
+  borderRadius?: number;
+  /**
+   * Padding in pixels (all sides)
+   */
+  padding?: number;
+  /**
+   * Widget opacity (0-1)
+   */
+  opacity?: number;
 }
 export interface Position {
   x: number;
@@ -235,6 +253,22 @@ export interface NavigationAction {
    * Detail view ID (without VIEW_DETAIL_ prefix). Required for OPEN_DETAIL.
    */
   targetId?: string;
+}
+/**
+ * Background color when button is in checked/active state (for toggle buttons)
+ */
+export interface Color1 {
+  r: number;
+  g: number;
+  b: number;
+}
+/**
+ * Text/icon color when button is in checked/active state
+ */
+export interface Color2 {
+  r: number;
+  g: number;
+  b: number;
 }
 /**
  * A single variant/state within a conditional area
@@ -333,4 +367,13 @@ export interface FontDefinition {
   id: string;
   file: string;
   size: number;
+}
+/**
+ * OTA update configuration
+ */
+export interface SecretsConfig {
+  /**
+   * Firmware update URL for OTA via HTTP (auto-populated from server)
+   */
+  firmwareUpdateUrl?: string;
 }

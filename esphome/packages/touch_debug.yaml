@@ -20,8 +20,7 @@ interval:
           uint8_t reg = 0x00;
           uint8_t buf[16];
           
-          if (id(touch_i2c)->write(0x1A, &reg, 1, true) != i2c::ERROR_OK) return;
-          if (id(touch_i2c)->read(0x1A, buf, 16) != i2c::ERROR_OK) return;
+          if (id(touch_i2c)->write_readv(0x1A, &reg, 1, buf, 16) != i2c::ERROR_OK) return;
           
           // Map status codes to finger count
           uint8_t status = buf[0];

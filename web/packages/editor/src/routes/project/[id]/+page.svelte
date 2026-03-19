@@ -14,6 +14,8 @@
 
   import ProjectSettings from "$lib/components/sidebar/ProjectSettings.svelte";
 
+  let { data } = $props();
+
   let showExport = $state(false);
   let showSettings = $state(false);
   let showDebug = $state(false);
@@ -21,16 +23,13 @@
   let error = $state<string | null>(null);
 
   onMount(() => {
-    const id = page.params.id;
-    if (id) {
-      const success = projectStore.loadProjectById(id);
-      if (!success) {
-        error = "Project not found";
-      }
+    if (data.project) {
+      projectStore.loadFromServer(data.project);
+      loading = false;
     } else {
-      error = "No project ID provided";
+      error = "Project not found";
+      loading = false;
     }
-    loading = false;
   });
 </script>
 

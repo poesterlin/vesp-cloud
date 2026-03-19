@@ -9,13 +9,19 @@ import type {
   Project,
   Component,
   Color,
+  Theme,
   TextComponent,
   ButtonComponent,
   SliderComponent,
   GaugeComponent,
   ContainerComponent,
+  ConditionalAreaComponent,
+  ConditionalVariant,
+  Condition,
+  EntityCondition,
   BaseComponent,
 } from "@esphome-designer/schema";
+import { RETRO_THEME } from "../themes/retro";
 import { getMdiCodepoint, generateIconFontYAML } from "./mdi-icons";
 
 // --- ID helpers ---
@@ -53,6 +59,87 @@ function fontSizeToLvgl(fontSize?: string): string {
   }
 }
 
+// --- LVGL Theme Generation ---
+
+function generateLvglTheme(theme: Theme): string[] {
+  const lines: string[] = [];
+  const colors = theme.colors;
+  const values = theme.values;
+  
+  // Calculate border radius based on theme
+  const radius = values?.borderRadius ?? 0;
+  
+  lines.push(`  theme:`);
+  
+  // Button styling
+  lines.push(`    button:`);
+  lines.push(`      bg_color: ${colorToHex(colors.backgroundSecondary ?? colors.background)}`);
+  lines.push(`      text_color: ${colorToHex(colors.foreground)}`);
+  lines.push(`      radius: ${radius}`);
+  if (values?.shadowOffset && theme.style?.buttonShadow) {
+    lines.push(`      shadow_width: ${values.shadowOffset}`);
+    lines.push(`      shadow_ofs_x: ${values.shadowOffset}`);
+    lines.push(`      shadow_ofs_y: ${values.shadowOffset}`);
+    lines.push(`      shadow_color: 0x000000`);
+    lines.push(`      shadow_opa: 80%`);
+  }
+  lines.push(`      pressed:`);
+  lines.push(`        bg_color: ${colorToHex(colors.accent)}`);
+  lines.push(`        text_color: ${colorToHex(colors.background)}`);
+  lines.push(`      checked:`);
+  lines.push(`        bg_color: ${colorToHex(colors.accent)}`);
+  lines.push(`        text_color: ${colorToHex(colors.background)}`);
+  lines.push(`      disabled:`);
+  lines.push(`        bg_color: ${colorToHex(colors.foregroundMuted ?? { r: 64, g: 64, b: 64 })}`);
+  lines.push(`        text_color: ${colorToHex(colors.background)}`);
+  
+  // Label styling
+  lines.push(`    label:`);
+  lines.push(`      text_color: ${colorToHex(colors.foreground)}`);
+  
+  // Slider styling
+  lines.push(`    slider:`);
+  lines.push(`      bg_color: ${colorToHex(colors.backgroundSecondary ?? colors.background)}`);
+  lines.push(`      radius: ${radius}`);
+  lines.push(`      indicator:`);
+  lines.push(`        bg_color: ${colorToHex(colors.accent)}`);
+  lines.push(`        radius: ${radius}`);
+  lines.push(`      knob:`);
+  lines.push(`        bg_color: ${colorToHex(colors.foreground)}`);
+  lines.push(`        radius: ${Math.max(radius, 20)}`);
+  
+  // Arc styling (for gauges)
+  lines.push(`    arc:`);
+  lines.push(`      arc_color: ${colorToHex(colors.backgroundSecondary ?? colors.background)}`);
+  lines.push(`      indicator:`);
+  lines.push(`        arc_color: ${colorToHex(colors.accent)}`);
+  lines.push(`      knob:`);
+  lines.push(`        bg_color: ${colorToHex(colors.foreground)}`);
+  
+  // Switch styling
+  lines.push(`    switch:`);
+  lines.push(`      bg_color: ${colorToHex(colors.backgroundSecondary ?? colors.background)}`);
+  lines.push(`      checked:`);
+  lines.push(`        bg_color: ${colorToHex(colors.accent)}`);
+  lines.push(`      knob:`);
+  lines.push(`        bg_color: ${colorToHex(colors.foreground)}`);
+  
+  // Spinner styling
+  lines.push(`    spinner:`);
+  lines.push(`      arc_color: ${colorToHex(colors.foregroundMuted ?? { r: 64, g: 64, b: 64 })}`);
+  lines.push(`      indicator:`);
+  lines.push(`        arc_color: ${colorToHex(colors.accent)}`);
+  
+  // Bar styling (progress bars)
+  lines.push(`    bar:`);
+  lines.push(`      bg_color: ${colorToHex(colors.backgroundSecondary ?? colors.background)}`);
+  lines.push(`      radius: ${radius}`);
+  lines.push(`      indicator:`);
+  lines.push(`        bg_color: ${colorToHex(colors.accent)}`);
+        
+  return lines;
+}
+
 // --- Binding extraction ---
 
 interface SensorBinding {
@@ -77,6 +164,111 @@ interface ToggleButton {
   scriptId: string;
 }
 
+// --- Conditional Area tracking ---
+
+interface ConditionalAreaInfo {
+  areaId: string;
+  componentId: string;
+  defaultVariantId?: string;
+  variants: {
+    variantId: string;
+    objId: string;
+    condition?: Condition;
+    isDefault: boolean;
+  }[];
+}
+
+// Extracts all entity IDs referenced in a condition (recursively)
+function extractConditionEntities(condition: Condition): string[] {
+  const entities: string[] = [];
+  
+  if (condition.type === "entity") {
+    entities.push(condition.entityId);
+  } else if (condition.type === "compound") {
+    for (const sub of condition.conditions) {
+      entities.push(...extractConditionEntities(sub));
+    }
+  } else if (condition.type === "not") {
+    entities.push(...extractConditionEntities(condition.condition));
+  }
+  // StateCondition and TimeCondition don't reference entities
+  
+  return entities;
+}
+
+// Generate C++ expression for evaluating a condition
+function generateConditionExpression(condition: Condition): string {
+  switch (condition.type) {
+    case "entity": {
+      const sId = sensorId(condition.entityId);
+      const valueExpr = condition.attribute 
+        ? `id(${sId}).state` // For now, just use state
+        : `id(${sId}).state`;
+      
+      const value = typeof condition.value === "string" 
+        ? `"${condition.value}"` 
+        : String(condition.value);
+      
+      // For binary sensors, compare against true/false
+      if (isBinaryDomain(condition.entityId)) {
+        const boolVal = condition.value === true || condition.value === "on" || condition.value === "true";
+        switch (condition.operator) {
+          case "eq": return `(id(${sId}).state == ${boolVal})`;
+          case "neq": return `(id(${sId}).state != ${boolVal})`;
+          default: return `(id(${sId}).state == ${boolVal})`;
+        }
+      }
+      
+      // For numeric sensors
+      if (isNumericDomain(condition.entityId)) {
+        const numVal = Number(condition.value);
+        switch (condition.operator) {
+          case "eq": return `(id(${sId}).state == ${numVal})`;
+          case "neq": return `(id(${sId}).state != ${numVal})`;
+          case "gt": return `(id(${sId}).state > ${numVal})`;
+          case "gte": return `(id(${sId}).state >= ${numVal})`;
+          case "lt": return `(id(${sId}).state < ${numVal})`;
+          case "lte": return `(id(${sId}).state <= ${numVal})`;
+          default: return `(id(${sId}).state == ${numVal})`;
+        }
+      }
+      
+      // For text sensors (string comparison)
+      switch (condition.operator) {
+        case "eq": return `(id(${sId}).state == ${value})`;
+        case "neq": return `(id(${sId}).state != ${value})`;
+        case "contains": return `(id(${sId}).state.find(${value}) != std::string::npos)`;
+        case "not_contains": return `(id(${sId}).state.find(${value}) == std::string::npos)`;
+        default: return `(id(${sId}).state == ${value})`;
+      }
+    }
+    
+    case "compound": {
+      const op = condition.operator === "and" ? " && " : " || ";
+      const parts = condition.conditions.map(c => generateConditionExpression(c));
+      return `(${parts.join(op)})`;
+    }
+    
+    case "not": {
+      return `!(${generateConditionExpression(condition.condition)})`;
+    }
+    
+    case "time": {
+      // Time conditions need special handling with time component
+      // For now, return a placeholder - would need sntp_time integration
+      return "true"; // TODO: implement time-based conditions
+    }
+    
+    case "state": {
+      // Internal state variables - would need globals
+      return "true"; // TODO: implement state variable conditions
+    }
+    
+    default:
+      return "true";
+  }
+}
+
 function isNumericDomain(entityId: string): boolean {
   const domain = entityId.split(".")[0];
   return ["sensor", "input_number", "number", "counter", "climate"].includes(
@@ -95,6 +287,8 @@ function extractBindingsAndActions(project: Project) {
   const sensorBindings: SensorBinding[] = [];
   const scriptActions: Map<string, ScriptAction> = new Map();
   const toggleButtons: ToggleButton[] = [];
+  const conditionalAreas: ConditionalAreaInfo[] = [];
+  const conditionEntityIds: Set<string> = new Set();
 
   const processComponent = (comp: Component) => {
     const wId = widgetId(comp.id);
@@ -184,11 +378,41 @@ function extractBindingsAndActions(project: Project) {
     }
 
     if (comp.type === "conditional_area") {
-      for (const variant of comp.variants) {
+      const areaId = wId;
+      const areaInfo: ConditionalAreaInfo = {
+        areaId,
+        componentId: comp.id,
+        defaultVariantId: comp.defaultVariantId,
+        variants: [],
+      };
+      
+      for (let vi = 0; vi < comp.variants.length; vi++) {
+        const variant = comp.variants[vi];
+        const variantObjId = `${areaId}_v${vi}`;
+        const isDefault = variant.id === comp.defaultVariantId || 
+                          (!comp.defaultVariantId && !variant.condition);
+        
+        areaInfo.variants.push({
+          variantId: variant.id,
+          objId: variantObjId,
+          condition: variant.condition,
+          isDefault,
+        });
+        
+        // Extract entity IDs from conditions for sensor generation
+        if (variant.condition) {
+          for (const entityId of extractConditionEntities(variant.condition)) {
+            conditionEntityIds.add(entityId);
+          }
+        }
+        
+        // Process child components
         for (const child of variant.components) {
           processComponent(child);
         }
       }
+      
+      conditionalAreas.push(areaInfo);
     }
   };
 
@@ -199,7 +423,13 @@ function extractBindingsAndActions(project: Project) {
     for (const comp of view.components) processComponent(comp);
   }
 
-  return { sensorBindings, scriptActions: [...scriptActions.values()], toggleButtons };
+  return { 
+    sensorBindings, 
+    scriptActions: [...scriptActions.values()], 
+    toggleButtons,
+    conditionalAreas,
+    conditionEntityIds: [...conditionEntityIds],
+  };
 }
 
 // --- Widget generation ---
@@ -237,6 +467,8 @@ function generateWidgetLines(comp: Component, level: number): string[] {
       return generateArcWidget(comp as GaugeComponent, level);
     case "container":
       return generateObjWidget(comp as ContainerComponent, level);
+    case "conditional_area":
+      return generateConditionalAreaWidget(comp as ConditionalAreaComponent, level);
     default:
       return [];
   }
@@ -519,6 +751,62 @@ function generateObjWidget(
   return lines;
 }
 
+function generateConditionalAreaWidget(
+  comp: ConditionalAreaComponent,
+  level: number,
+): string[] {
+  const lines: string[] = [];
+  const i = ind(level);
+  const areaId = widgetId(comp.id);
+  
+  // Create a parent container for all variants
+  lines.push(`${i}- obj:`);
+  lines.push(`${i}    id: ${areaId}`);
+  lines.push(`${i}    x: ${comp.position.x}`);
+  lines.push(`${i}    y: ${comp.position.y}`);
+  if (comp.size) {
+    lines.push(`${i}    width: ${comp.size.width}`);
+    lines.push(`${i}    height: ${comp.size.height}`);
+  }
+  lines.push(`${i}    bg_opa: 0`);  // Transparent container
+  lines.push(`${i}    border_width: 0`);
+  if (comp.clipContent) {
+    lines.push(`${i}    clip_corner: true`);
+  }
+  
+  // Generate obj for each variant
+  lines.push(`${i}    widgets:`);
+  
+  for (let vi = 0; vi < comp.variants.length; vi++) {
+    const variant = comp.variants[vi];
+    const variantObjId = `${areaId}_v${vi}`;
+    const isDefault = variant.id === comp.defaultVariantId || 
+                      (!comp.defaultVariantId && !variant.condition);
+    
+    // Each variant is an obj that fills the parent
+    lines.push(`${i}      - obj:`);
+    lines.push(`${i}          id: ${variantObjId}`);
+    lines.push(`${i}          width: 100%`);
+    lines.push(`${i}          height: 100%`);
+    lines.push(`${i}          bg_opa: 0`);
+    lines.push(`${i}          border_width: 0`);
+    // Show default variant, hide others initially
+    if (!isDefault) {
+      lines.push(`${i}          hidden: true`);
+    }
+    
+    // Render child components
+    if (variant.components.length > 0) {
+      lines.push(`${i}          widgets:`);
+      for (const child of variant.components) {
+        lines.push(...generateWidgetLines(child, level + 6));
+      }
+    }
+  }
+  
+  return lines;
+}
+
 // --- Sensor update action generation ---
 
 function generateSensorUpdateLines(binding: SensorBinding): string[] {
@@ -562,7 +850,7 @@ function generateSensorUpdateLines(binding: SensorBinding): string[] {
 
 export function generateESPHomeYAML(project: Project): string {
   const lines: string[] = [];
-  const { sensorBindings, scriptActions, toggleButtons } =
+  const { sensorBindings, scriptActions, toggleButtons, conditionalAreas, conditionEntityIds } =
     extractBindingsAndActions(project);
 
   // Header
@@ -620,12 +908,29 @@ export function generateESPHomeYAML(project: Project): string {
   lines.push(`    ignore_strapping_warning: true`);
   lines.push(``);
 
-  // Touchscreen
+  // Touchscreen with swipe detection for page navigation
   lines.push(`touchscreen:`);
   lines.push(`  platform: gt911`);
   lines.push(`  id: touch_gt911`);
   lines.push(`  i2c_id: touch_i2c`);
   lines.push(`  display: main_display`);
+  lines.push(`  on_touch:`);
+  lines.push(`    - lambda: |-`);
+  lines.push(`        id(touch_start_x) = touch.x;`);
+  lines.push(`        id(touch_last_x) = touch.x;`);
+  lines.push(`  on_update:`);
+  lines.push(`    - lambda: |-`);
+  lines.push(`        for (auto &t : touches) {`);
+  lines.push(`          id(touch_last_x) = t.x;`);
+  lines.push(`        }`);
+  lines.push(`  on_release:`);
+  lines.push(`    - lambda: |-`);
+  lines.push(`        int dx = id(touch_last_x) - id(touch_start_x);`);
+  lines.push(`        if (dx < -50) {`);
+  lines.push(`          id(my_lvgl)->show_next_page(LV_SCR_LOAD_ANIM_MOVE_LEFT, 300);`);
+  lines.push(`        } else if (dx > 50) {`);
+  lines.push(`          id(my_lvgl)->show_prev_page(LV_SCR_LOAD_ANIM_MOVE_RIGHT, 300);`);
+  lines.push(`        }`);
   lines.push(``);
 
   // SPI for display initialization
@@ -733,16 +1038,22 @@ export function generateESPHomeYAML(project: Project): string {
   lines.push(`      blue: [4, 5, 6, 7, 15]`);
   lines.push(``);
 
-  // Globals for toggle button loading states
-  if (toggleButtons.length > 0) {
-    lines.push(`globals:`);
-    for (const tb of toggleButtons) {
-      lines.push(`  - id: ${tb.widgetId}_loading`);
-      lines.push(`    type: bool`);
-      lines.push(`    initial_value: "false"`);
-    }
-    lines.push(``);
+  // Globals for swipe detection and toggle button loading states
+  lines.push(`globals:`);
+  // Touch tracking for swipe gestures
+  lines.push(`  - id: touch_start_x`);
+  lines.push(`    type: int`);
+  lines.push(`    initial_value: "0"`);
+  lines.push(`  - id: touch_last_x`);
+  lines.push(`    type: int`);
+  lines.push(`    initial_value: "0"`);
+  // Toggle button loading states
+  for (const tb of toggleButtons) {
+    lines.push(`  - id: ${tb.widgetId}_loading`);
+    lines.push(`    type: bool`);
+    lines.push(`    initial_value: "false"`);
   }
+  lines.push(``);
 
   // WiFi — credentials configured via the device's own AP/captive portal
   lines.push(`wifi:`);
@@ -789,18 +1100,6 @@ export function generateESPHomeYAML(project: Project): string {
   lines.push(`time:`);
   lines.push(`  - platform: sntp`);
   lines.push(`    id: sntp_time`);
-  lines.push(``);
-
-
-
-  // Globals for touch swipe navigation (used by hardware package)
-  lines.push(`globals:`);
-  lines.push(`  - id: touch_start_x`);
-  lines.push(`    type: int`);
-  lines.push(`    initial_value: "0"`);
-  lines.push(`  - id: touch_last_x`);
-  lines.push(`    type: int`);
-  lines.push(`    initial_value: "0"`);
   lines.push(``);
 
   // BLE
@@ -856,8 +1155,27 @@ export function generateESPHomeYAML(project: Project): string {
       ? sensorId(b.entityId) + "_" + b.attribute.replace(/[^a-zA-Z0-9]/g, "_")
       : sensorId(b.entityId);
 
-  if (numericBindings.length > 0) {
+  // Create a set of entity IDs used in conditions for quick lookup
+  const conditionEntitySet = new Set(conditionEntityIds);
+  
+  // Find condition entities that aren't already tracked as sensors
+  const existingEntityIds = new Set(sensorBindings.map(b => b.entityId));
+  const additionalConditionEntities = conditionalAreas.length > 0 
+    ? conditionEntityIds.filter(id => !existingEntityIds.has(id))
+    : [];
+  
+  // Group additional condition entities by sensor type
+  const additionalNumeric = additionalConditionEntities.filter(isNumericDomain);
+  const additionalBinary = additionalConditionEntities.filter(isBinaryDomain);
+  const additionalText = additionalConditionEntities.filter(
+    id => !isNumericDomain(id) && !isBinaryDomain(id)
+  );
+
+  // Generate sensor section (combining bindings + condition-only entities)
+  if (numericBindings.length > 0 || additionalNumeric.length > 0) {
     lines.push(`sensor:`);
+    
+    // First, binding-based sensors
     const byEntity = groupBy(numericBindings, sensorKey);
     for (const [, bindings] of byEntity) {
       const first = bindings[0];
@@ -871,12 +1189,29 @@ export function generateESPHomeYAML(project: Project): string {
       for (const b of bindings) {
         lines.push(...generateSensorUpdateLines(b));
       }
+      // Also trigger conditional area update if this entity is used in conditions
+      if (conditionalAreas.length > 0 && conditionEntitySet.has(first.entityId)) {
+        lines.push(`      - script.execute: update_conditional_areas`);
+      }
     }
+    
+    // Then, condition-only sensors (no widget bindings)
+    for (const entityId of additionalNumeric) {
+      lines.push(`  - platform: homeassistant`);
+      lines.push(`    id: ${sensorId(entityId)}`);
+      lines.push(`    entity_id: ${entityId}`);
+      lines.push(`    on_value:`);
+      lines.push(`      - script.execute: update_conditional_areas`);
+    }
+    
     lines.push(``);
   }
 
-  if (textBindings.length > 0) {
+  // Generate text_sensor section (combining bindings + condition-only entities)
+  if (textBindings.length > 0 || additionalText.length > 0) {
     lines.push(`text_sensor:`);
+    
+    // First, binding-based sensors
     const byEntity = groupBy(textBindings, sensorKey);
     for (const [, bindings] of byEntity) {
       const first = bindings[0];
@@ -890,12 +1225,29 @@ export function generateESPHomeYAML(project: Project): string {
       for (const b of bindings) {
         lines.push(...generateSensorUpdateLines(b));
       }
+      // Also trigger conditional area update if this entity is used in conditions
+      if (conditionalAreas.length > 0 && conditionEntitySet.has(first.entityId)) {
+        lines.push(`      - script.execute: update_conditional_areas`);
+      }
     }
+    
+    // Then, condition-only sensors (no widget bindings)
+    for (const entityId of additionalText) {
+      lines.push(`  - platform: homeassistant`);
+      lines.push(`    id: ${sensorId(entityId)}`);
+      lines.push(`    entity_id: ${entityId}`);
+      lines.push(`    on_value:`);
+      lines.push(`      - script.execute: update_conditional_areas`);
+    }
+    
     lines.push(``);
   }
 
-  if (binaryBindings.length > 0) {
+  // Generate binary_sensor section (combining bindings + condition-only entities)
+  if (binaryBindings.length > 0 || additionalBinary.length > 0) {
     lines.push(`binary_sensor:`);
+    
+    // First, binding-based sensors
     const byEntity = groupBy(binaryBindings, sensorKey);
     for (const [, bindings] of byEntity) {
       const first = bindings[0];
@@ -917,13 +1269,84 @@ export function generateESPHomeYAML(project: Project): string {
           lines.push(`      - lvgl.widget.hide: ${toggleBtn.spinnerId}`);
         }
       }
+      // Also trigger conditional area update if this entity is used in conditions
+      if (conditionalAreas.length > 0 && conditionEntitySet.has(first.entityId)) {
+        lines.push(`      - script.execute: update_conditional_areas`);
+      }
     }
+    
+    // Then, condition-only sensors (no widget bindings)
+    for (const entityId of additionalBinary) {
+      lines.push(`  - platform: homeassistant`);
+      lines.push(`    id: ${sensorId(entityId)}`);
+      lines.push(`    entity_id: ${entityId}`);
+      lines.push(`    on_state:`);
+      lines.push(`      - script.execute: update_conditional_areas`);
+    }
+    
     lines.push(``);
   }
 
-  // --- Scripts for service call actions ---
-  if (scriptActions.length > 0) {
+  // --- Scripts for service call actions and conditional areas ---
+  const hasScripts = scriptActions.length > 0 || conditionalAreas.length > 0;
+  if (hasScripts) {
     lines.push(`script:`);
+    
+    // Conditional area update script
+    if (conditionalAreas.length > 0) {
+      lines.push(`  - id: update_conditional_areas`);
+      lines.push(`    then:`);
+      lines.push(`      - lambda: |-`);
+      
+      // Generate C++ code to evaluate conditions and show/hide variants
+      for (const area of conditionalAreas) {
+        lines.push(`          // Conditional area: ${area.componentId}`);
+        
+        // Find the first matching variant (by priority/order)
+        let firstCondition = true;
+        for (const variant of area.variants) {
+          if (variant.condition) {
+            const condExpr = generateConditionExpression(variant.condition);
+            if (firstCondition) {
+              lines.push(`          if ${condExpr} {`);
+              firstCondition = false;
+            } else {
+              lines.push(`          } else if ${condExpr} {`);
+            }
+            // Show this variant, hide others
+            for (const v of area.variants) {
+              if (v.objId === variant.objId) {
+                lines.push(`            lv_obj_clear_flag(id(${v.objId}), LV_OBJ_FLAG_HIDDEN);`);
+              } else {
+                lines.push(`            lv_obj_add_flag(id(${v.objId}), LV_OBJ_FLAG_HIDDEN);`);
+              }
+            }
+          }
+        }
+        
+        // Handle default variant (else case)
+        const defaultVariant = area.variants.find(v => v.isDefault);
+        if (defaultVariant) {
+          if (!firstCondition) {
+            lines.push(`          } else {`);
+          }
+          for (const v of area.variants) {
+            if (v.objId === defaultVariant.objId) {
+              lines.push(`            lv_obj_clear_flag(id(${v.objId}), LV_OBJ_FLAG_HIDDEN);`);
+            } else {
+              lines.push(`            lv_obj_add_flag(id(${v.objId}), LV_OBJ_FLAG_HIDDEN);`);
+            }
+          }
+          if (!firstCondition) {
+            lines.push(`          }`);
+          }
+        } else if (!firstCondition) {
+          lines.push(`          }`);
+        }
+      }
+    }
+    
+    // Service call action scripts
     for (const action of scriptActions) {
       // Check if this script is for a toggle button (needs loading indicator)
       const toggleBtn = toggleButtons.find((tb) => tb.scriptId === action.id);
@@ -948,9 +1371,15 @@ export function generateESPHomeYAML(project: Project): string {
 
   // --- LVGL pages with widgets ---
   lines.push(`lvgl:`);
+  lines.push(`  id: my_lvgl`);
   lines.push(`  touchscreens:`);
   lines.push(`    - touch_gt911`);
   lines.push(`  page_wrap: true`);
+  
+  // Add theme based on project theme
+  const theme = project.theme ?? RETRO_THEME;
+  lines.push(...generateLvglTheme(theme));
+  
   lines.push(`  pages:`);
 
   // Dashboard pages
@@ -970,10 +1399,11 @@ export function generateESPHomeYAML(project: Project): string {
     }
   }
 
-  // Detail views as scrollable LVGL pages
+  // Detail views as scrollable LVGL pages (skip: true excludes from swipe navigation)
   for (const view of project.detailViews || []) {
     lines.push(`    # Detail: ${view.title}`);
     lines.push(`    - id: detail_${view.id.toLowerCase()}`);
+    lines.push(`      skip: true`);
 
     lines.push(`      widgets:`);
     lines.push(`        - label:`);

@@ -333,20 +333,26 @@ function extractBindingsAndActions(project: Project) {
     }
 
     if (comp.type === "button") {
-      if (comp.pressAction && comp.pressAction.type === "SERVICE_CALL") {
+      // Get the action - fallback to pressAction for backwards compatibility
+      const tapAction = comp.onTap || (comp as any).pressAction;
+      
+      if (tapAction && tapAction.type === "SERVICE_CALL") {
         const sId = scriptId(
-          comp.pressAction.service,
-          comp.pressAction.target?.entityId,
+          tapAction.service,
+          tapAction.target?.entityId,
         );
         if (!scriptActions.has(sId)) {
           scriptActions.set(sId, {
             id: sId,
-            service: comp.pressAction.service,
-            targetEntityId: comp.pressAction.target?.entityId,
+            service: tapAction.service,
+            targetEntityId: tapAction.target?.entityId,
           });
         }
-        const targetEntity = comp.pressAction.target?.entityId;
+
+        // Track binary state toggle buttons
+        const targetEntity = tapAction.target?.entityId;
         if (targetEntity && isBinaryDomain(targetEntity)) {
+          const wId = widgetId(comp.id);
           sensorBindings.push({
             entityId: targetEntity,
             widgetId: wId,
@@ -362,16 +368,19 @@ function extractBindingsAndActions(project: Project) {
           });
         }
       }
-      if (comp.holdAction && comp.holdAction.type === "SERVICE_CALL") {
+      
+      // Handle hold actions
+      const holdAction = comp.onHold || (comp as any).holdAction;
+      if (holdAction && holdAction.type === "SERVICE_CALL") {
         const sId = scriptId(
-          comp.holdAction.service,
-          comp.holdAction.target?.entityId,
+          holdAction.service,
+          holdAction.target?.entityId,
         );
         if (!scriptActions.has(sId)) {
           scriptActions.set(sId, {
             id: sId,
-            service: comp.holdAction.service,
-            targetEntityId: comp.holdAction.target?.entityId,
+            service: holdAction.service,
+            targetEntityId: holdAction.target?.entityId,
           });
         }
       }
@@ -455,20 +464,28 @@ function generateBaseStyleLines(
   return lines;
 }
 
-function generateWidgetLines(comp: Component, level: number): string[] {
+/** Context passed to widget generators so they know which page they're on */
+interface PageContext {
+  /** Index of the dashboard page this widget is on, or -1 for detail view pages */
+  pageIndex: number;
+  /** Whether detail views exist in the project (to know if we need detail_view_active tracking) */
+  hasDetailViews: boolean;
+}
+
+function generateWidgetLines(comp: Component, level: number, ctx?: PageContext): string[] {
   switch (comp.type) {
     case "text":
       return generateLabelWidget(comp as TextComponent, level);
     case "button":
-      return generateButtonWidget(comp as ButtonComponent, level);
+      return generateButtonWidget(comp as ButtonComponent, level, ctx);
     case "slider":
       return generateSliderWidget(comp as SliderComponent, level);
     case "gauge":
       return generateArcWidget(comp as GaugeComponent, level);
     case "container":
-      return generateObjWidget(comp as ContainerComponent, level);
+      return generateObjWidget(comp as ContainerComponent, level, ctx);
     case "conditional_area":
-      return generateConditionalAreaWidget(comp as ConditionalAreaComponent, level);
+      return generateConditionalAreaWidget(comp as ConditionalAreaComponent, level, ctx);
     default:
       return [];
   }
@@ -502,15 +519,18 @@ function generateLabelWidget(comp: TextComponent, level: number): string[] {
   return lines;
 }
 
-function generateButtonWidget(comp: ButtonComponent, level: number): string[] {
+function generateButtonWidget(comp: ButtonComponent, level: number, ctx?: PageContext): string[] {
   const lines: string[] = [];
   const i = ind(level);
   const wId = widgetId(comp.id);
 
+  // Get the action - fallback to pressAction for backwards compatibility
+  const tapAction = comp.onTap || (comp as any).pressAction;
+
   const isToggleButton =
-    comp.pressAction?.type === "SERVICE_CALL" &&
-    comp.pressAction.target?.entityId &&
-    isBinaryDomain(comp.pressAction.target.entityId);
+    tapAction?.type === "SERVICE_CALL" &&
+    tapAction.target?.entityId &&
+    isBinaryDomain(tapAction.target.entityId);
 
   lines.push(`${i}- button:`);
   lines.push(`${i}    id: ${wId}`);
@@ -541,30 +561,43 @@ function generateButtonWidget(comp: ButtonComponent, level: number): string[] {
     }
   }
 
-  if (comp.pressAction?.type === "SERVICE_CALL") {
+  if (tapAction?.type === "SERVICE_CALL") {
+    // Determine the script ID
     const sId = scriptId(
-      comp.pressAction.service,
-      comp.pressAction.target?.entityId,
+      tapAction.service,
+      tapAction.target?.entityId,
     );
     lines.push(`${i}    on_click:`);
     lines.push(`${i}      - script.execute: ${sId}`);
-  } else if (comp.pressAction?.type === "NEXT_PAGE") {
+  } else if (tapAction?.type === "NEXT_PAGE") {
     lines.push(`${i}    on_click:`);
     lines.push(`${i}      - lvgl.page.next:`);
-  } else if (comp.pressAction?.type === "PREV_PAGE") {
+  } else if (tapAction?.type === "PREV_PAGE") {
     lines.push(`${i}    on_click:`);
     lines.push(`${i}      - lvgl.page.previous:`);
   } else if (
-    comp.pressAction?.type === "OPEN_DETAIL" &&
-    comp.pressAction.targetId
+    tapAction?.type === "OPEN_DETAIL" &&
+    tapAction.targetId
   ) {
+    const returnPageIdx = ctx?.pageIndex ?? 0;
     lines.push(`${i}    on_click:`);
+    lines.push(`${i}      - globals.set:`);
+    lines.push(`${i}          id: detail_view_active`);
+    lines.push(`${i}          value: "true"`);
+    lines.push(`${i}      - globals.set:`);
+    lines.push(`${i}          id: return_page`);
+    lines.push(`${i}          value: "${returnPageIdx}"`);
     lines.push(
-      `${i}      - lvgl.page.show: detail_${comp.pressAction.targetId.toLowerCase()}`,
+      `${i}      - lvgl.page.show: detail_${tapAction.targetId.toLowerCase()}`,
     );
-  } else if (comp.pressAction?.type === "GO_BACK") {
+  } else if (tapAction?.type === "GO_BACK") {
+    // Return to the stored page and clear detail view state
     lines.push(`${i}    on_click:`);
-    lines.push(`${i}      - lvgl.page.previous:`);
+    lines.push(`${i}      - globals.set:`);
+    lines.push(`${i}          id: detail_view_active`);
+    lines.push(`${i}          value: "false"`);
+    lines.push(`${i}      - lambda: |-`);
+    lines.push(`${i}          id(my_lvgl)->show_page(id(return_page), LV_SCR_LOAD_ANIM_MOVE_RIGHT, 300);`);
   }
 
   // Always add widgets section for toggle buttons (need spinner) or if there's a label/icon
@@ -661,9 +694,18 @@ function generateSliderWidget(
   lines.push(...generateBaseStyleLines(comp, i));
 
   if (comp.onChange?.type === "SERVICE_CALL") {
-    const sId = scriptId(comp.onChange.service, comp.onChange.target?.entityId);
-    lines.push(`${i}    on_value:`);
-    lines.push(`${i}      - script.execute: ${sId}`);
+    const service = comp.onChange.service;
+    const targetEntityId = comp.onChange.target?.entityId;
+    // on_change fires only on user interaction (not programmatic updates),
+    // avoiding feedback loops when the slider also has a valueBinding
+    lines.push(`${i}    on_change:`);
+    lines.push(`${i}      - homeassistant.service:`);
+    lines.push(`${i}          service: ${service}`);
+    if (targetEntityId) {
+      lines.push(`${i}          data:`);
+      lines.push(`${i}            entity_id: ${targetEntityId}`);
+      lines.push(`${i}            value: !lambda return (int)(x + 0.5);`);
+    }
   }
 
   return lines;
@@ -701,6 +743,7 @@ function generateArcWidget(comp: GaugeComponent, level: number): string[] {
 function generateObjWidget(
   comp: ContainerComponent,
   level: number,
+  ctx?: PageContext,
 ): string[] {
   const lines: string[] = [];
   const i = ind(level);
@@ -743,7 +786,7 @@ function generateObjWidget(
     }
     if (hasChildren) {
       for (const child of comp.children!) {
-        lines.push(...generateWidgetLines(child, level + 2));
+        lines.push(...generateWidgetLines(child, level + 2, ctx));
       }
     }
   }
@@ -754,6 +797,7 @@ function generateObjWidget(
 function generateConditionalAreaWidget(
   comp: ConditionalAreaComponent,
   level: number,
+  ctx?: PageContext,
 ): string[] {
   const lines: string[] = [];
   const i = ind(level);
@@ -799,7 +843,7 @@ function generateConditionalAreaWidget(
     if (variant.components.length > 0) {
       lines.push(`${i}          widgets:`);
       for (const child of variant.components) {
-        lines.push(...generateWidgetLines(child, level + 6));
+        lines.push(...generateWidgetLines(child, level + 6, ctx));
       }
     }
   }
@@ -829,12 +873,12 @@ function generateSensorUpdateLines(binding: SensorBinding): string[] {
     case "arc":
       lines.push(`      - lvgl.arc.update:`);
       lines.push(`          id: ${binding.widgetId}`);
-      lines.push(`          value: !lambda return (int)x;`);
+      lines.push(`          value: !lambda return (int)(x + 0.5);`);
       break;
     case "slider":
       lines.push(`      - lvgl.slider.update:`);
       lines.push(`          id: ${binding.widgetId}`);
-      lines.push(`          value: !lambda return (int)x;`);
+      lines.push(`          value: !lambda return (int)(x + 0.5);`);
       break;
     case "button":
       lines.push(`      - lvgl.widget.update:`);
@@ -852,6 +896,7 @@ export function generateESPHomeYAML(project: Project): string {
   const lines: string[] = [];
   const { sensorBindings, scriptActions, toggleButtons, conditionalAreas, conditionEntityIds } =
     extractBindingsAndActions(project);
+  const hasDetailViews = (project.detailViews?.length ?? 0) > 0;
 
   // Header
   lines.push(`# ============================================`);
@@ -926,6 +971,10 @@ export function generateESPHomeYAML(project: Project): string {
   lines.push(`  on_release:`);
   lines.push(`    - lambda: |-`);
   lines.push(`        int dx = id(touch_last_x) - id(touch_start_x);`);
+  if (hasDetailViews) {
+    // Block swipe navigation while a detail view is open
+    lines.push(`        if (id(detail_view_active)) return;`);
+  }
   lines.push(`        if (dx < -50) {`);
   lines.push(`          id(my_lvgl)->show_next_page(LV_SCR_LOAD_ANIM_MOVE_LEFT, 300);`);
   lines.push(`        } else if (dx > 50) {`);
@@ -1047,6 +1096,15 @@ export function generateESPHomeYAML(project: Project): string {
   lines.push(`  - id: touch_last_x`);
   lines.push(`    type: int`);
   lines.push(`    initial_value: "0"`);
+  // Detail view navigation state
+  if (hasDetailViews) {
+    lines.push(`  - id: detail_view_active`);
+    lines.push(`    type: bool`);
+    lines.push(`    initial_value: "false"`);
+    lines.push(`  - id: return_page`);
+    lines.push(`    type: int`);
+    lines.push(`    initial_value: "0"`);
+  }
   // Toggle button loading states
   for (const tb of toggleButtons) {
     lines.push(`  - id: ${tb.widgetId}_loading`);
@@ -1387,55 +1445,90 @@ export function generateESPHomeYAML(project: Project): string {
     const page = project.dashboardPages[i];
     lines.push(`    # ${page.name}`);
     lines.push(`    - id: page_${i}`);
-    if (page.backgroundColor) {
-      lines.push(`      bg_color: ${colorToHex(page.backgroundColor)}`);
-    }
+    // Always set background color - use page color or theme background
+    const pageBgColor = page.backgroundColor ?? theme.colors.background;
+    lines.push(`      bg_color: ${colorToHex(pageBgColor)}`);
 
     if (page.components.length > 0) {
       lines.push(`      widgets:`);
+      const ctx: PageContext = { pageIndex: i, hasDetailViews };
       for (const comp of page.components) {
-        lines.push(...generateWidgetLines(comp, 4));
+        lines.push(...generateWidgetLines(comp, 4, ctx));
       }
     }
   }
 
-  // Detail views as scrollable LVGL pages (skip: true excludes from swipe navigation)
-  for (const view of project.detailViews || []) {
-    lines.push(`    # Detail: ${view.title}`);
-    lines.push(`    - id: detail_${view.id.toLowerCase()}`);
-    lines.push(`      skip: true`);
-
-    lines.push(`      widgets:`);
-    lines.push(`        - label:`);
-    lines.push(`            text: "${view.title}"`);
-    lines.push(`            align: TOP_MID`);
-    lines.push(`            y: 10`);
-    lines.push(`            text_color: 0xFFFFFF`);
-    lines.push(`            text_font: montserrat_24`);
-
-    if (view.components.length > 0) {
+  // Detail views as pages (skipped in normal navigation)
+  if (project.detailViews && project.detailViews.length > 0) {
+    for (const view of project.detailViews) {
+      const detailId = `detail_${view.id.toLowerCase()}`;
+      const displayHeight = project.display?.height ?? 480;
+      
+      lines.push(`    # Detail: ${view.title}`);
+      lines.push(`    - id: ${detailId}`);
+      lines.push(`      skip: true`);
+      lines.push(`      bg_color: ${colorToHex(theme.colors.background)}`);
+      lines.push(`      widgets:`);
+      
+      // Header with title and back button
       lines.push(`        - obj:`);
-      lines.push(`            align: CENTER`);
-      lines.push(`            y: 30`);
-      lines.push(`            width: 95%`);
-      lines.push(`            height: 85%`);
-      lines.push(`            scrollbar_mode: auto`);
+      lines.push(`            width: 100%`);
+      lines.push(`            height: ${view.headerHeight ?? 45}`);
+      lines.push(`            bg_color: ${colorToHex(theme.colors.backgroundSecondary ?? theme.colors.background)}`);
+      lines.push(`            pad_left: 10`);
+      lines.push(`            pad_right: 10`);
       lines.push(`            layout:`);
       lines.push(`              type: flex`);
-      lines.push(`              flex_flow: COLUMN`);
-      lines.push(`            pad_all: 10`);
+      lines.push(`              flex_flow: ROW`);
+      lines.push(`              flex_align_main: SPACE_BETWEEN`);
+      lines.push(`              flex_align_cross: CENTER`);
       lines.push(`            widgets:`);
-      for (const comp of view.components) {
-        lines.push(...generateWidgetLines(comp, 7));
+      
+      // Back button
+      lines.push(`              - button:`);
+      lines.push(`                  id: ${detailId}_back`);
+      lines.push(`                  width: 40`);
+      lines.push(`                  height: 35`);
+      lines.push(`                  on_click:`);
+      lines.push(`                    - globals.set:`);
+      lines.push(`                        id: detail_view_active`);
+      lines.push(`                        value: "false"`);
+      lines.push(`                    - lambda: |-`);
+      lines.push(`                        id(my_lvgl)->show_page(id(return_page), LV_SCR_LOAD_ANIM_MOVE_RIGHT, 300);`);
+      lines.push(`                  widgets:`);
+      lines.push(`                    - label:`);
+      lines.push(`                        text: "<"`);
+      lines.push(`                        align: CENTER`);
+      lines.push(`                        text_color: ${colorToHex(theme.colors.foreground)}`);
+      
+      // Title
+      lines.push(`              - label:`);
+      lines.push(`                  text: "${view.title}"`);
+      lines.push(`                  text_color: ${colorToHex(theme.colors.foreground)}`);
+      lines.push(`                  text_font: montserrat_24`);
+      
+      // Spacer for centering title
+      lines.push(`              - obj:`);
+      lines.push(`                  width: 40`);
+      lines.push(`                  height: 1`);
+      lines.push(`                  bg_opa: 0`);
+      
+      // Content area
+      if (view.components.length > 0) {
+        lines.push(`        - obj:`);
+        lines.push(`            y: ${view.headerHeight ?? 45}`);
+        lines.push(`            width: 100%`);
+        lines.push(`            height: ${displayHeight - (view.headerHeight ?? 45)}`);
+        lines.push(`            bg_opa: 0`);
+        lines.push(`            scrollbar_mode: auto`);
+        lines.push(`            pad_all: 10`);
+        lines.push(`            widgets:`);
+        const detailCtx: PageContext = { pageIndex: -1, hasDetailViews };
+        for (const comp of view.components) {
+          lines.push(...generateWidgetLines(comp, 6, detailCtx)); // Indent appropriately for page widgets
+        }
       }
     }
-  }
-
-  // Page listing comment
-  lines.push(``);
-  lines.push(`# Total dashboard pages: ${project.dashboardPages.length}`);
-  for (let i = 0; i < project.dashboardPages.length; i++) {
-    lines.push(`# Page ${i}: ${project.dashboardPages[i].name}`);
   }
 
   return lines.join("\n");

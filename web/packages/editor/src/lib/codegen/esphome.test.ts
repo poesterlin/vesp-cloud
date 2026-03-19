@@ -1,9 +1,9 @@
 /**
- * Tests for ESPHome YAML generator - Conditional Areas
+ * Tests for ESPHome YAML generator
  */
 import { describe, test, expect } from "bun:test";
 import { generateESPHomeYAML } from "./esphome";
-import type { Project, ConditionalAreaComponent } from "@esphome-designer/schema";
+import type { Project, ConditionalAreaComponent, SliderComponent, GaugeComponent } from "@esphome-designer/schema";
 
 function createMinimalProject(): Project {
   return {
@@ -246,5 +246,311 @@ describe("ESPHome YAML Generator - Conditional Areas", () => {
     // sensor.temperature should only appear once as a sensor definition
     const tempSensorDefs = yaml.match(/entity_id: sensor\.temperature/g);
     expect(tempSensorDefs?.length).toBe(1);
+  });
+});
+
+describe("ESPHome YAML Generator - Detail Views", () => {
+  test("generates detail view as hidden overlay", () => {
+    const project = createMinimalProject();
+    project.dashboardPages = [{
+      id: "page-1",
+      name: "Home",
+      components: [{
+        id: "btn-open",
+        type: "button",
+        position: { x: 100, y: 100 },
+        size: { width: 80, height: 40 },
+        label: "Open",
+        pressAction: {
+          type: "OPEN_DETAIL",
+          targetId: "SETTINGS",
+        },
+      }],
+    }];
+    project.detailViews = [{
+      id: "SETTINGS",
+      title: "Settings",
+      height: 600,
+      components: [],
+    }];
+
+    const yaml = generateESPHomeYAML(project);
+
+    // Button should use lvgl.page.show (not lvgl.widget.show)
+    expect(yaml).toContain("lvgl.page.show: detail_settings");
+    expect(yaml).not.toContain("lvgl.widget.show");
+
+    // Detail view should be a skipped page
+    expect(yaml).toContain("id: detail_settings");
+    expect(yaml).toContain("skip: true");
+    expect(yaml).not.toContain("top_layer:");
+
+    // Should have back button that returns to the stored page
+    expect(yaml).toContain("detail_view_active");
+    expect(yaml).toContain("return_page");
+    expect(yaml).toContain("id(my_lvgl)->show_page(id(return_page)");
+
+    // OPEN_DETAIL button should store page index and set detail_view_active
+    expect(yaml).toContain('value: "true"');
+    expect(yaml).toContain('value: "0"'); // return to page_0
+
+    // Swipe should be blocked when detail view is active
+    expect(yaml).toContain("if (id(detail_view_active)) return;");
+  });
+
+  test("detail view has header with title and back button", () => {
+    const project = createMinimalProject();
+    project.dashboardPages = [{ id: "page-1", name: "Home", components: [] }];
+    project.detailViews = [{
+      id: "TEMPS",
+      title: "Temperature Details",
+      height: 600,
+      headerHeight: 50,
+      components: [],
+    }];
+
+    const yaml = generateESPHomeYAML(project);
+
+    // Should have title label
+    expect(yaml).toContain('text: "Temperature Details"');
+    
+    // Should have back button with correct ID
+    expect(yaml).toContain("id: detail_temps_back");
+  });
+});
+
+describe("ESPHome YAML Generator - Slider", () => {
+  test("generates slider with onChange service call using on_change trigger", () => {
+    const slider: SliderComponent = {
+      id: "brightness-slider",
+      type: "slider",
+      position: { x: 20, y: 100 },
+      size: { width: 200, height: 30 },
+      min: 0,
+      max: 255,
+      onChange: {
+        type: "SERVICE_CALL",
+        service: "light.turn_on",
+        target: { entityId: "light.living_room" },
+      },
+    };
+
+    const project = createMinimalProject();
+    project.dashboardPages = [{
+      id: "page-1",
+      name: "Home",
+      components: [slider],
+    }];
+
+    const yaml = generateESPHomeYAML(project);
+
+    // Should use on_change (user-only), NOT on_value (which fires on programmatic updates too)
+    expect(yaml).toContain("on_change:");
+    expect(yaml).not.toContain("on_value:");
+
+    // Should have inline service call
+    expect(yaml).toContain("homeassistant.service:");
+    expect(yaml).toContain("service: light.turn_on");
+    expect(yaml).toContain("entity_id: light.living_room");
+
+    // Should pass slider value with rounding
+    expect(yaml).toContain("value: !lambda return (int)(x + 0.5);");
+
+    // Should have slider properties
+    expect(yaml).toContain("min_value: 0");
+    expect(yaml).toContain("max_value: 255");
+  });
+
+  test("bidirectional slider uses on_change without feedback guard globals", () => {
+    const slider: SliderComponent = {
+      id: "volume-slider",
+      type: "slider",
+      position: { x: 10, y: 50 },
+      size: { width: 180, height: 25 },
+      min: 0,
+      max: 100,
+      valueBinding: {
+        type: "entity_state",
+        entityId: "input_number.volume",
+      },
+      onChange: {
+        type: "SERVICE_CALL",
+        service: "input_number.set_value",
+        target: { entityId: "input_number.volume" },
+      },
+    };
+
+    const project = createMinimalProject();
+    project.dashboardPages = [{
+      id: "page-1",
+      name: "Home",
+      components: [slider],
+    }];
+
+    const yaml = generateESPHomeYAML(project);
+
+    // The slider widget itself should use on_change (not on_value) for its service call
+    // Note: the HA sensor section uses on_value: for sensor updates — that's correct and expected
+    expect(yaml).toContain("on_change:");
+
+    // Should NOT have _updating globals (on_change eliminates the need)
+    expect(yaml).not.toContain("_updating");
+
+    // Should have sensor binding for programmatic updates
+    expect(yaml).toContain("entity_id: input_number.volume");
+    expect(yaml).toContain("lvgl.slider.update:");
+
+    // Sensor update should use rounding
+    expect(yaml).toContain("value: !lambda return (int)(x + 0.5);");
+  });
+
+  test("slider with only valueBinding (no onChange) has no on_change", () => {
+    const slider: SliderComponent = {
+      id: "temp-display",
+      type: "slider",
+      position: { x: 10, y: 50 },
+      size: { width: 200, height: 20 },
+      min: 0,
+      max: 50,
+      valueBinding: {
+        type: "entity_state",
+        entityId: "sensor.temperature",
+      },
+    };
+
+    const project = createMinimalProject();
+    project.dashboardPages = [{
+      id: "page-1",
+      name: "Home",
+      components: [slider],
+    }];
+
+    const yaml = generateESPHomeYAML(project);
+
+    // Should have sensor binding
+    expect(yaml).toContain("lvgl.slider.update:");
+    expect(yaml).toContain("entity_id: sensor.temperature");
+
+    // Should NOT have on_change (read-only slider)
+    expect(yaml).not.toContain("on_change:");
+    expect(yaml).not.toContain("homeassistant.service:");
+  });
+
+  test("slider with styling properties", () => {
+    const slider: SliderComponent = {
+      id: "styled-slider",
+      type: "slider",
+      position: { x: 10, y: 10 },
+      size: { width: 200, height: 30 },
+      trackColor: { r: 50, g: 50, b: 50 },
+      fillColor: { r: 0, g: 150, b: 255 },
+      handleColor: { r: 255, g: 255, b: 255 },
+    };
+
+    const project = createMinimalProject();
+    project.dashboardPages = [{
+      id: "page-1",
+      name: "Home",
+      components: [slider],
+    }];
+
+    const yaml = generateESPHomeYAML(project);
+
+    expect(yaml).toContain("bg_color: 0x323232");
+    expect(yaml).toContain("indicator:");
+    expect(yaml).toContain("knob:");
+  });
+});
+
+describe("ESPHome YAML Generator - Gauge (Arc)", () => {
+  test("generates arc widget from gauge component", () => {
+    const gauge: GaugeComponent = {
+      id: "temp-gauge",
+      type: "gauge",
+      position: { x: 50, y: 50 },
+      size: { width: 120, height: 120 },
+      min: 0,
+      max: 50,
+      valueBinding: {
+        type: "entity_state",
+        entityId: "sensor.temperature",
+      },
+      unit: "°C",
+    };
+
+    const project = createMinimalProject();
+    project.dashboardPages = [{
+      id: "page-1",
+      name: "Home",
+      components: [gauge],
+    }];
+
+    const yaml = generateESPHomeYAML(project);
+
+    // Should generate arc widget
+    expect(yaml).toContain("- arc:");
+    expect(yaml).toContain("id: w_temp_gauge");
+    expect(yaml).toContain("min_value: 0");
+    expect(yaml).toContain("max_value: 50");
+    expect(yaml).toContain("adjustable: false");
+
+    // Size should use min dimension (square)
+    expect(yaml).toContain("width: 120");
+    expect(yaml).toContain("height: 120");
+
+    // Should have sensor binding with rounding
+    expect(yaml).toContain("lvgl.arc.update:");
+    expect(yaml).toContain("value: !lambda return (int)(x + 0.5);");
+    expect(yaml).toContain("entity_id: sensor.temperature");
+  });
+
+  test("gauge uses min dimension for non-square sizes", () => {
+    const gauge: GaugeComponent = {
+      id: "rect-gauge",
+      type: "gauge",
+      position: { x: 10, y: 10 },
+      size: { width: 200, height: 150 },
+      min: 0,
+      max: 100,
+    };
+
+    const project = createMinimalProject();
+    project.dashboardPages = [{
+      id: "page-1",
+      name: "Home",
+      components: [gauge],
+    }];
+
+    const yaml = generateESPHomeYAML(project);
+
+    // Arc should use min(200, 150) = 150
+    expect(yaml).toContain("width: 150");
+    expect(yaml).toContain("height: 150");
+  });
+
+  test("gauge with colors", () => {
+    const gauge: GaugeComponent = {
+      id: "colored-gauge",
+      type: "gauge",
+      position: { x: 10, y: 10 },
+      size: { width: 100, height: 100 },
+      min: 0,
+      max: 100,
+      backgroundColor: { r: 30, g: 30, b: 30 },
+      needleColor: { r: 255, g: 100, b: 0 },
+    };
+
+    const project = createMinimalProject();
+    project.dashboardPages = [{
+      id: "page-1",
+      name: "Home",
+      components: [gauge],
+    }];
+
+    const yaml = generateESPHomeYAML(project);
+
+    expect(yaml).toContain("arc_color: 0x1E1E1E");
+    expect(yaml).toContain("indicator:");
+    expect(yaml).toContain("arc_color: 0xFF6400");
   });
 });

@@ -14,6 +14,7 @@ export type Component =
   | ProceduralIconComponent
   | ContainerComponent
   | ImageComponent
+  | TodoListComponent
   | ConditionalAreaComponent;
 export type TextComponent = BaseComponent & {
   type: "text";
@@ -99,6 +100,12 @@ export type ImageComponent = BaseComponent & {
   byte_order?: "big_endian" | "little_endian";
   foregroundColor?: Color;
   backgroundColor?: Color;
+};
+export type TodoListComponent = BaseComponent & {
+  type: "todo_list";
+  itemsBinding?: EntityBinding;
+  maxItems?: number;
+  rowHeight?: number;
 };
 export type ConditionalAreaComponent = BaseComponent & {
   type: "conditional_area";

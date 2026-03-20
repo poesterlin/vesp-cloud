@@ -436,6 +436,31 @@
         }
       ]
     },
+    "TodoListComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "todo_list" },
+            "itemsBinding": { "$ref": "#/definitions/EntityBinding" },
+            "maxItems": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10,
+              "default": 4
+            },
+            "rowHeight": {
+              "type": "integer",
+              "minimum": 20,
+              "maximum": 80,
+              "default": 30
+            }
+          },
+          "required": ["type", "size"]
+        }
+      ]
+    },
     "Component": {
       "oneOf": [
         { "$ref": "#/definitions/TextComponent" },
@@ -446,6 +471,7 @@
         { "$ref": "#/definitions/ProceduralIconComponent" },
         { "$ref": "#/definitions/ContainerComponent" },
         { "$ref": "#/definitions/ImageComponent" },
+        { "$ref": "#/definitions/TodoListComponent" },
         { "$ref": "#/definitions/ConditionalAreaComponent" }
       ]
     },

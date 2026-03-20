@@ -554,3 +554,78 @@ describe("ESPHome YAML Generator - Gauge (Arc)", () => {
     expect(yaml).toContain("arc_color: 0xFF6400");
   });
 });
+
+describe("ESPHome YAML Generator - To-Do List", () => {
+  test("generates todo list rows and scrolling summary labels", () => {
+    const project = createMinimalProject();
+    project.dashboardPages = [
+      {
+        id: "page-1",
+        name: "Home",
+        components: [
+          {
+            id: "shopping-list",
+            type: "todo_list",
+            position: { x: 20, y: 30 },
+            size: { width: 280, height: 150 },
+            maxItems: 3,
+            rowHeight: 36,
+            itemsBinding: {
+              entityId: "sensor.flur_display_to_do_items",
+              attribute: "all_items",
+            },
+          },
+        ],
+      },
+    ];
+
+    const yaml = generateESPHomeYAML(project);
+
+    expect(yaml).toContain("id: w_shopping_list");
+    expect(yaml).toContain("id: w_shopping_list_r0_summary");
+    expect(yaml).toContain("id: w_shopping_list_r1_summary");
+    expect(yaml).toContain("id: w_shopping_list_r2_summary");
+    expect(yaml).toContain("long_mode: SCROLL");
+    expect(yaml).toContain("anim_time: 7000ms");
+    expect(yaml).toContain("id: w_shopping_list_r0_cb");
+    expect(yaml).toContain("id: w_shopping_list_r0_due");
+    expect(yaml).toContain("bg_opa: 100%");
+  });
+
+  test("generates PSV parsing lambda and human-readable due handling", () => {
+    const project = createMinimalProject();
+    project.dashboardPages = [
+      {
+        id: "page-1",
+        name: "Home",
+        components: [
+          {
+            id: "todo",
+            type: "todo_list",
+            position: { x: 0, y: 0 },
+            size: { width: 220, height: 120 },
+            maxItems: 2,
+            itemsBinding: {
+              entityId: "sensor.flur_display_to_do_items",
+              attribute: "all_items",
+            },
+          },
+        ],
+      },
+    ];
+
+    const yaml = generateESPHomeYAML(project);
+
+    expect(yaml).toContain("auto humanize_due = [](const std::string &raw_due)");
+    expect(yaml).toContain("size_t p1 = line.find('|')");
+    expect(yaml).toContain("size_t p2 = rest.find('|')");
+    expect(yaml).toContain("if (due == \"no-date\" || due == \"none\")");
+    expect(yaml).toContain("lv_label_set_text(id(w_todo_r0_cb), \"[ ]\")");
+    expect(yaml).toContain("lv_obj_set_width(id(w_todo_r0_summary), 186);");
+    expect(yaml).toContain("lv_obj_set_width(id(w_todo_r0_summary), 104);");
+    expect(yaml).toContain("statuses[0] == \"overdue\" ? 0xFF5555 : 0xFFC857");
+    expect(yaml).toContain("if (item_count == 0 && !input.empty()) {");
+    expect(yaml).toContain("entity_id: sensor.flur_display_to_do_items");
+    expect(yaml).toContain("attribute: all_items");
+  });
+});

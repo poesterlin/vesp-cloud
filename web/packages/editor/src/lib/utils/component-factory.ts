@@ -72,6 +72,15 @@ export function createComponent(type: string, x: number, y: number): Component {
         size: { width: 100, height: 60 },
       } as Component;
 
+    case "todo_list":
+      return {
+        ...base,
+        type: "todo_list",
+        size: { width: 220, height: 140 },
+        maxItems: 4,
+        rowHeight: 30,
+      } as Component;
+
     case "conditional_area":
       return {
         ...base,

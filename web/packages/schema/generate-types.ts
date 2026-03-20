@@ -63,7 +63,17 @@ async function generate() {
 export * from "./types.js";
 
 // Re-export component type discriminators for type guards
-export type ComponentType = "text" | "button" | "slider" | "gauge" | "icon";
+export type ComponentType =
+  | "text"
+  | "button"
+  | "slider"
+  | "gauge"
+  | "icon"
+  | "procedural_icon"
+  | "container"
+  | "image"
+  | "todo_list"
+  | "conditional_area";
 
 export function isTextComponent(c: Component): c is TextComponent {
   return c.type === "text";

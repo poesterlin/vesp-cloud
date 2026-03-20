@@ -15,6 +15,7 @@ import type {
   SliderComponent,
   GaugeComponent,
   ContainerComponent,
+  TodoListComponent,
   ConditionalAreaComponent,
   ConditionalVariant,
   Condition,
@@ -147,8 +148,10 @@ interface SensorBinding {
   attribute?: string | null;
   widgetId: string;
   sensorType: "numeric" | "text" | "binary";
-  widgetType: "label" | "arc" | "slider" | "button";
+  widgetType: "label" | "arc" | "slider" | "button" | "todo_list";
   unit?: string;
+  maxItems?: number;
+  listWidth?: number;
 }
 
 interface ScriptAction {
@@ -325,6 +328,18 @@ function extractBindingsAndActions(project: Project) {
       });
     }
 
+    if (comp.type === "todo_list" && comp.itemsBinding) {
+      sensorBindings.push({
+        entityId: comp.itemsBinding.entityId,
+        attribute: comp.itemsBinding.attribute ?? "all_items",
+        widgetId: wId,
+        sensorType: "text",
+        widgetType: "todo_list",
+        maxItems: Math.max(1, Math.min(10, comp.maxItems ?? 4)),
+        listWidth: comp.size?.width ?? 220,
+      });
+    }
+
     // Process container children
     if (comp.type === "container" && comp.children) {
       for (const child of comp.children) {
@@ -484,11 +499,97 @@ function generateWidgetLines(comp: Component, level: number, ctx?: PageContext):
       return generateArcWidget(comp as GaugeComponent, level);
     case "container":
       return generateObjWidget(comp as ContainerComponent, level, ctx);
+    case "todo_list":
+      return generateTodoListWidget(comp as TodoListComponent, level);
     case "conditional_area":
       return generateConditionalAreaWidget(comp as ConditionalAreaComponent, level, ctx);
     default:
       return [];
   }
+}
+
+function todoRowWidgetId(listWidgetId: string, rowIndex: number, part: "cb" | "summary" | "due"): string {
+  return `${listWidgetId}_r${rowIndex}_${part}`;
+}
+
+function generateTodoListWidget(comp: TodoListComponent, level: number): string[] {
+  const lines: string[] = [];
+  const i = ind(level);
+  const wId = widgetId(comp.id);
+  const width = comp.size?.width ?? 220;
+  const height = comp.size?.height ?? 140;
+  const maxItems = Math.max(1, Math.min(10, comp.maxItems ?? 4));
+  const rowHeight = Math.max(20, Math.min(80, comp.rowHeight ?? 30));
+  const dueWidth = 78;
+  const summaryX = 30;
+  const summaryWidth = Math.max(40, width - summaryX - dueWidth - 8);
+  const summaryWidthNoDue = Math.max(40, width - summaryX - 4);
+  const dueX = width - dueWidth - 4;
+
+  lines.push(`${i}- obj:`);
+  lines.push(`${i}    id: ${wId}`);
+  lines.push(`${i}    x: ${comp.position.x}`);
+  lines.push(`${i}    y: ${comp.position.y}`);
+  lines.push(`${i}    width: ${width}`);
+  lines.push(`${i}    height: ${height}`);
+  lines.push(`${i}    bg_color: 0x000000`);
+  lines.push(`${i}    bg_opa: 100%`);
+  lines.push(`${i}    border_color: 0x3A3A3A`);
+  lines.push(`${i}    border_width: 1`);
+  lines.push(`${i}    pad_all: 2`);
+  lines.push(`${i}    radius: 4`);
+  lines.push(`${i}    scrollbar_mode: "OFF"`);
+  lines.push(...generateBaseStyleLines(comp, i));
+  lines.push(`${i}    widgets:`);
+
+  for (let row = 0; row < maxItems; row++) {
+    const rowY = row * rowHeight;
+    const cbId = todoRowWidgetId(wId, row, "cb");
+    const summaryId = todoRowWidgetId(wId, row, "summary");
+    const dueId = todoRowWidgetId(wId, row, "due");
+
+    lines.push(`${i}      - obj:`);
+    lines.push(`${i}          x: 0`);
+    lines.push(`${i}          y: ${rowY}`);
+    lines.push(`${i}          width: 100%`);
+    lines.push(`${i}          height: ${rowHeight}`);
+    lines.push(`${i}          bg_opa: 0`);
+    lines.push(`${i}          border_width: 0`);
+    lines.push(`${i}          scrollbar_mode: "OFF"`);
+    lines.push(`${i}          widgets:`);
+
+    lines.push(`${i}            - label:`);
+    lines.push(`${i}                id: ${cbId}`);
+    lines.push(`${i}                x: 4`);
+    lines.push(`${i}                y: 6`);
+    lines.push(`${i}                text: ""`);
+    lines.push(`${i}                text_font: montserrat_14`);
+    lines.push(`${i}                text_color: 0x86D37F`);
+
+    lines.push(`${i}            - label:`);
+    lines.push(`${i}                id: ${summaryId}`);
+    lines.push(`${i}                x: ${summaryX}`);
+    lines.push(`${i}                y: 6`);
+    lines.push(`${i}                width: ${summaryWidth}`);
+    lines.push(`${i}                text: ""`);
+    lines.push(`${i}                long_mode: SCROLL`);
+    lines.push(`${i}                anim_time: 7000ms`);
+    lines.push(`${i}                text_font: montserrat_14`);
+    lines.push(`${i}                text_color: 0xFFFFFF`);
+
+    lines.push(`${i}            - label:`);
+    lines.push(`${i}                id: ${dueId}`);
+    lines.push(`${i}                x: ${dueX}`);
+    lines.push(`${i}                y: 6`);
+    lines.push(`${i}                width: ${dueWidth}`);
+    lines.push(`${i}                text: ""`);
+    lines.push(`${i}                text_align: RIGHT`);
+    lines.push(`${i}                text_font: montserrat_12`);
+    lines.push(`${i}                text_color: 0xFFC857`);
+    lines.push(`${i}                hidden: true`);
+  }
+
+  return lines;
 }
 
 function generateLabelWidget(comp: TextComponent, level: number): string[] {
@@ -886,6 +987,140 @@ function generateSensorUpdateLines(binding: SensorBinding): string[] {
       lines.push(`          state:`);
       lines.push(`            checked: !lambda return x;`);
       break;
+    case "todo_list": {
+      const maxItems = Math.max(1, Math.min(10, binding.maxItems ?? 4));
+      const dueNormalHex = "0xFFC857";
+      const dueOverdueHex = "0xFF5555";
+      const dueWidth = 78;
+      const summaryX = 30;
+      const listWidth = binding.listWidth ?? 220;
+      const summaryWidth = Math.max(40, listWidth - summaryX - dueWidth - 8);
+      const summaryWidthNoDue = Math.max(40, listWidth - summaryX - 4);
+
+      lines.push(`      - lambda: |-`);
+      lines.push(`          auto trim = [](std::string &s) {`);
+      lines.push(`            const char *ws = " \\t\\r\\n";`);
+      lines.push(`            size_t start = s.find_first_not_of(ws);`);
+      lines.push(`            if (start == std::string::npos) {`);
+      lines.push(`              s.clear();`);
+      lines.push(`              return;`);
+      lines.push(`            }`);
+      lines.push(`            size_t end = s.find_last_not_of(ws);`);
+      lines.push(`            s = s.substr(start, end - start + 1);`);
+      lines.push(`          };`);
+      lines.push(`          auto humanize_due = [](const std::string &raw_due) -> std::string {`);
+      lines.push(`            std::string due = raw_due;`);
+      lines.push(`            size_t t_pos = due.find('T');`);
+      lines.push(`            if (t_pos != std::string::npos) {`);
+      lines.push(`              due = due.substr(0, t_pos);`);
+      lines.push(`            }`);
+      lines.push(`            if (due.size() >= 10 && due[4] == '-' && due[7] == '-') {`);
+      lines.push(`              int month = atoi(due.substr(5, 2).c_str());`);
+      lines.push(`              int day = atoi(due.substr(8, 2).c_str());`);
+      lines.push(`              static const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};`);
+      lines.push(`              if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {`);
+      lines.push(`                return std::string(months[month - 1]) + " " + std::to_string(day);`);
+      lines.push(`              }`);
+      lines.push(`            }`);
+      lines.push(`            return due;`);
+      lines.push(`          };`);
+      lines.push(``);
+      lines.push(`          std::string input = x;`);
+      lines.push(`          std::string summaries[${maxItems}];`);
+      lines.push(`          std::string dues[${maxItems}];`);
+      lines.push(`          std::string statuses[${maxItems}];`);
+      lines.push(`          int item_count = 0;`);
+      lines.push(`          size_t cursor = 0;`);
+      lines.push(``);
+      lines.push(`          while (item_count < ${maxItems} && cursor != std::string::npos) {`);
+      lines.push(`            size_t next = input.find('\\n', cursor);`);
+      lines.push(`            std::string line = next == std::string::npos ? input.substr(cursor) : input.substr(cursor, next - cursor);`);
+      lines.push(`            cursor = next == std::string::npos ? std::string::npos : next + 1;`);
+      lines.push(`            trim(line);`);
+      lines.push(`            if (line.empty()) continue;`);
+      lines.push(``);
+      lines.push(`            std::string summary = line;`);
+      lines.push(`            std::string due = "";`);
+      lines.push(`            std::string status = "";`);
+      lines.push(``);
+      lines.push(`            size_t p1 = line.find('|');`);
+      lines.push(`            if (p1 != std::string::npos) {`);
+      lines.push(`              summary = line.substr(0, p1);`);
+      lines.push(`              std::string rest = line.substr(p1 + 1);`);
+      lines.push(`              size_t p2 = rest.find('|');`);
+      lines.push(`              if (p2 != std::string::npos) {`);
+      lines.push(`                due = rest.substr(0, p2);`);
+      lines.push(`                status = rest.substr(p2 + 1);`);
+      lines.push(`              } else {`);
+      lines.push(`                due = rest;`);
+      lines.push(`              }`);
+      lines.push(`            }`);
+      lines.push(``);
+      lines.push(`            trim(summary);`);
+      lines.push(`            trim(due);`);
+      lines.push(`            trim(status);`);
+      lines.push(`            if (summary.empty()) continue;`);
+      lines.push(``);
+      lines.push(`            if (due == "no-date" || due == "none") {`);
+      lines.push(`              due.clear();`);
+      lines.push(`            } else if (!due.empty()) {`);
+      lines.push(`              due = humanize_due(due);`);
+      lines.push(`            }`);
+      lines.push(``);
+      lines.push(`            summaries[item_count] = summary;`);
+      lines.push(`            dues[item_count] = due;`);
+      lines.push(`            statuses[item_count] = status;`);
+      lines.push(`            item_count++;`);
+      lines.push(`          }`);
+      lines.push(``);
+      lines.push(`          // Debug fallback: if parsing produced no rows, show raw payload.`);
+      lines.push(`          if (item_count == 0 && !input.empty()) {`);
+      lines.push(`            std::string raw = input;`);
+      lines.push(`            for (size_t i = 0; i < raw.size(); i++) {`);
+      lines.push(`              if (raw[i] == '\\n' || raw[i] == '\\r') raw[i] = ' ';`);
+      lines.push(`            }`);
+      lines.push(`            trim(raw);`);
+      lines.push(`            if (!raw.empty()) {`);
+      lines.push(`              summaries[0] = raw.substr(0, 60);`);
+      lines.push(`              dues[0].clear();`);
+      lines.push(`              statuses[0].clear();`);
+      lines.push(`              item_count = 1;`);
+      lines.push(`            }`);
+      lines.push(`          }`);
+      lines.push(``);
+
+      for (let row = 0; row < maxItems; row++) {
+        const cbId = todoRowWidgetId(binding.widgetId, row, "cb");
+        const summaryId = todoRowWidgetId(binding.widgetId, row, "summary");
+        const dueId = todoRowWidgetId(binding.widgetId, row, "due");
+
+        lines.push(`          if (item_count > ${row}) {`);
+        lines.push(`            lv_label_set_text(id(${cbId}), "[ ]");`);
+        lines.push(`            lv_label_set_text(id(${summaryId}), summaries[${row}].c_str());`);
+        lines.push(`            if (!dues[${row}].empty()) {`);
+        lines.push(`              lv_obj_set_width(id(${summaryId}), ${summaryWidth});`);
+        lines.push(`              lv_label_set_text(id(${dueId}), dues[${row}].c_str());`);
+        lines.push(`              lv_obj_clear_flag(id(${dueId}), LV_OBJ_FLAG_HIDDEN);`);
+        lines.push(`            } else {`);
+        lines.push(`              lv_obj_set_width(id(${summaryId}), ${summaryWidthNoDue});`);
+        lines.push(`              lv_label_set_text(id(${dueId}), "");`);
+        lines.push(`              lv_obj_add_flag(id(${dueId}), LV_OBJ_FLAG_HIDDEN);`);
+        lines.push(`            }`);
+        lines.push(`            lv_obj_set_style_text_color(`);
+        lines.push(`              id(${dueId}),`);
+        lines.push(`              lv_color_hex(statuses[${row}] == "overdue" ? ${dueOverdueHex} : ${dueNormalHex}),`);
+        lines.push(`              LV_PART_MAIN | LV_STATE_DEFAULT`);
+        lines.push(`            );`);
+        lines.push(`          } else {`);
+        lines.push(`            lv_label_set_text(id(${cbId}), "");`);
+        lines.push(`            lv_label_set_text(id(${summaryId}), "");`);
+        lines.push(`            lv_label_set_text(id(${dueId}), "");`);
+        lines.push(`            lv_obj_add_flag(id(${dueId}), LV_OBJ_FLAG_HIDDEN);`);
+        lines.push(`          }`);
+      }
+
+      break;
+    }
   }
   return lines;
 }

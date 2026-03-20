@@ -8,8 +8,17 @@
     deviceName: string;
   }
 
+  type PickerComponent = Component | {
+    type?: string;
+    textBinding?: EntityBinding;
+    valueBinding?: EntityBinding;
+    stateBinding?: EntityBinding;
+    itemsBinding?: EntityBinding;
+    targetDevice?: { deviceId?: string; deviceName?: string };
+  };
+
   interface Props {
-    component: Component;
+    component: PickerComponent;
     onUpdate?: (binding: EntityBinding | undefined) => void;
     onDeviceSelect?: (device: DeviceSelection | undefined) => void;
     numericOnly?: boolean;
@@ -21,9 +30,18 @@
   // Get current binding based on component type
   const currentBinding = $derived.by<EntityBinding | undefined>(() => {
     if (component.type === "text") {
-      return (component as any).textBinding;
+      return component.textBinding;
     }
-    return (component as any).valueBinding;
+    if (component.type === "procedural_icon") {
+      return component.stateBinding;
+    }
+    if (component.type === "todo_list") {
+      return component.itemsBinding;
+    }
+    if (component.type === "slider" || component.type === "gauge") {
+      return component.valueBinding;
+    }
+    return undefined;
   });
 
   let isModalOpen = $state(false);
@@ -33,13 +51,17 @@
   let selectedDevice = $state<Device | null>(null);
   let selectedDomain = $state<string | null>(null);
   let selectedDeviceId = $state<string | null>(null);
-  let browseMode = $state<"type" | "device" | "area">(deviceOnly ? "device" : "type");
+  let browseMode = $state<"type" | "device" | "area">("type");
+
+  $effect(() => {
+    browseMode = deviceOnly ? "device" : "type";
+  });
 
   // Sync state when binding changes
   $effect(() => {
     if (deviceOnly) {
       // For device mode, check if there's a device selection stored
-      const deviceId = (component as any).targetDevice?.deviceId;
+      const deviceId = "targetDevice" in component ? component.targetDevice?.deviceId : undefined;
       if (deviceId) {
         const device = homeAssistantStore.getDeviceById(deviceId);
         if (device) {

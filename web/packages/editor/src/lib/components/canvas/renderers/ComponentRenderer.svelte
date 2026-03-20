@@ -9,6 +9,7 @@
   import ContainerRenderer from "./ContainerRenderer.svelte";
   import ImageRenderer from "./ImageRenderer.svelte";
   import ConditionalAreaRenderer from "./ConditionalAreaRenderer.svelte";
+  import TodoListRenderer from "./TodoListRenderer.svelte";
 
   interface Props {
     component: Component;
@@ -34,11 +35,13 @@
   <ContainerRenderer {component} />
 {:else if component.type === "image"}
   <ImageRenderer {component} />
+{:else if component.type === "todo_list"}
+  <TodoListRenderer {component} />
 {:else if component.type === "conditional_area"}
   <ConditionalAreaRenderer {component} {parentOffset} />
 {:else}
   <div class="unknown-component">
-    Unknown: {component.type}
+    Unknown component
   </div>
 {/if}
 

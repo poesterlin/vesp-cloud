@@ -485,6 +485,40 @@
       </div>
     {/if}
 
+    {#if selectedComponent.type === "todo_list"}
+      <div class="property-section">
+        <label class="section-label">To-Do List</label>
+        <div class="field">
+          <span class="field-label">Rows</span>
+          <input
+            type="number"
+            min="1"
+            max="10"
+            value={selectedComponent.maxItems ?? 4}
+            oninput={(e) =>
+              updateProperty(
+                "maxItems",
+                Math.max(1, Math.min(10, parseInt(e.currentTarget.value) || 4)),
+              )}
+          />
+        </div>
+        <div class="field">
+          <span class="field-label">Row Height</span>
+          <input
+            type="number"
+            min="20"
+            max="80"
+            value={selectedComponent.rowHeight ?? 30}
+            oninput={(e) =>
+              updateProperty(
+                "rowHeight",
+                Math.max(20, Math.min(80, parseInt(e.currentTarget.value) || 30)),
+              )}
+          />
+        </div>
+      </div>
+    {/if}
+
     {#if selectedComponent.type === "conditional_area"}
       <div class="property-section">
         <label class="section-label">Variants</label>
@@ -569,7 +603,7 @@
     {/if}
 
     <!-- Entity Binding (only for components that display entity values) -->
-    {#if selectedComponent.type === "text" || selectedComponent.type === "slider" || selectedComponent.type === "gauge" || selectedComponent.type === "procedural_icon"}
+    {#if selectedComponent.type === "text" || selectedComponent.type === "slider" || selectedComponent.type === "gauge" || selectedComponent.type === "procedural_icon" || selectedComponent.type === "todo_list"}
       <div class="property-section">
         <label class="section-label">Entity Binding</label>
         <EntityPicker
@@ -580,6 +614,8 @@
               updateProperty("textBinding", binding);
             } else if (selectedComponent.type === "procedural_icon") {
               updateProperty("stateBinding", binding);
+            } else if (selectedComponent.type === "todo_list") {
+              updateProperty("itemsBinding", binding);
             } else {
               updateProperty("valueBinding", binding);
             }

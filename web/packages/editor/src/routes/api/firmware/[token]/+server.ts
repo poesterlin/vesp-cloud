@@ -5,6 +5,7 @@ import { projects, compilationJobs } from '$lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { existsSync, createReadStream, statSync } from 'fs';
 import { join } from 'path';
+import { getStaticBuildsDir } from '$lib/server/static-paths';
 
 export const GET: RequestHandler = async ({ params, request }) => {
   const db = getDb();
@@ -31,7 +32,7 @@ export const GET: RequestHandler = async ({ params, request }) => {
 
   if (!job) error(404, 'No published firmware');
 
-  const binPath = join(process.cwd(), 'static', 'builds', `${job.id}.bin`);
+  const binPath = join(getStaticBuildsDir(), `${job.id}.bin`);
   if (!existsSync(binPath)) error(404, 'Binary not found');
 
   // Use job ID as the ETag / version identifier

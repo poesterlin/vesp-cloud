@@ -11,6 +11,7 @@ import { generateESPHomeYAML } from '$lib/codegen/esphome';
 import { generateSecretsYAML } from '$lib/codegen/secrets';
 import { generateHardwareYAML } from '$lib/codegen/hardware';
 import { generateInitialFlashYAML } from '$lib/codegen/initial-flash';
+import { getStaticBuildsDir } from '$lib/server/static-paths';
 
 interface ActiveJob {
   job: CompilationJob;
@@ -199,7 +200,7 @@ export class CompilationQueue extends EventEmitter {
             .replace(/[^a-z0-9-]/g, '');
           const pioDir = join(tempDir, '.esphome', 'build', deviceName, '.pioenvs', deviceName);
           const candidates = ['firmware.factory.bin', 'firmware.bin'];
-          const buildsDir = join(process.cwd(), 'static', 'builds');
+          const buildsDir = getStaticBuildsDir();
           const publicDest = join(buildsDir, `${job.id}.bin`);
           await fs.mkdir(buildsDir, { recursive: true });
 

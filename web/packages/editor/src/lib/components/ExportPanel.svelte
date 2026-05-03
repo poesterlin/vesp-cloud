@@ -8,9 +8,10 @@
 
   interface Props {
     onClose: () => void;
+    onCompilingChange?: (isCompiling: boolean) => void;
   }
 
-  let { onClose }: Props = $props();
+  let { onClose, onCompilingChange }: Props = $props();
 
   // Wizard state
   type WizardStep = "choose" | "compiling" | "flash" | "publish" | "done";
@@ -34,6 +35,10 @@
   // Check for existing builds on mount
   let hasExistingBuild = $state(false);
   let existingBuildPublished = $state(false);
+
+  $effect(() => {
+    onCompilingChange?.(compiling);
+  });
 
   $effect(() => {
     checkExistingBuild();
@@ -232,7 +237,7 @@
     <h2>
       {#if step === "choose"}Deploy{:else if step === "compiling"}Building{:else if step === "flash"}Install{:else if step === "publish"}Publish{:else}Done{/if}
     </h2>
-    <button class="close-btn" onclick={onClose}>
+    <button class="close-btn" onclick={() => !compiling && onClose()} disabled={compiling}>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
@@ -513,6 +518,11 @@
   }
 
   .back-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .close-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
   }

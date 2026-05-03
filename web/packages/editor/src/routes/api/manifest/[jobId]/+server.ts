@@ -1,12 +1,13 @@
 import { json, error } from '@sveltejs/kit';
 import { existsSync } from 'fs';
 import { join } from 'path';
+import { getStaticBuildsDir } from '$lib/server/static-paths';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params }) => {
 	const { jobId } = params;
 
-	const binPath = join(process.cwd(), 'static', 'builds', `${jobId}.bin`);
+	const binPath = join(getStaticBuildsDir(), `${jobId}.bin`);
 	if (!existsSync(binPath)) {
 		throw error(404, 'Firmware binary not found');
 	}

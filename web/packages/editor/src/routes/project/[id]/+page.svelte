@@ -17,6 +17,7 @@
   let { data } = $props();
 
   let showExport = $state(false);
+  let exportCompiling = $state(false);
   let showSettings = $state(false);
   let showDebug = $state(false);
   let loading = $state(true);
@@ -31,7 +32,17 @@
       loading = false;
     }
   });
+
+  function handleEscapeClose(event: KeyboardEvent) {
+    if (event.key !== "Escape") return;
+    if (!showExport || exportCompiling) return;
+
+    showExport = false;
+    exportCompiling = false;
+  }
 </script>
+
+<svelte:window onkeydown={handleEscapeClose} />
 
 <svelte:head>
   <title>ESPHome Designer {projectStore.project ? `- ${projectStore.project.name}` : ''}</title>
@@ -75,9 +86,15 @@
 </div>
 
 {#if showExport}
-  <div class="modal-overlay" onclick={() => (showExport = false)}>
+  <div class="modal-overlay" onclick={() => !exportCompiling && (showExport = false)}>
     <div class="modal-content" onclick={(e: MouseEvent) => e.stopPropagation()}>
-      <ExportPanel onClose={() => (showExport = false)} />
+      <ExportPanel
+        onClose={() => {
+          showExport = false;
+          exportCompiling = false;
+        }}
+        onCompilingChange={(isCompiling) => (exportCompiling = isCompiling)}
+      />
     </div>
   </div>
 {/if}

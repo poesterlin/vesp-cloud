@@ -19,7 +19,7 @@ export const GET: RequestHandler = async ({ params }) => {
 		builds: [
 			{
 				chipFamily: 'ESP32-S3',
-				parts: [{ path: `/builds/${jobId}.bin`, offset: 0 }]
+				parts: [{ path: `/api/builds/${jobId}`, offset: 0 }]
 			}
 		]
 	};

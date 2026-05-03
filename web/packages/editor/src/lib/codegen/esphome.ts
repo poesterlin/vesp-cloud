@@ -78,13 +78,10 @@ function generateLvglTheme(theme: Theme): string[] {
   lines.push(`      bg_color: ${colorToHex(colors.backgroundSecondary ?? colors.background)}`);
   lines.push(`      text_color: ${colorToHex(colors.foreground)}`);
   lines.push(`      radius: ${radius}`);
-  if (values?.shadowOffset && theme.style?.buttonShadow) {
-    lines.push(`      shadow_width: ${values.shadowOffset}`);
-    lines.push(`      shadow_ofs_x: ${values.shadowOffset}`);
-    lines.push(`      shadow_ofs_y: ${values.shadowOffset}`);
-    lines.push(`      shadow_color: 0x000000`);
-    lines.push(`      shadow_opa: 80%`);
-  }
+  lines.push(`      shadow_width: 0`);
+  lines.push(`      shadow_ofs_x: 0`);
+  lines.push(`      shadow_ofs_y: 0`);
+  lines.push(`      shadow_opa: TRANSP`);
   lines.push(`      pressed:`);
   lines.push(`        bg_color: ${colorToHex(colors.accent)}`);
   lines.push(`        text_color: ${colorToHex(colors.background)}`);
@@ -884,7 +881,7 @@ function generateButtonWidget(comp: ButtonComponent, level: number, ctx?: PageCo
     lines.push(`${i}          id: detail_view_active`);
     lines.push(`${i}          value: "false"`);
     lines.push(`${i}      - lambda: |-`);
-    lines.push(`${i}          id(my_lvgl)->show_page(id(return_page), LV_SCR_LOAD_ANIM_MOVE_RIGHT, 300);`);
+      lines.push(`${i}          id(my_lvgl)->show_page(id(return_page), LV_SCR_LOAD_ANIM_NONE, 0);`);
   }
 
   // Always add widgets section for toggle buttons (need spinner) or if there's a label/icon
@@ -1542,9 +1539,9 @@ export function generateESPHomeYAML(project: Project): string {
     lines.push(`        if (id(detail_view_active)) return;`);
   }
   lines.push(`        if (dx < -50) {`);
-  lines.push(`          id(my_lvgl)->show_next_page(LV_SCR_LOAD_ANIM_MOVE_LEFT, 300);`);
+  lines.push(`          id(my_lvgl)->show_next_page(LV_SCR_LOAD_ANIM_NONE, 0);`);
   lines.push(`        } else if (dx > 50) {`);
-  lines.push(`          id(my_lvgl)->show_prev_page(LV_SCR_LOAD_ANIM_MOVE_RIGHT, 300);`);
+  lines.push(`          id(my_lvgl)->show_prev_page(LV_SCR_LOAD_ANIM_NONE, 0);`);
   lines.push(`        }`);
   lines.push(``);
 
@@ -1689,13 +1686,10 @@ export function generateESPHomeYAML(project: Project): string {
   lines.push(`captive_portal:`);
   lines.push(``);
 
-  // Improv WiFi for easy provisioning via BLE
-  lines.push(`esp32_improv:`);
-  lines.push(`  authorizer: none`);
-  lines.push(``);
-
   // Logger
   lines.push(`logger:`);
+  lines.push(`  level: WARN`);
+  lines.push(`  baud_rate: 0`);
   lines.push(``);
 
   // API
@@ -1703,16 +1697,14 @@ export function generateESPHomeYAML(project: Project): string {
   lines.push(`  reboot_timeout: 15min`);
   lines.push(``);
 
-  // OTA — local ESPHome OTA + HTTP request for remote updates
+  // OTA
   lines.push(`ota:`);
   lines.push(`  - platform: esphome`);
   lines.push(`  - platform: http_request`);
   lines.push(``);
-
   // HTTP request component (required by http_request OTA)
   lines.push(`http_request:`);
   lines.push(``);
-
   // Update entity — exposed to Home Assistant with "Install" button
   lines.push(`update:`);
   lines.push(`  - platform: http_request`);
@@ -1724,15 +1716,6 @@ export function generateESPHomeYAML(project: Project): string {
   lines.push(`time:`);
   lines.push(`  - platform: sntp`);
   lines.push(`    id: sntp_time`);
-  lines.push(``);
-
-  // BLE
-  lines.push(`esp32_ble_tracker:`);
-  lines.push(`  scan_parameters:`);
-  lines.push(`    active: true`);
-  lines.push(``);
-  lines.push(`bluetooth_proxy:`);
-  lines.push(`  active: true`);
   lines.push(``);
 
   // Custom fonts + Icon fonts
@@ -2145,7 +2128,7 @@ export function generateESPHomeYAML(project: Project): string {
       lines.push(`                        id: detail_view_active`);
       lines.push(`                        value: "false"`);
       lines.push(`                    - lambda: |-`);
-      lines.push(`                        id(my_lvgl)->show_page(id(return_page), LV_SCR_LOAD_ANIM_MOVE_RIGHT, 300);`);
+      lines.push(`                        id(my_lvgl)->show_page(id(return_page), LV_SCR_LOAD_ANIM_NONE, 0);`);
       lines.push(`                  widgets:`);
       lines.push(`                    - label:`);
       lines.push(`                        text: "<"`);

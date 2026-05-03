@@ -249,6 +249,37 @@ describe("ESPHome YAML Generator - Conditional Areas", () => {
   });
 });
 
+describe("ESPHome YAML Generator - Performance Defaults", () => {
+  test("uses max-responsiveness runtime defaults", () => {
+    const project = createMinimalProject();
+    project.dashboardPages = [
+      {
+        id: "page-1",
+        name: "Home",
+        components: [],
+      },
+    ];
+
+    const yaml = generateESPHomeYAML(project);
+
+    expect(yaml).toContain("power_save_mode: none");
+    expect(yaml).toContain("level: WARN");
+    expect(yaml).toContain("baud_rate: 0");
+    expect(yaml).toContain("LV_SCR_LOAD_ANIM_NONE, 0");
+    expect(yaml).toContain("shadow_width: 0");
+    expect(yaml).toContain("shadow_opa: TRANSP");
+
+    expect(yaml).not.toContain("esp32_ble_tracker:");
+    expect(yaml).not.toContain("bluetooth_proxy:");
+    expect(yaml).not.toContain("esp32_improv:");
+    expect(yaml).not.toContain("captive_portal:");
+    expect(yaml).not.toContain("http_request:");
+    expect(yaml).not.toContain("- platform: http_request");
+    expect(yaml).not.toContain("source: !secret firmware_update_url");
+    expect(yaml).not.toContain("- platform: sntp");
+  });
+});
+
 describe("ESPHome YAML Generator - Detail Views", () => {
   test("generates detail view as hidden overlay", () => {
     const project = createMinimalProject();

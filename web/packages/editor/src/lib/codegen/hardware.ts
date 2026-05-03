@@ -35,9 +35,9 @@ touchscreen:
     - lambda: |-
         int dx = id(touch_last_x) - id(touch_start_x);
         if (dx < -50) {
-          id(my_lvgl)->show_next_page(LV_SCR_LOAD_ANIM_MOVE_LEFT, 300);
+          id(my_lvgl)->show_next_page(LV_SCR_LOAD_ANIM_NONE, 0);
         } else if (dx > 50) {
-          id(my_lvgl)->show_prev_page(LV_SCR_LOAD_ANIM_MOVE_RIGHT, 300);
+          id(my_lvgl)->show_prev_page(LV_SCR_LOAD_ANIM_NONE, 0);
         }
 
 spi:

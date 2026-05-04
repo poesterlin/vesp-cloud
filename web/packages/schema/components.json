@@ -593,6 +593,7 @@
               "required": ["deviceId"],
               "additionalProperties": false
             },
+            "showBrightnessControl": { "type": "boolean", "default": false },
             "onText": { "type": "string", "default": "ON" },
             "offText": { "type": "string", "default": "OFF" },
             "showIcon": { "type": "boolean", "default": true },

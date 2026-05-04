@@ -12,6 +12,10 @@
   const onText = $derived(component.onText?.trim() || "ON");
   const offText = $derived(component.offText?.trim() || "OFF");
   const showIcon = $derived(component.showIcon !== false);
+  const showBrightnessControl = $derived(component.showBrightnessControl === true);
+  const hasBrightnessTarget = $derived(
+    !!component.stateBinding?.entityId || !!component.targetDevice?.deviceId,
+  );
 
   const offColor = $derived(colorToCss(component.offColor, "rgb(92, 102, 117)"));
 </script>
@@ -32,6 +36,17 @@
         Bind a light entity
       {/if}
     </div>
+    {#if showBrightnessControl}
+      <div class="brightness-row">
+        <span class="brightness-label">Brightness</span>
+        <div class="brightness-track">
+          <div class="brightness-fill" style:background-color={offColor}></div>
+        </div>
+        {#if !hasBrightnessTarget}
+          <span class="brightness-hint">no target</span>
+        {/if}
+      </div>
+    {/if}
   </div>
 </Draggable>
 
@@ -80,5 +95,38 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .brightness-row {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .brightness-label {
+    font-size: 10px;
+    color: #9dadc1;
+    flex: 0 0 auto;
+  }
+
+  .brightness-track {
+    height: 6px;
+    flex: 1;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    overflow: hidden;
+  }
+
+  .brightness-fill {
+    width: 55%;
+    height: 100%;
+    border-radius: 999px;
+  }
+
+  .brightness-hint {
+    font-size: 10px;
+    color: #8fa0b5;
   }
 </style>

@@ -663,6 +663,38 @@ describe("ESPHome YAML Generator - To-Do List", () => {
   });
 });
 
+describe("ESPHome YAML Generator - Light State", () => {
+  test("light_state with brightness control generates slider and light.turn_on action", () => {
+    const project = createMinimalProject();
+    project.dashboardPages = [
+      {
+        id: "page-1",
+        name: "Home",
+        components: [
+          {
+            id: "light-card",
+            type: "light_state",
+            position: { x: 12, y: 22 },
+            size: { width: 160, height: 52 },
+            label: "Ceiling",
+            showBrightnessControl: true,
+            stateBinding: { entityId: "light.living_room" },
+          } as any,
+        ],
+      },
+    ];
+
+    const yaml = generateESPHomeYAML(project);
+
+    expect(yaml).toContain("id: w_light_card_brightness");
+    expect(yaml).toContain("max_value: 255");
+    expect(yaml).toContain("on_change:");
+    expect(yaml).toContain("action: light.turn_on");
+    expect(yaml).toContain("entity_id: light.living_room");
+    expect(yaml).toContain("brightness: !lambda return (int)(x + 0.5);");
+  });
+});
+
 describe("ESPHome YAML Generator - Page Indicators", () => {
   test("renders bottom page indicators on dashboard pages", () => {
     const project = createMinimalProject();

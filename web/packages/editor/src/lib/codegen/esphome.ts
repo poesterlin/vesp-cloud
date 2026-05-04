@@ -869,6 +869,14 @@ function generateLightStateWidget(comp: LightStateComponent, level: number): str
   const label = (comp.label ?? "Light").replace(/"/g, '\\"');
   const pillId = lightStateWidgetId(wId, "pill");
   const stateId = lightStateWidgetId(wId, "state");
+  const showBrightnessControl = comp.showBrightnessControl === true;
+  const brightnessId = `${wId}_brightness`;
+  const brightnessTargetEntity = comp.stateBinding?.entityId?.startsWith("light.")
+    ? comp.stateBinding.entityId
+    : undefined;
+  const brightnessTargetDevice = !brightnessTargetEntity
+    ? comp.targetDevice?.deviceId
+    : undefined;
 
   lines.push(`${i}- obj:`);
   lines.push(`${i}    id: ${wId}`);
@@ -919,6 +927,44 @@ function generateLightStateWidget(comp: LightStateComponent, level: number): str
   lines.push(`${i}                text: "${offText.replace(/"/g, '\\"')}"`);
   lines.push(`${i}                text_font: montserrat_12`);
   lines.push(`${i}                text_color: 0x0D1117`);
+
+  if (showBrightnessControl) {
+    const sliderY = Math.max(24, height - 14);
+
+    lines.push(`${i}      - slider:`);
+    lines.push(`${i}          id: ${brightnessId}`);
+    lines.push(`${i}          x: 4`);
+    lines.push(`${i}          y: ${sliderY}`);
+    lines.push(`${i}          width: ${Math.max(20, width - 8)}`);
+    lines.push(`${i}          height: 8`);
+    lines.push(`${i}          min_value: 0`);
+    lines.push(`${i}          max_value: 255`);
+    lines.push(`${i}          value: 128`);
+    lines.push(`${i}          bg_opa: 50%`);
+    lines.push(`${i}          border_width: 0`);
+    lines.push(`${i}          knob:`);
+    lines.push(`${i}            bg_color: 0xFFFFFF`);
+    lines.push(`${i}          indicator:`);
+    lines.push(`${i}            bg_color: ${colorToHex(comp.onColor ?? { r: 255, g: 199, b: 64 })}`);
+
+    if (brightnessTargetEntity || brightnessTargetDevice) {
+      const actionLog = brightnessTargetEntity
+        ? `Light brightness update (${brightnessTargetEntity})`
+        : `Light brightness update (device: ${brightnessTargetDevice})`;
+      lines.push(`${i}          on_change:`);
+      lines.push(`${i}            - logger.log: "${actionLog}"`);
+      lines.push(`${i}            - homeassistant.action:`);
+      lines.push(`${i}                action: light.turn_on`);
+      lines.push(`${i}                data:`);
+      if (brightnessTargetEntity) {
+        lines.push(`${i}                  entity_id: ${brightnessTargetEntity}`);
+      }
+      if (brightnessTargetDevice) {
+        lines.push(`${i}                  device_id: ${brightnessTargetDevice}`);
+      }
+      lines.push(`${i}                  brightness: !lambda return (int)(x + 0.5);`);
+    }
+  }
 
   return lines;
 }

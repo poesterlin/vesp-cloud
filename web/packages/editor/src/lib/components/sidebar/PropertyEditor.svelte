@@ -655,6 +655,14 @@
             onchange={(e) => updateProperty("showIcon", e.currentTarget.checked)}
           />
         </div>
+        <div class="field">
+          <span class="field-label">Brightness</span>
+          <input
+            type="checkbox"
+            checked={selectedComponent.showBrightnessControl === true}
+            onchange={(e) => updateProperty("showBrightnessControl", e.currentTarget.checked)}
+          />
+        </div>
       </div>
 
       <div class="property-section">

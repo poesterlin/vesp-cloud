@@ -118,6 +118,7 @@ export type LightStateComponent = BaseComponent & {
     deviceId: string;
     deviceName?: string;
   };
+  showBrightnessControl?: boolean;
   onText?: string;
   offText?: string;
   showIcon?: boolean;

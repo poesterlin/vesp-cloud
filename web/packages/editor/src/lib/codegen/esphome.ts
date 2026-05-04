@@ -2270,7 +2270,7 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
       lines.push(
         `          auto normalize = [](std::string value) -> std::string {`,
       );
-      lines.push(`            const char *ws = " \t\r\n";`);
+      lines.push(`            const char *ws = " \\t\\r\\n";`);
       lines.push(`            size_t start = value.find_first_not_of(ws);`);
       lines.push(`            if (start == std::string::npos) return "";`);
       lines.push(`            size_t end = value.find_last_not_of(ws);`);

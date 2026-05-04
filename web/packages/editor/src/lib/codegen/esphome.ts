@@ -36,9 +36,10 @@ function sensorId(entityId: string): string {
   return `ha_${entityId.replace(/\./g, "_")}`;
 }
 
-function scriptId(service: string, targetEntity?: string): string {
+function scriptId(service: string, targetEntity?: string, targetDevice?: string): string {
   const base = service.replace(/\./g, "_");
   if (targetEntity) return `script_${base}_${targetEntity.replace(/\./g, "_")}`;
+  if (targetDevice) return `script_${base}_${targetDevice.replace(/[^a-zA-Z0-9]/g, "_")}`;
   return `script_${base}`;
 }
 
@@ -156,6 +157,7 @@ interface ScriptAction {
   id: string;
   service: string;
   targetEntityId?: string;
+  targetDeviceId?: string;
 }
 
 interface ToggleButton {
@@ -385,12 +387,14 @@ function extractBindingsAndActions(project: Project) {
         const sId = scriptId(
           tapAction.service,
           tapAction.target?.entityId,
+          tapAction.target?.deviceId,
         );
         if (!scriptActions.has(sId)) {
           scriptActions.set(sId, {
             id: sId,
             service: tapAction.service,
             targetEntityId: tapAction.target?.entityId,
+            targetDeviceId: tapAction.target?.deviceId,
           });
         }
 
@@ -420,12 +424,14 @@ function extractBindingsAndActions(project: Project) {
         const sId = scriptId(
           holdAction.service,
           holdAction.target?.entityId,
+          holdAction.target?.deviceId,
         );
         if (!scriptActions.has(sId)) {
           scriptActions.set(sId, {
             id: sId,
             service: holdAction.service,
             targetEntityId: holdAction.target?.entityId,
+            targetDeviceId: holdAction.target?.deviceId,
           });
         }
       }
@@ -850,6 +856,7 @@ function generateButtonWidget(comp: ButtonComponent, level: number, ctx?: PageCo
     const sId = scriptId(
       tapAction.service,
       tapAction.target?.entityId,
+      tapAction.target?.deviceId,
     );
     lines.push(`${i}    on_click:`);
     lines.push(`${i}      - script.execute: ${sId}`);
@@ -980,18 +987,26 @@ function generateSliderWidget(
   if (comp.onChange?.type === "SERVICE_CALL") {
     const service = comp.onChange.service;
     const targetEntityId = comp.onChange.target?.entityId;
+    const targetDeviceId = comp.onChange.target?.deviceId;
     // on_change fires only on user interaction (not programmatic updates),
     // avoiding feedback loops when the slider also has a valueBinding
     lines.push(`${i}    on_change:`);
     const actionLog = targetEntityId
       ? `Calling HA action: ${service} (${targetEntityId})`
+      : targetDeviceId
+      ? `Calling HA action: ${service} (device: ${targetDeviceId})`
       : `Calling HA action: ${service}`;
     lines.push(`${i}      - logger.log: "${actionLog}"`);
     lines.push(`${i}      - homeassistant.action:`);
     lines.push(`${i}          action: ${service}`);
-    if (targetEntityId) {
+    if (targetEntityId || targetDeviceId) {
       lines.push(`${i}          data:`);
-      lines.push(`${i}            entity_id: ${targetEntityId}`);
+      if (targetEntityId) {
+        lines.push(`${i}            entity_id: ${targetEntityId}`);
+      }
+      if (targetDeviceId) {
+        lines.push(`${i}            device_id: ${targetDeviceId}`);
+      }
       lines.push(`${i}            value: !lambda return (int)(x + 0.5);`);
     }
   }
@@ -2022,13 +2037,20 @@ export function generateESPHomeYAML(project: Project): string {
       }
       const actionLog = action.targetEntityId
         ? `Calling HA action: ${action.service} (${action.targetEntityId})`
+        : action.targetDeviceId
+        ? `Calling HA action: ${action.service} (device: ${action.targetDeviceId})`
         : `Calling HA action: ${action.service}`;
       lines.push(`      - logger.log: "${actionLog}"`);
       lines.push(`      - homeassistant.action:`);
       lines.push(`          action: ${action.service}`);
-      if (action.targetEntityId) {
+      if (action.targetEntityId || action.targetDeviceId) {
         lines.push(`          data:`);
-        lines.push(`            entity_id: ${action.targetEntityId}`);
+        if (action.targetEntityId) {
+          lines.push(`            entity_id: ${action.targetEntityId}`);
+        }
+        if (action.targetDeviceId) {
+          lines.push(`            device_id: ${action.targetDeviceId}`);
+        }
       }
     }
     lines.push(``);

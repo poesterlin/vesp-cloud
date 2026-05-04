@@ -1474,7 +1474,7 @@ function generateSensorUpdateLines(binding: SensorBinding): string[] {
 
 // --- Main generator ---
 
-export function generateESPHomeYAML(project: Project): string {
+export function generateESPHomeYAML(project: Project, firmwareVersion?: string): string {
   const lines: string[] = [];
   const { sensorBindings, scriptActions, toggleButtons, conditionalAreas, tabContainers, autoLayoutLists, conditionEntityIds } =
     extractBindingsAndActions(project);
@@ -1495,8 +1495,12 @@ export function generateESPHomeYAML(project: Project): string {
   lines.push(``);
 
   // ESPHome core
+  const projectVersion = firmwareVersion ?? "dev";
   lines.push(`esphome:`);
   lines.push(`  name: \${device_name}`);
+  lines.push(`  project:`);
+  lines.push(`    name: "esphome_designer.${deviceName}"`);
+  lines.push(`    version: "${projectVersion}"`);
   lines.push(`  on_boot:`);
   lines.push(`    priority: 800`);
   lines.push(`    then:`);

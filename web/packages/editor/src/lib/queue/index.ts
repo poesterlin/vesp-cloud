@@ -107,7 +107,7 @@ export class CompilationQueue extends EventEmitter {
       const packagesDir = join(tempDir, 'packages');
       await fs.mkdir(packagesDir, { recursive: true });
 
-      // Look up firmware token to generate the OTA update URL
+      // Look up firmware token to generate the OTA manifest URL
       let firmwareUpdateUrl: string | undefined;
       if (job.projectId) {
         const db = getDb();
@@ -116,7 +116,7 @@ export class CompilationQueue extends EventEmitter {
           .where(eq(schema.projects.id, job.projectId));
         if (proj?.firmwareToken) {
           const baseUrl = env.PUBLIC_BASE_URL || `http://localhost:5173`;
-          firmwareUpdateUrl = `${baseUrl}/api/firmware/${proj.firmwareToken}`;
+          firmwareUpdateUrl = `${baseUrl}/api/firmware/${proj.firmwareToken}/manifest`;
         }
       }
 
@@ -127,7 +127,7 @@ export class CompilationQueue extends EventEmitter {
         // Initial flash mode: use the lightweight setup firmware
         esphomeYaml = generateInitialFlashYAML(job.projectName);
         // Generate minimal secrets with just the firmware URL
-        secretsYaml = `# ESPHome Secrets (Initial Flash)\nfirmware_update_url: "${firmwareUpdateUrl ?? "http://YOUR_SERVER/api/firmware/YOUR_TOKEN"}"`;
+        secretsYaml = `# ESPHome Secrets (Initial Flash)\nfirmware_update_url: "${firmwareUpdateUrl ?? "http://YOUR_SERVER/api/firmware/YOUR_TOKEN/manifest"}"`;
       } else {
         // Full dashboard mode: generate from project config
         const project = JSON.parse(job.config) as Project;
@@ -137,7 +137,7 @@ export class CompilationQueue extends EventEmitter {
             firmwareUpdateUrl,
           };
         }
-        esphomeYaml = generateESPHomeYAML(project);
+        esphomeYaml = generateESPHomeYAML(project, job.id);
         secretsYaml = generateSecretsYAML(project);
       }
 

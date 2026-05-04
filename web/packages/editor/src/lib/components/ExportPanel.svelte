@@ -150,7 +150,7 @@
       if (res.ok) {
         published = true;
         if (projectStore.firmwareToken) {
-          const url = `${window.location.origin}/api/firmware/${projectStore.firmwareToken}`;
+          const url = `${window.location.origin}/api/firmware/${projectStore.firmwareToken}/manifest`;
           projectStore.updateProject({
             secrets: {
               ...projectStore.secrets,
@@ -195,7 +195,7 @@
 
   let firmwareUrl = $derived(
     projectStore.firmwareToken
-      ? `${typeof window !== "undefined" ? window.location.origin : ""}/api/firmware/${projectStore.firmwareToken}`
+      ? `${typeof window !== "undefined" ? window.location.origin : ""}/api/firmware/${projectStore.firmwareToken}/manifest`
       : null,
   );
 

@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getDb } from '$lib/db';
 import { projects, compilationJobs } from '$lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { existsSync, createReadStream, statSync } from 'fs';
 import { join } from 'path';
 import { getStaticBuildsDir } from '$lib/server/static-paths';
@@ -28,7 +28,8 @@ export const GET: RequestHandler = async ({ params, request }) => {
         eq(compilationJobs.status, 'completed'),
         eq(compilationJobs.published, true),
       ),
-    );
+    )
+    .orderBy(desc(compilationJobs.completedAt));
 
   if (!job) error(404, 'No published firmware');
 

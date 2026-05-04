@@ -268,6 +268,8 @@ describe("ESPHome YAML Generator - Performance Defaults", () => {
     expect(yaml).toContain("- platform: http_request");
     expect(yaml).toContain("http_request:");
     expect(yaml).toContain("source: !secret firmware_update_url");
+    expect(yaml).toContain("project:");
+    expect(yaml).toContain("version: \"dev\"");
     expect(yaml).toContain("- platform: sntp");
     expect(yaml).toContain("LV_SCR_LOAD_ANIM_NONE, 0");
     expect(yaml).toContain("shadow_width: 0");

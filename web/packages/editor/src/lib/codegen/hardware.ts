@@ -79,7 +79,7 @@ display:
     vsync_pin: 17
     pclk_pin: 21
     pclk_frequency: 14MHz
-    pclk_inverted: true
+    pclk_inverted: false
     hsync_pulse_width: 8
     hsync_front_porch: 10
     hsync_back_porch: 50

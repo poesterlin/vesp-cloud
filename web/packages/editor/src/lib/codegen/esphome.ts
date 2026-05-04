@@ -1850,7 +1850,7 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   lines.push(`    vsync_pin: 17`);
   lines.push(`    pclk_pin: 21`);
   lines.push(`    pclk_frequency: 12MHz`);
-  lines.push(`    pclk_inverted: true`);
+  lines.push(`    pclk_inverted: false`);
   lines.push(`    hsync_pulse_width: 8`);
   lines.push(`    hsync_front_porch: 10`);
   lines.push(`    hsync_back_porch: 50`);

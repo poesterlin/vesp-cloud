@@ -165,7 +165,9 @@
     <div class="target-section">
       <span class="field-label">Target</span>
       <EntityPicker
-        component={{} as any}
+        component={{
+          targetDevice: serviceTargetDevice ? { deviceId: serviceTargetDevice } : undefined,
+        }}
         deviceOnly={true}
         onDeviceSelect={handleDeviceTargetChange}
       />

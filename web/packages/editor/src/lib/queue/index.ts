@@ -7,8 +7,9 @@ import { eq, desc } from 'drizzle-orm';
 import type { CompilationJob, NewCompilationJob } from '$lib/db/schema';
 import { env } from '$env/dynamic/private';
 import type { Project } from '@esphome-designer/schema';
-import { generateESPHomeYAML } from '$lib/codegen/esphome';
+import { generateESPHomeYAML, generateUITypesHeader, generateUIStateHeader, generateUIScreensHeader } from '$lib/codegen/esphome';
 import { generateSecretsYAML } from '$lib/codegen/secrets';
+import { copyStaticTemplates } from '$lib/server/esphome-templates';
 import { getStaticBuildsDir } from '$lib/server/static-paths';
 
 interface ActiveJob {
@@ -101,9 +102,8 @@ export class CompilationQueue extends EventEmitter {
     try {
       await fs.mkdir(tempDir, { recursive: true });
 
-      // Create packages directory for hardware config
-      const packagesDir = join(tempDir, 'packages');
-      await fs.mkdir(packagesDir, { recursive: true });
+      // Copy static template files (YAML + C++ headers)
+      await copyStaticTemplates(tempDir);
 
       // Look up firmware token to generate the OTA manifest URL
       let firmwareUpdateUrl: string | undefined;
@@ -126,6 +126,12 @@ export class CompilationQueue extends EventEmitter {
           firmwareUpdateUrl,
         };
       }
+
+      // Write generated dynamic headers
+      await fs.writeFile(join(tempDir, 'includes', 'ui_types.h'), generateUITypesHeader(project));
+      await fs.writeFile(join(tempDir, 'includes', 'ui_state.h'), generateUIStateHeader(project));
+      await fs.writeFile(join(tempDir, 'includes', 'ui_screens.h'), generateUIScreensHeader(project));
+
       const esphomeYaml = generateESPHomeYAML(project, job.id);
       const secretsYaml = generateSecretsYAML(project);
 

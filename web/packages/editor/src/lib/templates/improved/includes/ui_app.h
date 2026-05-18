@@ -22,9 +22,8 @@ class UiApp {
   void on_touch_event(const TouchEvent &event) {
     init();
     const uint32_t now = millis();
-    if (screens_.handle_touch(event, now, state_)) {
-      UiInvalidation::request_partial();
-    }
+    screens_.handle_touch(event, now, state_);
+    UiInvalidation::request_partial();
   }
 
   void update(uint32_t now) {
@@ -45,10 +44,6 @@ class UiApp {
   UiState& state() { return state_; }
 
   std::function<void(const std::string&, const std::string&)> on_action;
-
-  uint32_t last_interaction_time = 0;
-
-  void touch_activity() { last_interaction_time = millis(); }
 
   void dispatch_action(const std::string& entity_id, const std::string& action) {
     if (on_action) on_action(entity_id, action);

@@ -4,8 +4,10 @@
 #include "ui_state.h"
 #include "ui_types.h"
 #include "ui_widgets.h"
+#include "ui_screen_base.h"
 #include "ui_invalidation.h"
 #include "ui_redraw.h"
+#include "ui_scrollable_detail.h"
 #include <memory>
 #include <vector>
 #include <map>
@@ -16,78 +18,15 @@ class Font;
 }
 }  // namespace esphome
 
-class Screen {
- public:
-  virtual ~Screen() = default;
-  virtual void enter() {}
-  virtual void exit() {}
-  virtual void layout() {}
-  virtual void update(uint32_t now) = 0;
-  virtual bool handle_touch(const TouchEvent &event, uint32_t now, const UiState &state) = 0;
-  virtual void draw(display::Display &it, const UiState &state) = 0;
-};
-
-class GenericScreen : public Screen {
- public:
-  GenericScreen() = default;
-
-  void add_widget(std::unique_ptr<Widget> widget) {
-    widgets_.push_back(std::move(widget));
-  }
-
-  template<typename T, typename... Args>
-  T* emplace_widget(Args&&... args) {
-    auto widget = std::make_unique<T>(std::forward<Args>(args)...);
-    T* ptr = widget.get();
-    widgets_.push_back(std::move(widget));
-    return ptr;
-  }
-
-  void enter() override {
-    for (auto &w : widgets_) w->enter();
-  }
-
-  void exit() override {
-    for (auto &w : widgets_) w->exit();
-  }
-
-  void layout() override {
-    for (auto &w : widgets_) w->layout();
-  }
-
-  void update(uint32_t now) override {
-    for (auto &w : widgets_) w->update(now);
-  }
-
-  bool handle_touch(const TouchEvent &event, uint32_t now, const UiState &state) override {
-    for (auto &w : widgets_) {
-      if (w->is_visible(state) && w->handle_touch(event, now)) return true;
-    }
-    return false;
-  }
-
-  void draw(display::Display &it, const UiState &state) override {
-    for (auto &w : widgets_) {
-      if (w->is_visible(state)) w->draw(it, state);
-    }
-  }
-
- private:
-  std::vector<std::unique_ptr<Widget>> widgets_;
-};
-
 class ScreenController {
  public:
   ScreenController() {
-    {
-      auto home = std::make_unique<GenericScreen>();
-      screens_[UiScreenId::Home] = home.get();
-      owned_screens_.push_back(std::move(home));
-    }
-    {
-      auto actions = std::make_unique<GenericScreen>();
-      screens_[UiScreenId::Actions] = actions.get();
-      owned_screens_.push_back(std::move(actions));
+    // Pre-create all screen slots
+    for (int i = 0; i <= static_cast<int>(UiScreenId::Scenes); i++) {
+      auto id = static_cast<UiScreenId>(i);
+      auto screen = std::make_unique<GenericScreen>();
+      screens_[id] = screen.get();
+      owned_screens_.push_back(std::move(screen));
     }
     current_ = screens_.at(UiScreenId::Home);
   }
@@ -129,7 +68,25 @@ class ScreenController {
 
   void update(uint32_t now) { current_->update(now); }
 
-  bool handle_touch(const TouchEvent &event, uint32_t now, const UiState &state) { return current_->handle_touch(event, now, state); }
+  bool handle_touch(const TouchEvent &event, uint32_t now, const UiState &state) {
+    (void)state;
+    if (current_id_ == UiScreenId::Home &&
+        event.type == TouchType::Up &&
+        abs(event.dx) > 60 && abs(event.dx) > abs(event.dy)) {
+      UiState& s = const_cast<UiState&>(state);
+      if (event.dx < 0) {
+        // Swipe left -> next page
+        s.home_page_index = (s.home_page_index + 1) % s.home_total_pages;
+      } else {
+        // Swipe right -> prev page
+        s.home_page_index = (s.home_page_index - 1 + s.home_total_pages) % s.home_total_pages;
+      }
+      UiInvalidation::request_full();
+      return true;
+    }
+
+    return current_->handle_touch(event, now, state);
+  }
 
   void draw(display::Display &it, const UiState &state) { current_->draw(it, state); }
 
@@ -147,54 +104,289 @@ struct EntityAction {
   const char *service;
 };
 
-inline void setup_ui_screens(ScreenController &screens, UiState &state, 
+inline void setup_ui_screens(ScreenController &screens, UiState &state,
                            std::function<void(const std::string&, const std::string&)> on_action) {
-  auto *home = screens.get_screen(UiScreenId::Home);
-  auto *actions = screens.get_screen(UiScreenId::Actions);
-
   auto make_ha_callback = [on_action](const char* entity, const char* service) {
     return [on_action, entity, service]() {
       if (on_action) on_action(entity, service);
     };
   };
 
-  home->emplace_widget<LabelWidget>(UiRect{10, 10, 100, 20}, "HOME", g_theme.header);
-
-  home->emplace_widget<RectWidget>(UiRect{10, 40, 220, 20}, g_theme.info_bg);
-
+  // ===================== HOME SCREEN =====================
   {
-    auto *info = home->emplace_widget<LabelWidget>(UiRect{10, 40, 220, 20}, "", g_theme.label);
-    info->bind(state.button_a_on.ptr(), "Button A: ON", "Button A: OFF");
+    auto *home = screens.get_screen(UiScreenId::Home);
+
+    // -- Chrome header (visible on all pages) --
+    home->emplace_widget<HeaderWidget>(g_theme.header.font, g_theme.label.font,
+                                       nullptr, nullptr);
+
+    // ===== PAGE 0: Main Dashboard =====
+    {
+      auto p0 = [&state]() { return state.home_page_index == 0; };
+
+      auto *btn_lamp = home->emplace_widget<ButtonWidget>(
+          UiRect{20, 65, 440, 70}, "SWITCH LAMP",
+          make_ha_callback("switch.led_stehlampe_switch", "switch.toggle"),
+          g_theme.primary);
+      btn_lamp->set_visibility_condition(p0);
+
+      auto *led_label = home->emplace_widget<LabelWidget>(
+          UiRect{20, 148, 440, 20}, "", g_theme.label);
+      led_label->bind(state.led_switch.ptr(), "LAMP: ON", "LAMP: OFF");
+      led_label->set_visibility_condition(p0);
+
+      auto *tabs = home->emplace_widget<TabContainerWidget>(
+          UiRect{20, 178, 440, 270},
+          Color(20, 20, 20), g_theme.primary);
+      tabs->set_visibility_condition(p0);
+      const Color tab_bg(20, 20, 20);
+
+      int t0 = tabs->add_tab("STATUS");
+      {
+        auto *l = tabs->emplace_child<LabelWidget>(t0, UiRect{30, 234, 420, 20},
+            "Lamp Status", g_theme.header);
+        l->set_bg_color(tab_bg);
+        auto *v = tabs->emplace_child<LabelWidget>(t0, UiRect{30, 264, 420, 20},
+            "", g_theme.label);
+        v->set_bg_color(tab_bg);
+        v->bind(state.led_switch.ptr(), "ON", "OFF");
+      }
+      {
+        auto *l = tabs->emplace_child<LabelWidget>(t0, UiRect{30, 295, 420, 20},
+            "Uptime: --:--", g_theme.label);
+        l->set_bg_color(tab_bg);
+      }
+      {
+        auto *l = tabs->emplace_child<LabelWidget>(t0, UiRect{30, 325, 420, 20},
+            "WiFi: connected", g_theme.label);
+        l->set_bg_color(tab_bg);
+      }
+      {
+        auto *b = tabs->emplace_child<ButtonWidget>(t0,
+            UiRect{50, 360, 340, 50}, "REFRESH",
+            []() {}, g_theme.success);
+      }
+
+      int t1 = tabs->add_tab("CONTROLS");
+      tabs->emplace_child<ButtonWidget>(t1, UiRect{50, 234, 340, 55},
+          "BTN A", [&state]() { state.button_a_on = !state.button_a_on; },
+          g_theme.accent);
+      tabs->emplace_child<ButtonWidget>(t1, UiRect{50, 305, 340, 55},
+          "BTN B", [&state]() { state.button_b_on = !state.button_b_on; },
+          g_theme.accent);
+      {
+        auto *l = tabs->emplace_child<LabelWidget>(t1, UiRect{30, 378, 420, 20},
+            "Tap buttons above", g_theme.label);
+        l->set_bg_color(tab_bg);
+      }
+
+      int t2 = tabs->add_tab("INFO");
+      {
+        auto *l = tabs->emplace_child<LabelWidget>(t2, UiRect{30, 234, 420, 20},
+            "Home Display v2.0", g_theme.header);
+        l->set_bg_color(tab_bg);
+      }
+      {
+        auto *l = tabs->emplace_child<LabelWidget>(t2, UiRect{30, 264, 420, 20},
+            "HW: ESP32-S3 + ST7701S + GT911", g_theme.label);
+        l->set_bg_color(tab_bg);
+      }
+      {
+        auto *l = tabs->emplace_child<LabelWidget>(t2, UiRect{30, 294, 420, 20},
+            "SW: ESPHome + custom UI", g_theme.label);
+        l->set_bg_color(tab_bg);
+      }
+      {
+        auto *l = tabs->emplace_child<LabelWidget>(t2, UiRect{30, 324, 420, 20},
+            "Built for wall-mount 480x480", g_theme.label);
+        l->set_bg_color(tab_bg);
+      }
+    }
+
+    // ===== PAGE 1: Quick Controls =====
+    {
+      auto p1 = [&state]() { return state.home_page_index == 1; };
+
+      home->emplace_widget<LabelWidget>(
+          UiRect{20, 70, 440, 30}, "Quick Controls", g_theme.header)
+          ->set_visibility_condition(p1);
+
+      home->emplace_widget<ButtonWidget>(
+          UiRect{20, 115, 440, 80}, "SCENES",
+          [&screens]() { screens.navigate_to(UiScreenId::Scenes); },
+          g_theme.primary)->set_visibility_condition(p1);
+
+      home->emplace_widget<RectWidget>(
+          UiRect{20, 220, 440, 1}, g_theme.primary.border_color)
+          ->set_visibility_condition(p1);
+
+      home->emplace_widget<ButtonWidget>(
+          UiRect{20, 240, 210, 70}, "BTN A",
+          [&state]() { state.button_a_on = !state.button_a_on; },
+          g_theme.accent)->set_visibility_condition(p1);
+
+      home->emplace_widget<ButtonWidget>(
+          UiRect{250, 240, 210, 70}, "BTN B",
+          [&state]() { state.button_b_on = !state.button_b_on; },
+          g_theme.success)->set_visibility_condition(p1);
+    }
+
+    // ===== PAGE 2: Status =====
+    {
+      auto p2 = [&state]() { return state.home_page_index == 2; };
+
+      home->emplace_widget<LabelWidget>(
+          UiRect{20, 70, 440, 30}, "Status Page", g_theme.header)
+          ->set_visibility_condition(p2);
+
+      home->emplace_widget<RectWidget>(
+          UiRect{20, 115, 440, 1}, g_theme.primary.border_color)
+          ->set_visibility_condition(p2);
+
+      {
+        auto *l = home->emplace_widget<LabelWidget>(
+            UiRect{20, 135, 440, 20}, "", g_theme.label);
+        l->bind(state.led_switch.ptr(), "Lamp: ON", "Lamp: OFF");
+        l->set_visibility_condition(p2);
+      }
+      {
+        auto *l = home->emplace_widget<LabelWidget>(
+            UiRect{20, 170, 440, 20}, "", g_theme.label);
+        l->bind(state.button_a_on.ptr(), "Button A: ON", "Button A: OFF");
+        l->set_visibility_condition(p2);
+      }
+      {
+        auto *l = home->emplace_widget<LabelWidget>(
+            UiRect{20, 205, 440, 20}, "", g_theme.label);
+        l->bind(state.button_b_on.ptr(), "Button B: ON", "Button B: OFF");
+        l->set_visibility_condition(p2);
+      }
+    }
+
+    // ===== PAGE 3: Actions =====
+    {
+      auto p3 = [&state]() { return state.home_page_index == 3; };
+
+      home->emplace_widget<LabelWidget>(
+          UiRect{20, 70, 440, 30}, "Actions Page", g_theme.header)
+          ->set_visibility_condition(p3);
+
+      home->emplace_widget<ButtonWidget>(
+          UiRect{20, 120, 440, 80}, "TOGGLE LAMP",
+          make_ha_callback("switch.led_stehlampe_switch", "switch.toggle"),
+          g_theme.primary)->set_visibility_condition(p3);
+
+      home->emplace_widget<ButtonWidget>(
+          UiRect{20, 220, 210, 70}, "BTN A",
+          [&state]() { state.button_a_on = !state.button_a_on; },
+          g_theme.accent)->set_visibility_condition(p3);
+
+      home->emplace_widget<ButtonWidget>(
+          UiRect{250, 220, 210, 70}, "BTN B",
+          [&state]() { state.button_b_on = !state.button_b_on; },
+          g_theme.success)->set_visibility_condition(p3);
+    }
+
+    // -- Page indicator dots (visible on all pages) --
+    home->emplace_widget<PageIndicatorWidget>(460);
   }
 
-  home->emplace_widget<ButtonWidget>(UiRect{20, 80, 200, 60}, "ACTIONS",
-      [&screens]() { screens.navigate_to(UiScreenId::Actions); }, g_theme.primary);
-
-  home->emplace_widget<ButtonWidget>(UiRect{20, 170, 200, 60}, "TOGGLE A",
-      [&state]() { state.button_a_on = !state.button_a_on; }, g_theme.accent);
-
-  // LED Switch Section
-  home->emplace_widget<RectWidget>(UiRect{10, 240, 220, 20}, g_theme.info_bg);
+  // ===================== ACTIONS SCREEN (example) =====================
   {
-    auto *info = home->emplace_widget<LabelWidget>(UiRect{10, 240, 220, 20}, "", g_theme.label);
-    info->bind(state.led_switch.ptr(), "LED: ON", "LED: OFF");
+    auto *actions = screens.get_screen(UiScreenId::Actions);
+
+    actions->emplace_widget<DetailHeaderWidget>(
+        g_theme.header.font, g_theme.label.font, "ACTIONS",
+        [&screens]() { screens.navigate_to(UiScreenId::Home); });
+
+    actions->emplace_widget<RectWidget>(UiRect{10, 70, 460, 20}, g_theme.info_bg);
+
+    {
+      auto *info = actions->emplace_widget<LabelWidget>(UiRect{10, 70, 460, 20}, "", g_theme.label);
+      info->bind(state.button_b_on.ptr(), "Button B: ON", "Button B: OFF");
+    }
+
+    actions->emplace_widget<ButtonWidget>(UiRect{40, 120, 400, 80}, "TOGGLE B",
+        [&state]() { state.button_b_on = !state.button_b_on; }, g_theme.success);
+
+    actions->emplace_widget<ButtonWidget>(UiRect{40, 230, 400, 80}, "LED SWITCH",
+        make_ha_callback("switch.led_stehlampe_switch", "switch.toggle"), g_theme.primary);
   }
 
-  home->emplace_widget<ButtonWidget>(UiRect{20, 270, 200, 60}, "LED SWITCH",
-      make_ha_callback("switch.led_stehlampe_switch", "switch.toggle"), g_theme.success);
-
-  actions->emplace_widget<LabelWidget>(UiRect{10, 10, 100, 20}, "ACTIONS", g_theme.header);
-
-  actions->emplace_widget<RectWidget>(UiRect{10, 40, 220, 20}, g_theme.info_bg);
+  // ===================== DETAIL SCREENS =====================
+  // Each detail screen gets a DetailHeaderWidget with back-button and title.
 
   {
-    auto *info = actions->emplace_widget<LabelWidget>(UiRect{10, 40, 220, 20}, "", g_theme.label);
-    info->bind(state.button_b_on.ptr(), "Button B: ON", "Button B: OFF");
+    auto *s = screens.get_screen(UiScreenId::Climate);
+    s->emplace_widget<DetailHeaderWidget>(g_theme.header.font, g_theme.label.font, "CLIMATE",
+        [&screens]() { screens.navigate_to(UiScreenId::Home); });
   }
+  {
+    auto *s = screens.get_screen(UiScreenId::Lights);
+    s->emplace_widget<DetailHeaderWidget>(g_theme.header.font, g_theme.label.font, "LIGHTS",
+        [&screens]() { screens.navigate_to(UiScreenId::Home); });
+  }
+  {
+    auto *s = screens.get_screen(UiScreenId::Todo);
+    s->emplace_widget<DetailHeaderWidget>(g_theme.header.font, g_theme.label.font, "TO-DO",
+        [&screens]() { screens.navigate_to(UiScreenId::Home); });
+  }
+  {
+    auto *s = screens.get_screen(UiScreenId::Vacuum);
+    s->emplace_widget<DetailHeaderWidget>(g_theme.header.font, g_theme.label.font, "VACUUM",
+        [&screens]() { screens.navigate_to(UiScreenId::Home); });
+  }
+  {
+    auto *s = screens.get_screen(UiScreenId::Music);
+    s->emplace_widget<DetailHeaderWidget>(g_theme.header.font, g_theme.label.font, "MUSIC",
+        [&screens]() { screens.navigate_to(UiScreenId::Home); });
+  }
+  {
+    auto *s = screens.get_screen(UiScreenId::Timer);
+    s->emplace_widget<DetailHeaderWidget>(g_theme.header.font, g_theme.label.font, "TIMER",
+        [&screens]() { screens.navigate_to(UiScreenId::Home); });
+  }
+  {
+    static ScrollableDetailScreen scenes_detail("SCENES",
+        g_theme.header.font, g_theme.label.font, g_theme.label.font,
+        [&screens]() { screens.navigate_to(UiScreenId::Home); });
 
-  actions->emplace_widget<ButtonWidget>(UiRect{20, 80, 200, 60}, "BACK",
-      [&screens]() { screens.navigate_to(UiScreenId::Home); }, g_theme.neutral);
+    screens.register_screen(UiScreenId::Scenes, &scenes_detail);
 
-  actions->emplace_widget<ButtonWidget>(UiRect{20, 170, 200, 60}, "TOGGLE B",
-      [&state]() { state.button_b_on = !state.button_b_on; }, g_theme.success);
+    scenes_detail.add_entry("ALL OFF", ChromeColors::RED,
+        make_ha_callback("switch.led_stehlampe_switch", "switch.toggle"));
+
+    scenes_detail.add_entry("COZY", ChromeColors::AMBER,
+        []() {});
+
+    scenes_detail.add_entry("COZY BEAMER", ChromeColors::BLUE,
+        []() {});
+
+    scenes_detail.add_entry("DAYLIGHT", ChromeColors::WHITE,
+        []() {});
+
+    scenes_detail.add_entry("NIGHT MODE", ChromeColors::MAGENTA,
+        []() {});
+
+    scenes_detail.add_entry("AWAY", ChromeColors::GREEN,
+        []() {});
+
+    scenes_detail.add_entry("READING", ChromeColors::CYAN,
+        []() {});
+
+    scenes_detail.add_entry("DINNER", ChromeColors::AMBER,
+        []() {});
+
+    scenes_detail.add_entry("MOVIE TIME", ChromeColors::BLUE,
+        []() {});
+
+    scenes_detail.add_entry("SLEEP MODE", ChromeColors::MAGENTA,
+        []() {});
+
+    scenes_detail.add_entry("GOOD MORNING", ChromeColors::WHITE,
+        []() {});
+
+    scenes_detail.add_entry("ENERGY SAVE", ChromeColors::GREEN,
+        []() {});
+  }
 }

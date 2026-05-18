@@ -1,0 +1,36 @@
+esphome:
+  name: ${device_name}
+  on_boot:
+    priority: 800
+    then:
+      - light.turn_on:
+          id: display_backlight
+          brightness: 100%
+
+esp32:
+  variant: esp32s3
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+wifi:
+  ap:
+    ssid: "${device_name} Fallback"
+    password: "password"
+
+logger:
+  hardware_uart: UART0
+  baud_rate: 115200
+
+api:
+  reboot_timeout: 15min
+
+ota:
+  - platform: esphome
+
+time:
+  - platform: sntp
+    id: sntp_time

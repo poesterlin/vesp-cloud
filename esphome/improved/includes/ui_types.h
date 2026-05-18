@@ -19,5 +19,12 @@ struct TouchEvent {
 
 enum class UiScreenId {
   Home,
-  Actions
+  Actions,
+  Climate,
+  Lights,
+  Todo,
+  Vacuum,
+  Music,
+  Timer,
+  Scenes
 };

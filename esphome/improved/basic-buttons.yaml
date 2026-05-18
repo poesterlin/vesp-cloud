@@ -53,10 +53,14 @@ esphome:
     - includes/ui_invalidation.h
     - includes/ui_redraw.h
     - includes/ui_widgets.h
+    - includes/ui_chrome.h
+    - includes/ui_screen_base.h
     - includes/ui_screens.h
     - includes/ui_app.h
     - includes/ui_touch.h
     - includes/ui_renderer.h
+    - includes/ui_tab_container.h
+    - includes/ui_scrollable_detail.h
 
 globals:
   - id: touch_last_x
@@ -79,6 +83,9 @@ touchscreen:
         id(touch_last_x) = touch.x;
         id(touch_last_y) = touch.y;
         BasicTouchHandler::handle_raw_touch(touch.x, touch.y, true);
+        if (UiInvalidation::needs_redraw()) {
+          id(main_display).update();
+        }
   on_update:
     - lambda: |-
         for (auto &t : touches) {
@@ -86,12 +93,36 @@ touchscreen:
           id(touch_last_y) = t.y;
           BasicTouchHandler::handle_raw_touch(t.x, t.y, true);
         }
+        if (UiInvalidation::needs_redraw()) {
+          id(main_display).update();
+        }
   on_release:
     - lambda: |-
         BasicTouchHandler::handle_raw_touch(id(touch_last_x), id(touch_last_y), false);
         if (UiInvalidation::needs_redraw()) {
           id(main_display).update();
         }
+
+interval:
+  - interval: 10s
+    then:
+      - lambda: |-
+          uint32_t now = millis();
+          if (now - g_ui_app.last_interaction_time > 20000) {
+            auto screen_id = g_ui_app.screens().current_id();
+            if (screen_id == UiScreenId::Home
+                && g_ui_app.state().home_page_index != 0) {
+              g_ui_app.state().home_page_index = 0;
+              UiInvalidation::request_full();
+            } else if (screen_id != UiScreenId::Home) {
+              g_ui_app.screens().navigate_to(UiScreenId::Home);
+            } else {
+              UiInvalidation::request_partial();
+            }
+          } else {
+            UiInvalidation::request_partial();
+          }
+          id(main_display).update();
 
 # Dummy: forces ESPHome to compile api::HomeAssistantServiceCallAction
 # so the generic C++ lambda in on_boot can use it for dynamic service calls.

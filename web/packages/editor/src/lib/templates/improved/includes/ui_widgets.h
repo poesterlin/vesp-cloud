@@ -104,8 +104,6 @@ class LabelWidget : public Widget {
     };
   }
 
-  void set_bg_color(Color c) { bg_color_ = c; }
-
   void bind(const bool *value, const char *on_text = "ON", const char *off_text = "OFF") {
     bound_bool_ = value;
     on_text_ = on_text;
@@ -126,26 +124,16 @@ class LabelWidget : public Widget {
     if (style_ == nullptr || style_->font == nullptr) return;
 
     auto *f = style_->font;
-    auto cl = style_->color;
+    auto c = style_->color;
     auto a = style_->align;
 
     if (bound_bool_ != nullptr) {
       const char *display = *bound_bool_ ? on_text_ : off_text_;
-      const char *alt = *bound_bool_ ? off_text_ : on_text_;
-      int tx, ty, tw, th, ax, ay, aw, ah;
-      it.get_text_bounds(rect_.x, rect_.y, display, f, a, &tx, &ty, &tw, &th);
-      it.get_text_bounds(rect_.x, rect_.y, alt, f, a, &ax, &ay, &aw, &ah);
-      int cw = (tw > aw) ? tw : aw;
-      ui_fast_filled_rectangle(it, tx - 2, ty, cw + 4, th, bg_color_);
-      it.printf(rect_.x, rect_.y, f, cl, a, "%s", display);
+      it.printf(rect_.x, rect_.y, f, c, a, "%s", display);
     } else if (printer_) {
-      ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
-      printer_(it, rect_.x, rect_.y, f, cl, a);
+      printer_(it, rect_.x, rect_.y, f, c, a);
     } else {
-      int tx, ty, tw, th;
-      it.get_text_bounds(rect_.x, rect_.y, text_, f, a, &tx, &ty, &tw, &th);
-      ui_fast_filled_rectangle(it, tx - 2, ty, tw + 4, th, bg_color_);
-      it.printf(rect_.x, rect_.y, f, cl, a, "%s", text_);
+      it.printf(rect_.x, rect_.y, f, c, a, "%s", text_);
     }
   }
 
@@ -157,7 +145,6 @@ class LabelWidget : public Widget {
   const char *on_text_ = "ON";
   const char *off_text_ = "OFF";
   std::function<void(display::Display&, int, int, esphome::font::Font*, Color, TextAlign)> printer_;
-  Color bg_color_{0, 0, 0};
 };
 
 class ButtonWidget : public Widget {
@@ -236,4 +223,3 @@ class ButtonWidget : public Widget {
 };
 
 #include "ui_tab_container.h"
-#include "ui_chrome.h"

@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { exec, spawn, type ChildProcess } from 'child_process';
+import { spawn, type ChildProcess } from 'child_process';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { getDb, schema } from '$lib/db/index.js';
@@ -9,8 +9,6 @@ import { env } from '$env/dynamic/private';
 import type { Project } from '@esphome-designer/schema';
 import { generateESPHomeYAML } from '$lib/codegen/esphome';
 import { generateSecretsYAML } from '$lib/codegen/secrets';
-import { generateHardwareYAML } from '$lib/codegen/hardware';
-import { generateInitialFlashYAML } from '$lib/codegen/initial-flash';
 import { getStaticBuildsDir } from '$lib/server/static-paths';
 
 interface ActiveJob {
@@ -120,38 +118,25 @@ export class CompilationQueue extends EventEmitter {
         }
       }
 
-      let esphomeYaml: string;
-      let secretsYaml: string;
-
-      if (job.template === 'initial') {
-        // Initial flash mode: use the lightweight setup firmware
-        esphomeYaml = generateInitialFlashYAML(job.projectName);
-        // Generate minimal secrets with just the firmware URL
-        secretsYaml = `# ESPHome Secrets (Initial Flash)\nfirmware_update_url: "${firmwareUpdateUrl ?? "http://YOUR_SERVER/api/firmware/YOUR_TOKEN/manifest"}"`;
-      } else {
-        // Full dashboard mode: generate from project config
-        const project = JSON.parse(job.config) as Project;
-        if (firmwareUpdateUrl) {
-          project.secrets = {
-            ...project.secrets,
-            firmwareUpdateUrl,
-          };
-        }
-        esphomeYaml = generateESPHomeYAML(project, job.id);
-        secretsYaml = generateSecretsYAML(project);
+      // Full dashboard mode: generate from project config
+      const project = JSON.parse(job.config) as Project;
+      if (firmwareUpdateUrl) {
+        project.secrets = {
+          ...project.secrets,
+          firmwareUpdateUrl,
+        };
       }
+      const esphomeYaml = generateESPHomeYAML(project, job.id);
+      const secretsYaml = generateSecretsYAML(project);
 
       // Write ESPHome YAML
       await fs.writeFile(configFile, esphomeYaml);
-
-      // Write LVGL hardware package
-      await fs.writeFile(join(packagesDir, 'lvgl_hardware.yaml'), generateHardwareYAML());
 
       // Write Secrets YAML
       await fs.writeFile(join(tempDir, 'secrets.yaml'), secretsYaml);
 
       const venvPath = env.ESPHOME_VENV;
-        const childProcess = spawn(`${venvPath}/bin/python`,
+      const childProcess = spawn(`${venvPath}/bin/python`,
         ['-m', 'esphome', 'compile', configFile],
         {
           cwd: tempDir,
@@ -213,7 +198,7 @@ export class CompilationQueue extends EventEmitter {
               console.log(`Binary saved to ${publicDest} (from ${name})`);
               copied = true;
               break;
-            } catch {}
+            } catch { }
           }
           if (!copied) {
             const files = await fs.readdir(pioDir).catch(() => []);

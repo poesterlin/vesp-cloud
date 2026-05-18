@@ -2,7 +2,6 @@
   import { projectStore } from "$lib/stores/project.svelte";
   import { generateESPHomeYAML } from "$lib/codegen/esphome";
   import { generateSecretsYAML } from "$lib/codegen/secrets";
-  import { generateHardwareYAML } from "$lib/codegen/hardware";
   import { assert } from "$lib/utils";
   import JSZip from "jszip";
 
@@ -177,10 +176,6 @@
       const project = projectStore.project;
       zip.file(`${fileName}.yaml`, generateESPHomeYAML(project));
       zip.file("secrets.yaml", generateSecretsYAML(project));
-      const packages = zip.folder("packages");
-      if (packages) {
-        packages.file("lvgl_hardware.yaml", generateHardwareYAML());
-      }
       const content = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");

@@ -1,6 +1,7 @@
 import type { Project, LightStateComponent, StateField } from "@esphome-designer/schema";
-import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents } from "./utils";
+import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames } from "./utils";
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
+import { ICON_FONT_ID, getIconGlyphs } from "./mdi-icons";
 
 const BINDER_BY_TYPE: Record<string, string> = {
   'bool': 'bind_ha_bool',
@@ -54,6 +55,10 @@ export function generateESPHomeYAML(project: Project, _firmwareVersion?: string)
   const deviceName = sanitizeDeviceName(project.name);
   const friendlyName = project.name;
   const bindings = generateBindings(project);
+  const iconGlyphs = getIconGlyphs(collectProjectIconNames(project));
+  const iconFontAssignment = iconGlyphs.size > 0
+    ? `\n          g_theme.icon.font = id(${ICON_FONT_ID});`
+    : '';
 
   return `substitutions:
   device_name: ${deviceName}
@@ -74,7 +79,7 @@ esphome:
           g_theme.primary.font = id(font_medium);
           g_theme.accent.font = id(font_small);
           g_theme.neutral.font = id(font_small);
-          g_theme.success.font = id(font_small);
+          g_theme.success.font = id(font_small);${iconFontAssignment}
           g_ui_app.on_action = [](const std::string& entity_id, const std::string& service) {
             auto *api = esphome::api::global_api_server;
             if (api == nullptr || !api->is_connected()) return;

@@ -7,7 +7,7 @@ import { eq, desc } from 'drizzle-orm';
 import type { CompilationJob, NewCompilationJob } from '$lib/db/schema';
 import { env } from '$env/dynamic/private';
 import type { Project } from '@esphome-designer/schema';
-import { generateESPHomeYAML, generateUITypesHeader, generateUIStateHeader, generateUIScreensHeader } from '$lib/codegen/esphome';
+import { generateESPHomeYAML, generateUITypesHeader, generateUIStateHeader, generateUIScreensHeader, generateFontsYAML } from '$lib/codegen/esphome';
 import { generateSecretsYAML } from '$lib/codegen/secrets';
 import { copyStaticTemplates } from '$lib/server/esphome-templates';
 import { getStaticBuildsDir } from '$lib/server/static-paths';
@@ -131,6 +131,11 @@ export class CompilationQueue extends EventEmitter {
       await fs.writeFile(join(tempDir, 'includes', 'ui_types.h'), generateUITypesHeader(project));
       await fs.writeFile(join(tempDir, 'includes', 'ui_state.h'), generateUIStateHeader(project));
       await fs.writeFile(join(tempDir, 'includes', 'ui_screens.h'), generateUIScreensHeader(project));
+
+      // Augment fonts.yaml with per-project MDI icon glyphs (no-op when no icons are used)
+      const fontsPath = join(tempDir, 'fonts.yaml');
+      const baseFontsYaml = await fs.readFile(fontsPath, 'utf-8');
+      await fs.writeFile(fontsPath, generateFontsYAML(project, baseFontsYaml));
 
       const esphomeYaml = generateESPHomeYAML(project, job.id);
       const secretsYaml = generateSecretsYAML(project);

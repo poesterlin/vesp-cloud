@@ -42,6 +42,7 @@ struct Theme {
 
   TextStyle header   = {nullptr, Color(255, 255, 255), TextAlign::TOP_LEFT};
   TextStyle label    = {nullptr, Color(180, 180, 180), TextAlign::TOP_LEFT};
+  TextStyle icon     = {nullptr, Color(255, 255, 255), TextAlign::CENTER};
   Color     info_bg  = Color(0, 0, 0);
 
   ButtonStyle primary = {Color(0, 200, 255), Color(255, 255, 255), nullptr};
@@ -160,12 +161,49 @@ class LabelWidget : public Widget {
   Color bg_color_{0, 0, 0};
 };
 
+class IconWidget : public Widget {
+ public:
+  IconWidget(UiRect rect, const char *glyph, const Theme::TextStyle &style)
+      : rect_(rect), glyph_(glyph), style_(&style) {}
+
+  void set_color(Color c) {
+    color_override_ = c;
+    has_color_override_ = true;
+  }
+
+  void draw(display::Display &it, const UiState &state) override {
+    (void)state;
+    if (style_ == nullptr || style_->font == nullptr) return;
+    if (glyph_ == nullptr || glyph_[0] == '\0') return;
+
+    auto *f = style_->font;
+    auto color = has_color_override_ ? color_override_ : style_->color;
+    const int cx = rect_.x + rect_.w / 2;
+    const int cy = rect_.y + rect_.h / 2;
+    it.printf(cx, cy, f, color, TextAlign::CENTER, "%s", glyph_);
+  }
+
+ private:
+  UiRect rect_;
+  const char *glyph_;
+  const Theme::TextStyle *style_ = nullptr;
+  Color color_override_{0, 0, 0};
+  bool has_color_override_ = false;
+};
+
 class ButtonWidget : public Widget {
  public:
   using Callback = std::function<void()>;
 
   ButtonWidget(UiRect rect, const char *label, Callback callback, const Theme::ButtonStyle &style)
       : rect_(rect), label_(label), callback_(callback), style_(&style) {}
+
+  // Configure an optional icon glyph drawn above the label using the
+  // provided text style (typically `g_theme.icon` so the MDI font is used).
+  void set_icon(const char *glyph, const Theme::TextStyle *icon_style) {
+    icon_glyph_ = glyph;
+    icon_style_ = icon_style;
+  }
 
   void update(uint32_t now) override {
     if (loading_timeout_ms_ > 0 && loading_ && (now - loading_start_ms_ > loading_timeout_ms_)) {
@@ -216,7 +254,21 @@ class ButtonWidget : public Widget {
       it.printf(rect_.x + rect_.w / 2, rect_.y + rect_.h / 2, f, tc, TextAlign::CENTER, "...");
       return;
     }
-    it.printf(rect_.x + rect_.w / 2, rect_.y + rect_.h / 2, f, tc, TextAlign::CENTER, "%s", label_);
+
+    const bool has_icon = icon_glyph_ != nullptr && icon_glyph_[0] != '\0'
+                         && icon_style_ != nullptr && icon_style_->font != nullptr;
+    const bool has_label = label_ != nullptr && label_[0] != '\0';
+    const int cx = rect_.x + rect_.w / 2;
+    const int cy = rect_.y + rect_.h / 2;
+
+    if (has_icon && has_label) {
+      it.printf(cx, cy - 10, icon_style_->font, tc, TextAlign::CENTER, "%s", icon_glyph_);
+      it.printf(cx, cy + 12, f, tc, TextAlign::CENTER, "%s", label_);
+    } else if (has_icon) {
+      it.printf(cx, cy, icon_style_->font, tc, TextAlign::CENTER, "%s", icon_glyph_);
+    } else {
+      it.printf(cx, cy, f, tc, TextAlign::CENTER, "%s", label_);
+    }
   }
 
  private:
@@ -230,6 +282,8 @@ class ButtonWidget : public Widget {
   const char *label_;
   Callback callback_;
   const Theme::ButtonStyle *style_ = nullptr;
+  const char *icon_glyph_ = nullptr;
+  const Theme::TextStyle *icon_style_ = nullptr;
   bool loading_ = false;
   uint32_t loading_start_ms_ = 0;
   uint32_t loading_timeout_ms_ = 350;

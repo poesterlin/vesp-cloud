@@ -1,4 +1,13 @@
-import type { Component, TabContainerComponent, ConditionalAreaComponent } from "@esphome-designer/schema";
+import type {
+  Component,
+  TabContainerComponent,
+  ConditionalAreaComponent,
+  Project,
+  IconComponent,
+  ButtonComponent,
+  AutoLayoutListComponent,
+  AutoLayoutListItem,
+} from "@esphome-designer/schema";
 
 export function toCppIdentifier(name: string): string {
   return name
@@ -71,3 +80,59 @@ export interface ScreenDescriptor {
 }
 
 export type WidgetFactory = (typeName: string, args: string) => string;
+
+// Default icon font size used when a component does not specify size.
+// Kept in sync with `ICON_FONT_SIZE` in mdi-icons.ts so codegen and YAML
+// reference the same font id.
+export const DEFAULT_ICON_FONT_SIZE = 24;
+
+/**
+ * Normalize an MDI icon name by stripping a leading `mdi:` prefix and
+ * trimming whitespace. Returns an empty string if the input is falsy.
+ */
+export function normalizeIconName(name: string | undefined | null): string {
+  if (!name) return "";
+  return name.replace(/^mdi:/, "").trim();
+}
+
+/**
+ * Walk all components in a project (dashboards, detail views, page header)
+ * and collect the set of normalized icon names referenced by them.
+ *
+ * Currently inspects: `icon`, `button.icon`, and `auto_layout_list` item icons.
+ */
+export function collectProjectIconNames(project: Project): Set<string> {
+  const icons = new Set<string>();
+
+  const addIcon = (raw: string | undefined | null) => {
+    const name = normalizeIconName(raw);
+    if (name) icons.add(name);
+  };
+
+  const visit = (components: Component[]) => {
+    for (const c of collectAllComponents(components)) {
+      if (c.type === "icon") {
+        addIcon((c as IconComponent).icon);
+      } else if (c.type === "button") {
+        addIcon((c as ButtonComponent).icon);
+      } else if (c.type === "auto_layout_list") {
+        const list = c as AutoLayoutListComponent;
+        for (const item of list.items as AutoLayoutListItem[]) {
+          addIcon(item.icon);
+        }
+      }
+    }
+  };
+
+  for (const page of project.dashboardPages ?? []) {
+    visit(page.components);
+  }
+  for (const view of project.detailViews ?? []) {
+    visit(view.components);
+  }
+  if (project.pageHeader?.components) {
+    visit(project.pageHeader.components);
+  }
+
+  return icons;
+}

@@ -7,6 +7,8 @@ import type {
   ConditionalVariant,
   TextComponent,
   ButtonComponent,
+  IconComponent,
+  Color,
   OnTapAction,
 } from "@esphome-designer/schema";
 import {
@@ -17,6 +19,11 @@ import {
   type WidgetFactory,
 } from "./utils";
 import { emitConditionExpression } from "./condition-expr";
+import { getMdiUtf8CEscape } from "./mdi-icons";
+
+function emitColor(c: Color): string {
+  return `Color(${c.r}, ${c.g}, ${c.b})`;
+}
 
 const TAB_BAR_HEIGHT = 36;
 
@@ -128,7 +135,16 @@ function generateComponentSetup(
     case 'button': {
       const label = c.label ?? '';
       const callback = emitTapAction(c.onTap ?? c.pressAction);
-      return `${indent}auto *${idSafe} = ${factory('ButtonWidget', `UiRect{${c.position.x + offsetX}, ${c.position.y + offsetY}, ${c.size?.width ?? 80}, ${c.size?.height ?? 36}}, "${escapeCString(label)}", ${callback || '[](){}'}, g_theme.primary`)};${visLine}\n`;
+      const rect = `UiRect{${c.position.x + offsetX}, ${c.position.y + offsetY}, ${c.size?.width ?? 80}, ${c.size?.height ?? 36}}`;
+      let out = `${indent}auto *${idSafe} = ${factory('ButtonWidget', `${rect}, "${escapeCString(label)}", ${callback || '[](){}'}, g_theme.primary`)};${visLine}\n`;
+      const iconGlyph = c.icon ? getMdiUtf8CEscape(c.icon) : null;
+      if (iconGlyph) {
+        out += `${indent}${idSafe}->set_icon("${iconGlyph}", &g_theme.icon);\n`;
+      }
+      return out;
+    }
+    case 'icon': {
+      return generateIconWidget(c, factory, indent, offsetX, offsetY, visibilityExpr);
     }
     case 'light_state': {
       const stateVar = stateVarFromEntity(c.stateBinding?.entityId ?? c.id);
@@ -141,6 +157,31 @@ function generateComponentSetup(
     default:
       return `${indent}// TODO: component type '${c.type}' (id: ${c.id})\n`;
   }
+}
+
+function generateIconWidget(
+    c: IconComponent,
+    factory: WidgetFactory,
+    indent: string,
+    offsetX: number,
+    offsetY: number,
+    visibilityExpr?: string,
+): string {
+  const idSafe = c.id.replace(/[^a-zA-Z0-9_]/g, '_');
+  const glyph = getMdiUtf8CEscape(c.icon);
+  if (!glyph) {
+    // Unknown icon - skip emission so firmware does not render tofu.
+    return `${indent}// Unknown icon '${c.icon}' (id: ${c.id}) - skipped\n`;
+  }
+  const rect = `UiRect{${c.position.x + offsetX}, ${c.position.y + offsetY}, ${c.size?.width ?? 32}, ${c.size?.height ?? 32}}`;
+  let out = `${indent}auto *${idSafe} = ${factory('IconWidget', `${rect}, "${glyph}", g_theme.icon`)};\n`;
+  if (c.color) {
+    out += `${indent}${idSafe}->set_color(${emitColor(c.color)});\n`;
+  }
+  if (visibilityExpr) {
+    out += `${indent}${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
+  }
+  return out;
 }
 
 function orderVariants(c: ConditionalAreaComponent): ConditionalVariant[] {
@@ -320,10 +361,29 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
       const label = c.label ?? '';
       const callback = emitTapAction(c.onTap ?? c.pressAction);
       const wargs = `UiRect{${x}, ${y}, ${w}, ${h}}, "${escapeCString(label)}", ${callback || '[](){}'}, g_theme.primary`;
-      if (visibilityExpr) {
-        return `${indent}auto *${idSafe} = ${factory('ButtonWidget', wargs)};${visLine}\n`;
+      const iconGlyph = c.icon ? getMdiUtf8CEscape(c.icon) : null;
+      if (visibilityExpr || iconGlyph) {
+        let out = `${indent}auto *${idSafe} = ${factory('ButtonWidget', wargs)};`;
+        if (visibilityExpr) out += `\n${indent}${idSafe}->set_visibility_condition(${visibilityExpr});`;
+        if (iconGlyph) out += `\n${indent}${idSafe}->set_icon("${iconGlyph}", &g_theme.icon);`;
+        return `${out}\n`;
       }
       return `${indent}${factory('ButtonWidget', wargs)};\n`;
+    }
+    case 'icon': {
+      const glyph = getMdiUtf8CEscape(c.icon);
+      if (!glyph) {
+        return `${indent}// Unknown icon '${c.icon}' (id: ${c.id}) - skipped\n`;
+      }
+      const wargs = `UiRect{${x}, ${y}, ${w}, ${h}}, "${glyph}", g_theme.icon`;
+      let out = `${indent}auto *${idSafe} = ${factory('IconWidget', wargs)};\n`;
+      if (c.color) {
+        out += `${indent}${idSafe}->set_color(${emitColor(c.color)});\n`;
+      }
+      if (visibilityExpr) {
+        out += `${indent}${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
+      }
+      return out;
     }
     case 'light_state': {
       const stateVar = stateVarFromEntity(c.stateBinding?.entityId ?? c.id);

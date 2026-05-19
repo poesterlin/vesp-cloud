@@ -8,6 +8,7 @@ import type {
   TextComponent,
   ButtonComponent,
   IconComponent,
+  TodoListComponent,
   Color,
   OnTapAction,
 } from "@esphome-designer/schema";
@@ -15,6 +16,7 @@ import {
   toCppIdentifier,
   escapeCString,
   stateVarFromEntity,
+  todoItemsVarFromBinding,
   type ScreenDescriptor,
   type WidgetFactory,
 } from "./utils";
@@ -142,6 +144,39 @@ function generateLightWidget(c: LightStateComponent, stateVar: string,
   return out;
 }
 
+function generateTodoListWidget(
+    c: TodoListComponent,
+    itemsVar: string,
+    factory: WidgetFactory,
+    indent: string,
+    offX = 0,
+    offY = 0,
+    visibilityExpr?: string,
+    dirtyBoundsExpr?: string,
+): string {
+  const x = c.position.x + offX;
+  const y = c.position.y + offY;
+  const w = c.size?.width ?? 220;
+  const h = c.size?.height ?? 140;
+  const maxItems = Math.max(1, Math.min(10, c.maxItems ?? 4));
+  const rowHeight = Math.max(20, Math.min(80, c.rowHeight ?? 30));
+  const scrollable = c.scrollable === true ? 'true' : 'false';
+  const checkable = c.checkable === true ? 'true' : 'false';
+  const onTap = (!c.checkable && c.onTap) ? emitTapAction(c.onTap) : '';
+  const incompleteIcon = getMdiUtf8CEscape("checkbox-blank-outline") ?? "";
+  const completeIcon = getMdiUtf8CEscape("checkbox-marked") ?? "";
+  const todoEntity = c.todoEntityId ?? "";
+  const idSafe = c.id.replace(/[^a-zA-Z0-9_]/g, '_');
+  let out = `${indent}auto *todo_${idSafe} = ${factory('TodoPreviewWidget', `UiRect{${x}, ${y}, ${w}, ${h}}, state.${itemsVar}.ptr(), ${maxItems}, ${rowHeight}, ${scrollable}, ${checkable}, ${onTap || '[](){}'}, "${incompleteIcon}", "${completeIcon}", "${escapeCString(todoEntity)}"`)};\n`;
+  if (visibilityExpr) {
+    out += `${indent}todo_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
+  }
+  if (dirtyBoundsExpr) {
+    out += `${indent}todo_${idSafe}->set_dirty_bounds(${dirtyBoundsExpr});\n`;
+  }
+  return out;
+}
+
 function generateComponentSetup(
     c: Component,
     screenVar: string,
@@ -193,6 +228,10 @@ function generateComponentSetup(
     case 'light_state': {
       const stateVar = stateVarFromEntity(c.stateBinding?.entityId ?? c.id);
       return generateLightWidget(c, stateVar, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
+    }
+    case 'todo_list': {
+      const itemsVar = todoItemsVarFromBinding(c.itemsBinding, c.id);
+      return generateTodoListWidget(c, itemsVar, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     }
     case 'tab_container':
       return generateTabContainerWidget(c, screenVar, indent, visibilityExpr, offsetX, offsetY, dirtyBoundsExpr);
@@ -458,6 +497,10 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
     case 'light_state': {
       const stateVar = stateVarFromEntity(c.stateBinding?.entityId ?? c.id);
       return generateLightWidget(c, stateVar, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
+    }
+    case 'todo_list': {
+      const itemsVar = todoItemsVarFromBinding(c.itemsBinding, c.id);
+      return generateTodoListWidget(c, itemsVar, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     }
     case 'conditional_area':
       return generateConditionalAreaNested(c, containerVar, tabIndex, indent, visibilityExpr, offsetX, offsetY, tabBgVar);

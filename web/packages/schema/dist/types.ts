@@ -107,8 +107,14 @@ export type ImageComponent = BaseComponent & {
 export type TodoListComponent = BaseComponent & {
   type: "todo_list";
   itemsBinding?: EntityBinding;
+  /**
+   * Home Assistant todo entity used for check-off actions
+   */
+  todoEntityId?: string;
   maxItems?: number;
   rowHeight?: number;
+  scrollable?: boolean;
+  checkable?: boolean;
 };
 export type LightStateComponent = BaseComponent & {
   type: "light_state";

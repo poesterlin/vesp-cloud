@@ -79,6 +79,8 @@ export function createComponent(type: string, x: number, y: number): Component {
         size: { width: 220, height: 140 },
         maxItems: 4,
         rowHeight: 30,
+        scrollable: false,
+        checkable: false,
       } as Component;
 
     case "light_state":

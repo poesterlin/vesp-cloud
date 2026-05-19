@@ -12,22 +12,30 @@
 
   const offText = $derived(component.offText?.trim() || "OFF");
   const useImageToggle = $derived(component.showIcon !== false);
-  const showBrightnessControl = $derived(component.showBrightnessControl === true);
+  const showBrightnessControl = $derived(
+    component.showBrightnessControl === true,
+  );
   const hasBrightnessTarget = $derived(
     !!component.stateBinding?.entityId || !!component.targetDevice?.deviceId,
   );
 
   const label = $derived(component.label?.trim() || "Light");
-  const iconName = $derived((component.icon?.trim() || "lightbulb").replace(/^mdi:/, ""));
+  const iconName = $derived(
+    (component.icon?.trim() || "lightbulb").replace(/^mdi:/, ""),
+  );
   const iconPath = $derived.by(() => {
-    const iconKey = "mdi" + iconName
-      .split(/[-_]/)
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join("");
+    const iconKey =
+      "mdi" +
+      iconName
+        .split(/[-_]/)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join("");
     const path = (mdiIcons as Record<string, unknown>)[iconKey];
     return typeof path === "string" ? path : null;
   });
-  const offColor = $derived(colorToCss(component.offColor, "rgb(92, 102, 117)"));
+  const offColor = $derived(
+    colorToCss(component.offColor, "rgb(92, 102, 117)"),
+  );
 </script>
 
 <Draggable {component}>
@@ -46,9 +54,7 @@
         <span class="label">{label}</span>
       </div>
       <div class="bindings">
-        {#if component.stateBinding}
-          {component.stateBinding.entityId}
-        {:else}
+        {#if !component.stateBinding}
           Bind a light entity
         {/if}
       </div>
@@ -58,9 +64,7 @@
         {offText}
       </span>
       <div class="bindings">
-        {#if component.stateBinding}
-          {component.stateBinding.entityId}
-        {:else}
+        {#if !component.stateBinding}
           Bind a light entity
         {/if}
       </div>
@@ -68,7 +72,10 @@
         <div class="brightness-row">
           <span class="brightness-label">Brightness</span>
           <div class="brightness-track">
-            <div class="brightness-fill" style:background-color={offColor}></div>
+            <div
+              class="brightness-fill"
+              style:background-color={offColor}
+            ></div>
           </div>
           {#if !hasBrightnessTarget}
             <span class="brightness-hint">no target</span>

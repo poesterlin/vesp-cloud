@@ -1,6 +1,7 @@
 substitutions:
   device_name: status-basic
   friendly_name: "Status Display Basic Architecture"
+  todo_bridge_entity: sensor.esphome_todo_bridge
 
 packages:
   base: !include base.yaml
@@ -46,7 +47,36 @@ esphome:
                   UiRedraw::trigger_display_update();
                 });
           };
+          auto bind_ha_int = [](const std::string& entity_id, Observable<int>* target) {
+            auto *api = esphome::api::global_api_server;
+            if (api == nullptr) return;
+            api->subscribe_home_assistant_state(
+                entity_id, esphome::optional<std::string>(),
+                [target](esphome::StringRef state) {
+                  const std::string raw = state.c_str();
+                  int value = 0;
+                  if (!raw.empty()) {
+                    value = atoi(raw.c_str());
+                  }
+                  target->set(value);
+                  UiRedraw::trigger_display_update();
+                });
+          };
+          auto bind_ha_text_attr = [](const std::string& entity_id, const std::string& attribute,
+                                      Observable<std::string>* target) {
+            auto *api = esphome::api::global_api_server;
+            if (api == nullptr) return;
+            api->subscribe_home_assistant_state(
+                entity_id, esphome::optional<std::string>(attribute),
+                [target](esphome::StringRef state) {
+                  target->set(std::string(state.c_str()));
+                  UiRedraw::trigger_display_update();
+                });
+          };
           bind_ha_bool("switch.led_stehlampe_switch", &g_ui_app.state().led_switch);
+          bind_ha_int("${todo_bridge_entity}", &g_ui_app.state().todo_pending_count);
+          bind_ha_text_attr("${todo_bridge_entity}", "all_items",
+                            &g_ui_app.state().todo_items_formatted);
   includes:
     - includes/ui_types.h
     - includes/ui_state.h

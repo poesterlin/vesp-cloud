@@ -615,6 +615,36 @@
               )}
           />
         </div>
+        <div class="field">
+          <span class="field-label">Scrollable</span>
+          <input
+            type="checkbox"
+            checked={selectedComponent.scrollable === true}
+            onchange={(e) => updateProperty("scrollable", e.currentTarget.checked)}
+          />
+        </div>
+        <div class="field">
+          <span class="field-label">Checkable</span>
+          <input
+            type="checkbox"
+            checked={selectedComponent.checkable === true}
+            onchange={(e) => updateProperty("checkable", e.currentTarget.checked)}
+          />
+        </div>
+        {#if selectedComponent.checkable === true}
+          <div class="field">
+            <span class="field-label">Todo Entity</span>
+            <EntityPicker
+              component={{
+                type: "procedural_icon",
+                stateBinding: selectedComponent.todoEntityId
+                  ? { entityId: selectedComponent.todoEntityId }
+                  : undefined,
+              }}
+              onUpdate={(binding) => updateProperty("todoEntityId", binding?.entityId)}
+            />
+          </div>
+        {/if}
       </div>
     {/if}
 
@@ -675,7 +705,7 @@
       </div>
 
       <div class="property-section">
-        <label class="section-label">Target</label>
+        <label class="section-label">Binding</label>
         <div class="field-group">
           <label class="group-label">Entity Target</label>
           <EntityPicker
@@ -686,7 +716,7 @@
             }}
           />
         </div>
-        <div class="field-group">
+        <!-- <div class="field-group">
           <label class="group-label">Device Target</label>
           <EntityPicker
             component={selectedComponent}
@@ -703,10 +733,10 @@
               }
             }}
           />
-        </div>
+        </div> -->
       </div>
 
-      <div class="property-section">
+      <!-- <div class="property-section">
         <label class="section-label">Styling</label>
         <ColorPicker
           label="On Color"
@@ -718,7 +748,7 @@
           value={selectedComponent.offColor}
           onUpdate={(color) => updateProperty("offColor", color)}
         />
-      </div>
+      </div> -->
     {/if}
 
     {#if selectedAutoLayoutComponent}

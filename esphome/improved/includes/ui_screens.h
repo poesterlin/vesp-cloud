@@ -152,19 +152,19 @@ inline void setup_ui_screens(ScreenController &screens, UiState &state,
         v->bind(state.led_switch.ptr(), "ON", "OFF");
       }
       {
-        auto *l = tabs->emplace_child<LabelWidget>(t0, UiRect{30, 295, 420, 20},
-            "Uptime: --:--", g_theme.label);
+        auto *l = tabs->emplace_child<LabelWidget>(t0, UiRect{30, 290, 420, 20},
+            "", g_theme.label);
         l->set_bg_color(tab_bg);
+        l->bind(state.todo_pending_count.ptr(), "PENDING: %d");
       }
       {
-        auto *l = tabs->emplace_child<LabelWidget>(t0, UiRect{30, 325, 420, 20},
-            "WiFi: connected", g_theme.label);
-        l->set_bg_color(tab_bg);
+        tabs->emplace_child<TodoPreviewWidget>(
+            t0, UiRect{30, 316, 420, 86}, state.todo_items_formatted.ptr());
       }
       {
-        auto *b = tabs->emplace_child<ButtonWidget>(t0,
-            UiRect{50, 360, 340, 50}, "REFRESH",
-            []() {}, g_theme.success);
+        tabs->emplace_child<ButtonWidget>(
+            t0, UiRect{50, 408, 340, 34}, "OPEN TO-DO",
+            [&screens]() { screens.navigate_to(UiScreenId::Todo); }, g_theme.accent);
       }
 
       int t1 = tabs->add_tab("CONTROLS");
@@ -330,6 +330,12 @@ inline void setup_ui_screens(ScreenController &screens, UiState &state,
     auto *s = screens.get_screen(UiScreenId::Todo);
     s->emplace_widget<DetailHeaderWidget>(g_theme.header.font, g_theme.label.font, "TO-DO",
         [&screens]() { screens.navigate_to(UiScreenId::Home); });
+    {
+      auto *l = s->emplace_widget<LabelWidget>(UiRect{20, 70, 440, 24}, "", g_theme.label);
+      l->bind(state.todo_pending_count.ptr(), "PENDING: %d");
+    }
+    s->emplace_widget<TodoPreviewWidget>(
+        UiRect{20, 100, 440, 110}, state.todo_items_formatted.ptr());
   }
   {
     auto *s = screens.get_screen(UiScreenId::Vacuum);

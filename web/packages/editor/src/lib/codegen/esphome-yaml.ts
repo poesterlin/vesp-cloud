@@ -1,5 +1,5 @@
-import type { Project, LightStateComponent, StateField } from "@esphome-designer/schema";
-import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames } from "./utils";
+import type { Project, LightStateComponent, StateField, TodoListComponent } from "@esphome-designer/schema";
+import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding } from "./utils";
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
 import { ICON_FONT_ID, getIconGlyphs } from "./mdi-icons";
 
@@ -28,6 +28,18 @@ function generateBindings(project: Project): string {
     if (claimed.has(stateVar)) continue;
     claimed.add(stateVar);
     lines.push(`          bind_ha_bool("${entityId}", &g_ui_app.state().${stateVar});`);
+  }
+
+  for (const c of allComponents) {
+    if (c.type !== "todo_list") continue;
+    const tc = c as TodoListComponent;
+    const entityId = tc.itemsBinding?.entityId;
+    if (!entityId) continue;
+    const stateVar = todoItemsVarFromBinding(tc.itemsBinding, tc.id);
+    if (claimed.has(stateVar)) continue;
+    claimed.add(stateVar);
+    const attribute = tc.itemsBinding?.attribute ?? "all_items";
+    lines.push(`          bind_ha_string_attr("${entityId}", "${attribute}", &g_ui_app.state().${stateVar});`);
   }
 
   for (const f of (project.state?.fields ?? []) as StateField[]) {
@@ -112,6 +124,18 @@ esphome:
             if (api == nullptr) return;
             api->subscribe_home_assistant_state(
                 entity_id, esphome::optional<std::string>(),
+                [target](esphome::StringRef state) {
+                  target->set(std::string(state.c_str(), state.size()));
+                  UiRedraw::trigger_display_update();
+                });
+          };
+
+          auto bind_ha_string_attr = [](const std::string& entity_id, const std::string& attribute,
+                                        Observable<std::string>* target) {
+            auto *api = esphome::api::global_api_server;
+            if (api == nullptr) return;
+            api->subscribe_home_assistant_state(
+                entity_id, esphome::optional<std::string>(attribute),
                 [target](esphome::StringRef state) {
                   target->set(std::string(state.c_str(), state.size()));
                   UiRedraw::trigger_display_update();

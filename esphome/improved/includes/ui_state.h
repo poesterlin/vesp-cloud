@@ -3,6 +3,7 @@
 #include "esphome.h"
 #include "ui_types.h"
 #include "ui_invalidation.h"
+#include <string>
 
 template<typename T>
 class Observable {
@@ -61,4 +62,6 @@ struct UiState {
   Observable<bool> button_a_on{false};
   Observable<bool> button_b_on{false};
   Observable<bool> led_switch{false};
+  Observable<int> todo_pending_count{0};
+  Observable<std::string> todo_items_formatted{"LIST EMPTY"};
 };

@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include <string>
 
 namespace esphome {
 namespace font {
@@ -405,6 +406,153 @@ class ImageToggleWidget : public Widget {
   uint32_t loading_start_ms_ = 0;
   uint32_t loading_timeout_ms_ = 350;
   bool last_on_state_ = false;
+};
+
+class TodoPreviewWidget : public Widget {
+ public:
+  TodoPreviewWidget(UiRect rect, const std::string *items)
+      : rect_(rect), items_(items) {}
+
+  UiRect bounds() const override { return rect_; }
+
+  void update(uint32_t now) override {
+    (void)now;
+    if (items_ == nullptr) return;
+    if (!baseline_set_ || *items_ != last_items_) {
+      mark_dirty();
+    }
+  }
+
+  void draw(display::Display &it, const UiState &state) override {
+    (void)state;
+
+    const Color border(255, 180, 0);
+    const Color bg(20, 20, 20);
+    const Color text(255, 255, 255);
+    const Color due_ok(255, 180, 0);
+    const Color due_overdue(255, 60, 60);
+    const Color dim(80, 80, 80);
+
+    it.rectangle(rect_.x, rect_.y, rect_.w, rect_.h, border);
+    ui_fast_filled_rectangle(it, rect_.x + 1, rect_.y + 1, rect_.w - 2, rect_.h - 2, bg);
+
+    if (items_ == nullptr || items_->empty()) {
+      if (g_theme.label.font != nullptr) {
+        it.printf(rect_.x + rect_.w / 2, rect_.y + rect_.h / 2, g_theme.label.font,
+                  dim, TextAlign::CENTER, "LIST EMPTY");
+      }
+      last_items_.clear();
+      baseline_set_ = true;
+      return;
+    }
+
+    int drawn = 0;
+    std::size_t start = 0;
+    const std::string &src = *items_;
+    const int line_h = 28;
+    const int base_y = rect_.y + 10;
+
+    while (drawn < 3 && start <= src.size()) {
+      std::size_t end = src.find('\n', start);
+      std::string line = (end == std::string::npos)
+                             ? src.substr(start)
+                             : src.substr(start, end - start);
+
+      std::size_t first = line.find_first_not_of(" \t\r\n");
+      if (first == std::string::npos) {
+        if (end == std::string::npos) break;
+        start = end + 1;
+        continue;
+      }
+      std::size_t last = line.find_last_not_of(" \t\r\n");
+      line = line.substr(first, last - first + 1);
+
+      if (line.empty() || line == "LIST EMPTY") {
+        if (end == std::string::npos) break;
+        start = end + 1;
+        continue;
+      }
+
+      std::string summary = line;
+      std::string due;
+      std::string status;
+      std::size_t p1 = line.find('|');
+      if (p1 != std::string::npos) {
+        summary = line.substr(0, p1);
+        std::string rest = line.substr(p1 + 1);
+        std::size_t p2 = rest.find('|');
+        if (p2 != std::string::npos) {
+          due = rest.substr(0, p2);
+          status = rest.substr(p2 + 1);
+        } else {
+          due = rest;
+        }
+      }
+
+      auto trim_inplace = [](std::string &value) {
+        std::size_t f = value.find_first_not_of(" \t\r\n");
+        if (f == std::string::npos) {
+          value.clear();
+          return;
+        }
+        std::size_t l = value.find_last_not_of(" \t\r\n");
+        value = value.substr(f, l - f + 1);
+      };
+      trim_inplace(summary);
+      trim_inplace(due);
+      trim_inplace(status);
+
+      if (summary.empty()) {
+        if (end == std::string::npos) break;
+        start = end + 1;
+        continue;
+      }
+
+      if (due == "none" || due == "no-date") {
+        due.clear();
+      }
+      const bool overdue = status.find("overdue") != std::string::npos;
+
+      const int y = base_y + drawn * line_h;
+      if (g_theme.label.font != nullptr) {
+        it.printf(rect_.x + 12, y, g_theme.label.font, border, TextAlign::TOP_LEFT, "[ ]");
+      }
+
+      int text_x = rect_.x + 42;
+      int max_chars = 28;
+      if (!due.empty() && g_theme.label.font != nullptr) {
+        it.printf(rect_.x + 42, y, g_theme.label.font, overdue ? due_overdue : due_ok,
+                  TextAlign::TOP_LEFT, "%s", due.c_str());
+        text_x = rect_.x + 140;
+        max_chars = 16;
+      }
+
+      if (static_cast<int>(summary.size()) > max_chars) {
+        summary = summary.substr(0, max_chars - 3) + "...";
+      }
+      if (g_theme.label.font != nullptr) {
+        it.printf(text_x, y, g_theme.label.font, text, TextAlign::TOP_LEFT, "%s", summary.c_str());
+      }
+
+      drawn++;
+      if (end == std::string::npos) break;
+      start = end + 1;
+    }
+
+    if (drawn == 0 && g_theme.label.font != nullptr) {
+      it.printf(rect_.x + rect_.w / 2, rect_.y + rect_.h / 2, g_theme.label.font,
+                dim, TextAlign::CENTER, "LIST EMPTY");
+    }
+
+    last_items_ = *items_;
+    baseline_set_ = true;
+  }
+
+ private:
+  UiRect rect_;
+  const std::string *items_ = nullptr;
+  std::string last_items_;
+  bool baseline_set_ = false;
 };
 
 #include "ui_tab_container.h"

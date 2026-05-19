@@ -558,6 +558,11 @@
           "properties": {
             "type": { "const": "todo_list" },
             "itemsBinding": { "$ref": "#/definitions/EntityBinding" },
+            "todoEntityId": {
+              "type": "string",
+              "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
+              "description": "Home Assistant todo entity used for check-off actions"
+            },
             "maxItems": {
               "type": "integer",
               "minimum": 1,
@@ -569,6 +574,14 @@
               "minimum": 20,
               "maximum": 80,
               "default": 30
+            },
+            "scrollable": {
+              "type": "boolean",
+              "default": false
+            },
+            "checkable": {
+              "type": "boolean",
+              "default": false
             }
           },
           "required": ["type", "size"]

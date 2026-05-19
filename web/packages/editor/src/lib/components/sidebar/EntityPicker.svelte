@@ -2,20 +2,24 @@
   import type { Component, EntityBinding } from "@esphome-designer/schema";
   import { homeAssistantStore } from "$lib/stores/homeassistant.svelte";
   import type { Entity, Device } from "@esphome-designer/schema/homeassistant";
+  import { onMount } from "svelte";
+  import { assert } from "$lib/utils";
 
   interface DeviceSelection {
     deviceId: string;
     deviceName: string;
   }
 
-  type PickerComponent = Component | {
-    type?: string;
-    textBinding?: EntityBinding;
-    valueBinding?: EntityBinding;
-    stateBinding?: EntityBinding;
-    itemsBinding?: EntityBinding;
-    targetDevice?: { deviceId?: string; deviceName?: string };
-  };
+  type PickerComponent =
+    | Component
+    | {
+        type?: string;
+        textBinding?: EntityBinding;
+        valueBinding?: EntityBinding;
+        stateBinding?: EntityBinding;
+        itemsBinding?: EntityBinding;
+        targetDevice?: { deviceId?: string; deviceName?: string };
+      };
 
   interface Props {
     component: PickerComponent;
@@ -25,14 +29,23 @@
     deviceOnly?: boolean;
   }
 
-  let { component, onUpdate, onDeviceSelect, numericOnly = false, deviceOnly = false }: Props = $props();
+  let {
+    component,
+    onUpdate,
+    onDeviceSelect,
+    numericOnly = false,
+    deviceOnly = false,
+  }: Props = $props();
 
   // Get current binding based on component type
   const currentBinding = $derived.by<EntityBinding | undefined>(() => {
     if (component.type === "text") {
       return component.textBinding;
     }
-    if (component.type === "procedural_icon" || component.type === "light_state") {
+    if (
+      component.type === "procedural_icon" ||
+      component.type === "light_state"
+    ) {
       return component.stateBinding;
     }
     if (component.type === "todo_list") {
@@ -46,6 +59,7 @@
 
   let isModalOpen = $state(false);
   let searchQuery = $state("");
+  let inputEl = $state<HTMLInputElement | null>(null);
   let showAttributes = $state(false);
   let selectedEntity = $state<Entity | null>(null);
   let selectedDevice = $state<Device | null>(null);
@@ -57,11 +71,20 @@
     browseMode = deviceOnly ? "device" : "type";
   });
 
+  $effect(() => {
+    if (isModalOpen && inputEl) {
+      inputEl.focus();
+    }
+  });
+
   // Sync state when binding changes
   $effect(() => {
     if (deviceOnly) {
       // For device mode, check if there's a device selection stored
-      const deviceId = "targetDevice" in component ? component.targetDevice?.deviceId : undefined;
+      const deviceId =
+        "targetDevice" in component
+          ? component.targetDevice?.deviceId
+          : undefined;
       if (deviceId) {
         const device = homeAssistantStore.getDeviceById(deviceId);
         if (device) {
@@ -136,7 +159,10 @@
   };
 
   function getDomainLabel(domain: string): string {
-    return domainLabels[domain] || domain.charAt(0).toUpperCase() + domain.slice(1).replace(/_/g, " ");
+    return (
+      domainLabels[domain] ||
+      domain.charAt(0).toUpperCase() + domain.slice(1).replace(/_/g, " ")
+    );
   }
 
   function getDomainIcon(domain: string): string {
@@ -147,7 +173,9 @@
   const allFilteredEntities = $derived.by(() => {
     if (!homeAssistantStore.isLoaded) return [];
     return numericOnly
-      ? homeAssistantStore.entities.filter((e: Entity) => e.numeric_state !== undefined)
+      ? homeAssistantStore.entities.filter(
+          (e: Entity) => e.numeric_state !== undefined,
+        )
       : homeAssistantStore.entities;
   });
 
@@ -173,18 +201,28 @@
       const deviceEntityCounts: Record<string, number> = {};
       for (const entity of allFilteredEntities) {
         if (entity.device_id) {
-          deviceEntityCounts[entity.device_id] = (deviceEntityCounts[entity.device_id] || 0) + 1;
+          deviceEntityCounts[entity.device_id] =
+            (deviceEntityCounts[entity.device_id] || 0) + 1;
         }
       }
       return homeAssistantStore.devices
         .filter((d: Device) => deviceEntityCounts[d.id] > 0)
-        .map((d: Device) => ({ ...d, entity_ids: Array(deviceEntityCounts[d.id]).fill('') }))
-        .sort((a: Device, b: Device) => (b.entity_ids?.length ?? 0) - (a.entity_ids?.length ?? 0));
+        .map((d: Device) => ({
+          ...d,
+          entity_ids: Array(deviceEntityCounts[d.id]).fill(""),
+        }))
+        .sort(
+          (a: Device, b: Device) =>
+            (b.entity_ids?.length ?? 0) - (a.entity_ids?.length ?? 0),
+        );
     }
 
     return homeAssistantStore.devices
       .filter((d: Device) => d.entity_ids && d.entity_ids.length > 0)
-      .sort((a: Device, b: Device) => (b.entity_ids?.length ?? 0) - (a.entity_ids?.length ?? 0));
+      .sort(
+        (a: Device, b: Device) =>
+          (b.entity_ids?.length ?? 0) - (a.entity_ids?.length ?? 0),
+      );
   });
 
   // Available areas (filtered for numeric entities if needed)
@@ -200,8 +238,8 @@
         }
       }
       return homeAssistantStore.areasList
-        .filter(area => areaCounts[area.name] > 0)
-        .map(area => ({ ...area, entity_count: areaCounts[area.name] }));
+        .filter((area) => areaCounts[area.name] > 0)
+        .map((area) => ({ ...area, entity_count: areaCounts[area.name] }));
     }
 
     return homeAssistantStore.areasList;
@@ -354,7 +392,11 @@
     <div class="empty-state">
       <span class="empty-icon">📡</span>
       <span class="empty-text">No Home Assistant data loaded</span>
-      <span class="empty-hint">Import your Home Assistant export to see available {deviceOnly ? 'devices' : 'entities'}</span>
+      <span class="empty-hint"
+        >Import your Home Assistant export to see available {deviceOnly
+          ? "devices"
+          : "entities"}</span
+      >
     </div>
   {:else if deviceOnly}
     <!-- Device Only Mode -->
@@ -367,19 +409,23 @@
               <span class="selected-name">{selectedDevice.friendly_name}</span>
               <span class="selected-meta">
                 {#if selectedDevice.manufacturer}
-                  <span class="selected-manufacturer">{selectedDevice.manufacturer}</span>
+                  <span class="selected-manufacturer"
+                    >{selectedDevice.manufacturer}</span
+                  >
                 {/if}
                 {#if selectedDevice.area_name}
-                  <span class="selected-area">📍 {selectedDevice.area_name}</span>
+                  <span class="selected-area"
+                    >📍 {selectedDevice.area_name}</span
+                  >
                 {/if}
               </span>
             </div>
           </div>
-          <button class="clear-btn" onclick={clearSelection} title="Remove">✕</button>
+          <button class="clear-btn" onclick={clearSelection} title="Remove"
+            >✕</button
+          >
         </div>
-        <button class="change-btn" onclick={openModal}>
-          Change device
-        </button>
+        <button class="change-btn" onclick={openModal}> Change device </button>
       </div>
     {:else}
       <button class="select-btn" onclick={openModal}>
@@ -393,12 +439,17 @@
       <div class="selected-entity">
         <div class="selected-header">
           <div class="selected-info">
-            <span class="selected-icon">{getDomainIcon(selectedEntity.domain)}</span>
+            <span class="selected-icon"
+              >{getDomainIcon(selectedEntity.domain)}</span
+            >
             <div class="selected-details">
-              <span class="selected-name">{getDisplayName(selectedEntity)}</span>
+              <span class="selected-name">{getDisplayName(selectedEntity)}</span
+              >
               <span class="selected-meta">
                 {#if getStateDisplay(selectedEntity)}
-                  <span class="selected-state">{getStateDisplay(selectedEntity)}</span>
+                  <span class="selected-state"
+                    >{getStateDisplay(selectedEntity)}</span
+                  >
                 {/if}
                 {#if selectedEntity.area}
                   <span class="selected-area">📍 {selectedEntity.area}</span>
@@ -406,14 +457,16 @@
               </span>
             </div>
           </div>
-          <button class="clear-btn" onclick={clearSelection} title="Remove">✕</button>
+          <button class="clear-btn" onclick={clearSelection} title="Remove"
+            >✕</button
+          >
         </div>
 
         <!-- Attribute Selection -->
         <div class="attribute-section">
           <button
             class="attribute-toggle"
-            onclick={() => showAttributes = !showAttributes}
+            onclick={() => (showAttributes = !showAttributes)}
           >
             <span class="attribute-label">
               {#if currentBinding?.attribute}
@@ -422,13 +475,15 @@
                 Showing: <strong>state</strong>
               {/if}
             </span>
-            <span class="toggle-arrow">{showAttributes ? '▲' : '▼'}</span>
+            <span class="toggle-arrow">{showAttributes ? "▲" : "▼"}</span>
           </button>
 
           {#if showAttributes}
             <div class="attribute-list">
               <button
-                class="attribute-item {!currentBinding?.attribute ? 'active' : ''}"
+                class="attribute-item {!currentBinding?.attribute
+                  ? 'active'
+                  : ''}"
                 onclick={() => selectAttribute(null)}
               >
                 <span class="attr-name">state</span>
@@ -436,19 +491,19 @@
               </button>
               {#each getEntityAttributes(selectedEntity) as attr}
                 <button
-                  class="attribute-item {currentBinding?.attribute === attr ? 'active' : ''}"
+                  class="attribute-item {currentBinding?.attribute === attr
+                    ? 'active'
+                    : ''}"
                   onclick={() => selectAttribute(attr)}
                 >
-                  <span class="attr-name">{attr.replace(/_/g, ' ')}</span>
+                  <span class="attr-name">{attr.replace(/_/g, " ")}</span>
                 </button>
               {/each}
             </div>
           {/if}
         </div>
 
-        <button class="change-btn" onclick={openModal}>
-          Change entity
-        </button>
+        <button class="change-btn" onclick={openModal}> Change entity </button>
       </div>
     {:else}
       <button class="select-btn" onclick={openModal}>
@@ -462,10 +517,16 @@
 <!-- Modal -->
 {#if isModalOpen}
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <div class="modal-backdrop" role="dialog" aria-modal="true" onclick={closeModal} onkeydown={handleKeydown}>
+  <div
+    class="modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    onclick={closeModal}
+    onkeydown={handleKeydown}
+  >
     <div class="modal" onclick={(e) => e.stopPropagation()}>
       <div class="modal-header">
-        <h2>{deviceOnly ? 'Select Device' : 'Select Entity'}</h2>
+        <h2>{deviceOnly ? "Select Device" : "Select Entity"}</h2>
         <button class="modal-close" onclick={closeModal}>✕</button>
       </div>
 
@@ -476,9 +537,12 @@
           placeholder={deviceOnly ? "Search devices..." : "Search entities..."}
           bind:value={searchQuery}
           autofocus
+          bind:this={inputEl}
         />
         {#if searchQuery}
-          <button class="search-clear" onclick={() => searchQuery = ''}>✕</button>
+          <button class="search-clear" onclick={() => (searchQuery = "")}
+            >✕</button
+          >
         {/if}
       </div>
 
@@ -486,27 +550,39 @@
         {#if deviceOnly}
           <!-- Device Only Mode -->
           {@const filteredDevices = searchQuery
-            ? availableDevices.filter((d: Device) =>
-                d.friendly_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                d.manufacturer?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                d.model?.toLowerCase().includes(searchQuery.toLowerCase())
+            ? availableDevices.filter(
+                (d: Device) =>
+                  d.friendly_name
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase()) ||
+                  d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  d.manufacturer
+                    ?.toLowerCase()
+                    .includes(searchQuery.toLowerCase()) ||
+                  d.model?.toLowerCase().includes(searchQuery.toLowerCase()),
               )
             : availableDevices}
           <div class="results-panel">
             <div class="panel-header">
-              <span>{searchQuery ? 'Search Results' : 'All Devices'}</span>
+              <span>{searchQuery ? "Search Results" : "All Devices"}</span>
               <span class="result-count">{filteredDevices.length} devices</span>
             </div>
             <div class="entity-grid">
               {#each filteredDevices as device}
-                <button class="entity-card" onclick={() => selectDeviceItem(device)}>
+                <button
+                  class="entity-card"
+                  onclick={() => selectDeviceItem(device)}
+                >
                   <span class="entity-icon">🔧</span>
                   <div class="entity-info">
                     <span class="entity-name">{device.friendly_name}</span>
                     <span class="entity-meta">
                       {#if device.manufacturer}
-                        <span class="entity-manufacturer">{device.manufacturer}{device.model ? ` ${device.model}` : ''}</span>
+                        <span class="entity-manufacturer"
+                          >{device.manufacturer}{device.model
+                            ? ` ${device.model}`
+                            : ""}</span
+                        >
                       {/if}
                       {#if device.area_name}
                         <span class="entity-area">{device.area_name}</span>
@@ -529,8 +605,12 @@
             </div>
             <div class="entity-grid">
               {#each filteredEntities as entity}
-                <button class="entity-card" onclick={() => selectEntity(entity)}>
-                  <span class="entity-icon">{getDomainIcon(entity.domain)}</span>
+                <button
+                  class="entity-card"
+                  onclick={() => selectEntity(entity)}
+                >
+                  <span class="entity-icon">{getDomainIcon(entity.domain)}</span
+                  >
                   <div class="entity-info">
                     <span class="entity-name">{getDisplayName(entity)}</span>
                     <span class="entity-meta">
@@ -538,7 +618,9 @@
                         <span class="entity-area">{entity.area}</span>
                       {/if}
                       {#if getStateDisplay(entity)}
-                        <span class="entity-state">{getStateDisplay(entity)}</span>
+                        <span class="entity-state"
+                          >{getStateDisplay(entity)}</span
+                        >
                       {/if}
                     </span>
                   </div>
@@ -557,60 +639,81 @@
               <div class="browse-tabs">
                 <button
                   class="browse-tab {browseMode === 'type' ? 'active' : ''}"
-                  onclick={() => { browseMode = 'type'; resetFilters(); }}
+                  onclick={() => {
+                    browseMode = "type";
+                    resetFilters();
+                  }}
                 >
                   📦 Type
                 </button>
                 <button
                   class="browse-tab {browseMode === 'device' ? 'active' : ''}"
-                  onclick={() => { browseMode = 'device'; resetFilters(); }}
+                  onclick={() => {
+                    browseMode = "device";
+                    resetFilters();
+                  }}
                 >
                   🔧 Device
                 </button>
                 <button
                   class="browse-tab {browseMode === 'area' ? 'active' : ''}"
-                  onclick={() => { browseMode = 'area'; resetFilters(); }}
+                  onclick={() => {
+                    browseMode = "area";
+                    resetFilters();
+                  }}
                 >
                   🏠 Room
                 </button>
               </div>
 
               <div class="filter-list">
-                {#if browseMode === 'type'}
+                {#if browseMode === "type"}
                   {#each availableDomains as { domain, count }}
                     <button
-                      class="filter-item {selectedDomain === domain ? 'active' : ''}"
-                      onclick={() => selectedDomain = domain}
+                      class="filter-item {selectedDomain === domain
+                        ? 'active'
+                        : ''}"
+                      onclick={() => (selectedDomain = domain)}
                     >
                       <span class="filter-icon">{getDomainIcon(domain)}</span>
                       <span class="filter-name">{getDomainLabel(domain)}</span>
                       <span class="filter-count">{count}</span>
                     </button>
                   {/each}
-                {:else if browseMode === 'device'}
+                {:else if browseMode === "device"}
                   {#each availableDevices as device}
                     <button
-                      class="filter-item {selectedDeviceId === device.id ? 'active' : ''}"
-                      onclick={() => selectedDeviceId = device.id}
-                      title={device.manufacturer ? `${device.manufacturer} ${device.model || ''}` : ''}
+                      class="filter-item {selectedDeviceId === device.id
+                        ? 'active'
+                        : ''}"
+                      onclick={() => (selectedDeviceId = device.id)}
+                      title={device.manufacturer
+                        ? `${device.manufacturer} ${device.model || ""}`
+                        : ""}
                     >
                       <span class="filter-icon">🔧</span>
                       <div class="filter-details">
                         <span class="filter-name">{device.friendly_name}</span>
                         {#if device.manufacturer}
-                          <span class="filter-subtitle">{device.manufacturer}</span>
+                          <span class="filter-subtitle"
+                            >{device.manufacturer}</span
+                          >
                         {/if}
                       </div>
-                      <span class="filter-count">{device.entity_ids?.length ?? 0}</span>
+                      <span class="filter-count"
+                        >{device.entity_ids?.length ?? 0}</span
+                      >
                     </button>
                   {/each}
-                {:else if browseMode === 'area'}
+                {:else if browseMode === "area"}
                   {#each availableAreas as area}
                     <button
-                      class="filter-item {selectedDomain === area.name ? 'active' : ''}"
-                      onclick={() => selectedDomain = area.name}
+                      class="filter-item {selectedDomain === area.name
+                        ? 'active'
+                        : ''}"
+                      onclick={() => (selectedDomain = area.name)}
                     >
-                      <span class="filter-icon">{area.icon || '🏠'}</span>
+                      <span class="filter-icon">{area.icon || "🏠"}</span>
                       <span class="filter-name">{area.name}</span>
                       {#if area.entity_count}
                         <span class="filter-count">{area.entity_count}</span>
@@ -626,28 +729,41 @@
               {#if filteredEntities.length > 0}
                 <div class="panel-header">
                   <span>
-                    {#if browseMode === 'type' && selectedDomain}
-                      {getDomainIcon(selectedDomain)} {getDomainLabel(selectedDomain)}
-                    {:else if browseMode === 'device' && selectedDeviceId}
-                      {availableDevices.find((d: Device) => d.id === selectedDeviceId)?.friendly_name}
-                    {:else if browseMode === 'area' && selectedDomain}
+                    {#if browseMode === "type" && selectedDomain}
+                      {getDomainIcon(selectedDomain)}
+                      {getDomainLabel(selectedDomain)}
+                    {:else if browseMode === "device" && selectedDeviceId}
+                      {availableDevices.find(
+                        (d: Device) => d.id === selectedDeviceId,
+                      )?.friendly_name}
+                    {:else if browseMode === "area" && selectedDomain}
                       🏠 {selectedDomain}
                     {/if}
                   </span>
-                  <span class="result-count">{filteredEntities.length} entities</span>
+                  <span class="result-count"
+                    >{filteredEntities.length} entities</span
+                  >
                 </div>
                 <div class="entity-grid">
                   {#each filteredEntities as entity}
-                    <button class="entity-card" onclick={() => selectEntity(entity)}>
-                      <span class="entity-icon">{getDomainIcon(entity.domain)}</span>
+                    <button
+                      class="entity-card"
+                      onclick={() => selectEntity(entity)}
+                    >
+                      <span class="entity-icon"
+                        >{getDomainIcon(entity.domain)}</span
+                      >
                       <div class="entity-info">
-                        <span class="entity-name">{getDisplayName(entity)}</span>
+                        <span class="entity-name">{getDisplayName(entity)}</span
+                        >
                         <span class="entity-meta">
-                          {#if browseMode !== 'area' && entity.area}
+                          {#if browseMode !== "area" && entity.area}
                             <span class="entity-area">{entity.area}</span>
                           {/if}
                           {#if getStateDisplay(entity)}
-                            <span class="entity-state">{getStateDisplay(entity)}</span>
+                            <span class="entity-state"
+                              >{getStateDisplay(entity)}</span
+                            >
                           {/if}
                         </span>
                       </div>
@@ -657,7 +773,9 @@
               {:else}
                 <div class="browse-empty">
                   <span class="browse-empty-icon">👈</span>
-                  <span class="browse-empty-text">Select a category to browse entities</span>
+                  <span class="browse-empty-text"
+                    >Select a category to browse entities</span
+                  >
                 </div>
               {/if}
             </div>

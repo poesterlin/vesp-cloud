@@ -9,14 +9,14 @@
   const components: ComponentTemplate[] = [
     { type: "text", label: "Text", icon: "T", description: "Display text or entity value" },
     { type: "button", label: "Button", icon: "B", description: "Tap to trigger action" },
-    { type: "slider", label: "Slider", icon: "S", description: "Adjust numeric value" },
-    { type: "gauge", label: "Gauge", icon: "G", description: "Visual meter display" },
+    // { type: "slider", label: "Slider", icon: "S", description: "Adjust numeric value" },
+    // { type: "gauge", label: "Gauge", icon: "G", description: "Visual meter display" },
     { type: "icon", label: "Icon", icon: "I", description: "MDI icon display" },
-    { type: "auto_layout_list", label: "Auto List", icon: "AL", description: "Icon row/stack with conditions" },
+    // { type: "auto_layout_list", label: "Auto List", icon: "AL", description: "Icon row/stack with conditions" },
+    { type: "tab_container", label: "Tabs", icon: "T+", description: "Named tabs with child content" },
     { type: "todo_list", label: "To-Do List", icon: "[]", description: "PSV to-do list preview" },
     { type: "light_state", label: "Light State", icon: "LB", description: "Show light on/off state" },
     { type: "conditional_area", label: "Cond Area", icon: "?", description: "Dynamic content by condition" },
-    { type: "tab_container", label: "Tabs", icon: "T+", description: "Named tabs with child content" },
   ];
 
   function handleDragStart(e: DragEvent, type: string) {

@@ -229,6 +229,29 @@ describe("collectProjectIconNames", () => {
     });
     expect(collectProjectIconNames(project)).toEqual(new Set(["ceiling-light"]));
   });
+
+  test("includes checkbox mdi icons for checkable todo lists", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Page",
+          components: [
+            {
+              id: "todo1",
+              type: "todo_list",
+              position: { x: 0, y: 0 },
+              size: { width: 180, height: 120 },
+              checkable: true,
+            },
+          ],
+        },
+      ],
+    });
+    expect(collectProjectIconNames(project)).toEqual(
+      new Set(["checkbox-blank-outline", "checkbox-marked"]),
+    );
+  });
 });
 
 describe("getMdiCodepoint / getMdiUtf8CEscape", () => {

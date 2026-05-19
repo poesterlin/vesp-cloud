@@ -47,7 +47,16 @@ display:
     hsync_pin: 16
     vsync_pin: 17
     pclk_pin: 21
-    pclk_frequency: 12MHz
+    # PSRAM bus is over-subscribed at higher pclks on this board: the
+    # RGB DMA streams the framebuffer from PSRAM continuously while the
+    # CPU also reads PSRAM (font glyphs, fill buffer) and writes to it
+    # (framebuffer updates). When bandwidth saturates, the LCD bounce
+    # buffer underruns -- visible as flickering pixels in fixed regions
+    # and, more rarely, as cache-disable panics. Lower pclk = more
+    # per-scanline slack. 6 MHz (~25 Hz refresh) was the lowest setting
+    # we found necessary on the Guition ESP32-S3-4848S040; higher
+    # values produced visible artifacts even on a near-empty UI.
+    pclk_frequency: 6MHz
     pclk_inverted: false
     hsync_pulse_width: 8
     hsync_front_porch: 10

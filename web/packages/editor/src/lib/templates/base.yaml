@@ -17,6 +17,18 @@ esp32:
       # UART FIFO). Cheap insurance for future debugging.
       CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS: "3"
 
+      # Extend the Interrupt Watchdog Timer from the 300 ms default. On
+      # this board's non-suspend-capable QSPI flash, the LCD bounce-
+      # buffer ISR is deferred during cache-disabled flash windows
+      # (NVS reads at boot, preferences syncs / WiFi reconnects at
+      # runtime). 10 s was empirically the threshold above which the
+      # device stays stable; below ~5 s we still see sporadic
+      # TG1WDT_SYS_RST. Saved PCs on IWDT resets are misleading (they
+      # point at a static reset vector, not the actual offender), so
+      # rather than chase each instance just give the system slack.
+      CONFIG_ESP_INT_WDT_TIMEOUT_MS: "10000"
+      CONFIG_ESP_TASK_WDT_TIMEOUT_S: "30"
+
       # ---- RGB-LCD + PSRAM framebuffer hardening -------------------------
       # The ST7701S driver streams the framebuffer out of PSRAM via DMA,
       # with an EOF interrupt refilling a small bounce buffer. Any flash

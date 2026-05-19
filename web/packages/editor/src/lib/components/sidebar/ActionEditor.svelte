@@ -36,6 +36,20 @@
   const serviceName = $derived(serviceAction?.service ?? "");
   const serviceTargetEntity = $derived(serviceAction?.target?.entityId ?? "");
 
+  // Track whether the user is editing a custom action ID. This is UI-only state;
+  // we never persist the "__custom__" sentinel into the model.
+  let customMode = $state(false);
+
+  // If the persisted service is non-empty and not a known preset, we're effectively
+  // already in custom mode (e.g. when loading an existing custom action).
+  const isCustom = $derived(
+    customMode || (!!serviceName && !SERVICE_PRESETS[serviceName])
+  );
+
+  // Value shown in the service <select>: use the sentinel when in custom mode so
+  // the "Enter Custom Action..." option stays selected.
+  const serviceSelectValue = $derived(isCustom ? "__custom__" : serviceName);
+
   // Build a clean service action, only including optional fields when populated
   function buildServiceAction(
     service: string,
@@ -70,6 +84,17 @@
   function handleServiceChange(service: string) {
     const target = serviceTargetEntity ? { entityId: serviceTargetEntity } : undefined;
     onUpdate(buildServiceAction(service, target));
+  }
+
+  function handleServiceSelect(value: string) {
+    if (value === "__custom__") {
+      customMode = true;
+      // Clear any previously selected preset so the custom input starts empty.
+      handleServiceChange("");
+    } else {
+      customMode = false;
+      handleServiceChange(value);
+    }
   }
 
   function handleEntityTargetChange(entityId: string | undefined) {
@@ -127,8 +152,8 @@
     <div class="field">
       <span class="field-label">Action</span>
       <select
-        value={serviceName}
-        onchange={(e) => handleServiceChange(e.currentTarget.value)}
+        value={serviceSelectValue}
+        onchange={(e) => handleServiceSelect(e.currentTarget.value)}
       >
         <option value="">Select Action</option>
         {#each [...groupedServices.entries()] as [domain, services]}
@@ -144,13 +169,13 @@
       </select>
     </div>
 
-    {#if serviceName === "__custom__" || (serviceName && !SERVICE_PRESETS[serviceName])}
+    {#if isCustom}
       <div class="field">
         <span class="field-label">Action ID</span>
         <input
           type="text"
           placeholder="domain.service_name"
-          value={serviceName === "__custom__" ? "" : serviceName}
+          value={serviceName}
           oninput={(e) => handleServiceChange(e.currentTarget.value)}
         />
       </div>

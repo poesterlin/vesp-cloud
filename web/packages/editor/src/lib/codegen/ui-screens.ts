@@ -667,6 +667,9 @@ export function generateUIScreensHeader(project: Project): string {
   const screenIds = screens.map(s => s.cppName);
   const firstScreen = screens[0]?.cppName ?? 'Home';
   const lastScreen = screenIds.length > 0 ? screenIds[screenIds.length - 1] : 'Home';
+  const overlayEnabled = project.notificationOverlay != null && project.notificationOverlay.enabled !== false;
+  const dw = project.display.width ?? 480;
+  const dh = project.display.height ?? 480;
 
   const screenCtor = `    // Pre-create all screen slots
     for (int i = 0; i <= static_cast<int>(UiScreenId::${lastScreen}); i++) {
@@ -676,6 +679,25 @@ export function generateUIScreensHeader(project: Project): string {
       owned_screens_.push_back(std::move(screen));
     }
     current_ = screens_.at(UiScreenId::${firstScreen});`
+
+  const overlayMember = overlayEnabled
+    ? '\n  NotificationOverlayWidget* notification_overlay_ = nullptr;'
+    : '';
+
+  const overlayPostUpdate = overlayEnabled
+    ? '\n    if (notification_overlay_ != nullptr) notification_overlay_->update(now);'
+    : '';
+
+  const overlayPreTouch = overlayEnabled
+    ? `    if (notification_overlay_ != nullptr && notification_overlay_->is_visible(state)) {
+      if (notification_overlay_->handle_touch(event, now)) return true;
+    }
+`
+    : '';
+
+  const overlayPostDraw = overlayEnabled
+    ? '\n    if (notification_overlay_ != nullptr) notification_overlay_->draw(it, state);'
+    : '';
 
   let setupBody = '';
   if (project.dashboardPages.length > 0) {
@@ -715,8 +737,25 @@ export function generateUIScreensHeader(project: Project): string {
     setupBody += '\n';
   }
 
-  if (!setupBody.trim()) {
-    setupBody = `  (void)state;\n  (void)on_action;\n  // No components\n`;
+  let overlaySetup = '';
+  if (overlayEnabled) {
+    overlaySetup = `
+  screens.notification_overlay_ = new NotificationOverlayWidget(
+      state.notification_title.ptr(),
+      state.notification_body.ptr(),
+      state.notification_severity.ptr(),
+      state.notification_dismissed.ptr(),
+      ${dw}, ${dh});
+  screens.notification_overlay_->set_dismiss_callback([&state, dismiss_notification]() {
+      state.notification_dismissed = *state.notification_body.ptr();
+      UiInvalidation::request_full();
+      if (dismiss_notification) dismiss_notification();
+    });
+`;
+  }
+
+  if (!setupBody.trim() && !overlaySetup.trim()) {
+    setupBody = `  (void)state;\n  (void)on_action;\n  (void)dismiss_notification;\n  // No components\n`;
   }
 
   return `#pragma once
@@ -781,11 +820,13 @@ ${screenCtor}
 
   UiScreenId current_id() const { return current_id_; }
 
-  void update(uint32_t now) { current_->update(now); }
+  void update(uint32_t now) {
+    current_->update(now);${overlayPostUpdate}
+  }
 
   bool handle_touch(const TouchEvent &event, uint32_t now, const UiState &state) {
     (void)state;
-    if (current_id_ == UiScreenId::Home &&
+${overlayPreTouch}    if (current_id_ == UiScreenId::Home &&
         event.type == TouchType::Up &&
         abs(event.dx) > 60 && abs(event.dx) > abs(event.dy)) {
       UiState& s = const_cast<UiState&>(state);
@@ -801,7 +842,9 @@ ${screenCtor}
     return current_->handle_touch(event, now, state);
   }
 
-  void draw(display::Display &it, const UiState &state) { current_->draw(it, state); }
+  void draw(display::Display &it, const UiState &state) {
+    current_->draw(it, state);${overlayPostDraw}
+  }
 
   Screen* current() { return current_; }
 
@@ -809,7 +852,7 @@ ${screenCtor}
   UiScreenId current_id_ = UiScreenId::${firstScreen};
   Screen *current_ = nullptr;
   std::map<UiScreenId, Screen*> screens_;
-  std::vector<std::unique_ptr<GenericScreen>> owned_screens_;
+  std::vector<std::unique_ptr<GenericScreen>> owned_screens_;${overlayMember}
 };
 
 struct EntityAction {
@@ -818,13 +861,14 @@ struct EntityAction {
 };
 
 inline void setup_ui_screens(ScreenController &screens, UiState &state,
-                           std::function<void(const std::string&, const std::string&)> on_action) {
+                           std::function<void(const std::string&, const std::string&)> on_action,
+                           std::function<void()> dismiss_notification = nullptr) {
   auto make_ha_callback = [on_action](const char* entity, const char* service) {
     return [on_action, entity, service]() {
       if (on_action) on_action(entity, service);
     };
   };
 
-${setupBody}}
+${setupBody}${overlaySetup}}
 `;
 }

@@ -26,6 +26,8 @@ class UiApp {
     initialized_ = true;
     setup_ui_screens(screens_, state_, [this](const std::string& e, const std::string& a) {
       if (this->on_action) this->on_action(e, a);
+    }, [this]() {
+      if (this->dismiss_notification) this->dismiss_notification();
     });
     UiRedraw::request_full();
   }
@@ -71,6 +73,7 @@ class UiApp {
   UiState& state() { return state_; }
 
   std::function<void(const std::string&, const std::string&)> on_action;
+  std::function<void()> dismiss_notification;
 
   uint32_t last_interaction_time = 0;
 

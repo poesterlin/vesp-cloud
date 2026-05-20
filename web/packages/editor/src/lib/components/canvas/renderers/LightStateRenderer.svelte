@@ -81,7 +81,9 @@
 <style>
   .label {
     min-width: 0;
-    font-size: 12px;
+    /* Light-state labels print via g_theme.label (font_small / Roboto 18). */
+    font-family: var(--display-font, monospace);
+    font-size: var(--display-text-small, 18px);
     color: #f2f4f8;
     white-space: nowrap;
     overflow: hidden;
@@ -146,11 +148,17 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
     min-height: 32px;
     padding: 6px 10px;
     border: 1px solid;
     border-radius: 8px;
     background: rgba(8, 10, 14, 0.45);
+    overflow: hidden;
+  }
+
+  .image-toggle .label {
+    flex: 1 1 auto;
   }
 
   .icon-wrap {

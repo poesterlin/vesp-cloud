@@ -16,6 +16,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@esphome-designer/schema": "workspace:*",
+        "@fontsource/roboto": "5.2.10",
         "@node-rs/argon2": "2.0.2",
         "@oslojs/crypto": "1.0.1",
         "@oslojs/encoding": "1.1.0",
@@ -135,6 +136,8 @@
     "@esphome-designer/editor": ["@esphome-designer/editor@workspace:packages/editor"],
 
     "@esphome-designer/schema": ["@esphome-designer/schema@workspace:packages/schema"],
+
+    "@fontsource/roboto": ["@fontsource/roboto@5.2.10", "", {}, "sha512-8HlA5FtSfz//oFSr2eL7GFXAiE7eIkcGOtx7tjsLKq+as702x9+GU7K95iDeWFapHC4M2hv9RrpXKRTGGBI8Zg=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.1", "", {}, "sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA=="],
 

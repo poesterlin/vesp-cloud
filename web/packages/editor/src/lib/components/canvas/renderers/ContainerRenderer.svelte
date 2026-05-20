@@ -19,6 +19,11 @@
 
 <Draggable {component}>
   <div class="container-wrapper" style:width="100%" style:height="100%">
+    {#if component.label}
+      <div class="container-label" style:color={accentColor} title={component.label}>
+        {component.label.toUpperCase()}
+      </div>
+    {/if}
     <svg
       width="100%"
       height="100%"
@@ -49,19 +54,28 @@
         </g>
       {/if}
 
-      <!-- Label -->
-      {#if component.label}
-        <text
-          x="10"
-          y="15"
-          fill={accentColor}
-          font-family="monospace"
-          font-size="12"
-          font-weight="bold"
-        >
-          {component.label.toUpperCase()}
-        </text>
-      {/if}
     </svg>
   </div>
 </Draggable>
+
+<style>
+  .container-wrapper {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .container-label {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    top: 4px;
+    z-index: 1;
+    font-family: var(--display-font, monospace);
+    font-size: var(--display-text-tiny, 14px);
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+  }
+</style>

@@ -175,7 +175,9 @@
   .summary {
     flex: 1 1 auto;
     min-width: 0;
-    font-size: 11px;
+    /* Todo rows print with g_theme.label.font (Roboto 18). */
+    font-family: var(--display-font, monospace);
+    font-size: var(--display-text-small, 18px);
     color: #ffffff;
     white-space: nowrap;
     overflow: hidden;
@@ -189,7 +191,8 @@
 
   .due {
     flex: 0 0 auto;
-    font-size: 10px;
+    font-family: var(--display-font, monospace);
+    font-size: var(--display-text-small, 18px);
     color: #f5c35a;
     white-space: nowrap;
     max-width: 92px;

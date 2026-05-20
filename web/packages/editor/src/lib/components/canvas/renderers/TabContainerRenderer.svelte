@@ -4,6 +4,7 @@
   import { conditionalEditorStore } from "$lib/stores/conditional-editor.svelte";
   import { projectStore } from "$lib/stores/project.svelte";
   import { historyStore } from "$lib/stores/history.svelte";
+  import { canvasPasteTargetStore } from "$lib/stores/canvas-paste-target.svelte";
   import { createComponent } from "$lib/utils/component-factory";
   import ComponentRenderer from "./ComponentRenderer.svelte";
   import Draggable from "../Draggable.svelte";
@@ -31,6 +32,7 @@
 
   function selectTab(tabId: string) {
     conditionalEditorStore.setActiveTab(component.id, tabId);
+    canvasPasteTargetStore.set({ scope: "tab", parentId: component.id, tabId });
   }
 
   function handleAddTab() {
@@ -59,6 +61,16 @@
     e.stopPropagation();
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = "copy";
+    }
+  }
+
+  function handleContentMouseDown() {
+    if (activeTab) {
+      canvasPasteTargetStore.set({
+        scope: "tab",
+        parentId: component.id,
+        tabId: activeTab.id,
+      });
     }
   }
 
@@ -119,6 +131,7 @@
       ondragleave={handleDragLeave}
       ondragover={handleDragOver}
       ondrop={handleDrop}
+      onpointerdown={handleContentMouseDown}
     >
       {#if activeTab}
         {#each activeTab.components as childComponent (childComponent.id)}
@@ -174,6 +187,7 @@
 
   .tab-button {
     min-height: 24px;
+    max-width: 140px;
     padding: 0 12px;
     font-size: 12px;
     line-height: 24px;
@@ -183,6 +197,8 @@
     color: #b8c2cf;
     cursor: pointer;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .tab-button:hover {

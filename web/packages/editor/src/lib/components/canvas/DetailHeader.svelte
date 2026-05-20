@@ -1,7 +1,6 @@
 <script lang="ts">
   import { projectStore } from "../../stores/project.svelte";
   import { colorToRgb } from "../../utils/themed-drawing";
-  import * as mdiIcons from '@mdi/js';
 
   interface Props {
     title: string;
@@ -10,25 +9,25 @@
 
   let { title, onBack }: Props = $props();
   const theme = $derived(projectStore.theme);
+
+  const accent = $derived(colorToRgb(theme.colors.accent || { r: 0, g: 255, b: 255 }));
+  const foreground = $derived(colorToRgb(theme.colors.foreground || { r: 255, g: 255, b: 255 }));
+  const muted = $derived(colorToRgb(theme.colors.foregroundMuted || { r: 128, g: 128, b: 128 }));
 </script>
 
-<div 
-  class="detail-header" 
-  style:border-bottom="1px solid {colorToRgb(theme.colors.foregroundMuted || {r:128,g:128,b:128})}"
->
-  <button 
-    class="back-button" 
+<div class="detail-header" style:border-bottom="1px solid {muted}">
+  <button
+    class="back-button"
     onclick={onBack}
     aria-label="Back"
+    style:color={accent}
+    style:border-color={accent}
   >
-    <svg width="24" height="24" viewBox="0 0 24 24" class="icon">
-      <path d={mdiIcons.mdiChevronLeft} />
-    </svg>
-    <span style:color={colorToRgb(theme.colors.accent || {r:0,g:255,b:255})}>BACK</span>
+    &lt;
   </button>
-  
-  <h1 style:color={colorToRgb(theme.colors.foreground || {r:255,g:255,b:255})}>{(title || "").toUpperCase()}</h1>
-  
+
+  <h1 style:color={foreground}>{title ?? ""}</h1>
+
   <div class="spacer"></div>
 </div>
 
@@ -49,31 +48,38 @@
   .back-button {
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 14px;
+    justify-content: center;
+    width: 56px;
+    height: 36px;
+    /* The device uses font_medium (Roboto 24) for the boxed `<`. */
+    font-size: var(--display-text-medium, 24px);
     font-weight: bold;
+    font-family: var(--display-font, monospace);
     cursor: pointer;
     background: transparent;
-    border: none;
+    border: 1px solid currentColor;
+    border-radius: 2px;
     padding: 0;
-    font-family: inherit;
-    color: inherit;
-  }
-
-  .icon {
-    fill: currentColor;
-    stroke: none;
+    line-height: 1;
   }
 
   h1 {
     flex: 1;
     text-align: center;
-    font-size: 16px;
+    /* Title prints via font_medium (Roboto 24) -- see DetailHeaderWidget. */
+    font-size: var(--display-text-medium, 24px);
+    font-weight: bold;
+    font-family: var(--display-font, monospace);
     margin: 0;
     letter-spacing: 1px;
+    /* Match the device: do not uppercase the supplied title. */
+    text-transform: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .spacer {
-    width: 60px; /* Balance the back button */
+    width: 44px;
   }
 </style>

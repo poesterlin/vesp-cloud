@@ -1,5 +1,13 @@
 /* ESPHome Designer - Global Styles */
 
+/* Roboto matches the typeface ESPHome bakes into its bitmap fonts via
+   `gfonts://Roboto` in esphome/fonts.yaml. Loading it here lets the
+   editor preview measure text using the same metrics the device will
+   eventually rasterise at, so labels that fit in the preview also fit
+   on hardware. */
+@import "@fontsource/roboto/400.css";
+@import "@fontsource/roboto/700.css";
+
 :root {
   /* Color palette */
   --color-bg-primary: #1a1a1a;

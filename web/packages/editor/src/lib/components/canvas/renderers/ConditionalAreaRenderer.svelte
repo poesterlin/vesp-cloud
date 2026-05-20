@@ -4,6 +4,7 @@
   import { conditionalEditorStore } from "$lib/stores/conditional-editor.svelte";
   import { projectStore } from "$lib/stores/project.svelte";
   import { historyStore } from "$lib/stores/history.svelte";
+  import { canvasPasteTargetStore } from "$lib/stores/canvas-paste-target.svelte";
   import { createComponent } from "$lib/utils/component-factory";
   import ComponentRenderer from "./ComponentRenderer.svelte";
   import Draggable from "../Draggable.svelte";
@@ -33,6 +34,7 @@
 
   function selectVariant(variantId: string) {
     conditionalEditorStore.setActiveVariant(component.id, variantId);
+    canvasPasteTargetStore.set({ scope: "variant", parentId: component.id, variantId });
   }
 
   function handleAddVariant() {
@@ -62,6 +64,16 @@
     e.stopPropagation();
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = "copy";
+    }
+  }
+
+  function handleContentMouseDown() {
+    if (activeVariant) {
+      canvasPasteTargetStore.set({
+        scope: "variant",
+        parentId: component.id,
+        variantId: activeVariant.id,
+      });
     }
   }
 
@@ -160,6 +172,7 @@
       ondragleave={handleDragLeave}
       ondragover={handleDragOver}
       ondrop={handleDrop}
+      onpointerdown={handleContentMouseDown}
     >
       {#if activeVariant}
         {#each activeVariant.components as childComponent (childComponent.id)}

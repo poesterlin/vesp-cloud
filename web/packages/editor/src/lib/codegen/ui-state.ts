@@ -68,12 +68,22 @@ export function generateUIStateHeader(project: Project): string {
   for (const v of textVars) existingNames.add(v);
   const conditionEntities = collectConditionEntities(project).filter(e => !existingNames.has(e.varName));
 
+  const overlayEnabled = project.notificationOverlay != null && project.notificationOverlay.enabled !== false;
+  const overlayVars: string[] = [];
+  if (overlayEnabled) {
+    overlayVars.push('  Observable<std::string> notification_title{""};');
+    overlayVars.push('  Observable<std::string> notification_body{""};');
+    overlayVars.push('  Observable<std::string> notification_severity{""};');
+    overlayVars.push('  Observable<std::string> notification_dismissed{""};');
+  }
+
   const allFields: string[] = [
     ...fields.map(f => `  Observable<${cppTypeFor(f.cppType)}> ${f.name}{${cppDefaultValue(f.cppType)}};`),
     ...lightVars.map(v => `  Observable<bool> ${v}{false};`),
     ...todoItemsVars.map(v => `  Observable<std::string> ${v}{"LIST EMPTY"};`),
     ...textVars.map(v => `  Observable<std::string> ${v}{""};`),
     ...conditionEntities.map(e => `  Observable<${cppTypeFor(e.cppType)}> ${e.varName}{${cppDefaultValue(e.cppType)}};`),
+    ...overlayVars,
   ];
 
   const observableFields = allFields.length > 0 ? allFields.join('\n') : '';

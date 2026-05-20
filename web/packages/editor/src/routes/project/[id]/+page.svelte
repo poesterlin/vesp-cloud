@@ -13,6 +13,7 @@
   import { onMount } from "svelte";
 
   import ProjectSettings from "$lib/components/sidebar/ProjectSettings.svelte";
+    import { selectionStore } from "$lib/stores/selection.svelte.js";
 
   let { data } = $props();
 
@@ -39,6 +40,14 @@
 
     showExport = false;
     exportCompiling = false;
+  }
+
+  function clearSelection(event: MouseEvent) {
+    // only on background clicks, not when clicking on elements
+    const isSelf= (event.target as HTMLElement).classList.contains('canvas-area');
+    if (isSelf) {
+      selectionStore.clear(); 
+    }
   }
 </script>
 
@@ -76,7 +85,7 @@
     <ComponentPalette />
   </aside>
 
-  <main class="canvas-area">
+  <main class="canvas-area" onclick={(e)=> clearSelection(e)}>
     <DesignCanvas />
   </main>
 

@@ -63,71 +63,140 @@
     (component.size?.height ?? 40) -
       (theme.style?.buttonShadow ? shadowOffset : 0),
   );
-  const centerX = $derived(buttonWidth / 2);
-  const centerY = $derived(buttonHeight / 2);
+
+  // Choose icon-next-to-label when the button is narrow/short; stack
+  // vertically only when there is clearly room for two legible lines.
+  // The width estimate mirrors what the device-side ButtonWidget does
+  // (icon width + gap + truncated label fits in the inner width), using
+  // ~7px per character for the monospace label as a coarse proxy.
+  const horizontalLayout = $derived.by(() => {
+    if (!hasIcon || !hasLabel) return false;
+    if (buttonHeight >= 56) return false; // tall enough to comfortably stack
+    const sidePad = 8;
+    const gap = 6;
+    const horizBudget = buttonWidth - 2 * sidePad - iconSize - gap;
+    // Need room for at least ~3 chars + ellipsis ("W..." ≈ 28px).
+    return horizBudget >= 28;
+  });
 </script>
 
 <Draggable {component}>
   {#if component.size}
     {@const width = component.size.width}
     {@const height = component.size.height}
+    {@const innerW = width - (theme.style?.buttonShadow ? shadowOffset : 0)}
+    {@const innerH = height - (theme.style?.buttonShadow ? shadowOffset : 0)}
     <div class="button-wrapper" style:width="100%" style:height="100%">
       <svg
+        class="button-bg"
         width="100%"
         height="100%"
         viewBox="0 0 {width} {height}"
         preserveAspectRatio="none"
       >
-        <!-- Main Body -->
         <rect
           x="0"
           y="0"
-          width={width - (theme.style?.buttonShadow ? shadowOffset : 0)}
-          height={height - (theme.style?.buttonShadow ? shadowOffset : 0)}
+          width={innerW}
+          height={innerH}
           fill={bgColor}
           stroke={accentColor}
           stroke-width="1"
         />
+      </svg>
 
-        <!-- Icon and/or Label -->
+      <div
+        class="button-content"
+        class:horizontal={horizontalLayout}
+        style:width="{(innerW / width) * 100}%"
+        style:height="{(innerH / height) * 100}%"
+        style:color={foregroundColor}
+      >
         {#if hasIcon && iconPath}
-          <!-- Icon rendered as SVG path -->
-          <g
-            transform="translate({centerX - iconSize / 2}, {hasLabel
-              ? centerY - iconSize - 2
-              : centerY - iconSize / 2})"
+          <svg
+            class="button-icon"
+            width={iconSize}
+            height={iconSize}
+            viewBox="0 0 24 24"
           >
-            <svg
-              width={iconSize}
-              height={iconSize}
-              viewBox="0 0 24 24"
-              overflow="visible"
-            >
-              <path d={iconPath} fill={foregroundColor} />
-            </svg>
-          </g>
+            <path d={iconPath} fill="currentColor" />
+          </svg>
         {/if}
-
         {#if hasLabel}
-          <text
-            x={centerX}
-            y={hasIcon ? centerY + iconSize / 2 + 2 : centerY}
-            fill={foregroundColor}
-            font-family="monospace"
-            font-size={hasIcon ? "11" : "14"}
-            text-anchor="middle"
-            dominant-baseline="central"
+          <span
+            class="button-label"
+            class:with-icon={hasIcon}
+            class:inline={horizontalLayout}
+            title={component.label}
           >
             {component.label}
-          </text>
+          </span>
         {/if}
-      </svg>
+      </div>
     </div>
   {/if}
 </Draggable>
 
 <style>
   .button-wrapper {
-    overflow: visible;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .button-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .button-content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px 6px;
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .button-content.horizontal {
+    flex-direction: row;
+    gap: 6px;
+    padding: 4px 8px;
+  }
+
+  .button-icon {
+    flex: 0 0 auto;
+  }
+
+  .button-label {
+    max-width: 100%;
+    min-width: 0;
+    font-family: var(--display-font, monospace);
+    font-size: var(--display-text-small, 18px);
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .button-label.with-icon {
+    font-size: var(--display-text-tiny, 14px);
+  }
+
+  /* When laid out side-by-side, the label can use the normal size --
+     we are no longer trying to fit two lines in the same vertical
+     space, so it should match an icon-less button's text. */
+  .button-label.inline {
+    flex: 1 1 auto;
+    text-align: left;
+    font-size: var(--display-text-small, 18px);
   }
 </style>

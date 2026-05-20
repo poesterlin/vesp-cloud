@@ -10,17 +10,36 @@ import type {
 import { RETRO_THEME } from "../themes/retro";
 import { assert, toUpperSnakeCase } from "$lib/utils";
 import { selectionStore } from "./selection.svelte";
+import { conditionalEditorStore } from "./conditional-editor.svelte";
 import { browser } from "$app/environment";
 
 const LATEST_VERSION = "1.0.0";
 const PROJECTS_INDEX_KEY = "esphome-designer-projects-index";
 const PROJECT_PREFIX = "esphome-designer-project-";
+const TAB_HEADER_HEIGHT = 30;
 
 const SAVE_DEBOUNCE_MS = 1500;
 
 export type ProjectConfig = {
   display?: Partial<DisplayConfig>,
   theme?: Theme
+};
+
+export type ComponentLayoutBounds = {
+  id: string;
+  component: Component;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  ancestorIds: string[];
+};
+
+export type LayoutSurface = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 };
 
 function createProjectStore() {
@@ -554,6 +573,154 @@ function createProjectStore() {
       }
 
       return { x, y };
+    },
+
+    getVisibleComponentLayoutBounds(): ComponentLayoutBounds[] {
+      if (!project) return [];
+
+      const bounds: ComponentLayoutBounds[] = [];
+
+      const visit = (
+        components: Component[],
+        origin: { x: number; y: number },
+        ancestorIds: string[],
+      ) => {
+        for (const component of components) {
+          const width = component.size?.width ?? 50;
+          const height = component.size?.height ?? 20;
+          const x = origin.x + component.position.x;
+          const y = origin.y + component.position.y;
+
+          bounds.push({
+            id: component.id,
+            component,
+            x,
+            y,
+            width,
+            height,
+            ancestorIds,
+          });
+
+          const childAncestorIds = [...ancestorIds, component.id];
+          if (component.type === "conditional_area") {
+            const activeVariantId = conditionalEditorStore.getActiveVariant(
+              component.id,
+              component.variants[0]?.id,
+            );
+            const activeVariant =
+              component.variants.find((variant) => variant.id === activeVariantId) ??
+              component.variants[0];
+            if (activeVariant) {
+              visit(activeVariant.components, { x, y }, childAncestorIds);
+            }
+          } else if (component.type === "tab_container") {
+            const activeTabId = conditionalEditorStore.getActiveTab(
+              component.id,
+              component.defaultTabId ?? component.tabs[0]?.id,
+            );
+            const activeTab =
+              component.tabs.find((tab) => tab.id === activeTabId) ?? component.tabs[0];
+            if (activeTab) {
+              visit(
+                activeTab.components,
+                { x, y: y + TAB_HEADER_HEIGHT },
+                childAncestorIds,
+              );
+            }
+          }
+        }
+      };
+
+      if (project.pageHeader) {
+        visit(project.pageHeader.components, { x: 0, y: 0 }, []);
+      }
+
+      const contentY = viewMode === "dashboard" ? (project.pageHeader?.height ?? 0) : 0;
+      visit(activeComponents, { x: 0, y: contentY }, []);
+
+      return bounds;
+    },
+
+    getComponentLayoutBounds(id: string): ComponentLayoutBounds | undefined {
+      return this.getVisibleComponentLayoutBounds().find((bounds) => bounds.id === id);
+    },
+
+    getComponentParentLayoutSurface(id: string): LayoutSurface | undefined {
+      if (!project) return undefined;
+
+      const displayWidth = project.display.width;
+      const contentY = viewMode === "dashboard" ? (project.pageHeader?.height ?? 0) : 0;
+      const contentHeight =
+        viewMode === "dashboard"
+          ? project.display.height - contentY
+          : (currentDetailView?.height ?? project.display.height);
+
+      const search = (
+        components: Component[],
+        surface: LayoutSurface,
+      ): LayoutSurface | undefined => {
+        for (const component of components) {
+          if (component.id === id) return surface;
+
+          const x = surface.x + component.position.x;
+          const y = surface.y + component.position.y;
+
+          if (component.type === "conditional_area") {
+            const activeVariantId = conditionalEditorStore.getActiveVariant(
+              component.id,
+              component.variants[0]?.id,
+            );
+            const activeVariant =
+              component.variants.find((variant) => variant.id === activeVariantId) ??
+              component.variants[0];
+            const found = activeVariant
+              ? search(activeVariant.components, {
+                  x,
+                  y,
+                  width: component.size?.width ?? 100,
+                  height: component.size?.height ?? 100,
+                })
+              : undefined;
+            if (found) return found;
+          } else if (component.type === "tab_container") {
+            const activeTabId = conditionalEditorStore.getActiveTab(
+              component.id,
+              component.defaultTabId ?? component.tabs[0]?.id,
+            );
+            const activeTab =
+              component.tabs.find((tab) => tab.id === activeTabId) ?? component.tabs[0];
+            const found = activeTab
+              ? search(activeTab.components, {
+                  x,
+                  y: y + TAB_HEADER_HEIGHT,
+                  width: component.size?.width ?? 150,
+                  height: Math.max(0, (component.size?.height ?? 100) - TAB_HEADER_HEIGHT),
+                })
+              : undefined;
+            if (found) return found;
+          }
+        }
+
+        return undefined;
+      };
+
+      if (project.pageHeader) {
+        const headerSurface = {
+          x: 0,
+          y: 0,
+          width: displayWidth,
+          height: project.pageHeader.height,
+        };
+        const found = search(project.pageHeader.components, headerSurface);
+        if (found) return found;
+      }
+
+      return search(activeComponents, {
+        x: 0,
+        y: contentY,
+        width: displayWidth,
+        height: contentHeight,
+      });
     },
 
     addVariant(componentId: string) {

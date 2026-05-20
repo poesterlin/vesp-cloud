@@ -17,6 +17,99 @@ class Font;
 
 void ui_fast_filled_rectangle(display::Display &it, int x, int y, int w, int h, Color color);
 
+// Width budget reserved for the painted truncation indicator (three
+// 2x2 squares with 1px gaps). Keep in sync with ui_draw_truncation_dots.
+constexpr int UI_TRUNC_DOT_SIZE = 2;
+constexpr int UI_TRUNC_DOTS_W = 8;
+
+// Truncate `text` so that, together with the painted truncation indicator
+// (UI_TRUNC_DOTS_W pixels), it fits within `max_w` pixels when rendered
+// with `font`. Returns the largest prefix that fits, WITHOUT any "..."
+// suffix -- the caller is expected to paint the indicator via
+// ui_draw_truncation_dots() iff `*truncated` ends up true. This keeps
+// the indicator pixel-tight (~8px) instead of letting the font's "..."
+// glyph eat ~30% of a label's horizontal real estate.
+inline std::string ui_truncate_to_width(display::Display &it,
+                                        esphome::font::Font *font,
+                                        const std::string &text,
+                                        int max_w,
+                                        bool *truncated = nullptr) {
+  if (truncated) *truncated = false;
+  if (font == nullptr || text.empty() || max_w <= 0) return text;
+  int x, y, w, h;
+  it.get_text_bounds(0, 0, text.c_str(), font, TextAlign::TOP_LEFT, &x, &y, &w, &h);
+  if (w <= max_w) return text;
+
+  if (truncated) *truncated = true;
+  // Budget the indicator dots out of `max_w` so the dots + truncated
+  // text together fit. A tiny gap before the dots keeps them legible.
+  const int dots_budget = UI_TRUNC_DOTS_W + 2;
+  const int text_budget = max_w > dots_budget ? max_w - dots_budget : 0;
+
+  std::string trimmed = text;
+  while (!trimmed.empty()) {
+    trimmed.pop_back();
+    it.get_text_bounds(0, 0, trimmed.c_str(), font, TextAlign::TOP_LEFT, &x, &y, &w, &h);
+    if (w <= text_budget) return trimmed;
+  }
+  return std::string();
+}
+
+// Paint the truncation indicator: three 2x2 px squares aligned above the
+// text baseline at (after_x, baseline_y). `after_x` is the
+// right edge of the last rendered glyph; the dots start there with a
+// 2px gap, then 2px square + 1px gap repeated. Total width: 8px.
+inline void ui_draw_truncation_dots(display::Display &it, int after_x, int baseline_y, Color color) {
+  // Move up by the dot height twice: once to sit on top of the baseline,
+  // and once more so the filled square never dips into/below it.
+  const int y = baseline_y - (UI_TRUNC_DOT_SIZE * 2);
+  int x = after_x + 2;
+  for (int i = 0; i < 3; i++) {
+    ui_fast_filled_rectangle(it, x, y, UI_TRUNC_DOT_SIZE, UI_TRUNC_DOT_SIZE, color);
+    x += UI_TRUNC_DOT_SIZE + 1;
+  }
+}
+
+// Compute the right-edge x coordinate of the rendered text bounds for
+// the given anchor (x, y) and align. Used so callers can position the
+// truncation indicator immediately after the last drawn glyph,
+// regardless of alignment.
+inline int ui_text_right_edge(display::Display &it, int x, int y,
+                              esphome::font::Font *font, TextAlign align,
+                              const std::string &text) {
+  int tx, ty, tw, th;
+  it.get_text_bounds(x, y, text.c_str(), font, align, &tx, &ty, &tw, &th);
+  return tx + tw;
+}
+
+// Get the stable baseline of the font for the given alignment and y coordinate.
+// By measuring a character without descenders (like "A"), we get a baseline
+// that doesn't bounce up and down depending on whether the text has descenders.
+inline int ui_get_baseline(display::Display &it, int x, int y,
+                           esphome::font::Font *font, TextAlign align) {
+  if (font == nullptr) return y;
+  int tx, ty, tw, th;
+  it.get_text_bounds(x, y, "A", font, align, &tx, &ty, &tw, &th);
+  return ty + th;
+}
+
+// One-call helper: truncate `text` to `max_w` and draw it at (x, y)
+// with `align`, painting the indicator dots after it iff truncated.
+inline void ui_print_truncated(display::Display &it, int x, int y,
+                               esphome::font::Font *font, Color color,
+                               TextAlign align, const std::string &text,
+                               int max_w) {
+  bool truncated = false;
+  std::string disp = ui_truncate_to_width(it, font, text, max_w, &truncated);
+  if (font == nullptr) return;
+  it.printf(x, y, font, color, align, "%s", disp.c_str());
+  if (!truncated || disp.empty()) return;
+  int tx, ty, tw, th;
+  it.get_text_bounds(x, y, disp.c_str(), font, align, &tx, &ty, &tw, &th);
+  int baseline_y = ui_get_baseline(it, x, y, font, align);
+  ui_draw_truncation_dots(it, tx + tw, baseline_y, color);
+}
+
 struct UiState;
 
 struct UiRect {
@@ -238,30 +331,53 @@ class LabelWidget : public Widget {
     auto cl = style_->color;
     auto a = style_->align;
 
+    // All string render paths truncate to rect_.w with an ellipsis so the
+    // label never bleeds outside its bounds, no matter what HA streams in.
+    const int max_text_w = rect_.w > 4 ? rect_.w - 4 : rect_.w;
+
     if (bound_bool_ != nullptr) {
-      const char *display = *bound_bool_ ? on_text_ : off_text_;
-      const char *alt = *bound_bool_ ? off_text_ : on_text_;
+      bool on_trunc = false, off_trunc = false;
+      std::string on_disp = ui_truncate_to_width(it, f, on_text_ ? on_text_ : "", max_text_w, &on_trunc);
+      std::string off_disp = ui_truncate_to_width(it, f, off_text_ ? off_text_ : "", max_text_w, &off_trunc);
+      const bool truncated = *bound_bool_ ? on_trunc : off_trunc;
+      const std::string &display = *bound_bool_ ? on_disp : off_disp;
+      const std::string &alt = *bound_bool_ ? off_disp : on_disp;
       int tx, ty, tw, th, ax, ay, aw, ah;
-      it.get_text_bounds(rect_.x, rect_.y, display, f, a, &tx, &ty, &tw, &th);
-      it.get_text_bounds(rect_.x, rect_.y, alt, f, a, &ax, &ay, &aw, &ah);
+      it.get_text_bounds(rect_.x, rect_.y, display.c_str(), f, a, &tx, &ty, &tw, &th);
+      it.get_text_bounds(rect_.x, rect_.y, alt.c_str(), f, a, &ax, &ay, &aw, &ah);
+      // Pad the bg rect by the indicator width on whichever side might
+      // gain dots, so flipping on->off doesn't leave stale pixels.
+      const int dot_pad = (on_trunc || off_trunc) ? (UI_TRUNC_DOTS_W + 2) : 0;
       int cw = (tw > aw) ? tw : aw;
-      ui_fast_filled_rectangle(it, tx - 2, ty, cw + 4, th, bg_color_);
-      it.printf(rect_.x, rect_.y, f, cl, a, "%s", display);
+      ui_fast_filled_rectangle(it, tx - 2, ty, cw + 4 + dot_pad, th, bg_color_);
+      it.printf(rect_.x, rect_.y, f, cl, a, "%s", display.c_str());
+      if (truncated && !display.empty()) {
+        int baseline_y = ui_get_baseline(it, rect_.x, rect_.y, f, a);
+        ui_draw_truncation_dots(it, tx + tw, baseline_y, cl);
+      }
       last_bool_ = *bound_bool_;
       bool_baseline_set_ = true;
     } else if (text_fn_) {
-      // last_text_ is kept in sync by update(); use it directly so the
-      // draw doesn't re-invoke the (potentially heavy) compose function.
       ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
-      it.printf(rect_.x, rect_.y, f, cl, a, "%s", last_text_.c_str());
+      ui_print_truncated(it, rect_.x, rect_.y, f, cl, a, last_text_, max_text_w);
     } else if (printer_) {
       ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
+      // printer_ wraps a templated bound value; we can't easily intercept
+      // the formatted result, but in practice these are short numeric
+      // labels (gauges, percentages) that fit by construction.
       printer_(it, rect_.x, rect_.y, f, cl, a);
     } else {
+      bool truncated = false;
+      std::string disp = ui_truncate_to_width(it, f, text_ ? text_ : "", max_text_w, &truncated);
       int tx, ty, tw, th;
-      it.get_text_bounds(rect_.x, rect_.y, text_, f, a, &tx, &ty, &tw, &th);
-      ui_fast_filled_rectangle(it, tx - 2, ty, tw + 4, th, bg_color_);
-      it.printf(rect_.x, rect_.y, f, cl, a, "%s", text_);
+      it.get_text_bounds(rect_.x, rect_.y, disp.c_str(), f, a, &tx, &ty, &tw, &th);
+      const int dot_pad = truncated ? (UI_TRUNC_DOTS_W + 2) : 0;
+      ui_fast_filled_rectangle(it, tx - 2, ty, tw + 4 + dot_pad, th, bg_color_);
+      it.printf(rect_.x, rect_.y, f, cl, a, "%s", disp.c_str());
+      if (truncated && !disp.empty()) {
+        int baseline_y = ui_get_baseline(it, rect_.x, rect_.y, f, a);
+        ui_draw_truncation_dots(it, tx + tw, baseline_y, cl);
+      }
     }
   }
 
@@ -386,12 +502,52 @@ class ButtonWidget : public Widget {
     const int cy = rect_.y + rect_.h / 2;
 
     if (has_icon && has_label) {
-      it.printf(cx, cy - 10, icon_style_->font, tc, TextAlign::CENTER, "%s", icon_glyph_);
-      it.printf(cx, cy + 12, f, tc, TextAlign::CENTER, "%s", label_);
+      // Try horizontal first (icon left of label). Falls back to the
+      // stacked layout when either the label can't be reasonably
+      // truncated next to the icon (e.g. very narrow button) or the
+      // button is tall enough that stacking reads better anyway.
+      int ix, iy, iw, ih;
+      it.get_text_bounds(0, 0, icon_glyph_, icon_style_->font, TextAlign::TOP_LEFT, &ix, &iy, &iw, &ih);
+      const int gap = 6;
+      const int side_pad = 8;
+      const int horiz_budget = rect_.w - 2 * side_pad - iw - gap;
+      // Minimum label budget to bother going horizontal: room for at
+      // least ~3 chars + ellipsis. Below that, vertical is more legible.
+      int eps_x, eps_y, eps_w, eps_h;
+      it.get_text_bounds(0, 0, "W...", f, TextAlign::TOP_LEFT, &eps_x, &eps_y, &eps_w, &eps_h);
+      const bool horiz_fits = horiz_budget >= eps_w;
+      // Stack only when the button is clearly tall enough for two
+      // legible lines; otherwise prefer the horizontal layout even on
+      // small buttons because the alternative is a clipped stack.
+      const bool tall_enough_for_stack = rect_.h >= 56;
+
+      if (horiz_fits && !tall_enough_for_stack) {
+        bool truncated = false;
+        std::string disp = ui_truncate_to_width(it, f, label_, horiz_budget, &truncated);
+        int lx, ly, lw, lh;
+        it.get_text_bounds(0, 0, disp.c_str(), f, TextAlign::TOP_LEFT, &lx, &ly, &lw, &lh);
+        // Reserve the indicator's width in the group total so the icon+label
+        // pair stays visually centered even when truncated.
+        const int extra = truncated ? (UI_TRUNC_DOTS_W + 2) : 0;
+        const int total_w = iw + gap + lw + extra;
+        const int start_x = rect_.x + (rect_.w - total_w) / 2;
+        it.printf(start_x + iw / 2, cy, icon_style_->font, tc, TextAlign::CENTER, "%s", icon_glyph_);
+        const int label_x = start_x + iw + gap;
+        it.printf(label_x, cy, f, tc, TextAlign::CENTER_LEFT, "%s", disp.c_str());
+        if (truncated && !disp.empty()) {
+          int tx, ty, tw, th;
+          it.get_text_bounds(label_x, cy, disp.c_str(), f, TextAlign::CENTER_LEFT, &tx, &ty, &tw, &th);
+          int baseline_y = ui_get_baseline(it, label_x, cy, f, TextAlign::CENTER_LEFT);
+          ui_draw_truncation_dots(it, tx + tw, baseline_y, tc);
+        }
+      } else {
+        it.printf(cx, cy - 12, icon_style_->font, tc, TextAlign::CENTER, "%s", icon_glyph_);
+        ui_print_truncated(it, cx, cy + 14, f, tc, TextAlign::CENTER, label_, rect_.w - 12);
+      }
     } else if (has_icon) {
       it.printf(cx, cy, icon_style_->font, tc, TextAlign::CENTER, "%s", icon_glyph_);
-    } else {
-      it.printf(cx, cy, f, tc, TextAlign::CENTER, "%s", label_);
+    } else if (has_label) {
+      ui_print_truncated(it, cx, cy, f, tc, TextAlign::CENTER, label_, rect_.w - 12);
     }
   }
 
@@ -490,8 +646,10 @@ class ImageToggleWidget : public Widget {
       it.line(cx, cy, cx + (int)(cosf(angle) * r),
               cy + (int)(sinf(angle) * r), icon_color);
       if (label_ != nullptr && g_theme.label.font != nullptr) {
-        it.printf(rect_.x + 52, rect_.y + rect_.h / 2, g_theme.label.font,
-                  icon_color, TextAlign::CENTER_LEFT, "%s", label_);
+        const int max_w = rect_.x + rect_.w - (rect_.x + 52) - 6;
+        ui_print_truncated(it, rect_.x + 52, rect_.y + rect_.h / 2,
+                           g_theme.label.font, icon_color,
+                           TextAlign::CENTER_LEFT, label_, max_w);
       }
       return;
     }
@@ -518,8 +676,10 @@ class ImageToggleWidget : public Widget {
     }
 
     if (label_ != nullptr && g_theme.label.font != nullptr) {
-      it.printf(rect_.x + 52, rect_.y + rect_.h / 2, g_theme.label.font,
-                Color(255, 255, 255), TextAlign::CENTER_LEFT, "%s", label_);
+      const int max_w = rect_.x + rect_.w - (rect_.x + 52) - 6;
+      ui_print_truncated(it, rect_.x + 52, rect_.y + rect_.h / 2,
+                         g_theme.label.font, Color(255, 255, 255),
+                         TextAlign::CENTER_LEFT, label_, max_w);
     }
 
     last_on_state_ = is_on;
@@ -715,20 +875,37 @@ class TodoPreviewWidget : public Widget {
       }
 
       int text_x = rect_.x + 38;
-      int max_chars = 28;
       if (!row.due.empty() && g_theme.label.font != nullptr) {
-        it.printf(rect_.x + 38, y, g_theme.label.font, overdue ? due_overdue : due_ok,
-                  TextAlign::TOP_LEFT, "%s", row.due.c_str());
+        const int due_max_w = 92;
+        ui_print_truncated(it, rect_.x + 38, y, g_theme.label.font,
+                           overdue ? due_overdue : due_ok,
+                           TextAlign::TOP_LEFT, row.due, due_max_w);
         text_x = rect_.x + 134;
-        max_chars = 16;
-      }
-      if (static_cast<int>(summary.size()) > max_chars) {
-        summary = summary.substr(0, max_chars - 3) + "...";
       }
       if (g_theme.label.font != nullptr) {
+        const int summary_max_w = rect_.x + rect_.w - text_x - 4;
+        bool summary_truncated = false;
+        summary = ui_truncate_to_width(it, g_theme.label.font, summary, summary_max_w, &summary_truncated);
         const Color summary_color = completed ? dim : text;
         it.printf(text_x, y, g_theme.label.font, summary_color, TextAlign::TOP_LEFT,
                   "%s", summary.c_str());
+
+        int tx, ty, tw, th;
+        it.get_text_bounds(text_x, y, summary.c_str(), g_theme.label.font, TextAlign::TOP_LEFT, &tx, &ty, &tw, &th);
+        int baseline_y = ui_get_baseline(it, text_x, y, g_theme.label.font, TextAlign::TOP_LEFT);
+        if (summary_truncated && !summary.empty()) {
+          ui_draw_truncation_dots(it, tx + tw, baseline_y, summary_color);
+        }
+        if (completed) {
+          // Centered on the cap height of a standard non-descender letter "A"
+          int bx, by, bw, bh;
+          it.get_text_bounds(text_x, y, "A", g_theme.label.font, TextAlign::TOP_LEFT, &bx, &by, &bw, &bh);
+          int line_y = by + bh / 2;
+          // Extend the strikethrough through the truncation dots so the
+          // visual cue stays continuous on long completed items.
+          const int line_end = summary_truncated ? (tx + tw + UI_TRUNC_DOTS_W + 2) : (tx + tw);
+          it.line(tx, line_y, line_end, line_y, dim);
+        }
       }
 
       drawn++;
@@ -855,6 +1032,205 @@ class TodoPreviewWidget : public Widget {
   bool dragging_ = false;
   std::string last_items_;
   bool baseline_set_ = false;
+};
+
+class NotificationOverlayWidget : public Widget {
+ public:
+  NotificationOverlayWidget(const std::string *title, const std::string *body,
+                            const std::string *severity,
+                            const std::string *dismissed,
+                            int display_w = 480, int display_h = 480)
+      : title_(title), body_(body), severity_(severity),
+        dismissed_(dismissed), display_w_(display_w), display_h_(display_h) {}
+
+  void set_dismiss_callback(std::function<void()> cb) {
+    dismiss_callback_ = std::move(cb);
+  }
+
+  UiRect bounds() const override { return UiRect{0, 0, display_w_, display_h_}; }
+
+  bool is_visible(const UiState &state) const override {
+    (void)state;
+    if (body_ == nullptr || body_->empty()) return false;
+    if (dismissed_ != nullptr && !dismissed_->empty() && *dismissed_ == *body_) return false;
+    return true;
+  }
+
+  void update(uint32_t now) override {
+    Widget::update(now);
+    if (body_ == nullptr) return;
+    const bool visible_now = is_visible_state();
+    if (!baseline_set_) {
+      last_body_ = *body_;
+      if (dismissed_ != nullptr) last_dismissed_ = *dismissed_;
+      was_visible_ = visible_now;
+      baseline_set_ = true;
+      if (visible_now) mark_dirty();
+      return;
+    }
+    if (*body_ != last_body_) last_body_ = *body_;
+    if (dismissed_ != nullptr && *dismissed_ != last_dismissed_) last_dismissed_ = *dismissed_;
+    if (was_visible_ != visible_now) {
+      UiInvalidation::request_full();
+      was_visible_ = visible_now;
+    }
+  }
+
+  bool handle_touch(const TouchEvent &event, uint32_t now) override {
+    (void)now;
+    if (event.type != TouchType::Tap) return false;
+    // Dismiss button hit test (bottom-center region of the panel).
+    if (!is_visible_state()) return false;
+    if (hit_test_dismiss(event.x, event.y)) {
+      if (dismiss_callback_) dismiss_callback_();
+      mark_dirty();
+      return true;
+    }
+    // Consume all taps while visible so they don't fall through to
+    // the underlying screen.
+    return true;
+  }
+
+  void draw(display::Display &it, const UiState &state) override {
+    (void)state;
+    if (!is_visible_state()) return;
+
+    // Semi-transparent backdrop
+    ui_fast_filled_rectangle(it, 0, 0, display_w_, display_h_, Color(0, 0, 0));
+
+    const int panel_w = (display_w_ * 3) / 4;
+    const int panel_h = (display_h_ * 2) / 3;
+    const int panel_x = (display_w_ - panel_w) / 2;
+    const int panel_y = (display_h_ - panel_h) / 2;
+
+    // Severity-based accent colour
+    const Color accent = severity_color();
+    const Color panel_bg(20, 20, 20);
+
+    // Panel background
+    it.rectangle(panel_x, panel_y, panel_w, panel_h, accent);
+    ui_fast_filled_rectangle(it, panel_x + 1, panel_y + 1, panel_w - 2, panel_h - 2, panel_bg);
+
+    // Title
+    const std::string &display_title = (title_ != nullptr && !title_->empty()) ? *title_ : std::string("Notification");
+    if (g_theme.header.font != nullptr) {
+      const int title_x = panel_x + panel_w / 2;
+      const int title_y = panel_y + 14;
+      ui_print_truncated(it, title_x, title_y, g_theme.header.font,
+                         accent, TextAlign::CENTER, display_title, panel_w - 16);
+    }
+
+    // Body
+    if (g_theme.label.font != nullptr && body_ != nullptr) {
+      const int body_y = panel_y + 50;
+      const int body_w = panel_w - 24;
+      const int body_h = panel_h - 120;
+      const int max_body_h = std::min(body_h, 100);
+      int tx, ty, tw, th;
+      const std::string &body_text = *body_;
+      const int wrap_width = body_w;
+      // Conservative wrap: measure the full body to decide if it fits
+      // on one line; if not, flow it into a multi-line block with the
+      // same truncation guard on the last visible line.
+      it.get_text_bounds(panel_x + 12, body_y, body_text.c_str(),
+                         g_theme.label.font, TextAlign::TOP_LEFT, &tx, &ty, &tw, &th);
+      if (tw <= body_w) {
+        // Single-line body fits comfortably
+        ui_print_truncated(it, panel_x + 12, body_y, g_theme.label.font,
+                           Color(255, 255, 255), TextAlign::TOP_LEFT, body_text, body_w);
+      } else {
+        // Multi-line wrap: print line by line and truncate the last
+        // visible line if it overflows.
+        int line_y = body_y;
+        int remaining = body_text.size();
+        int offset = 0;
+        const int line_height = 22;
+        while (remaining > 0 && line_y + line_height < panel_y + body_y + max_body_h) {
+          int best_w = 0;
+          int best_len = 0;
+          // Build up to the widest prefix that still fits in body_w.
+          for (int len = 1; len <= remaining; len++) {
+            std::string sub = body_text.substr(offset, len);
+            it.get_text_bounds(panel_x + 12, line_y, sub.c_str(),
+                               g_theme.label.font, TextAlign::TOP_LEFT, &tx, &ty, &tw, &th);
+            if (tw > body_w) break;
+            if (tw > best_w) { best_w = tw; best_len = len; }
+          }
+          if (best_len == 0) best_len = 1;
+          std::string line = body_text.substr(offset, best_len);
+          const bool is_last = offset + best_len >= remaining;
+          if (is_last) {
+            // Last line -- truncate with dots if still too wide.
+            ui_print_truncated(it, panel_x + 12, line_y, g_theme.label.font,
+                               Color(255, 255, 255), TextAlign::TOP_LEFT,
+                               body_text.substr(offset), body_w);
+          } else {
+            it.printf(panel_x + 12, line_y, g_theme.label.font,
+                      Color(255, 255, 255), TextAlign::TOP_LEFT, "%s", line.c_str());
+          }
+          offset += best_len;
+          remaining -= best_len;
+          line_y += line_height;
+        }
+      }
+    }
+
+    // Dismiss button
+    const int btn_w = panel_w - 40;
+    const int btn_h = 36;
+    const int btn_x = panel_x + (panel_w - btn_w) / 2;
+    const int btn_y = panel_y + panel_h - btn_h - 12;
+    it.rectangle(btn_x, btn_y, btn_w, btn_h, accent);
+    ui_fast_filled_rectangle(it, btn_x + 1, btn_y + 1, btn_w - 2, btn_h - 2, Color(40, 40, 40));
+    if (g_theme.label.font != nullptr) {
+      it.printf(btn_x + btn_w / 2, btn_y + btn_h / 2, g_theme.label.font,
+                Color(255, 255, 255), TextAlign::CENTER, "Dismiss");
+    }
+
+    last_body_ = body_ != nullptr ? *body_ : std::string();
+    if (dismissed_ != nullptr) last_dismissed_ = *dismissed_;
+  }
+
+ private:
+  bool is_visible_state() const {
+    if (body_ == nullptr || body_->empty()) return false;
+    if (dismissed_ != nullptr && !dismissed_->empty() && *dismissed_ == *body_) return false;
+    return true;
+  }
+
+  Color severity_color() const {
+    if (severity_ == nullptr || severity_->empty()) return Color(0, 200, 255);
+    const std::string s = *severity_;
+    if (s == "error") return Color(255, 60, 60);
+    if (s == "warning") return Color(255, 180, 0);
+    if (s == "info") return Color(80, 200, 255);
+    return Color(0, 200, 255);
+  }
+
+  bool hit_test_dismiss(int tx, int ty) const {
+    const int panel_w = (display_w_ * 3) / 4;
+    const int panel_h = (display_h_ * 2) / 3;
+    const int panel_x = (display_w_ - panel_w) / 2;
+    const int panel_y = (display_h_ - panel_h) / 2;
+    const int btn_w = panel_w - 40;
+    const int btn_h = 36;
+    const int btn_x = panel_x + (panel_w - btn_w) / 2;
+    const int btn_y = panel_y + panel_h - btn_h - 12;
+    return tx >= btn_x - 10 && tx <= btn_x + btn_w + 10 &&
+           ty >= btn_y - 10 && ty <= btn_y + btn_h + 10;
+  }
+
+  const std::string *title_;
+  const std::string *body_;
+  const std::string *severity_;
+  const std::string *dismissed_;
+  std::function<void()> dismiss_callback_;
+  int display_w_;
+  int display_h_;
+  std::string last_body_;
+  std::string last_dismissed_;
+  bool baseline_set_ = false;
+  bool was_visible_ = false;
 };
 
 #include "ui_tab_container.h"

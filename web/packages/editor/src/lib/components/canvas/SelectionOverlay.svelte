@@ -2,6 +2,7 @@
   import { projectStore } from "$lib/stores/project.svelte";
   import { selectionStore } from "$lib/stores/selection.svelte";
   import { historyStore } from "$lib/stores/history.svelte";
+  import { snapStore } from "$lib/stores/snap.svelte";
 
   interface Props {
     region?: "header" | "content";
@@ -13,6 +14,8 @@
 
   // Resize handles
   type Handle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
+  const MIN_SIZE = 10;
+  const SNAP_THRESHOLD = 8;
 
   let resizing = $state<{ id: string; handle: Handle } | null>(null);
   let resizeStart = $state<{
@@ -76,9 +79,117 @@
       }
     }
 
+    const parentSurface = projectStore.getComponentParentLayoutSurface(resizing.id);
+    const resizedBounds = projectStore.getComponentLayoutBounds(resizing.id);
+
+    if (!e.ctrlKey && parentSurface && resizedBounds) {
+      let left = parentSurface.x + newX;
+      let top = parentSurface.y + newY;
+      let right = left + newWidth;
+      let bottom = top + newHeight;
+
+      let bestDiffX = SNAP_THRESHOLD;
+      let bestDiffY = SNAP_THRESHOLD;
+      let snapCoordX: number | null = null;
+      let snapCoordY: number | null = null;
+
+      const snapLeftTo = (target: number) => {
+        const diff = Math.abs(left - target);
+        const nextWidth = right - target;
+        if (diff < bestDiffX && nextWidth >= MIN_SIZE) {
+          bestDiffX = diff;
+          snapCoordX = target;
+          left = target;
+          newX = left - parentSurface.x;
+          newWidth = nextWidth;
+        }
+      };
+
+      const snapRightTo = (target: number) => {
+        const diff = Math.abs(right - target);
+        const nextWidth = target - left;
+        if (diff < bestDiffX && nextWidth >= MIN_SIZE) {
+          bestDiffX = diff;
+          snapCoordX = target;
+          right = target;
+          newWidth = nextWidth;
+        }
+      };
+
+      const snapTopTo = (target: number) => {
+        const diff = Math.abs(top - target);
+        const nextHeight = bottom - target;
+        if (diff < bestDiffY && nextHeight >= MIN_SIZE) {
+          bestDiffY = diff;
+          snapCoordY = target;
+          top = target;
+          newY = top - parentSurface.y;
+          newHeight = nextHeight;
+        }
+      };
+
+      const snapBottomTo = (target: number) => {
+        const diff = Math.abs(bottom - target);
+        const nextHeight = target - top;
+        if (diff < bestDiffY && nextHeight >= MIN_SIZE) {
+          bestDiffY = diff;
+          snapCoordY = target;
+          bottom = target;
+          newHeight = nextHeight;
+        }
+      };
+
+      const snapToTarget = (target: { x: number; y: number; width: number; height: number }) => {
+        const xTargets = [target.x, target.x + target.width, target.x + target.width / 2];
+        const yTargets = [target.y, target.y + target.height, target.y + target.height / 2];
+
+        for (const xTarget of xTargets) {
+          if (handle.includes("w")) snapLeftTo(xTarget);
+          if (handle.includes("e")) snapRightTo(xTarget);
+        }
+
+        if (!widthOnly) {
+          for (const yTarget of yTargets) {
+            if (handle.includes("n")) snapTopTo(yTarget);
+            if (handle.includes("s")) snapBottomTo(yTarget);
+          }
+        }
+      };
+
+      snapToTarget(parentSurface);
+
+      for (const target of projectStore.getVisibleComponentLayoutBounds()) {
+        if (target.id === resizing.id) continue;
+        if (target.ancestorIds.includes(resizing.id)) continue;
+        if (resizedBounds.ancestorIds.includes(target.id)) continue;
+        snapToTarget(target);
+      }
+
+      const snapLines: Array<{ type: "v" | "h"; coord: number; start: number; end: number }> = [];
+      if (snapCoordX !== null) {
+        snapLines.push({
+          type: "v",
+          coord: snapCoordX,
+          start: parentSurface.y,
+          end: parentSurface.y + parentSurface.height,
+        });
+      }
+      if (snapCoordY !== null) {
+        snapLines.push({
+          type: "h",
+          coord: snapCoordY,
+          start: parentSurface.x,
+          end: parentSurface.x + parentSurface.width,
+        });
+      }
+      snapStore.setLines(snapLines);
+    } else {
+      snapStore.clear();
+    }
+
     // Apply constraints
-    newWidth = Math.max(10, newWidth);
-    newHeight = Math.max(10, newHeight);
+    newWidth = Math.max(MIN_SIZE, newWidth);
+    newHeight = Math.max(MIN_SIZE, newHeight);
 
     projectStore.updateComponent(resizing.id, {
       position: { x: Math.max(0, newX), y: Math.max(0, newY) },
@@ -89,6 +200,7 @@
   function handleResizeEnd() {
     resizing = null;
     resizeStart = null;
+    snapStore.clear();
     window.removeEventListener("mousemove", handleResizeMove);
     window.removeEventListener("mouseup", handleResizeEnd);
   }

@@ -60,7 +60,7 @@
     style:overflow="hidden"
   >
     {#if imageUrl.startsWith("mdi:") || imageUrl.startsWith("mdil:")}
-      <span style="font-size: 24px; color: {fgColor};">{imageUrl}</span>
+      <span class="image-text" style:font-size="24px" style:color={fgColor} title={imageUrl}>{imageUrl}</span>
     {:else if imageUrl.startsWith("http://") || imageUrl.startsWith("https://")}
       <img
         src={imageUrl}
@@ -68,7 +68,7 @@
         style="max-width: 100%; max-height: 100%; object-fit: contain;"
       />
     {:else}
-      <span style="color: {fgColor};">IMG: {component.file}</span>
+      <span class="image-text" style:color={fgColor} title={component.file}>IMG: {component.file}</span>
     {/if}
   </div>
 </Draggable>
@@ -78,5 +78,13 @@
     box-sizing: border-box;
     position: relative;
     user-select: none;
+  }
+
+  .image-text {
+    max-width: 100%;
+    padding: 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>

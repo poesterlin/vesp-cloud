@@ -14,12 +14,19 @@
 
   let { component }: Props = $props();
 
+  // Mirror the device's text-style slots (see esphome/fonts.yaml):
+  //   small  -> font_small  (18px)  used by g_theme.label
+  //   medium -> font_medium (24px)  used by g_theme.header / .primary
+  //   large  -> font_large  (32px)
+  // Falling back to 18 mirrors what fontMap in codegen does for unknown
+  // values. These are the pixel sizes the device actually rasterises at,
+  // so using the same numbers in the preview makes overflow math honest.
   const fontSize = $derived(
     component.fontSize === "small"
-      ? 12
+      ? 18
       : component.fontSize === "large"
-        ? 20
-        : 14,
+        ? 32
+        : 24,
   );
 
   const textAlign = $derived(
@@ -87,7 +94,8 @@
     height: 100%;
     display: flex;
     align-items: center;
-    font-family: monospace;
+    font-family: var(--display-font, monospace);
+    line-height: 1.1;
     white-space: nowrap;
     overflow: hidden;
   }

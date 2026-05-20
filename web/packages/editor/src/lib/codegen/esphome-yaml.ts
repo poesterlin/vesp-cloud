@@ -100,10 +100,55 @@ function generateBindings(project: Project): string {
   return lines.join('\n');
 }
 
+function generateNotificationSubscriptions(project: Project): string {
+  const overlay = project.notificationOverlay;
+  if (!overlay || overlay.enabled === false) return '';
+  const lines: string[] = [];
+  if (overlay.titleEntityId) {
+    lines.push(`          bind_ha_string("${overlay.titleEntityId}", &g_ui_app.state().notification_title);`);
+  }
+  if (overlay.bodyEntityId) {
+    lines.push(`          bind_ha_string("${overlay.bodyEntityId}", &g_ui_app.state().notification_body);`);
+  }
+  if (overlay.severityEntityId) {
+    lines.push(`          bind_ha_string("${overlay.severityEntityId}", &g_ui_app.state().notification_severity);`);
+  }
+  // Dismiss action: clears HA title/body entities via input_text.set_value
+  if (overlay.titleEntityId || overlay.bodyEntityId) {
+    const clearLines: string[] = [];
+    if (overlay.titleEntityId) {
+      clearLines.push(`          clear_text_entity("${overlay.titleEntityId}");`);
+    }
+    if (overlay.bodyEntityId) {
+      clearLines.push(`          clear_text_entity("${overlay.bodyEntityId}");`);
+    }
+    lines.push('');
+    lines.push('          auto clear_text_entity = [](const std::string& entity_id) {');
+    lines.push('            auto *api = esphome::api::global_api_server;');
+    lines.push('            if (api == nullptr || !api->is_connected()) return;');
+    lines.push('            esphome::api::HomeAssistantServiceCallAction<> call(api, false);');
+    lines.push('            call.set_service("input_text.set_value");');
+    lines.push('            call.init_data(2);');
+    lines.push('            call.add_data("entity_id", entity_id);');
+    lines.push('            call.add_data("value", "");');
+    lines.push('            call.play();');
+    lines.push('          };');
+    lines.push('');
+    lines.push('          g_ui_app.dismiss_notification = []() {');
+    for (const l of clearLines) {
+      lines.push(l);
+    }
+    lines.push('          };');
+  }
+  return lines.join('\n');
+}
+
 export function generateESPHomeYAML(project: Project, _firmwareVersion?: string): string {
   const deviceName = sanitizeDeviceName(project.name);
   const friendlyName = project.name;
   const bindings = generateBindings(project);
+  const notificationSubs = generateNotificationSubscriptions(project);
+  const notificationBindings = notificationSubs ? `\n${notificationSubs}` : '';
   const iconGlyphs = getIconGlyphs(collectProjectIconNames(project));
   const iconFontAssignment = iconGlyphs.size > 0
     ? `\n          g_theme.icon.font = id(${ICON_FONT_ID});`
@@ -125,7 +170,7 @@ esphome:
       - lambda: |-
           g_theme.header.font = id(font_medium);
           g_theme.label.font = id(font_small);
-          g_theme.primary.font = id(font_medium);
+          g_theme.primary.font = id(font_small);
           g_theme.accent.font = id(font_small);
           g_theme.neutral.font = id(font_small);
           g_theme.success.font = id(font_small);${iconFontAssignment}
@@ -156,25 +201,44 @@ esphome:
                 });
           };
 
-          auto bind_ha_string = [](const std::string& entity_id, Observable<std::string>* target) {
+          // Numbers from Home Assistant can arrive with absurd precision
+          // (e.g. a sensor reporting "21.3442857142857"). The display has
+          // no horizontal room for that, so we trim purely-numeric strings
+          // with more than one fractional digit down to one decimal. Non-
+          // numeric strings pass through unchanged.
+          auto trim_numeric = [](esphome::StringRef state) -> std::string {
+            std::string s(state.c_str(), state.size());
+            if (s.empty()) return s;
+            const char *c = s.c_str();
+            char *end = nullptr;
+            float v = strtof(c, &end);
+            if (end == c || *end != '\\0') return s;
+            auto dot = s.find('.');
+            if (dot == std::string::npos || s.size() - dot <= 2) return s;
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%.1f", v);
+            return std::string(buf);
+          };
+
+          auto bind_ha_string = [trim_numeric](const std::string& entity_id, Observable<std::string>* target) {
             auto *api = esphome::api::global_api_server;
             if (api == nullptr) return;
             api->subscribe_home_assistant_state(
                 entity_id, esphome::optional<std::string>(),
-                [target](esphome::StringRef state) {
-                  target->set(std::string(state.c_str(), state.size()));
+                [target, trim_numeric](esphome::StringRef state) {
+                  target->set(trim_numeric(state));
                   UiRedraw::trigger_display_update();
                 });
           };
 
-          auto bind_ha_string_attr = [](const std::string& entity_id, const std::string& attribute,
+          auto bind_ha_string_attr = [trim_numeric](const std::string& entity_id, const std::string& attribute,
                                         Observable<std::string>* target) {
             auto *api = esphome::api::global_api_server;
             if (api == nullptr) return;
             api->subscribe_home_assistant_state(
                 entity_id, esphome::optional<std::string>(attribute),
-                [target](esphome::StringRef state) {
-                  target->set(std::string(state.c_str(), state.size()));
+                [target, trim_numeric](esphome::StringRef state) {
+                  target->set(trim_numeric(state));
                   UiRedraw::trigger_display_update();
                 });
           };
@@ -210,7 +274,7 @@ esphome:
                   UiRedraw::trigger_display_update();
                 });
           };
-${bindings ? bindings + '\n' : ''}  includes:
+${bindings ? bindings + '\n' : ''}${notificationBindings ? notificationBindings + '\n' : ''}  includes:
     - includes/ui_types.h
     - includes/ui_state.h
     - includes/ui_invalidation.h

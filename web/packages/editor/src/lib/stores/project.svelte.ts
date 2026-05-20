@@ -349,7 +349,7 @@ function createProjectStore() {
       }
     },
 
-    updateComponent(id: string, updates: Partial<Component>) {
+    updateComponent(id: string, updates: Partial<Component>, skipSave?: boolean) {
       if (!project) return;
 
       const updateInComponents = (components: Component[]): boolean => {
@@ -378,13 +378,21 @@ function createProjectStore() {
 
       const components = viewMode === "dashboard" ? currentDashboardPage?.components : currentDetailView?.components;
       if (components && updateInComponents(components)) {
-        scheduleSave();
+        if (!skipSave) scheduleSave();
         return;
       }
       // Also search header components
       if (project.pageHeader && updateInComponents(project.pageHeader.components)) {
-        scheduleSave();
+        if (!skipSave) scheduleSave();
       }
+    },
+
+    batchUpdateComponents(updates: Array<{ id: string; updates: Partial<Component> }>) {
+      if (!project) return;
+      for (const { id, updates: u } of updates) {
+        this.updateComponent(id, u, true);
+      }
+      scheduleSave();
     },
 
     deleteComponent(id: string) {

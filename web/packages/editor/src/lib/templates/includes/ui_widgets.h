@@ -93,6 +93,12 @@ inline bool ui_text_align_is_right(TextAlign align) {
          align == TextAlign::BASELINE_RIGHT || align == TextAlign::BOTTOM_RIGHT;
 }
 
+inline TextAlign ui_text_align_vertical_center(TextAlign align) {
+  if (ui_text_align_is_right(align)) return TextAlign::CENTER_RIGHT;
+  if (ui_text_align_is_center(align)) return TextAlign::CENTER;
+  return TextAlign::CENTER_LEFT;
+}
+
 // When text is truncated, the painted dot indicator is part of the visual
 // label. Shift non-left anchors so text + dots stay aligned as one unit.
 inline int ui_anchor_x_for_truncation(int x, TextAlign align, bool truncated) {
@@ -357,6 +363,7 @@ class LabelWidget : public Widget {
     auto cl = style_->color;
     auto a = text_align();
     const int x = text_anchor_x(a);
+    const int y = text_anchor_y();
 
     // All string render paths truncate to rect_.w with an ellipsis so the
     // label never bleeds outside its bounds, no matter what HA streams in.
@@ -373,8 +380,8 @@ class LabelWidget : public Widget {
       const int draw_x = ui_anchor_x_for_truncation(x, a, truncated);
       const int alt_x = ui_anchor_x_for_truncation(x, a, alt_truncated);
       int tx, ty, tw, th, ax, ay, aw, ah;
-      it.get_text_bounds(draw_x, rect_.y, display.c_str(), f, a, &tx, &ty, &tw, &th);
-      it.get_text_bounds(alt_x, rect_.y, alt.c_str(), f, a, &ax, &ay, &aw, &ah);
+      it.get_text_bounds(draw_x, y, display.c_str(), f, a, &tx, &ty, &tw, &th);
+      it.get_text_bounds(alt_x, y, alt.c_str(), f, a, &ax, &ay, &aw, &ah);
       // Pad the bg rect by the indicator width on whichever side might
       // gain dots, so flipping on->off doesn't leave stale pixels.
       const int dot_pad = UI_TRUNC_DOTS_W + 2;
@@ -382,33 +389,33 @@ class LabelWidget : public Widget {
       const int right = std::max(tx + tw + (truncated ? dot_pad : 0),
                                  ax + aw + (alt_truncated ? dot_pad : 0)) + 2;
       ui_fast_filled_rectangle(it, left, ty, right - left, th, bg_color_);
-      it.printf(draw_x, rect_.y, f, cl, a, "%s", display.c_str());
+      it.printf(draw_x, y, f, cl, a, "%s", display.c_str());
       if (truncated && !display.empty()) {
-        int baseline_y = ui_get_baseline(it, draw_x, rect_.y, f, a);
+        int baseline_y = ui_get_baseline(it, draw_x, y, f, a);
         ui_draw_truncation_dots(it, tx + tw, baseline_y, cl);
       }
       last_bool_ = *bound_bool_;
       bool_baseline_set_ = true;
     } else if (text_fn_) {
       ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
-      ui_print_truncated(it, x, rect_.y, f, cl, a, last_text_, max_text_w);
+      ui_print_truncated(it, x, y, f, cl, a, last_text_, max_text_w);
     } else if (printer_) {
       ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
       // printer_ wraps a templated bound value; we can't easily intercept
       // the formatted result, but in practice these are short numeric
       // labels (gauges, percentages) that fit by construction.
-      printer_(it, x, rect_.y, f, cl, a);
+      printer_(it, x, y, f, cl, a);
     } else {
       bool truncated = false;
       std::string disp = ui_truncate_to_width(it, f, text_ ? text_ : "", max_text_w, &truncated);
       const int draw_x = ui_anchor_x_for_truncation(x, a, truncated);
       int tx, ty, tw, th;
-      it.get_text_bounds(draw_x, rect_.y, disp.c_str(), f, a, &tx, &ty, &tw, &th);
+      it.get_text_bounds(draw_x, y, disp.c_str(), f, a, &tx, &ty, &tw, &th);
       const int dot_pad = truncated ? (UI_TRUNC_DOTS_W + 2) : 0;
       ui_fast_filled_rectangle(it, tx - 2, ty, tw + 4 + dot_pad, th, bg_color_);
-      it.printf(draw_x, rect_.y, f, cl, a, "%s", disp.c_str());
+      it.printf(draw_x, y, f, cl, a, "%s", disp.c_str());
       if (truncated && !disp.empty()) {
-        int baseline_y = ui_get_baseline(it, draw_x, rect_.y, f, a);
+        int baseline_y = ui_get_baseline(it, draw_x, y, f, a);
         ui_draw_truncation_dots(it, tx + tw, baseline_y, cl);
       }
     }
@@ -416,7 +423,7 @@ class LabelWidget : public Widget {
 
  private:
   TextAlign text_align() const {
-    return has_align_override_ ? align_ : style_->align;
+    return ui_text_align_vertical_center(has_align_override_ ? align_ : style_->align);
   }
 
   int text_anchor_x(TextAlign align) const {
@@ -424,6 +431,8 @@ class LabelWidget : public Widget {
     if (ui_text_align_is_center(align)) return rect_.x + (rect_.w / 2);
     return rect_.x;
   }
+
+  int text_anchor_y() const { return rect_.y + (rect_.h / 2); }
 
   UiRect rect_;
   const char *text_;

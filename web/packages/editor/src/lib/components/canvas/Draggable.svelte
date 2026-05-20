@@ -25,13 +25,18 @@
     compHeight: number;
   } | null>(null);
 
+  let multiSelectDrag = $state(false);
+  let multiSelectStartPositions = $state<Map<string, { x: number; y: number }>>(new Map());
+
   const isSelected = $derived(selectionStore.isSelected(component.id));
   const isHovered = $derived(selectionStore.isHovered(component.id));
 
   function handleMouseDown(e: MouseEvent) {
     e.stopPropagation();
 
-    if (!selectionStore.isSelected(component.id)) {
+    const wasSelected = selectionStore.isSelected(component.id);
+
+    if (!wasSelected) {
       if (e.shiftKey) {
         selectionStore.addToSelection(component.id);
       } else {
@@ -39,7 +44,20 @@
       }
     }
 
-    historyStore.record("Move component");
+    if (wasSelected && selectionStore.selectedCount > 1) {
+      multiSelectDrag = true;
+      const positions = new Map<string, { x: number; y: number }>();
+      for (const id of selectionStore.selectedIds) {
+        const comp = projectStore.getComponent(id);
+        if (comp) {
+          positions.set(id, { x: comp.position.x, y: comp.position.y });
+        }
+      }
+      multiSelectStartPositions = positions;
+      historyStore.record("Move components");
+    } else {
+      historyStore.record("Move component");
+    }
 
     dragging = true;
     dragStart = {
@@ -60,6 +78,21 @@
 
     const dx = e.clientX - dragStart.x;
     const dy = e.clientY - dragStart.y;
+
+    if (multiSelectDrag && multiSelectStartPositions.size > 0) {
+      const updates: Array<{ id: string; updates: Partial<Component> }> = [];
+      for (const [id, startPos] of multiSelectStartPositions) {
+        const newX = Math.max(0, startPos.x + dx);
+        const newY = Math.max(0, startPos.y + dy);
+        updates.push({
+          id,
+          updates: { position: { x: Math.round(newX), y: Math.round(newY) } },
+        });
+      }
+      projectStore.batchUpdateComponents(updates);
+      snapStore.clear();
+      return;
+    }
 
     const newX = Math.max(0, dragStart.compX + dx);
     const newY = Math.max(0, dragStart.compY + dy);
@@ -197,6 +230,8 @@
   function handleMouseUp() {
     dragging = false;
     dragStart = null;
+    multiSelectDrag = false;
+    multiSelectStartPositions = new Map();
     snapStore.clear();
     window.removeEventListener("mousemove", handleMouseMove);
     window.removeEventListener("mouseup", handleMouseUp);

@@ -217,6 +217,8 @@ export function generateESPHomeYAML(project: Project, _firmwareVersion?: string)
   const deviceName = sanitizeDeviceName(project.name);
   const friendlyName = project.name;
   const onlineImagesEnabled = hasOnlineImages(project);
+  const httpOtaEnabled = !!(project.secrets?.firmwareUpdateUrl);
+  const httpRequestEnabled = onlineImagesEnabled || httpOtaEnabled;
   const bindings = generateBindings(project);
   const notificationSubs = generateNotificationSubscriptions(project);
   const notificationBindings = notificationSubs ? `\n${notificationSubs}` : '';
@@ -229,8 +231,11 @@ export function generateESPHomeYAML(project: Project, _firmwareVersion?: string)
     : '';
   const imageYaml = generateStaticImagesYAML(project);
   const onlineImageYaml = generateOnlineImagesYAML(project);
-  const httpRequestYaml = onlineImagesEnabled
+  const httpRequestYaml = httpRequestEnabled
     ? `\nhttp_request:\n  verify_ssl: false\n  timeout: 10s\n`
+    : '';
+  const httpOtaYaml = httpOtaEnabled
+    ? `\nota:\n  - platform: http_request\n    url: !secret firmware_update_url\n`
     : '';
   const haBaseUrlLocal = onlineImagesEnabled
     ? `\n          const std::string ha_base_url = "\${home_assistant_base_url}";\n`
@@ -264,7 +269,7 @@ packages:
   base: !include base.yaml
   fonts: !include fonts.yaml
   hardware: !include hardware.yaml
-${imageYaml}${onlineImageYaml}${httpRequestYaml}
+${imageYaml}${onlineImageYaml}${httpRequestYaml}${httpOtaYaml}
 
 esphome:
   on_boot:

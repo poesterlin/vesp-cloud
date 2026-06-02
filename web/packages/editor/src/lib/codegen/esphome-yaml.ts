@@ -321,7 +321,12 @@ ${haBaseUrlLocal}
             if (dot == std::string::npos || s.size() - dot <= 2) return s;
             char buf[32];
             snprintf(buf, sizeof(buf), "%.1f", v);
-            return std::string(buf);
+            std::string out(buf);
+            // Strip trailing ".0" so "21.0" becomes "21"
+            if (out.size() >= 2 && out.compare(out.size() - 2, 2, ".0") == 0) {
+              out.resize(out.size() - 2);
+            }
+            return out;
           };
 
           auto bind_ha_string = [trim_numeric](const std::string& entity_id, Observable<std::string>* target) {

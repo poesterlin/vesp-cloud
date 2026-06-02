@@ -971,6 +971,7 @@ class TodoPreviewWidget : public Widget {
         break;
       }
 
+      const int row_cy = y + row_height_ / 2;
       const bool overdue = row.overdue;
       const bool completed = row.completed;
       std::string summary = row.summary;
@@ -980,12 +981,12 @@ class TodoPreviewWidget : public Widget {
         if (g_theme.icon.font != nullptr &&
             incomplete_icon_ != nullptr && complete_icon_ != nullptr &&
             incomplete_icon_[0] != '\0' && complete_icon_[0] != '\0') {
-          it.printf(rect_.x + 16, y + row_height_ / 2, g_theme.icon.font,
+          it.printf(rect_.x + 16, row_cy, g_theme.icon.font,
                     check_color, TextAlign::CENTER,
                     "%s", completed ? complete_icon_ : incomplete_icon_);
         } else {
-          it.printf(rect_.x + 10, y, g_theme.label.font,
-                    check_color, TextAlign::TOP_LEFT,
+          it.printf(rect_.x + 10, row_cy, g_theme.label.font,
+                    check_color, TextAlign::CENTER_LEFT,
                     "%s", completed ? "[x]" : "[ ]");
         }
       }
@@ -993,9 +994,9 @@ class TodoPreviewWidget : public Widget {
       int text_x = rect_.x + 38;
       if (!row.due.empty() && g_theme.label.font != nullptr) {
         const int due_max_w = 92;
-        ui_print_truncated(it, rect_.x + 38, y, g_theme.label.font,
+        ui_print_truncated(it, rect_.x + 38, row_cy, g_theme.label.font,
                            overdue ? due_overdue : due_ok,
-                           TextAlign::TOP_LEFT, row.due, due_max_w);
+                           TextAlign::CENTER_LEFT, row.due, due_max_w);
         text_x = rect_.x + 134;
       }
       if (g_theme.label.font != nullptr) {
@@ -1003,19 +1004,19 @@ class TodoPreviewWidget : public Widget {
         bool summary_truncated = false;
         summary = ui_truncate_to_width(it, g_theme.label.font, summary, summary_max_w, &summary_truncated);
         const Color summary_color = completed ? dim : text;
-        it.printf(text_x, y, g_theme.label.font, summary_color, TextAlign::TOP_LEFT,
+        it.printf(text_x, row_cy, g_theme.label.font, summary_color, TextAlign::CENTER_LEFT,
                   "%s", summary.c_str());
 
         int tx, ty, tw, th;
-        it.get_text_bounds(text_x, y, summary.c_str(), g_theme.label.font, TextAlign::TOP_LEFT, &tx, &ty, &tw, &th);
-        int baseline_y = ui_get_baseline(it, text_x, y, g_theme.label.font, TextAlign::TOP_LEFT);
+        it.get_text_bounds(text_x, row_cy, summary.c_str(), g_theme.label.font, TextAlign::CENTER_LEFT, &tx, &ty, &tw, &th);
+        int baseline_y = ui_get_baseline(it, text_x, row_cy, g_theme.label.font, TextAlign::CENTER_LEFT);
         if (summary_truncated && !summary.empty()) {
           ui_draw_truncation_dots(it, tx + tw, baseline_y, summary_color);
         }
         if (completed) {
           // Centered on the cap height of a standard non-descender letter "A"
           int bx, by, bw, bh;
-          it.get_text_bounds(text_x, y, "A", g_theme.label.font, TextAlign::TOP_LEFT, &bx, &by, &bw, &bh);
+          it.get_text_bounds(text_x, row_cy, "A", g_theme.label.font, TextAlign::CENTER_LEFT, &bx, &by, &bw, &bh);
           int line_y = by + bh / 2;
           // Extend the strikethrough through the truncation dots so the
           // visual cue stays continuous on long completed items.

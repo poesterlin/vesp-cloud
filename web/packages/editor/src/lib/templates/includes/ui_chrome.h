@@ -201,7 +201,7 @@ class DetailHeaderWidget : public Widget {
   bool handle_touch(const TouchEvent& event, uint32_t now) override {
     (void)now;
     if (event.type != TouchType::Tap) return false;
-    if (event.x >= 10 && event.x <= 80 && event.y >= 5 && event.y <= 45) {
+    if (event.x >= 14 && event.x <= 66 && event.y >= 6 && event.y <= 44) {
       if (back_callback_) back_callback_();
       return true;
     }
@@ -217,9 +217,13 @@ class DetailHeaderWidget : public Widget {
     it.line(0, 0, 0, 480, RetroColors::DARK);
     it.line(479, 0, 479, 480, RetroColors::DARK);
 
-    // Back button - clipped-corner outline
-    draw_clipped_border(it, 14, 8, 56, 36, 5, 5, 5, 5, RetroColors::CYAN);
-    it.printf(42, 22, btn_font_, RetroColors::CYAN, TextAlign::CENTER, "<");
+    // Back button — filled clipped box with drawn chevron
+    const int bx = 14, by = 6, bw = 52, bh = 38;
+    draw_clipped_box(it, bx, by, bw, bh, 5, RetroColors::CYAN, RetroColors::DIM, true);
+    const int cx = bx + bw / 2;
+    const int cy = by + bh / 2;
+    it.line(cx - 6, cy - 7, cx + 4, cy, RetroColors::CYAN);
+    it.line(cx + 4, cy, cx - 6, cy + 7, RetroColors::CYAN);
 
     if (title_ && title_font_) {
       // Section label in brackets for retro terminal feel

@@ -18,3 +18,7 @@ custom_components/esphome_display/__pycache__/
 *.zip
 4.0inch_ESP32-4848S040
 temp/
+
+esphome/.esphome/
+
+esphome/secrets.yaml

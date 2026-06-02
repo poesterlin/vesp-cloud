@@ -1,62 +1,29 @@
 #pragma once
 #include "esphome.h"
+#include "ui_state.h"
 #include "ui_widgets.h"
-
-namespace ChromeColors {
-  const Color BLACK(0, 0, 0);
-  const Color WHITE(255, 255, 255);
-  const Color CYAN(0, 255, 255);
-  const Color AMBER(255, 180, 0);
-  const Color GREEN(0, 255, 100);
-  const Color RED(255, 60, 60);
-  const Color BLUE(80, 140, 255);
-  const Color MAGENTA(255, 0, 200);
-  const Color DIM(80, 80, 80);
-  const Color DIMMER(40, 40, 40);
-}
+#include "ui_retro.h"
 
 inline void draw_retro_box(display::Display& it, int x, int y, int w, int h,
                            esphome::font::Font* font = nullptr,
-                           const char* label = nullptr, Color color = ChromeColors::DIM) {
-  it.rectangle(x, y, w, h, ChromeColors::DIMMER);
-
-  int s = 10;
-  it.line(x, y, x + s, y, color);
-  it.line(x, y, x, y + s, color);
-  it.line(x+1, y+1, x + s, y+1, color);
-  it.line(x+1, y+1, x+1, y + s, color);
-
-  it.line(x + w, y, x + w - s, y, color);
-  it.line(x + w, y, x + w, y + s, color);
-  it.line(x + w - 1, y+1, x + w - s, y+1, color);
-  it.line(x + w - 1, y+1, x + w - 1, y + s, color);
-
-  it.line(x, y + h, x + s, y + h, color);
-  it.line(x, y + h, x, y + h - s, color);
-  it.line(x+1, y + h - 1, x + s, y + h - 1, color);
-  it.line(x+1, y + h - 1, x+1, y + h - s, color);
-
-  it.line(x + w, y + h, x + w - s, y + h, color);
-  it.line(x + w, y + h, x + w, y + h - s, color);
-  it.line(x + w - 1, y + h - 1, x + w - s, y + h - 1, color);
-  it.line(x + w - 1, y + h - 1, x + w - 1, y + h - s, color);
+                           const char* label = nullptr, Color color = RetroColors::DIM) {
+  draw_clipped_border(it, x, y, w, h, 6, 6, 6, 6, RetroColors::CYAN);
+  draw_clipped_border(it, x + 2, y + 2, w - 4, h - 4, 4, 4, 4, 4, RetroColors::DIMMER);
 
   if (label && font) {
     int tx, ty, tw, th;
     it.get_text_bounds(x + 12, y - 7, label, font, TextAlign::TOP_LEFT, &tx, &ty, &tw, &th);
-    it.filled_rectangle(tx - 2, ty, tw + 4, th, ChromeColors::BLACK);
+    ui_fast_filled_rectangle(it, tx - 2, ty, tw + 4, th, RetroColors::VOID);
     it.printf(x + 12, y - 7, font, color, TextAlign::TOP_LEFT, " %s ", label);
   }
 }
 
 class PageIndicatorWidget : public Widget {
  public:
-  PageIndicatorWidget(int y, int dot_spacing = 28, int radius_active = 8, int radius_inactive = 6)
+  PageIndicatorWidget(int y, int dot_spacing = 28, int radius_active = 7, int radius_inactive = 5)
       : y_(y), dot_spacing_(dot_spacing), radius_active_(radius_active), radius_inactive_(radius_inactive) {}
 
   UiRect bounds() const override {
-    // Dots are centered horizontally at 240, padded generously to cover any
-    // page count up to ~14 dots; full width is fine and avoids overthinking.
     return UiRect{0, y_ - radius_active_ - 2, 480, 2 * (radius_active_ + 2)};
   }
 
@@ -71,10 +38,18 @@ class PageIndicatorWidget : public Widget {
     for (int i = 0; i < total; i++) {
       int dot_x = start_x + i * dot_spacing_;
       if (i == page) {
-        it.filled_circle(dot_x, y_, radius_active_, ChromeColors::CYAN);
+        // Active page: filled diamond
+        it.line(dot_x, y_ - radius_active_, dot_x + radius_active_, y_, RetroColors::CYAN);
+        it.line(dot_x + radius_active_, y_, dot_x, y_ + radius_active_, RetroColors::CYAN);
+        it.line(dot_x, y_ + radius_active_, dot_x - radius_active_, y_, RetroColors::CYAN);
+        it.line(dot_x - radius_active_, y_, dot_x, y_ - radius_active_, RetroColors::CYAN);
       } else {
-        it.filled_circle(dot_x, y_, radius_active_, ChromeColors::BLACK);
-        it.circle(dot_x, y_, radius_inactive_, ChromeColors::DIM);
+        // Inactive page: outline diamond
+        int r = radius_inactive_;
+        it.line(dot_x, y_ - r, dot_x + r, y_, RetroColors::DIMMER);
+        it.line(dot_x + r, y_, dot_x, y_ + r, RetroColors::DIMMER);
+        it.line(dot_x, y_ + r, dot_x - r, y_, RetroColors::DIMMER);
+        it.line(dot_x - r, y_, dot_x, y_ - r, RetroColors::DIMMER);
       }
     }
     last_page_ = page;
@@ -84,8 +59,6 @@ class PageIndicatorWidget : public Widget {
 
   void update(uint32_t now) override {
     (void)now;
-    // Page swipes mark full dirty already (see ScreenController), but
-    // covering the bare-minimum case is cheap.
   }
 
  private:
@@ -107,9 +80,6 @@ class HeaderWidget : public Widget {
 
   UiRect bounds() const override { return UiRect{0, 0, 480, 50}; }
 
-  // Poll the clock & timer state, mark the header dirty when something
-  // human-visible has actually changed. This is what lets the 10s interval
-  // tick redraw only the header (~3ms) instead of the whole screen (~60ms).
   void update(uint32_t now) override {
     (void)now;
     bool changed = false;
@@ -131,9 +101,8 @@ class HeaderWidget : public Widget {
       }
     }
 
-    if (!baseline_set_) {
+    if (!baseline_set_)
       changed = true;
-    }
 
     if (changed) mark_dirty();
   }
@@ -141,10 +110,12 @@ class HeaderWidget : public Widget {
   void draw(display::Display& it, const UiState& state) override {
     (void)state;
 
-    ui_fast_filled_rectangle(it, 0, 0, 480, 49, ChromeColors::BLACK);
+    // Header background — blank the retro background in this zone
+    ui_fast_filled_rectangle(it, 0, 0, 480, 49, RetroColors::VOID);
 
-    it.line(0, 0, 0, 480, ChromeColors::DIMMER);
-    it.line(479, 0, 479, 480, ChromeColors::DIMMER);
+    // Left/right frame lines
+    it.line(0, 0, 0, 480, RetroColors::DARK);
+    it.line(479, 0, 479, 480, RetroColors::DARK);
 
     const bool t_active = timer_active_ ? *timer_active_ : false;
     const int t_rem = timer_remaining_ ? *timer_remaining_ : 0;
@@ -152,7 +123,7 @@ class HeaderWidget : public Widget {
     if (t_active) {
       int minutes = t_rem / 60;
       int seconds = t_rem % 60;
-      Color tc = (t_rem == 0) ? ChromeColors::RED : ChromeColors::CYAN;
+      Color tc = (t_rem == 0) ? RetroColors::RED : RetroColors::CYAN;
 
       int cx = 40, cy = 25;
       it.circle(cx, cy, 10, tc);
@@ -164,8 +135,10 @@ class HeaderWidget : public Widget {
     } else {
       auto time_now = sntp_time->now();
       if (time_now.is_valid()) {
-        it.printf(20, 12, time_font_, ChromeColors::WHITE, TextAlign::TOP_LEFT, "%02d:%02d",
-                  time_now.hour, time_now.minute);
+        // Time display with cyan accent
+        it.printf(18, 8, time_font_, RetroColors::CYAN, TextAlign::TOP_LEFT, "%02d", time_now.hour);
+        it.printf(18 + 32, 8, time_font_, RetroColors::WHITE, TextAlign::TOP_LEFT, ":");
+        it.printf(18 + 44, 8, time_font_, RetroColors::CYAN, TextAlign::TOP_LEFT, "%02d", time_now.minute);
 
         const char* days[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
         const char* months[] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN",
@@ -173,7 +146,7 @@ class HeaderWidget : public Widget {
         int dayIdx = time_now.day_of_week - 1;
         if (dayIdx < 0) dayIdx = 0;
 
-        it.printf(460, 14, detail_font_, ChromeColors::DIM, TextAlign::TOP_RIGHT, "%s %02d %s",
+        it.printf(460, 14, detail_font_, RetroColors::GRAY, TextAlign::TOP_RIGHT, "%s %02d %s",
                   days[dayIdx], time_now.day_of_month, months[time_now.month - 1]);
 
         last_hour_ = time_now.hour;
@@ -182,7 +155,16 @@ class HeaderWidget : public Widget {
       }
     }
 
-    it.line(20, 48, 460, 48, ChromeColors::DIM);
+    // Bottom separator with double-line effect
+    it.line(18, 47, 462, 47, RetroColors::DIMMER);
+    it.line(18, 48, 462, 48, RetroColors::DARK);
+
+    // Hatch pattern in the top-right corner (decorative)
+    draw_hatch_pattern(it, 460, 2, 10, 4, 4, Color(0, 30, 45));
+
+    // Corner accents on the top edge
+    draw_corner_accent_tl(it, 3, 3, 5, RetroColors::CYAN_DIM);
+    draw_corner_accent_tr(it, 476, 3, 5, RetroColors::CYAN_DIM);
 
     last_timer_active_ = t_active;
     last_timer_remaining_ = t_rem;
@@ -220,7 +202,7 @@ class DetailHeaderWidget : public Widget {
   bool handle_touch(const TouchEvent& event, uint32_t now) override {
     (void)now;
     if (event.type != TouchType::Tap) return false;
-    if (event.x >= 10 && event.x <= 80 && event.y >= 5 && event.y <= 45) {
+    if (event.x >= 8 && event.x <= 72 && event.y >= 5 && event.y <= 45) {
       if (back_callback_) back_callback_();
       return true;
     }
@@ -229,18 +211,27 @@ class DetailHeaderWidget : public Widget {
 
   void draw(display::Display& it, const UiState& state) override {
     (void)state;
-    ui_fast_filled_rectangle(it, 0, 0, 480, 50, ChromeColors::BLACK);
-    it.line(0, 50, 480, 50, ChromeColors::DIM);
+    ui_fast_filled_rectangle(it, 0, 0, 480, 50, RetroColors::VOID);
+    it.line(0, 49, 480, 49, RetroColors::DIMMER);
+    it.line(0, 50, 480, 50, RetroColors::DARK);
 
-    it.rectangle(12, 8, 56, 36, ChromeColors::CYAN);
-    it.printf(40, 22, btn_font_, ChromeColors::CYAN, TextAlign::CENTER, "<");
+    it.line(0, 0, 0, 480, RetroColors::DARK);
+    it.line(479, 0, 479, 480, RetroColors::DARK);
+
+    // Back button — clipped-corner outline
+    draw_clipped_border(it, 10, 8, 60, 36, 5, 5, 5, 5, RetroColors::CYAN);
+    it.printf(40, 22, btn_font_, RetroColors::CYAN, TextAlign::CENTER, "<");
 
     if (title_ && title_font_) {
-      it.printf(240, 20, title_font_, ChromeColors::WHITE, TextAlign::CENTER, "%s", title_);
+      // Section label in brackets for retro terminal feel
+      it.printf(240, 20, title_font_, RetroColors::CYAN, TextAlign::CENTER, "[ %s ]", title_);
     }
 
-    it.line(0, 0, 0, 480, ChromeColors::DIMMER);
-    it.line(479, 0, 479, 480, ChromeColors::DIMMER);
+    // Hatch pattern decoration top-right
+    draw_hatch_pattern(it, 465, 2, 12, 3, 4, Color(0, 30, 45));
+
+    draw_corner_accent_tl(it, 3, 3, 5, RetroColors::CYAN_DIM);
+    draw_corner_accent_tr(it, 476, 3, 5, RetroColors::CYAN_DIM);
   }
 
  private:

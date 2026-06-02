@@ -391,6 +391,7 @@ ${bindings ? bindings + '\n' : ''}${notificationBindings ? notificationBindings 
     - includes/ui_app.h
     - includes/ui_touch.h
     - includes/ui_renderer.h
+    - includes/ui_retro.h
     - includes/ui_tab_container.h
     - includes/ui_scrollable_detail.h
 

@@ -8,6 +8,7 @@
 #include "ui_invalidation.h"
 #include "ui_redraw.h"
 #include "ui_scrollable_detail.h"
+#include "ui_retro.h"
 #include <memory>
 #include <vector>
 #include <map>
@@ -21,7 +22,6 @@ class Font;
 class ScreenController {
  public:
   ScreenController() {
-    // Pre-create all screen slots
     for (int i = 0; i <= static_cast<int>(UiScreenId::Scenes); i++) {
       auto id = static_cast<UiScreenId>(i);
       auto screen = std::make_unique<GenericScreen>();
@@ -75,10 +75,8 @@ class ScreenController {
         abs(event.dx) > 60 && abs(event.dx) > abs(event.dy)) {
       UiState& s = const_cast<UiState&>(state);
       if (event.dx < 0) {
-        // Swipe left -> next page
         s.home_page_index = (s.home_page_index + 1) % s.home_total_pages;
       } else {
-        // Swipe right -> prev page
         s.home_page_index = (s.home_page_index - 1 + s.home_total_pages) % s.home_total_pages;
       }
       UiInvalidation::request_full();
@@ -116,7 +114,6 @@ inline void setup_ui_screens(ScreenController &screens, UiState &state,
   {
     auto *home = screens.get_screen(UiScreenId::Home);
 
-    // -- Chrome header (visible on all pages) --
     home->emplace_widget<HeaderWidget>(g_theme.header.font, g_theme.label.font,
                                        nullptr, nullptr);
 
@@ -137,9 +134,9 @@ inline void setup_ui_screens(ScreenController &screens, UiState &state,
 
       auto *tabs = home->emplace_widget<TabContainerWidget>(
           UiRect{20, 178, 440, 270},
-          Color(20, 20, 20), g_theme.primary);
+          RetroColors::DIM, g_theme.primary);
       tabs->set_visibility_condition(p0);
-      const Color tab_bg(20, 20, 20);
+      const Color tab_bg(10, 12, 18);
 
       int t0 = tabs->add_tab("STATUS");
       {
@@ -217,7 +214,7 @@ inline void setup_ui_screens(ScreenController &screens, UiState &state,
           g_theme.primary)->set_visibility_condition(p1);
 
       home->emplace_widget<RectWidget>(
-          UiRect{20, 220, 440, 1}, g_theme.primary.border_color)
+          UiRect{20, 220, 440, 1}, RetroColors::CYAN_DIM)
           ->set_visibility_condition(p1);
 
       home->emplace_widget<ButtonWidget>(
@@ -240,7 +237,7 @@ inline void setup_ui_screens(ScreenController &screens, UiState &state,
           ->set_visibility_condition(p2);
 
       home->emplace_widget<RectWidget>(
-          UiRect{20, 115, 440, 1}, g_theme.primary.border_color)
+          UiRect{20, 115, 440, 1}, RetroColors::CYAN_DIM)
           ->set_visibility_condition(p2);
 
       {
@@ -287,11 +284,10 @@ inline void setup_ui_screens(ScreenController &screens, UiState &state,
           g_theme.success)->set_visibility_condition(p3);
     }
 
-    // -- Page indicator dots (visible on all pages) --
     home->emplace_widget<PageIndicatorWidget>(460);
   }
 
-  // ===================== ACTIONS SCREEN (example) =====================
+  // ===================== ACTIONS SCREEN =====================
   {
     auto *actions = screens.get_screen(UiScreenId::Actions);
 
@@ -299,7 +295,7 @@ inline void setup_ui_screens(ScreenController &screens, UiState &state,
         g_theme.header.font, g_theme.label.font, "ACTIONS",
         [&screens]() { screens.navigate_to(UiScreenId::Home); });
 
-    actions->emplace_widget<RectWidget>(UiRect{10, 70, 460, 20}, g_theme.info_bg);
+    actions->emplace_widget<RectWidget>(UiRect{10, 70, 460, 20}, RetroColors::VOID);
 
     {
       auto *info = actions->emplace_widget<LabelWidget>(UiRect{10, 70, 460, 20}, "", g_theme.label);
@@ -314,8 +310,6 @@ inline void setup_ui_screens(ScreenController &screens, UiState &state,
   }
 
   // ===================== DETAIL SCREENS =====================
-  // Each detail screen gets a DetailHeaderWidget with back-button and title.
-
   {
     auto *s = screens.get_screen(UiScreenId::Climate);
     s->emplace_widget<DetailHeaderWidget>(g_theme.header.font, g_theme.label.font, "CLIMATE",
@@ -359,40 +353,29 @@ inline void setup_ui_screens(ScreenController &screens, UiState &state,
 
     screens.register_screen(UiScreenId::Scenes, &scenes_detail);
 
-    scenes_detail.add_entry("ALL OFF", ChromeColors::RED,
+    scenes_detail.add_entry("ALL OFF", RetroColors::RED,
         make_ha_callback("switch.led_stehlampe_switch", "switch.toggle"));
 
-    scenes_detail.add_entry("COZY", ChromeColors::AMBER,
-        []() {});
+    scenes_detail.add_entry("COZY", RetroColors::AMBER, []() {});
 
-    scenes_detail.add_entry("COZY BEAMER", ChromeColors::BLUE,
-        []() {});
+    scenes_detail.add_entry("COZY BEAMER", RetroColors::BLUE, []() {});
 
-    scenes_detail.add_entry("DAYLIGHT", ChromeColors::WHITE,
-        []() {});
+    scenes_detail.add_entry("DAYLIGHT", RetroColors::WHITE, []() {});
 
-    scenes_detail.add_entry("NIGHT MODE", ChromeColors::MAGENTA,
-        []() {});
+    scenes_detail.add_entry("NIGHT MODE", RetroColors::MAGENTA, []() {});
 
-    scenes_detail.add_entry("AWAY", ChromeColors::GREEN,
-        []() {});
+    scenes_detail.add_entry("AWAY", RetroColors::GREEN, []() {});
 
-    scenes_detail.add_entry("READING", ChromeColors::CYAN,
-        []() {});
+    scenes_detail.add_entry("READING", RetroColors::CYAN, []() {});
 
-    scenes_detail.add_entry("DINNER", ChromeColors::AMBER,
-        []() {});
+    scenes_detail.add_entry("DINNER", RetroColors::AMBER, []() {});
 
-    scenes_detail.add_entry("MOVIE TIME", ChromeColors::BLUE,
-        []() {});
+    scenes_detail.add_entry("MOVIE TIME", RetroColors::BLUE, []() {});
 
-    scenes_detail.add_entry("SLEEP MODE", ChromeColors::MAGENTA,
-        []() {});
+    scenes_detail.add_entry("SLEEP MODE", RetroColors::MAGENTA, []() {});
 
-    scenes_detail.add_entry("GOOD MORNING", ChromeColors::WHITE,
-        []() {});
+    scenes_detail.add_entry("GOOD MORNING", RetroColors::WHITE, []() {});
 
-    scenes_detail.add_entry("ENERGY SAVE", ChromeColors::GREEN,
-        []() {});
+    scenes_detail.add_entry("ENERGY SAVE", RetroColors::GREEN, []() {});
   }
 }

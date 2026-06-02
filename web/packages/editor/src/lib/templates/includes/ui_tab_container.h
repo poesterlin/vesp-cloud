@@ -146,7 +146,7 @@ class TabContainerWidget : public Widget {
 
   void draw_tab_bar(display::Display &it) const {
     ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, kTabBarHeight,
-                             Color(30, 30, 30));
+                             RetroColors::DIM);
 
     if (tabs_.empty()) return;
 
@@ -162,13 +162,15 @@ class TabContainerWidget : public Widget {
       if (i == active_tab_) {
         ui_fast_filled_rectangle(it, tx, ty, tab_w, th,
                                  tab_style_->border_color);
-        it.rectangle(tx, ty, tab_w, th, tab_style_->border_color);
+        draw_clipped_border(it, tx, ty, tab_w, th, 3, 3, 3, 3,
+                            tab_style_->border_color);
         if (font) {
           it.printf(tx + tab_w / 2, ty + th / 2, font,
-                    Color(0, 0, 0), TextAlign::CENTER, "%s", tabs_[i].label);
+                    RetroColors::BLACK, TextAlign::CENTER, "%s", tabs_[i].label);
         }
       } else {
-        it.rectangle(tx, ty, tab_w, th, tab_style_->border_color);
+        draw_clipped_border(it, tx, ty, tab_w, th, 3, 3, 3, 3,
+                            tab_style_->border_color);
         if (font) {
           it.printf(tx + tab_w / 2, ty + th / 2, font,
                     tab_style_->text_color, TextAlign::CENTER, "%s", tabs_[i].label);

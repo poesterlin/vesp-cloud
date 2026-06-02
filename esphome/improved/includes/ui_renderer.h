@@ -4,6 +4,7 @@
 #include "ui_app.h"
 #include "ui_invalidation.h"
 #include "ui_redraw.h"
+#include "ui_retro.h"
 
 #include <cstring>
 #include <esp_heap_caps.h>
@@ -71,16 +72,6 @@ inline void ui_fast_filled_rectangle(display::Display &it, int x, int y, int w, 
 inline void ui_fast_fill(display::Display &it, Color color) { ui_fast_filled_rectangle(it, 0, 0, it.get_width(), it.get_height(), color); }
 
 // --- Profiling --------------------------------------------------------------
-// Set UI_PROFILE 1 (e.g. via -DUI_PROFILE=1 in the YAML build flags, or just
-// flip this define) to log per-frame timing. Each redraw prints:
-//
-//   ui_draw full=1 partial_rects=3 fill=8.4ms screens=42.1ms total=50.7ms
-//
-// 'fill' is the global black fill in UiApp::draw (0 if skipped).
-// 'screens' is the screen draw (includes all widget painting).
-// 'total' is begin_draw -> end_draw, which is essentially fill + screens.
-//
-// Use this to localise the ~80ms flash before changing more code.
 #ifndef UI_PROFILE
 #define UI_PROFILE 1
 #endif

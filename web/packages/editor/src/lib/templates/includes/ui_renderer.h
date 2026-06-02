@@ -1,6 +1,7 @@
 #pragma once
 
 #include "esphome.h"
+#include "ui_retro.h"
 #include "ui_app.h"
 #include "ui_invalidation.h"
 #include "ui_redraw.h"

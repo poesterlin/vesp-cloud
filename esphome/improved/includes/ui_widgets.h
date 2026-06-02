@@ -3,6 +3,7 @@
 #include "esphome.h"
 #include "ui_invalidation.h"
 #include "ui_types.h"
+#include "ui_retro.h"
 #include <cmath>
 #include <memory>
 #include <vector>
@@ -14,8 +15,6 @@ namespace font {
 class Font;
 }
 }  // namespace esphome
-
-void ui_fast_filled_rectangle(display::Display &it, int x, int y, int w, int h, Color color);
 
 struct UiState;
 
@@ -38,19 +37,19 @@ struct Theme {
   };
 
   struct ButtonStyle {
-    Color border_color = Color(0, 200, 255);
-    Color text_color = Color(255, 255, 255);
+    Color border_color = Color(0, 240, 255);
+    Color text_color = Color(230, 240, 250);
     esphome::font::Font *font = nullptr;
   };
 
-  TextStyle header   = {nullptr, Color(255, 255, 255), TextAlign::TOP_LEFT};
-  TextStyle label    = {nullptr, Color(180, 180, 180), TextAlign::TOP_LEFT};
-  Color     info_bg  = Color(0, 0, 0);
+  TextStyle header   = {nullptr, RetroColors::CYAN, TextAlign::TOP_LEFT};
+  TextStyle label    = {nullptr, RetroColors::LIGHT, TextAlign::TOP_LEFT};
+  Color     info_bg  = RetroColors::VOID;
 
-  ButtonStyle primary = {Color(0, 200, 255), Color(255, 255, 255), nullptr};
-  ButtonStyle accent  = {Color(255, 180, 0), Color(255, 255, 255), nullptr};
-  ButtonStyle neutral = {Color(170, 170, 170), Color(255, 255, 255), nullptr};
-  ButtonStyle success = {Color(0, 220, 120), Color(255, 255, 255), nullptr};
+  ButtonStyle primary = {RetroColors::CYAN, RetroColors::WHITE, nullptr};
+  ButtonStyle accent  = {RetroColors::AMBER, RetroColors::WHITE, nullptr};
+  ButtonStyle neutral = {RetroColors::GRAY, RetroColors::WHITE, nullptr};
+  ButtonStyle success = {RetroColors::GREEN, RetroColors::WHITE, nullptr};
 };
 
 inline Theme g_theme;
@@ -65,21 +64,13 @@ class Widget {
   virtual bool handle_touch(const TouchEvent &event, uint32_t now) { return false; }
   virtual void draw(display::Display &it, const UiState &state) = 0;
 
-  // Bounding box used by the dirty-rect machinery. Widgets with a fixed
-  // rectangle override this to return their rect_; widgets that paint
-  // outside a single box can return a conservative superset. Default is
-  // the full screen, which means "I might be anywhere -> always redraw me".
   virtual UiRect bounds() const { return UiRect{0, 0, 480, 480}; }
 
-  // Mark this widget's bounds dirty so it (and only it) is redrawn on the
-  // next render pass. Use this from state-change handlers / update() polls.
   void mark_dirty() {
     const auto b = bounds();
     UiInvalidation::request_rect(UiDirtyRect{b.x, b.y, b.w, b.h});
   }
 
-  // Should this widget actually be drawn this frame? Combines visibility
-  // and dirty-rect intersection.
   bool needs_draw(const UiState &state) const {
     if (!is_visible(state)) return false;
     const auto b = bounds();
@@ -116,6 +107,59 @@ class RectWidget : public Widget {
   Color color_;
 };
 
+class ImageWidget : public Widget {
+ public:
+  using Callback = std::function<void()>;
+
+  ImageWidget(UiRect rect, esphome::display::BaseImage *image,
+              Color color_on = display::COLOR_ON,
+              Color color_off = display::COLOR_OFF)
+      : rect_(rect), image_(image),
+        color_on_(color_on), color_off_(color_off) {}
+
+  ImageWidget(UiRect rect, esphome::display::BaseImage &image,
+              Color color_on = display::COLOR_ON,
+              Color color_off = display::COLOR_OFF)
+      : ImageWidget(rect, &image, color_on, color_off) {}
+
+  void on_tap(Callback cb) { tap_callback_ = std::move(cb); }
+
+  void set_tint(Color on, Color off) {
+    color_on_ = on;
+    color_off_ = off;
+  }
+
+  void set_bg_color(Color c) { bg_color_ = c; }
+
+  UiRect bounds() const override { return rect_; }
+
+  bool handle_touch(const TouchEvent &event, uint32_t now) override {
+    (void)now;
+    if (!tap_callback_) return false;
+    if (event.type != TouchType::Tap) return false;
+    if (rect_.contains(event.x, event.y)) {
+      tap_callback_();
+      return true;
+    }
+    return false;
+  }
+
+  void draw(display::Display &it, const UiState &state) override {
+    (void)state;
+    if (image_ == nullptr) return;
+    ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
+    it.image(rect_.x, rect_.y, image_, color_on_, color_off_);
+  }
+
+ private:
+  UiRect rect_;
+  esphome::display::BaseImage *image_;
+  Color color_on_;
+  Color color_off_;
+  Color bg_color_{RetroColors::VOID};
+  Callback tap_callback_;
+};
+
 class LabelWidget : public Widget {
  public:
   LabelWidget(UiRect rect, const char *text, const Theme::TextStyle &style)
@@ -150,9 +194,6 @@ class LabelWidget : public Widget {
     };
   }
 
-  // Poll bound state and mark dirty if it changed since the last draw. This is
-  // what makes the "only the label that actually changed redraws" optimisation
-  // work for the common bound-bool case (LED on/off, button A/B, etc.).
   void update(uint32_t now) override {
     (void)now;
     if (bound_bool_ != nullptr) {
@@ -202,7 +243,7 @@ class LabelWidget : public Widget {
   const char *on_text_ = "ON";
   const char *off_text_ = "OFF";
   std::function<void(display::Display&, int, int, esphome::font::Font*, Color, TextAlign)> printer_;
-  Color bg_color_{0, 0, 0};
+  Color bg_color_{RetroColors::VOID};
   bool last_bool_ = false;
   bool bool_baseline_set_ = false;
 };
@@ -226,8 +267,7 @@ class ButtonWidget : public Widget {
   bool handle_touch(const TouchEvent &event, uint32_t now) override {
     if (event.type != TouchType::Tap) return false;
     if (loading_) return false;
-    
-    // Safety: Don't trigger if API is not connected to avoid crashes
+
     if (esphome::api::global_api_server == nullptr || !esphome::api::global_api_server->is_connected()) {
       return false;
     }
@@ -238,7 +278,6 @@ class ButtonWidget : public Widget {
     mark_dirty();
     if (callback_) callback_();
 
-    // Schedule a delayed reset to end the loading state and trigger redraw
     char name_buf[24];
     snprintf(name_buf, sizeof(name_buf), "btn_%p", this);
     esphome::App.scheduler.set_timeout(nullptr, name_buf, loading_timeout_ms_,
@@ -259,8 +298,10 @@ class ButtonWidget : public Widget {
     auto bc = style_->border_color;
     auto tc = style_->text_color;
 
-    it.rectangle(rect_.x, rect_.y, rect_.w, rect_.h, bc);
-    ui_fast_filled_rectangle(it, rect_.x + 1, rect_.y + 1, rect_.w - 2, rect_.h - 2, Color(40, 40, 40));
+    int c = (rect_.h < 40) ? 4 : 6;
+    draw_clipped_box(it, rect_.x, rect_.y, rect_.w, rect_.h,
+                     c, bc, RetroColors::DIM, true);
+
     if (loading_) {
       it.printf(rect_.x + rect_.w / 2, rect_.y + rect_.h / 2, f, tc, TextAlign::CENTER, "...");
       return;
@@ -289,8 +330,8 @@ class ImageToggleWidget : public Widget {
   using Callback = std::function<void()>;
 
   ImageToggleWidget(UiRect rect, const char *label, const bool *on_state,
-                    Callback callback, Color on_color = Color(255, 180, 0),
-                    Color off_color = Color(80, 80, 80))
+                    Callback callback, Color on_color = RetroColors::AMBER,
+                    Color off_color = RetroColors::DIMMER)
       : rect_(rect), label_(label), on_state_(on_state),
         callback_(std::move(callback)), on_color_(on_color),
         off_color_(off_color) {}
@@ -339,20 +380,16 @@ class ImageToggleWidget : public Widget {
     return true;
   }
 
-  // TODO: Replace hardcoded bulb icon drawing with an MDI icon rendering
-  // once MDI icon support is added to the renderer. The bulb is drawn as
-  // a circle, optionally filled with radial rays when the entity is on.
   void draw(display::Display &it, const UiState &state) override {
     (void)state;
 
     bool is_on = on_state_ != nullptr ? *on_state_ : false;
 
-    Color base = Color(40, 40, 40);
     Color icon_color = is_on ? on_color_ : off_color_;
 
-    it.rectangle(rect_.x, rect_.y, rect_.w, rect_.h, icon_color);
-    ui_fast_filled_rectangle(it, rect_.x + 1, rect_.y + 1, rect_.w - 2,
-                             rect_.h - 2, base);
+    int c = 6;
+    draw_clipped_box(it, rect_.x, rect_.y, rect_.w, rect_.h,
+                     c, icon_color, RetroColors::DIM, true);
 
     if (loading_) {
       float angle = (millis() % 1000) * 2.0f * 3.14159265f / 1000.0f;
@@ -383,7 +420,7 @@ class ImageToggleWidget : public Widget {
 
     if (label_ != nullptr && g_theme.label.font != nullptr) {
       it.printf(rect_.x + 52, rect_.y + rect_.h / 2, g_theme.label.font,
-                Color(255, 255, 255), TextAlign::CENTER_LEFT, "%s", label_);
+                RetroColors::WHITE, TextAlign::CENTER_LEFT, "%s", label_);
     }
 
     last_on_state_ = is_on;
@@ -426,15 +463,19 @@ class TodoPreviewWidget : public Widget {
   void draw(display::Display &it, const UiState &state) override {
     (void)state;
 
-    const Color border(255, 180, 0);
-    const Color bg(20, 20, 20);
-    const Color text(255, 255, 255);
-    const Color due_ok(255, 180, 0);
-    const Color due_overdue(255, 60, 60);
-    const Color dim(80, 80, 80);
+    const Color border = RetroColors::AMBER;
+    const Color bg(10, 12, 18);
+    const Color text = RetroColors::WHITE;
+    const Color due_ok = RetroColors::AMBER;
+    const Color due_overdue = RetroColors::RED;
+    const Color dim = RetroColors::GRAY;
 
-    it.rectangle(rect_.x, rect_.y, rect_.w, rect_.h, border);
-    ui_fast_filled_rectangle(it, rect_.x + 1, rect_.y + 1, rect_.w - 2, rect_.h - 2, bg);
+    // Clipped-corner container
+    draw_clipped_box(it, rect_.x, rect_.y, rect_.w, rect_.h,
+                     8, border, bg, false);
+    // Inner double-line
+    draw_clipped_border(it, rect_.x + 2, rect_.y + 2, rect_.w - 4, rect_.h - 4,
+                        6, 6, 6, 6, RetroColors::AMBER_DIM);
 
     if (items_ == nullptr || items_->empty()) {
       if (g_theme.label.font != nullptr) {
@@ -515,7 +556,13 @@ class TodoPreviewWidget : public Widget {
 
       const int y = base_y + drawn * line_h;
       if (g_theme.label.font != nullptr) {
-        it.printf(rect_.x + 12, y, g_theme.label.font, border, TextAlign::TOP_LEFT, "[ ]");
+        // Checkbox as clipped diamond
+        int cbx = rect_.x + 18;
+        int cby = y + 14;
+        it.line(cbx, cby - 5, cbx + 5, cby, border);
+        it.line(cbx + 5, cby, cbx, cby + 5, border);
+        it.line(cbx, cby + 5, cbx - 5, cby, border);
+        it.line(cbx - 5, cby, cbx, cby - 5, border);
       }
 
       int text_x = rect_.x + 42;

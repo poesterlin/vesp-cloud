@@ -3,6 +3,7 @@
 #include "esphome.h"
 #include "ui_invalidation.h"
 #include "ui_types.h"
+#include "ui_retro.h"
 #include <algorithm>
 #include <cmath>
 #include <memory>
@@ -162,20 +163,20 @@ struct Theme {
   };
 
   struct ButtonStyle {
-    Color border_color = Color(0, 200, 255);
-    Color text_color = Color(255, 255, 255);
+    Color border_color = RetroColors::CYAN;
+    Color text_color = RetroColors::WHITE;
     esphome::font::Font *font = nullptr;
   };
 
-  TextStyle header   = {nullptr, Color(255, 255, 255), TextAlign::TOP_LEFT};
-  TextStyle label    = {nullptr, Color(180, 180, 180), TextAlign::TOP_LEFT};
-  TextStyle icon     = {nullptr, Color(255, 255, 255), TextAlign::CENTER};
-  Color     info_bg  = Color(0, 0, 0);
+  TextStyle header   = {nullptr, RetroColors::CYAN, TextAlign::TOP_LEFT};
+  TextStyle label    = {nullptr, RetroColors::LIGHT, TextAlign::TOP_LEFT};
+  TextStyle icon     = {nullptr, RetroColors::WHITE, TextAlign::CENTER};
+  Color     info_bg  = RetroColors::VOID;
 
-  ButtonStyle primary = {Color(0, 200, 255), Color(255, 255, 255), nullptr};
-  ButtonStyle accent  = {Color(255, 180, 0), Color(255, 255, 255), nullptr};
-  ButtonStyle neutral = {Color(170, 170, 170), Color(255, 255, 255), nullptr};
-  ButtonStyle success = {Color(0, 220, 120), Color(255, 255, 255), nullptr};
+  ButtonStyle primary = {RetroColors::CYAN, RetroColors::WHITE, nullptr};
+  ButtonStyle accent  = {RetroColors::AMBER, RetroColors::WHITE, nullptr};
+  ButtonStyle neutral = {RetroColors::GRAY, RetroColors::WHITE, nullptr};
+  ButtonStyle success = {RetroColors::GREEN, RetroColors::WHITE, nullptr};
 };
 
 inline Theme g_theme;
@@ -325,7 +326,7 @@ class ImageWidget : public Widget {
   esphome::image::Image *image_;
   Color color_on_;
   Color color_off_;
-  Color bg_color_{0, 0, 0};
+  Color bg_color_{RetroColors::VOID};
   Callback tap_callback_;
 };
 
@@ -499,7 +500,7 @@ class LabelWidget : public Widget {
   std::function<void(display::Display&, int, int, esphome::font::Font*, Color, TextAlign)> printer_;
   std::function<std::string()> text_fn_;
   std::string last_text_;
-  Color bg_color_{0, 0, 0};
+  Color bg_color_{RetroColors::VOID};
   TextAlign align_ = TextAlign::TOP_LEFT;
   bool has_align_override_ = false;
   bool last_bool_ = false;
@@ -598,8 +599,10 @@ class ButtonWidget : public Widget {
     auto bc = style_->border_color;
     auto tc = style_->text_color;
 
-    it.rectangle(rect_.x, rect_.y, rect_.w, rect_.h, bc);
-    ui_fast_filled_rectangle(it, rect_.x + 1, rect_.y + 1, rect_.w - 2, rect_.h - 2, Color(40, 40, 40));
+    int c = (rect_.h < 40) ? 4 : 6;
+    draw_clipped_box(it, rect_.x, rect_.y, rect_.w, rect_.h,
+                     c, bc, RetroColors::DIM, true);
+
     if (loading_) {
       it.printf(rect_.x + rect_.w / 2, rect_.y + rect_.h / 2, f, tc, TextAlign::CENTER, "...");
       return;
@@ -741,12 +744,11 @@ class ImageToggleWidget : public Widget {
 
     bool is_on = on_state_ != nullptr ? *on_state_ : false;
 
-    Color base = Color(40, 40, 40);
     Color icon_color = is_on ? on_color_ : off_color_;
 
-    it.rectangle(rect_.x, rect_.y, rect_.w, rect_.h, icon_color);
-    ui_fast_filled_rectangle(it, rect_.x + 1, rect_.y + 1, rect_.w - 2,
-                             rect_.h - 2, base);
+    int c = 6;
+    draw_clipped_box(it, rect_.x, rect_.y, rect_.w, rect_.h,
+                     c, icon_color, RetroColors::DIM, true);
 
     if (loading_) {
       float angle = (millis() % 1000) * 2.0f * 3.14159265f / 1000.0f;
@@ -904,15 +906,19 @@ class TodoPreviewWidget : public Widget {
   void draw(display::Display &it, const UiState &state) override {
     (void)state;
 
-    const Color border(255, 180, 0);
-    const Color bg(20, 20, 20);
-    const Color text(255, 255, 255);
-    const Color due_ok(255, 180, 0);
-    const Color due_overdue(255, 60, 60);
-    const Color dim(80, 80, 80);
+    const Color border = RetroColors::AMBER;
+    const Color bg(10, 12, 18);
+    const Color text = RetroColors::WHITE;
+    const Color due_ok = RetroColors::AMBER;
+    const Color due_overdue = RetroColors::RED;
+    const Color dim = RetroColors::GRAY;
 
-    it.rectangle(rect_.x, rect_.y, rect_.w, rect_.h, border);
-    ui_fast_filled_rectangle(it, rect_.x + 1, rect_.y + 1, rect_.w - 2, rect_.h - 2, bg);
+    // Clipped-corner container
+    draw_clipped_box(it, rect_.x, rect_.y, rect_.w, rect_.h,
+                     8, border, bg, false);
+    // Inner double-line
+    draw_clipped_border(it, rect_.x + 2, rect_.y + 2, rect_.w - 4, rect_.h - 4,
+                        6, 6, 6, 6, RetroColors::AMBER_DIM);
 
     if (items_ == nullptr || items_->empty()) {
       if (g_theme.label.font != nullptr) {

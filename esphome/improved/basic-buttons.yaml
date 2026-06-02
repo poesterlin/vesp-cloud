@@ -82,6 +82,7 @@ esphome:
     - includes/ui_state.h
     - includes/ui_invalidation.h
     - includes/ui_redraw.h
+    - includes/ui_retro.h
     - includes/ui_widgets.h
     - includes/ui_chrome.h
     - includes/ui_screen_base.h

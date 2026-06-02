@@ -5,6 +5,7 @@
 #include "ui_screens.h"
 #include "ui_state.h"
 #include "ui_types.h"
+#include "ui_retro.h"
 
 void ui_fast_fill(display::Display &it, Color color);
 
@@ -33,10 +34,6 @@ class UiApp {
   void on_touch_event(const TouchEvent &event) {
     init();
     const uint32_t now = millis();
-    // Touch handlers (buttons, tabs, page-swipe, scrollable entries) are
-    // responsible for marking their own dirty rects via mark_dirty() /
-    // request_full(). We deliberately don't blanket-request a partial repaint
-    // here -- doing so would force every widget to redraw on every touch.
     (void)screens_.handle_touch(event, now, state_);
   }
 
@@ -52,7 +49,7 @@ class UiApp {
     if (UiInvalidation::is_full_dirty() &&
         !screens_.current()->draws_own_background()) {
       const uint32_t t = micros();
-      ui_fast_fill(it, Color(0, 0, 0));
+      draw_retro_background(it);
       UiProfileTimer::fill_us = micros() - t;
     }
     const uint32_t t = micros();
@@ -61,7 +58,7 @@ class UiApp {
 #else
     if (UiInvalidation::is_full_dirty() &&
         !screens_.current()->draws_own_background()) {
-      ui_fast_fill(it, Color(0, 0, 0));
+      draw_retro_background(it);
     }
     screens_.draw(it, state_);
 #endif

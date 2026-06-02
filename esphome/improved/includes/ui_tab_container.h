@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui_widgets.h"
+#include "ui_retro.h"
 
 class TabContainerWidget : public Widget {
  public:
@@ -38,10 +39,6 @@ class TabContainerWidget : public Widget {
     const bool legacy_partial =
         !full && UiInvalidation::dirty_count() == 0 && UiInvalidation::needs_redraw();
 
-    // Repaint the tab-bar/body backgrounds ONLY when a dirty rect actually
-    // covers their full area (e.g. tab switch marks the container's whole
-    // rect). A small dirty rect from a child must NOT trigger a bg repaint,
-    // because that would erase sibling widgets that won't redraw this frame.
     const int bar_y = rect_.y;
     const int bar_h = kTabBarHeight;
     const int body_y = rect_.y + kTabBarHeight;
@@ -61,8 +58,6 @@ class TabContainerWidget : public Widget {
 
     for (auto &w : tabs_[active_tab_].widgets) {
       if (!w->is_visible(state)) continue;
-      // If we repainted the body bg we must redraw every child that lives
-      // there or it'll vanish.
       if (draw_body_bg) {
         w->draw(it, state);
         continue;
@@ -77,7 +72,6 @@ class TabContainerWidget : public Widget {
     }
   }
 
-  // Returns true iff some dirty rect fully covers the given area.
   static bool rect_fully_covered(int x, int y, int w, int h) {
     for (int i = 0; i < UiInvalidation::dirty_count(); i++) {
       const auto &r = UiInvalidation::dirty_rect(i);
@@ -140,12 +134,17 @@ class TabContainerWidget : public Widget {
   }
 
   void draw_background(display::Display &it) const {
-    ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
+    // Fill body area
+    ui_fast_filled_rectangle(it, rect_.x, rect_.y + kTabBarHeight,
+                             rect_.w, rect_.h - kTabBarHeight, bg_color_);
+    // Clipped-corner border around the entire container
+    draw_double_clipped_border(it, rect_.x, rect_.y, rect_.w, rect_.h,
+                               8, 3, RetroColors::CYAN, RetroColors::CYAN_DIM);
   }
 
   void draw_tab_bar(display::Display &it) const {
     ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, kTabBarHeight,
-                             Color(30, 30, 30));
+                             RetroColors::DARK);
 
     if (tabs_.empty()) return;
 
@@ -159,26 +158,23 @@ class TabContainerWidget : public Widget {
       int th = kTabBarHeight - kTabVertPadding * 2;
 
       if (i == active_tab_) {
-        ui_fast_filled_rectangle(it, tx, ty, tab_w, th,
-                                 tab_style_->border_color);
-        it.rectangle(tx, ty, tab_w, th, tab_style_->border_color);
+        // Active tab: filled with cyan, clipped-corner outline
+        draw_clipped_box(it, tx, ty, tab_w, th, 3,
+                         tab_style_->border_color,
+                         tab_style_->border_color, false);
         if (font) {
           it.printf(tx + tab_w / 2, ty + th / 2, font,
-                    Color(0, 0, 0), TextAlign::CENTER, "%s", tabs_[i].label);
+                    RetroColors::BLACK, TextAlign::CENTER, "%s", tabs_[i].label);
         }
       } else {
-        it.rectangle(tx, ty, tab_w, th, tab_style_->border_color);
+        // Inactive tab: clipped-corner outline only
+        draw_clipped_border(it, tx, ty, tab_w, th, 3, 3, 3, 3,
+                            RetroColors::DIMMER);
         if (font) {
           it.printf(tx + tab_w / 2, ty + th / 2, font,
-                    tab_style_->text_color, TextAlign::CENTER, "%s", tabs_[i].label);
+                    RetroColors::GRAY, TextAlign::CENTER, "%s", tabs_[i].label);
         }
       }
-    }
-  }
-
-  void draw_active_children(display::Display &it, const UiState &state) const {
-    for (auto &w : tabs_[active_tab_].widgets) {
-      if (w->is_visible(state)) w->draw(it, state);
     }
   }
 

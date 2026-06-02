@@ -7,6 +7,7 @@
 #include "ui_invalidation.h"
 #include "ui_redraw.h"
 #include "ui_chrome.h"
+#include "ui_retro.h"
 #include <vector>
 #include <functional>
 
@@ -138,26 +139,23 @@ class ScrollableDetailScreen : public Screen {
 
     if (fast_scroll_ && !full && millis() - last_full_draw_ms_ < 1000) {
       if (max_scroll_ > 0) {
-        ui_fast_filled_rectangle(it, 475, content_y_, 3, content_area_h_, Color(10, 10, 10));
+        ui_fast_filled_rectangle(it, 475, content_y_, 3, content_area_h_, RetroColors::DARK);
         int sb_h = content_area_h_ * content_area_h_ / content_height_;
         int sb_y = content_y_ + (-scroll_y_ * content_area_h_ / content_height_);
         if (sb_h < 20) sb_h = 20;
-        ui_fast_filled_rectangle(it, 475, sb_y, 3, sb_h, Color(60, 60, 60));
+        ui_fast_filled_rectangle(it, 475, sb_y, 3, sb_h, RetroColors::DIMMER);
       }
       return;
     }
 
     last_full_draw_ms_ = millis();
 
-    // Header: only repaint if it's actually dirty (rare -- title changes)
-    // or we're doing a full / legacy repaint.
+    // Header
     if (draw_all || header_->needs_draw(state)) {
       header_->draw(it, state);
     }
 
-    // Content background: only repaint when a dirty rect FULLY covers the
-    // content area. A per-entry dirty rect must not wipe the whole content
-    // (that would erase sibling entries that won't redraw this frame).
+    // Content background
     bool need_content_bg = draw_all;
     if (!need_content_bg) {
       for (int i = 0; i < UiInvalidation::dirty_count(); i++) {
@@ -170,7 +168,9 @@ class ScrollableDetailScreen : public Screen {
       }
     }
     if (need_content_bg) {
-      ui_fast_filled_rectangle(it, 0, content_y_, 480, 480 - content_y_, Color(10, 10, 10));
+      ui_fast_filled_rectangle(it, 0, content_y_, 480, 480 - content_y_, RetroColors::VOID);
+      // Decorative border between header and content
+      it.line(0, content_y_, 480, content_y_, RetroColors::DIMMER);
     }
 
     for (size_t i = 0; i < entries_.size(); i++) {
@@ -190,46 +190,36 @@ class ScrollableDetailScreen : public Screen {
       }
       if (draw_h <= 0) continue;
 
-      // Skip entries that are outside any dirty rect on partial passes. If
-      // the content bg was repainted above, every entry is implicitly dirty
-      // because its background just got erased, so we draw them all.
       if (!draw_all && !need_content_bg &&
           !UiInvalidation::needs_redraw_in(20, draw_y, 440, draw_h)) {
         continue;
       }
 
-      Color c = e.color;
-      it.rectangle(20, draw_y, 440, draw_h, c);
-
+      // Clipped-corner entry border
       if (draw_y == sy && draw_h == 50) {
-        // If the content bg wasn't repainted, paint inside the entry rect to
-        // erase the previous label/spinner before drawing the new one.
         if (!need_content_bg) {
-          ui_fast_filled_rectangle(it, 21, draw_y + 1, 438, draw_h - 2, Color(10, 10, 10));
+          ui_fast_filled_rectangle(it, 21, draw_y + 1, 438, draw_h - 2, RetroColors::VOID);
         }
+        draw_clipped_border(it, 20, draw_y, 440, draw_h, 5, 5, 5, 5, e.color);
         if (e.loading) {
-          it.printf(240, draw_y + draw_h / 2, entry_font_, c, TextAlign::CENTER, "...");
+          it.printf(240, draw_y + draw_h / 2, entry_font_, e.color, TextAlign::CENTER, "...");
         } else {
-          it.printf(240, draw_y + draw_h / 2, entry_font_, c, TextAlign::CENTER, "%s", e.text);
+          it.printf(240, draw_y + draw_h / 2, entry_font_, e.color, TextAlign::CENTER, "%s", e.text);
         }
       }
     }
 
     if (max_scroll_ > 0) {
-      // Scrollbar always paints on slow path -- it's cheap and tracks scroll.
       int sb_h = content_area_h_ * content_area_h_ / content_height_;
       int sb_y = content_y_ + (-scroll_y_ * content_area_h_ / content_height_);
       if (sb_h < 20) sb_h = 20;
       if (!need_content_bg) {
-        // Erase the scrollbar track in the small affected vertical region.
-        ui_fast_filled_rectangle(it, 475, content_y_, 3, content_area_h_, Color(10, 10, 10));
+        ui_fast_filled_rectangle(it, 475, content_y_, 3, content_area_h_, RetroColors::VOID);
       }
-      ui_fast_filled_rectangle(it, 475, sb_y, 3, sb_h, Color(60, 60, 60));
+      ui_fast_filled_rectangle(it, 475, sb_y, 3, sb_h, RetroColors::DIMMER);
     }
   }
 
-  // Mark a single entry's screen-space rect dirty so that the next render
-  // only repaints that entry (loading spinner toggle, etc.).
   void mark_entry_dirty(int index) {
     int sy = content_y_ + 10 + index * 55 + scroll_y_;
     int draw_y = sy;

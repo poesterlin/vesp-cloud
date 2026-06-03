@@ -6,6 +6,8 @@ services:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/esphome
       - CONCURRENT_JOBS=4
       - APP_EDITION=cloud
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
     networks:
       - traefik_web
     labels:

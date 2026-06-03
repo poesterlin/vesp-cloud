@@ -47,7 +47,7 @@ export async function processStripeEvent(
   webhookSecret: string
 ): Promise<void> {
   const stripe = getStripe();
-  const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+  const event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
 
   if (!isTrackedEvent(event.type)) return;
 

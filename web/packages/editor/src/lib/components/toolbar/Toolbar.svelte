@@ -8,9 +8,15 @@
     onExport: () => void;
     onSettings: () => void;
     onDebug: () => void;
+    showExportInfo?: boolean;
   }
 
-  let { onExport, onSettings, onDebug }: Props = $props();
+  let {
+    onExport,
+    onSettings,
+    onDebug,
+    showExportInfo = false,
+  }: Props = $props();
 </script>
 
 <header class="toolbar">
@@ -70,7 +76,25 @@
       </svg>
     </button>
     <div class="separator"></div>
-    <button class="primary" onclick={onExport}>Export Code</button>
+    <button
+      class="primary"
+      onclick={onExport}
+      title={showExportInfo
+        ? "You are currently out of credits for cloud builds"
+        : "Flash Device"}
+    >
+      Export Code
+      {#if showExportInfo}
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          aria-label="Cloud build credits required"
+        >
+          <path d={mdiIcons.mdiInformationOutline} />
+        </svg>
+      {/if}
+    </button>
   </div>
 </header>
 
@@ -113,7 +137,6 @@
   .settings-btn {
     display: flex;
     gap: 8px;
-
   }
 
   .projects-link:hover {
@@ -157,6 +180,12 @@
   button {
     font-size: 12px;
     padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 
   .icon {

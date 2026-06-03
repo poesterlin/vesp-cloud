@@ -3,6 +3,9 @@ import { getDb } from '$lib/db';
 import { projects } from '$lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
+import { env } from '$env/dynamic/private';
+
+const IS_CLOUD = env.APP_EDITION === 'cloud';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
   if (!locals.user) error(401);
@@ -16,6 +19,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   if (!row) error(404, 'Project not found');
 
   return {
+    isCloud: IS_CLOUD,
     project: {
       id: row.id,
       name: row.name,

@@ -8,12 +8,18 @@
   let purchasing = $state<string | null>(null);
   let error = $state<string | null>(null);
 
+  const currency = Intl.NumberFormat("us", {
+    style: "currency",
+    currency: "EUR",
+    compactDisplay: "long",
+    minimumFractionDigits: 2,
+    currencyDisplay: "symbol",
+  });
+
   const packs = $derived(
     (data.packs ?? []).map((p) => ({
       ...p,
-      price: p.credits === 10 ? "$5" : p.credits === 50 ? "$20" : "$60",
-      unitPrice: p.credits === 10 ? "$0.50" : p.credits === 50 ? "$0.40" : "$0.30",
-      popular: p.credits === 50,
+      unitPrice: p.price / p.credits,
     })),
   );
 
@@ -65,7 +71,9 @@
         Payment successful! Credits will appear shortly.
       </div>
     {:else if checkoutStatus === "cancelled"}
-      <div class="toast muted">Checkout cancelled. Your credits remain unchanged.</div>
+      <div class="toast muted">
+        Checkout cancelled. Your credits remain unchanged.
+      </div>
     {/if}
 
     {#if error}
@@ -85,25 +93,31 @@
 
     <section>
       <h1>Buy Build Credits</h1>
-      <p class="subhead">Top up your account and keep your firmware build workflow moving.</p>
+      <p class="subhead">
+        Top up your account and keep your firmware build workflow moving.
+      </p>
       <p class="legal-note">
-        By purchasing credits, you agree to our <a href="/terms">Terms of Service</a>. Credits are non-refundable
-        except where required by law.
+        By purchasing credits, you agree to our <a href="/terms"
+          >Terms of Service</a
+        >. Credits are non-refundable except where required by law.
       </p>
 
       <div class="packs-grid">
         {#each packs as pack (pack.priceKey)}
-          <article class="pack-card" class:popular={pack.popular}>
-            {#if pack.popular}
+          {@const popular = pack.credits === 50}
+          <article class="pack-card" class:popular>
+            {#if popular}
               <div class="popular-badge">Best Value</div>
             {/if}
             <div class="pack-name">{pack.name}</div>
             <div class="pack-credits">{pack.credits} builds</div>
-            <div class="pack-price">{pack.price}</div>
-            <div class="pack-unit">({pack.unitPrice} per build)</div>
+            <div class="pack-price">{currency.format(pack.price)}</div>
+            <div class="pack-unit">
+              {currency.format(pack.unitPrice)} per build
+            </div>
             <button
               class="buy-btn"
-              class:popular-btn={pack.popular}
+              class:popular-btn={popular}
               disabled={purchasing === pack.priceKey}
               onclick={() => buyPack(pack)}
             >
@@ -123,9 +137,16 @@
 <style>
   .credits-page {
     min-height: 100vh;
-    background:
-      radial-gradient(circle at 20% 0%, rgba(74, 158, 254, 0.17), transparent 42%),
-      radial-gradient(circle at 80% 100%, rgba(97, 218, 251, 0.12), transparent 50%),
+    background: radial-gradient(
+        circle at 20% 0%,
+        rgba(74, 158, 254, 0.17),
+        transparent 42%
+      ),
+      radial-gradient(
+        circle at 80% 100%,
+        rgba(97, 218, 251, 0.12),
+        transparent 50%
+      ),
       var(--color-bg-primary);
     color: #fff;
   }
@@ -203,7 +224,11 @@
     margin: 1.1rem 0 2rem;
     border-radius: 1rem;
     border: 1px solid rgba(74, 158, 254, 0.3);
-    background: linear-gradient(135deg, rgba(26, 26, 46, 0.85), rgba(20, 20, 36, 0.95));
+    background: linear-gradient(
+      135deg,
+      rgba(26, 26, 46, 0.85),
+      rgba(20, 20, 36, 0.95)
+    );
   }
 
   .balance-label {
@@ -265,7 +290,11 @@
 
   .pack-card.popular {
     border-color: rgba(74, 158, 254, 0.45);
-    background: linear-gradient(180deg, rgba(37, 37, 65, 0.92), rgba(27, 27, 46, 0.95));
+    background: linear-gradient(
+      180deg,
+      rgba(37, 37, 65, 0.92),
+      rgba(27, 27, 46, 0.95)
+    );
   }
 
   .popular-badge {

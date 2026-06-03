@@ -23,6 +23,12 @@
   let showDebug = $state(false);
   let loading = $state(true);
   let error = $state<string | null>(null);
+  let creditBalance = $state<number | null>(null);
+
+  const compileCost = 1;
+  let showExportInfo = $derived(
+    data.isCloud && creditBalance !== null && creditBalance < compileCost,
+  );
 
   onMount(() => {
     if (data.project) {
@@ -32,7 +38,29 @@
       error = "Project not found";
       loading = false;
     }
+
+    if (data.isCloud) {
+      loadCreditBalance();
+    }
   });
+
+  async function loadCreditBalance() {
+    try {
+      const res = await fetch("/api/credits/balance");
+      if (!res.ok) return;
+      const payload = await res.json();
+      creditBalance = typeof payload.balance === "number" ? payload.balance : null;
+    } catch {
+      creditBalance = null;
+    }
+  }
+
+  function openExport() {
+    showExport = !showExport;
+    if (showExport && data.isCloud) {
+      loadCreditBalance();
+    }
+  }
 
   function handleEscapeClose(event: KeyboardEvent) {
     if (event.key !== "Escape") return;
@@ -68,9 +96,10 @@
   </div>
 {:else if projectStore.project}
   <Toolbar 
-    onExport={() => (showExport = !showExport)} 
+    onExport={openExport}
     onSettings={() => (showSettings = !showSettings)}
     onDebug={() => (showDebug = !showDebug)}
+    {showExportInfo}
   />
 
   <div class="editor-container">

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import { projectStore } from "$lib/stores/project.svelte";
   import {
     generateESPHomeYAML,
@@ -7,10 +8,8 @@
     generateUIScreensHeader,
     generateFontsYAML,
   } from "$lib/codegen/esphome";
-  import { generateSecretsYAML } from "$lib/codegen/secrets";
   import { validateProject } from "$lib/codegen/validations";
   import { assert } from "$lib/utils";
-  import type { Project } from "@esphome-designer/schema";
   import JSZip from "jszip";
 
   // Static ESPHome template files (base.yaml, hardware.yaml, fonts.yaml,
@@ -197,17 +196,7 @@
       // Mirror the server queue: if we have a firmware token and the
       // project does not already carry a firmwareUpdateUrl, inject one
       // pointing at this server so OTA updates work out of the box.
-      const baseProject = projectStore.project;
-      const project: Project =
-        projectStore.firmwareToken && !baseProject.secrets?.firmwareUpdateUrl
-          ? {
-              ...baseProject,
-              secrets: {
-                ...baseProject.secrets,
-                firmwareUpdateUrl: `${window.location.origin}/api/firmware/${projectStore.firmwareToken}/manifest`,
-              },
-            }
-          : baseProject;
+      const project = projectStore.project;
 
       // 1. Copy bundled static templates (base.yaml, hardware.yaml,
       //    includes/*.h, ...). fonts.yaml is held back so we can append
@@ -242,7 +231,7 @@
 
       // 4. The main ESPHome config + secrets.
       zip.file(`${fileName}.yaml`, generateESPHomeYAML(project));
-      zip.file("secrets.yaml", generateSecretsYAML(project));
+      // zip.file("secrets.yaml", generateSecretsYAML(project));
 
       const content = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(content);
@@ -263,6 +252,21 @@
   );
 
   let copied = $state(false);
+
+  const insufficientCreditsRegex =
+    /Insufficient credits\. Cost: (?<cost>\d+), balance: (?<balance>\d+)/;
+
+  let insufficientCreditsDetails = $derived.by(() => {
+    if (!compilationError) return null;
+    const match = compilationError.match(insufficientCreditsRegex);
+    if (!match?.groups) return null;
+
+    return {
+      cost: Number(match.groups.cost),
+      balance: Number(match.groups.balance),
+    };
+  });
+
   function copyFirmwareUrl() {
     if (firmwareUrl) {
       navigator.clipboard.writeText(firmwareUrl);
@@ -436,9 +440,19 @@
           </div>
           <p class="compile-hint">This can take a few minutes on first build</p>
         {:else}
-          <button class="retry-btn" onclick={() => compile()}>
-            Try Again
-          </button>
+          {#if insufficientCreditsDetails}
+            <div class="credits-cta">
+              <p class="credits-cta-title">You're out of credits</p>
+              <p class="credits-cta-copy">
+                This build costs {insufficientCreditsDetails.cost} credit{insufficientCreditsDetails.cost === 1 ? "" : "s"}, and your balance is {insufficientCreditsDetails.balance}.
+              </p>
+              <button class="primary-action" onclick={() => goto("/credits")}>Add Credits</button>
+            </div>
+          {:else}
+            <button class="retry-btn" onclick={() => compile()}>
+              Try Again
+            </button>
+          {/if}
         {/if}
       </div>
 
@@ -891,6 +905,31 @@
   .retry-btn:hover {
     border-color: var(--color-accent);
     background: var(--color-bg-tertiary, #333);
+  }
+
+  .credits-cta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    width: 100%;
+    padding: var(--spacing-lg);
+    border: 1px solid rgba(255, 152, 0, 0.35);
+    border-radius: 12px;
+    background: rgba(255, 152, 0, 0.08);
+  }
+
+  .credits-cta-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffcc80;
+  }
+
+  .credits-cta-copy {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
   }
 
   /* Flash view */

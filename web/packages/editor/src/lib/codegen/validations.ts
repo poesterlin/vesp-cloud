@@ -8,6 +8,8 @@ import type {
   ConditionalAreaComponent,
   ContainerComponent,
   LightStateComponent,
+  TodoListComponent,
+  ImageComponent,
 } from "@esphome-designer/schema";
 
 export interface ValidationError {
@@ -57,6 +59,8 @@ export type ValidationRule = (project: Project) => ValidationError[];
 const RULES: ValidationRule[] = [
   validateActionTargets,
   validateLightStateBinding,
+  validateTodoListBinding,
+  validateImageHaBinding,
 ];
 
 export function validateProject(project: Project): ValidationError[] {
@@ -175,6 +179,46 @@ function validateLightStateBinding(project: Project): ValidationError[] {
       errors.push({
         type: "error" as const,
         message: `Needs an entity binding to display state`,
+        componentId: c.id,
+        componentLabel: componentLabel(c),
+      });
+    }
+  }
+
+  return errors;
+}
+
+function validateTodoListBinding(project: Project): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const components = collectAllComponents(project);
+
+  for (const c of components) {
+    if (c.type !== "todo_list") continue;
+    const tl = c as TodoListComponent;
+    if (!tl.itemsBinding?.entityId) {
+      errors.push({
+        type: "error" as const,
+        message: `Needs an entity binding to display items`,
+        componentId: c.id,
+        componentLabel: componentLabel(c),
+      });
+    }
+  }
+
+  return errors;
+}
+
+function validateImageHaBinding(project: Project): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const components = collectAllComponents(project);
+
+  for (const c of components) {
+    if (c.type !== "image") continue;
+    const img = c as ImageComponent;
+    if (img.imageSource === "ha" && !img.imageBinding?.entityId) {
+      errors.push({
+        type: "error" as const,
+        message: `Needs an entity binding for Home Assistant image`,
         componentId: c.id,
         componentLabel: componentLabel(c),
       });

@@ -479,43 +479,48 @@
           </div>
         {/if}
 
-        <div class="field">
-          <span class="field-label">Type</span>
-          <select
-            value={selectedComponent.image_type ?? "RGB565"}
-            onchange={(e) =>
-              updateProperty("image_type", e.currentTarget.value)}
-          >
-            <option value="BINARY">Binary</option>
-            <option value="GRAYSCALE">Grayscale</option>
-            <option value="RGB565">RGB565</option>
-            <option value="RGB">RGB</option>
-          </select>
-        </div>
-        {#if (selectedComponent.imageSource ?? (selectedComponent.imageBinding?.entityId ? "ha" : "static")) === "ha"}
+        <details class="advanced-details">
+          <summary class="advanced-summary">Advanced</summary>
+          <p class="advanced-note">These defaults work for most cases. Adjust only if your image doesn't display correctly.</p>
+
           <div class="field">
-            <span class="field-label">Online</span>
+            <span class="field-label">Type</span>
             <select
-              value={selectedComponent.onlineFormat ?? "png"}
+              value={selectedComponent.image_type ?? "RGB565"}
               onchange={(e) =>
-                updateProperty("onlineFormat", e.currentTarget.value)}
+                updateProperty("image_type", e.currentTarget.value)}
             >
-              <option value="png">PNG</option>
-              <option value="jpeg">JPEG</option>
-              <option value="bmp">BMP</option>
+              <option value="BINARY">Binary</option>
+              <option value="GRAYSCALE">Grayscale</option>
+              <option value="RGB565">RGB565</option>
+              <option value="RGB">RGB</option>
             </select>
           </div>
-        {/if}
-        <div class="field">
-          <span class="field-label">Resize</span>
-          <input
-            type="text"
-            value={selectedComponent.resize ??
-              `${selectedComponent.size?.width ?? 100}x${selectedComponent.size?.height ?? 100}`}
-            placeholder="100x100"
-            oninput={(e) => updateProperty("resize", e.currentTarget.value)}
-          />
-        </div>
+          {#if (selectedComponent.imageSource ?? (selectedComponent.imageBinding?.entityId ? "ha" : "static")) === "ha"}
+            <div class="field">
+              <span class="field-label">Online</span>
+              <select
+                value={selectedComponent.onlineFormat ?? "png"}
+                onchange={(e) =>
+                  updateProperty("onlineFormat", e.currentTarget.value)}
+              >
+                <option value="png">PNG</option>
+                <option value="jpeg">JPEG</option>
+                <option value="bmp">BMP</option>
+              </select>
+            </div>
+          {/if}
+          <div class="field">
+            <span class="field-label">Resize</span>
+            <input
+              type="text"
+              value={selectedComponent.resize ??
+                `${selectedComponent.size?.width ?? 100}x${selectedComponent.size?.height ?? 100}`}
+              placeholder="100x100"
+              oninput={(e) => updateProperty("resize", e.currentTarget.value)}
+            />
+          </div>
+        </details>
       </div>
     {/if}
 
@@ -1045,5 +1050,28 @@
   .validation-error .error-icon {
     flex: 0 0 auto;
     margin-top: 1px;
+  }
+
+  .advanced-details {
+    margin-top: var(--spacing-sm);
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--spacing-sm);
+  }
+
+  .advanced-summary {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .advanced-note {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin: var(--spacing-xs) 0 var(--spacing-sm);
+    line-height: 1.4;
   }
 </style>

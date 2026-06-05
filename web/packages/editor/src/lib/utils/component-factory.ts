@@ -76,7 +76,7 @@ export function createComponent(type: string, x: number, y: number): Component {
       return {
         ...base,
         type: "image",
-        imageSource: "static",
+        imageSource: "ha",
         file: "images/image.png",
         image_type: "RGB565",
         onlineFormat: "png",

@@ -11,7 +11,13 @@ export function validateUsername(username: unknown): username is string {
 }
 
 export function validatePassword(password: unknown): password is string {
-  return typeof password === 'string' && password.length >= 6 && password.length <= 255;
+  return (
+    typeof password === 'string' &&
+    password.length >= 8 &&
+    password.length <= 255 &&
+    /[a-zA-Z]/.test(password) &&
+    /[0-9]/.test(password)
+  );
 }
 
 export function assert(condition: any, message: string): asserts condition;

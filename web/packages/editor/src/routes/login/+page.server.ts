@@ -1,7 +1,7 @@
 import * as auth from '$lib/server/auth';
 import { getDb } from '$lib/db';
 import * as table from '$lib/db/schema';
-import { validatePassword, validateUsername } from '$lib/server/util';
+import { validateUsername } from '$lib/server/util';
 import { verify } from '@node-rs/argon2';
 import { fail, redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
@@ -28,7 +28,7 @@ export const actions: Actions = {
     if (!validateUsername(username)) {
       return fail(400, { message: 'Invalid username' });
     }
-    if (!validatePassword(password)) {
+    if (typeof password !== 'string' || password.length === 0) {
       return fail(400, { message: 'Invalid password' });
     }
 

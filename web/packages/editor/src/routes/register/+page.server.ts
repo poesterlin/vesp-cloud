@@ -35,7 +35,7 @@ export const actions: Actions = {
       return fail(400, { message: 'Username must be 3-31 characters' });
     }
     if (!validatePassword(password)) {
-      return fail(400, { message: 'Password must be 6-255 characters' });
+      return fail(400, { message: 'Password must be 8-255 characters with at least one letter and one number' });
     }
 
     const userId = generateId();

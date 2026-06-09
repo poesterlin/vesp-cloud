@@ -24,7 +24,6 @@
   const accentColor = $derived(colorToCss(theme.colors.accent));
   const foregroundColor = $derived(colorToCss(theme.colors.foreground));
   const dimColor = "rgb(25, 30, 40)";
-  const voidColor = "rgb(2, 3, 5)";
 
   let activeTabId = $derived(
     conditionalEditorStore.getActiveTab(component.id, component.defaultTabId ?? component.tabs[0]?.id),

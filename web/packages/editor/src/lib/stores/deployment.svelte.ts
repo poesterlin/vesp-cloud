@@ -24,6 +24,7 @@ export type JobStatus = {
   completedAt: string | null;
   error: string | null;
   output: string | null;
+  config?: string | null;
 };
 
 function createDeploymentStore() {

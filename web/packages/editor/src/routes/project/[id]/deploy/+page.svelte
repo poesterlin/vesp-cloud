@@ -4,6 +4,7 @@
   import { deploymentStore } from "$lib/stores/deployment.svelte";
   import DeployWizard from "$lib/components/DeployWizard.svelte";
   import BuildHistory from "$lib/components/BuildHistory.svelte";
+  import ChangeSummary from "$lib/components/ChangeSummary.svelte";
   import { onMount } from "svelte";
 
   let { data } = $props();
@@ -41,6 +42,7 @@
 
   <div class="deploy-body">
     <div class="deploy-left">
+      <ChangeSummary />
       <DeployWizard standalone />
     </div>
     <div class="deploy-right">

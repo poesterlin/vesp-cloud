@@ -172,8 +172,9 @@ interval:
 
 # Dummy: forces ESPHome to compile the image component so ImageWidget
 # can access esphome::image::Image::get_data_start() for tiled rendering.
+# Uses BMP (fast decode) at 1x1 to be minimal.
 image:
-  - file: "_dummy.png"
+  - file: "_dummy.bmp"
     id: _img_dummy
     type: RGB565
 

@@ -677,7 +677,7 @@ class TodoPreviewWidget : public Widget {
 
 class LoadingWidget : public Widget {
  public:
-  UiRect bounds() const override { return UiRect{0, 185, 480, 170}; }
+  UiRect bounds() const override { return UiRect{0, 0, 480, 480}; }
 
   bool is_visible(const UiState &state) const override {
     return state.ha_connected == false;
@@ -690,6 +690,7 @@ class LoadingWidget : public Widget {
 
   void draw(display::Display &it, const UiState &state) override {
     (void)state;
+    ui_fast_fill(it, RetroColors::VOID);
 
     const int cx = 240, cy = 240;
     const uint32_t t = millis();

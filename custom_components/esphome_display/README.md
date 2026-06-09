@@ -113,7 +113,7 @@ Add this repository as a custom integration in HACS.
 ### Manual
 
 ```bash
-cp -r custom_components/esphome_display/custom_components/
+cp -r custom_components/esphome_display /config/custom_components/
 ```
 
 Restart Home Assistant, then add the integration via UI.

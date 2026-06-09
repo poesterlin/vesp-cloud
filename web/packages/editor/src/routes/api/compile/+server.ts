@@ -60,6 +60,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
     return json(result);
   } catch (error: any) {
+    if (error.message?.includes('already have an active compilation job')) {
+      return json({ error: error.message }, { status: 429 });
+    }
     return json({ error: error.message }, { status: 500 });
   }
 };

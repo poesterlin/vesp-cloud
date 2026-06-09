@@ -3,7 +3,7 @@ import { spawn, type ChildProcess } from 'child_process';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { getDb, schema } from '$lib/db/index.js';
-import { eq, desc, inArray } from 'drizzle-orm';
+import { eq, desc, inArray, and } from 'drizzle-orm';
 import type { CompilationJob, NewCompilationJob } from '$lib/db/schema';
 import { env } from '$env/dynamic/private';
 import type { Project } from '@esphome-designer/schema';
@@ -69,7 +69,36 @@ export class CompilationQueue extends EventEmitter {
     console.log(`🧹 Marked ${inProgress.length} in-progress builds as failed`);
   }
 
+  async hasUserActiveJob(userId: string): Promise<boolean> {
+    for (const job of this.jobs.values()) {
+      if (job.userId === userId && ['pending', 'running', 'queued'].includes(job.status)) {
+        return true;
+      }
+    }
+
+    const db = getDb();
+    const dbJobs = await db
+      .select()
+      .from(schema.compilationJobs)
+      .where(
+        and(
+          eq(schema.compilationJobs.userId, userId),
+          inArray(schema.compilationJobs.status, ['pending', 'running', 'queued']),
+        ),
+      )
+      .limit(1);
+
+    return dbJobs.length > 0;
+  }
+
   async addJob(job: CompilationJob | NewCompilationJob): Promise<void> {
+    if (job.userId) {
+      const hasActive = await this.hasUserActiveJob(job.userId);
+      if (hasActive) {
+        throw new Error('You already have an active compilation job. Please wait for it to finish.');
+      }
+    }
+
     const fullJob = job as CompilationJob;
     this.jobs.set(fullJob.id, fullJob);
     this.queue.push(fullJob);
@@ -340,12 +369,25 @@ export class CompilationQueue extends EventEmitter {
     completed: number;
     failed: number;
   } {
-    return {
-      total: 0,
-      pending: this.queue.length,
-      running: this.activeJobs.size,
-      completed: 0,
-      failed: 0,
-    };
+    let total = 0, pending = 0, running = 0, completed = 0, failed = 0;
+    for (const job of this.jobs.values()) {
+      total++;
+      switch (job.status) {
+        case 'pending':
+        case 'queued':
+          pending++;
+          break;
+        case 'running':
+          running++;
+          break;
+        case 'completed':
+          completed++;
+          break;
+        case 'failed':
+          failed++;
+          break;
+      }
+    }
+    return { total, pending, running, completed, failed };
   }
 }

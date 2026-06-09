@@ -1,0 +1,48 @@
+# Editor Setup Review (Queue, Build, Auth, Payments, Errors, Logs)
+
+## Queue and Build
+
+- [x] `getStats()` is incorrect: `total`, `completed`, and `failed` always return `0`.
+- [ ] `this.jobs` in-memory map is never pruned and can grow indefinitely.
+- [ ] `PYTHONPATH` is hardcoded to Python `3.11`, which can break on version changes.
+- [ ] Credits are deducted before compile and not refunded when compilation fails.
+<!-- - [ ] Worker/db init in `hooks.server.ts` is unawaited; requests can arrive before readiness. -->
+- [~] No per-user rate limiting on compile job submission. make it only 1 job.
+- [ ] Job insertion and queue processing can leave orphaned pending jobs after crashes. TODO: check again: web/packages/editor/src/lib/queue/index.ts:51 in failInProgressJobs()
+- [ ] Shutdown uses `process.kill()` with basic handling; child cleanup can be incomplete.
+- [ ] Build retention keeps last 10 only; no way to pin/retain important builds.
+
+## Authentication
+
+- [ ] Session cookie is missing `httpOnly`, `secure`, and `sameSite` flags.
+- [ ] No CSRF protection on mutating POST endpoints. TODO: this is checked by sveltekit right?
+- [ ] No login rate limiting or account lockout for brute-force protection. 
+- [ ] Argon2 settings are acceptable but below stronger modern recommendations.
+- [ ] Registration catch block hides root cause (`username taken` vs real server error).
+- [ ] Password policy is weak (length-only, min 6 chars).
+<!-- - [ ] Login flow timing/validation behavior may allow weak username enumeration signals. -->
+<!-- - [ ] Email can be provided but there is no verification flow. -->
+
+## Payments and Credits
+
+<!-- - [ ] Stripe price IDs are hardcoded in source instead of environment/config. -->
+- [ ] Webhook idempotency relies on DB uniqueness only; no processed-event ledger.
+- [ ] Webhook route returns `400` for all failures, including server-side/transient errors.
+<!-- - [ ] No customer billing portal integration. -->
+
+## Error Handling
+
+- [ ] API error responses return raw `error.message`, potentially leaking internals.
+- [ ] Multiple endpoints use broad catch-and-return patterns without sanitization.
+<!-- - [ ] Project validation runs twice (API and worker), producing inconsistent UX paths. -->
+- [ ] No circuit breaker/backoff when compile environment is consistently broken.
+- [ ] Compile timeout and compile failure are not clearly distinguished in user-facing errors.
+
+## Logging and Observability
+
+- [ ] Logging uses plain `console.*` only; no structured logs or level controls. Add correlation IDs across API, queue, and subprocess logs.
+- [ ] Stripe success paths are minimally logged compared to error paths.
+
+## Infrastructure and Ops
+
+- [ ] Production image includes broader dependency set than necessary (dev prune not explicit).

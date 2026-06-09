@@ -17,7 +17,7 @@
 - [x] Session cookie is missing `httpOnly`, `secure`, and `sameSite` flags.
 - [x] No CSRF protection on mutating POST endpoints. TODO: this is checked by sveltekit right?
 - [x] No login rate limiting or account lockout for brute-force protection. 
-- [ ] Argon2 settings are acceptable but below stronger modern recommendations.
+- [x] Argon2 settings are acceptable but below stronger modern recommendations.
 - [ ] Registration catch block hides root cause (`username taken` vs real server error).
 - [ ] Password policy is weak (length-only, min 6 chars).
 <!-- - [ ] Login flow timing/validation behavior may allow weak username enumeration signals. -->

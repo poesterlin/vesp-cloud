@@ -31,8 +31,8 @@ export const actions: Actions = {
 
     const userId = generateId();
     const passwordHash = await hash(password, {
-      memoryCost: 19456,
-      timeCost: 2,
+      memoryCost: 65536,
+      timeCost: 3,
       outputLen: 32,
       parallelism: 1,
     });

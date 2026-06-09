@@ -4,6 +4,7 @@
 #include "ui_invalidation.h"
 #include "ui_types.h"
 #include "ui_retro.h"
+#include "esphome/components/image/image.h"
 #include <cmath>
 #include <memory>
 #include <vector>
@@ -111,6 +112,8 @@ class ImageWidget : public Widget {
  public:
   using Callback = std::function<void()>;
 
+  static constexpr int TILE_ROWS = 32;
+
   ImageWidget(UiRect rect, esphome::display::BaseImage *image,
               Color color_on = display::COLOR_ON,
               Color color_off = display::COLOR_OFF)
@@ -147,32 +150,75 @@ class ImageWidget : public Widget {
   void draw(display::Display &it, const UiState &state) override {
     if (image_ == nullptr) return;
 
-    if (!fully_rendered_ &&
-        state.images_rendered_this_frame >= UiState::MAX_IMAGES_PER_FRAME) {
+    auto *img = static_cast<esphome::image::Image *>(image_);
+    if (img->get_data_start() == nullptr) {
       draw_placeholder(it);
-      if (!deferred_) {
-        deferred_ = true;
-        UiInvalidation::request_continue();
+      return;
+    }
+
+    if (!fully_rendered_) {
+      if (state.images_rendered_this_frame >= UiState::MAX_IMAGES_PER_FRAME
+          && tile_row_ == 0) {
+        draw_placeholder(it);
+        if (!deferred_) {
+          deferred_ = true;
+          UiInvalidation::request_continue();
+        }
+        return;
       }
+      render_tile(it, state);
       return;
     }
 
     ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
     it.image(rect_.x, rect_.y, image_, color_on_, color_off_);
-    fully_rendered_ = true;
-    deferred_ = false;
-    const_cast<UiState&>(state).images_rendered_this_frame++;
   }
 
  private:
+  void render_tile(display::Display &it, const UiState &state) {
+    auto *img = static_cast<esphome::image::Image *>(image_);
+    const int iw = img->get_width();
+    const int ih = img->get_height();
+    if (iw <= 0 || ih <= 0) { fully_rendered_ = true; return; }
+
+    const int ox = rect_.x + (rect_.w - iw) / 2;
+    const int oy = rect_.y + (rect_.h - ih) / 2;
+
+    if (tile_row_ == 0) {
+      ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
+    }
+
+    int tile_h = TILE_ROWS;
+    if (tile_row_ + tile_h > ih) tile_h = ih - tile_row_;
+
+    const uint8_t *data = img->get_data_start();
+    const uint8_t *tile_data = data + (tile_row_ * iw * 2);
+
+    it.draw_pixels_at(ox, oy + tile_row_, iw, tile_h, tile_data,
+                      display::COLOR_ORDER_RGB, display::COLOR_BITNESS_565,
+                      true, 0, 0, 0);
+
+    tile_row_ += TILE_ROWS;
+    if (tile_row_ >= ih) {
+      fully_rendered_ = true;
+      deferred_ = false;
+      return;
+    }
+
+    UiInvalidation::request_continue();
+    const_cast<UiState&>(state).images_rendered_this_frame++;
+  }
+
   void draw_placeholder(display::Display &it) const {
+    auto *img = static_cast<esphome::image::Image *>(image_);
+    const bool downloading = (img->get_data_start() == nullptr);
     ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
     draw_clipped_border(it, rect_.x + 2, rect_.y + 2, rect_.w - 4, rect_.h - 4,
                         4, 4, 4, 4, RetroColors::DIMMER);
     if (g_theme.label.font != nullptr) {
       it.printf(rect_.x + rect_.w / 2, rect_.y + rect_.h / 2,
                 g_theme.label.font, RetroColors::DIMMER,
-                TextAlign::CENTER, "...");
+                TextAlign::CENTER, downloading ? "LOADING..." : "...");
     }
   }
 
@@ -184,6 +230,7 @@ class ImageWidget : public Widget {
   Callback tap_callback_;
   bool fully_rendered_ = false;
   bool deferred_ = false;
+  int tile_row_ = 0;
 };
 
 class LabelWidget : public Widget {
@@ -643,15 +690,9 @@ class LoadingWidget : public Widget {
 
   void draw(display::Display &it, const UiState &state) override {
     (void)state;
-    const bool first_pass = !baseline_set_;
-    baseline_set_ = true;
 
     const int cx = 240, cy = 240;
     const uint32_t t = millis();
-
-    if (first_pass) {
-      ui_fast_fill(it, RetroColors::VOID);
-    }
 
     const int segments = 8;
     for (int i = 0; i < segments; i++) {
@@ -685,7 +726,6 @@ class LoadingWidget : public Widget {
   }
 
  private:
-  bool baseline_set_ = false;
 };
 
 #include "ui_tab_container.h"

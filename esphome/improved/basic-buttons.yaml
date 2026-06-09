@@ -170,6 +170,13 @@ interval:
           // early at the needs_redraw() check.
           id(main_display).update();
 
+# Dummy: forces ESPHome to compile the image component so ImageWidget
+# can access esphome::image::Image::get_data_start() for tiled rendering.
+image:
+  - file: "_dummy.png"
+    id: _img_dummy
+    type: RGB565
+
 # Dummy: forces ESPHome to compile api::HomeAssistantServiceCallAction
 # so the generic C++ lambda in on_boot can use it for dynamic service calls.
 script:

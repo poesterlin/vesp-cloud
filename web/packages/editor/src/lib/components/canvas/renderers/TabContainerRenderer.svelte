@@ -46,6 +46,7 @@
   function selectTab(tabId: string) {
     conditionalEditorStore.setActiveTab(component.id, tabId);
     canvasPasteTargetStore.set({ scope: "tab", parentId: component.id, tabId });
+    selectionStore.select(component.id);
   }
 
   function handleAddTab() {

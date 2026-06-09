@@ -1,5 +1,5 @@
 import { startWorker, stopWorker } from "$lib/utils/worker";
-import type { Handle } from "@sveltejs/kit";
+import { sequence, json, type Handle } from "@sveltejs/kit";
 import { getDb } from "./lib/db";
 import * as auth from "$lib/server/auth";
 import { env } from "$env/dynamic/private";
@@ -36,6 +36,30 @@ if (!workerStarted) {
   });
 }
 
+const handleCsrf: Handle = async ({ event, resolve }) => {
+  const method = event.request.method;
+  if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+    return resolve(event);
+  }
+
+  const origin = event.request.headers.get('origin');
+  if (!origin) return resolve(event);
+
+  const url = new URL(event.request.url);
+  const host = event.request.headers.get('host') || url.host;
+
+  try {
+    const originUrl = new URL(origin);
+    if (originUrl.host !== host) {
+      return json({ error: 'CSRF check failed' }, { status: 403 });
+    }
+  } catch {
+    return json({ error: 'Invalid origin' }, { status: 403 });
+  }
+
+  return resolve(event);
+};
+
 const handleAuth: Handle = async ({ event, resolve }) => {
   const sessionToken = event.cookies.get(auth.sessionCookieName);
   if (!sessionToken) {
@@ -57,4 +81,4 @@ const handleAuth: Handle = async ({ event, resolve }) => {
   return resolve(event);
 };
 
-export const handle: Handle = handleAuth;
+export const handle: Handle = sequence(handleCsrf, handleAuth);

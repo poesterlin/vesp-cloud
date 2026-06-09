@@ -49,7 +49,7 @@ class UiApp {
 #if UI_PROFILE
     if (UiInvalidation::is_full_dirty() &&
         !screens_.current()->draws_own_background() &&
-        state_.ha_connected) {
+        !state_.should_show_loading()) {
       const uint32_t t = micros();
       draw_retro_background(it);
       UiProfileTimer::fill_us = micros() - t;
@@ -60,7 +60,7 @@ class UiApp {
 #else
     if (UiInvalidation::is_full_dirty() &&
         !screens_.current()->draws_own_background() &&
-        state_.ha_connected) {
+        !state_.should_show_loading()) {
       draw_retro_background(it);
     }
     screens_.draw(it, state_);

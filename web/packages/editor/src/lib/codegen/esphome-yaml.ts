@@ -75,6 +75,25 @@ function generateOnlineImagesYAML(project: Project): string {
     lines.push(`    on_download_finished:`);
     lines.push(`      then:`);
     lines.push(`        - lambda: |-`);
+    lines.push(`            g_ui_app.state().online_images_completed++;`);
+    lines.push(`            if (g_ui_app.state().image_bootstrap_active) {`);
+    lines.push(`              const int done = g_ui_app.state().online_images_completed + g_ui_app.state().online_images_failed;`);
+    lines.push(`              if (done >= g_ui_app.state().online_images_expected) {`);
+    lines.push(`                g_ui_app.state().image_bootstrap_active = false;`);
+    lines.push(`              }`);
+    lines.push(`            }`);
+    lines.push(`            UiRedraw::request_full();`);
+    lines.push(`            UiRedraw::trigger_display_update();`);
+    lines.push(`    on_error:`);
+    lines.push(`      then:`);
+    lines.push(`        - lambda: |-`);
+    lines.push(`            g_ui_app.state().online_images_failed++;`);
+    lines.push(`            if (g_ui_app.state().image_bootstrap_active) {`);
+    lines.push(`              const int done = g_ui_app.state().online_images_completed + g_ui_app.state().online_images_failed;`);
+    lines.push(`              if (done >= g_ui_app.state().online_images_expected) {`);
+    lines.push(`                g_ui_app.state().image_bootstrap_active = false;`);
+    lines.push(`              }`);
+    lines.push(`            }`);
     lines.push(`            UiRedraw::request_full();`);
     lines.push(`            UiRedraw::trigger_display_update();`);
   }
@@ -83,6 +102,10 @@ function generateOnlineImagesYAML(project: Project): string {
 
 function hasOnlineImages(project: Project): boolean {
   return collectImageComponents(project).some(c => isHomeAssistantImage(c) && !!c.imageBinding?.entityId);
+}
+
+function countOnlineImages(project: Project): number {
+  return collectImageComponents(project).filter(c => isHomeAssistantImage(c) && !!c.imageBinding?.entityId).length;
 }
 
 const BINDER_BY_TYPE: Record<string, string> = {
@@ -217,6 +240,7 @@ export function generateESPHomeYAML(project: Project, _firmwareVersion?: string)
   const deviceName = sanitizeDeviceName(project.name);
   const friendlyName = project.name;
   const onlineImagesEnabled = hasOnlineImages(project);
+  const onlineImageCount = countOnlineImages(project);
   const httpOtaEnabled = !!(project.secrets?.firmwareUpdateUrl);
   const httpRequestEnabled = onlineImagesEnabled || httpOtaEnabled;
   const bindings = generateBindings(project);
@@ -294,6 +318,11 @@ esphome:
             call.play();
           };
           UiRedraw::set_display_updater([]() { id(main_display).update(); });
+          g_ui_app.state().online_images_expected = ${onlineImageCount};
+          g_ui_app.state().online_images_completed = 0;
+          g_ui_app.state().online_images_failed = 0;
+          g_ui_app.state().image_bootstrap_active = false;
+          g_ui_app.state().image_bootstrap_started_at = 0;
           UiRedraw::request_full();
           id(main_display).update();
 ${haBaseUrlLocal}
@@ -456,11 +485,32 @@ interval:
           if (connected != g_ui_app.state().ha_connected) {
             g_ui_app.state().ha_connected = connected;
             if (!connected) {
+              g_ui_app.state().image_bootstrap_active = false;
+              g_ui_app.state().online_images_completed = 0;
+              g_ui_app.state().online_images_failed = 0;
               g_ui_app.screens().navigate_to(UiScreenId::Home);
+            } else {
+              if (g_ui_app.state().online_images_expected > 0) {
+                g_ui_app.state().image_bootstrap_active = true;
+                g_ui_app.state().image_bootstrap_started_at = millis();
+                g_ui_app.state().online_images_completed = 0;
+                g_ui_app.state().online_images_failed = 0;
+              } else {
+                g_ui_app.state().image_bootstrap_active = false;
+              }
             }
             UiRedraw::request_full();
             id(main_display).update();
             return;
+          }
+          if (connected && g_ui_app.state().image_bootstrap_active) {
+            if (millis() - g_ui_app.state().image_bootstrap_started_at
+                >= UiState::ONLINE_IMAGE_BOOTSTRAP_TIMEOUT_MS) {
+              g_ui_app.state().image_bootstrap_active = false;
+              UiRedraw::request_full();
+              id(main_display).update();
+              return;
+            }
           }
           if (!connected) {
             id(main_display).update();

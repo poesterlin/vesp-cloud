@@ -682,7 +682,7 @@ class LoadingWidget : public Widget {
   UiRect bounds() const override { return UiRect{0, 0, 480, 480}; }
 
   bool is_visible(const UiState &state) const override {
-    return state.ha_connected == false;
+    return state.should_show_loading();
   }
 
   bool is_loading_widget() const override { return true; }

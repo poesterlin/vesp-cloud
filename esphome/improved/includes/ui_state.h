@@ -75,6 +75,22 @@ struct UiState {
   AppStage app_stage = AppStage::Booting;
   uint32_t ha_connected_at = 0;
 
+  bool image_bootstrap_active = false;
+  uint32_t image_bootstrap_started_at = 0;
+  int online_images_expected = 0;
+  int online_images_completed = 0;
+  int online_images_failed = 0;
+  static constexpr uint32_t ONLINE_IMAGE_BOOTSTRAP_TIMEOUT_MS = 10000;
+
+  bool should_show_loading() const {
+    if (!ha_connected) return true;
+    if (!image_bootstrap_active) return false;
+    if (online_images_expected <= 0) return false;
+    const int done = online_images_completed + online_images_failed;
+    if (done >= online_images_expected) return false;
+    return (millis() - image_bootstrap_started_at) < ONLINE_IMAGE_BOOTSTRAP_TIMEOUT_MS;
+  }
+
   int images_rendered_this_frame = 0;
   static constexpr int MAX_IMAGES_PER_FRAME = 2;
 };

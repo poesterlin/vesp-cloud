@@ -66,7 +66,7 @@ class GenericScreen : public Screen {
   }
 
   void draw(display::Display &it, const UiState &state) override {
-    if (!state.ha_connected) {
+    if (state.should_show_loading()) {
       for (auto &w : widgets_) {
         if (w->is_loading_widget()) { w->draw(it, state); return; }
       }

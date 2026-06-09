@@ -5,6 +5,15 @@ import { generateId, validatePassword, validateUsername } from '$lib/server/util
 import { hash } from '@node-rs/argon2';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+
+function isUniqueConstraintError(err: unknown, constraintName: string): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const code = 'code' in err ? (err as { code?: unknown }).code : undefined;
+  const constraint = 'constraint' in err
+    ? (err as { constraint?: unknown }).constraint
+    : undefined;
+  return code === '23505' && typeof constraint === 'string' && constraint.includes(constraintName);
+}
 import { ensureBalanceExists } from '$lib/credits';
 
 export const load: PageServerLoad = async (event) => {
@@ -53,8 +62,15 @@ export const actions: Actions = {
       auth.setSessionTokenCookie(event, sessionToken, session.expiresAt);
 
       await ensureBalanceExists(userId);
-    } catch {
-      return fail(500, { message: 'Username already taken or server error' });
+    } catch (e) {
+      if (isUniqueConstraintError(e, 'user_username_unique')) {
+        return fail(409, { message: 'Username already taken' });
+      }
+      if (isUniqueConstraintError(e, 'user_email_unique')) {
+        return fail(409, { message: 'Email already in use' });
+      }
+      console.error('Registration error:', e);
+      return fail(500, { message: 'An error occurred during registration' });
     }
 
     return redirect(302, redirectTo || '/');

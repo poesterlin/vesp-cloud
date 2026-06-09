@@ -17,8 +17,9 @@ import { collectProjectIconNames, normalizeIconName } from "./utils";
 import mdiCodepoints from "./mdi-codepoints.json" with { type: "json" };
 
 /** Pixel size of the default MDI icon font generated in fonts.yaml. */
-const ICON_FONT_SIZE = 24;
+export const ICON_FONT_SIZE = 24;
 
+/** Generated ESPHome font id for the default MDI icon font. */
 export const ICON_FONT_ID = `mdi_icons_${ICON_FONT_SIZE}`;
 
 /**
@@ -27,7 +28,7 @@ export const ICON_FONT_ID = `mdi_icons_${ICON_FONT_SIZE}`;
  * Names are kebab-case without the `mdi:` prefix. Codepoints are hex
  * strings (e.g., "F0244"). See `mdi-codepoints.json` for the data.
  */
-const MDI_ICONS: Record<string, string> = mdiCodepoints as Record<string, string>;
+export const MDI_ICONS: Record<string, string> = mdiCodepoints as Record<string, string>;
 
 /**
  * Get the YAML-compatible unicode escape sequence for an MDI icon glyph.
@@ -107,7 +108,7 @@ export function getMdiUtf8CEscape(iconName: string): string | null {
  * empty array when no icons are known so callers can decide whether to
  * skip emitting a `font:` section entirely.
  */
-function generateIconFontYAML(
+export function generateIconFontYAML(
   iconNames: Set<string>,
   fontSize: number = ICON_FONT_SIZE,
 ): string[] {

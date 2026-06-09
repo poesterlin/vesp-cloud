@@ -3,7 +3,7 @@ import { spawn, type ChildProcess } from 'child_process';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { getDb, schema } from '$lib/db/index.js';
-import { eq, desc, and, inArray } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import type { CompilationJob, NewCompilationJob } from '$lib/db/schema';
 import { env } from '$env/dynamic/private';
 import type { Project } from '@esphome-designer/schema';
@@ -11,7 +11,7 @@ import { generateESPHomeYAML, generateUITypesHeader, generateUIStateHeader, gene
 import { generateSecretsYAML } from '$lib/codegen/secrets';
 import { validateProject } from '$lib/codegen/validations';
 import { copyStaticTemplates } from '$lib/server/esphome-templates';
-import { uploadBinary, deleteBinaries } from '$lib/server/s3';
+import { getStaticBuildsDir } from '$lib/server/static-paths';
 
 interface ActiveJob {
   job: CompilationJob;
@@ -31,10 +31,6 @@ export class CompilationQueue extends EventEmitter {
   async start(): Promise<void> {
     console.log(`🚀 Starting compilation queue with ${this.maxWorkers} slots`);
     this.isStopped = false;
-
-    // Mark any jobs that were left in a non-terminal state (e.g. server restart) as failed
-    await this.failInProgressJobs();
-
     this.processQueue();
   }
 
@@ -50,29 +46,6 @@ export class CompilationQueue extends EventEmitter {
     this.activeJobs.clear();
     this.queue = [];
     this.jobs.clear();
-  }
-
-  private async failInProgressJobs(): Promise<void> {
-    const db = getDb();
-    const inProgress = await db.select()
-      .from(schema.compilationJobs)
-      .where(
-        inArray(schema.compilationJobs.status, ['running', 'pending', 'queued']),
-      );
-
-    if (inProgress.length === 0) return;
-
-    await db.update(schema.compilationJobs)
-      .set({
-        status: 'failed',
-        error: 'Server restarted during build',
-        completedAt: new Date(),
-      })
-      .where(
-        inArray(schema.compilationJobs.status, ['running', 'pending', 'queued']),
-      );
-
-    console.log(`🧹 Marked ${inProgress.length} in-progress builds as failed`);
   }
 
   async addJob(job: CompilationJob | NewCompilationJob): Promise<void> {
@@ -231,20 +204,22 @@ export class CompilationQueue extends EventEmitter {
             .replace(/[^a-z0-9-]/g, '');
           const pioDir = join(tempDir, '.esphome', 'build', deviceName, '.pioenvs', deviceName);
           const candidates = ['firmware.factory.bin', 'firmware.bin'];
+          const buildsDir = getStaticBuildsDir();
+          const publicDest = join(buildsDir, `${job.id}.bin`);
+          await fs.mkdir(buildsDir, { recursive: true });
 
-          let uploaded = false;
+          let copied = false;
           for (const name of candidates) {
             const binPath = join(pioDir, name);
             try {
               await fs.access(binPath);
-              const data = await fs.readFile(binPath);
-              await uploadBinary(job.id, data);
-              console.log(`Binary uploaded to S3 for job ${job.id} (from ${name})`);
-              uploaded = true;
+              await fs.copyFile(binPath, publicDest);
+              console.log(`Binary saved to ${publicDest} (from ${name})`);
+              copied = true;
               break;
             } catch { }
           }
-          if (!uploaded) {
+          if (!copied) {
             const files = await fs.readdir(pioDir).catch(() => []);
             console.error(`No firmware binary found in ${pioDir}. Files: ${files.join(', ')}`);
           }
@@ -303,11 +278,6 @@ export class CompilationQueue extends EventEmitter {
       })
       .where(eq(schema.compilationJobs.id, job.id));
 
-    // Clean up old builds for this project
-    if (job.projectId) {
-      await this.cleanupOldJobs(job.projectId);
-    }
-
     this.emit('jobCompleted', job);
   }
 
@@ -333,40 +303,16 @@ export class CompilationQueue extends EventEmitter {
       .orderBy(desc(schema.compilationJobs.createdAt));
   }
 
-  async getProjectJobs(projectId: string, limit = 10): Promise<CompilationJob[]> {
-    const db = getDb();
-    return db.select()
-      .from(schema.compilationJobs)
-      .where(eq(schema.compilationJobs.projectId, projectId))
-      .orderBy(desc(schema.compilationJobs.createdAt))
-      .limit(limit);
+  getStats(): { total: number; pending: number; running: number; completed: number; failed: number } {
+    // This is a bit inefficient to fetch all jobs from DB just for stats,
+    // but keeping it consistent with the previous implementation for now.
+    // In a real app, you'd likely want a more optimized way to get counts.
+    return {
+      total: 0, // Placeholder as we'd need to await getAllJobs()
+      pending: this.queue.length,
+      running: this.activeJobs.size,
+      completed: 0,
+      failed: 0
+    };
   }
-
-  private async cleanupOldJobs(projectId: string): Promise<void> {
-    const KEEP_COUNT = 10;
-    const db = getDb();
-
-    // Find all jobs for this project ordered by newest first
-    const allJobs = await db.select()
-      .from(schema.compilationJobs)
-      .where(eq(schema.compilationJobs.projectId, projectId))
-      .orderBy(desc(schema.compilationJobs.createdAt));
-
-    if (allJobs.length <= KEEP_COUNT) return;
-
-    const jobsToDelete = allJobs.slice(KEEP_COUNT);
-    const idsToDelete = jobsToDelete.map(j => j.id);
-
-    // Delete old binaries from S3
-    await deleteBinaries(idsToDelete);
-
-    // Delete old jobs from database
-    if (idsToDelete.length > 0) {
-      await db.delete(schema.compilationJobs)
-        .where(inArray(schema.compilationJobs.id, idsToDelete));
-    }
-
-    console.log(`🧹 Cleaned up ${jobsToDelete.length} old builds for project ${projectId}`);
-  }
-
 }

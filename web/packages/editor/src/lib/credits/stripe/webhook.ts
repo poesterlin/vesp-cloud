@@ -7,11 +7,11 @@ const trackedEvents = new Set<string>([
   "checkout.session.completed",
 ]);
 
-function isTrackedEvent(type: string): boolean {
+export function isTrackedEvent(type: string): boolean {
   return trackedEvents.has(type);
 }
 
-async function handleCompletedCheckout(
+export async function handleCompletedCheckout(
   sessionId: string
 ): Promise<void> {
   const stripe = getStripe();

@@ -135,7 +135,7 @@ class ImageWidget : public Widget {
 
   bool handle_touch(const TouchEvent &event, uint32_t now) override {
     (void)now;
-    if (!tap_callback_) return false;
+    if (!tap_callback_ || !fully_rendered_) return false;
     if (event.type != TouchType::Tap) return false;
     if (rect_.contains(event.x, event.y)) {
       tap_callback_();
@@ -145,19 +145,45 @@ class ImageWidget : public Widget {
   }
 
   void draw(display::Display &it, const UiState &state) override {
-    (void)state;
     if (image_ == nullptr) return;
+
+    if (!fully_rendered_ &&
+        state.images_rendered_this_frame >= UiState::MAX_IMAGES_PER_FRAME) {
+      draw_placeholder(it);
+      if (!deferred_) {
+        deferred_ = true;
+        UiInvalidation::request_continue();
+      }
+      return;
+    }
+
     ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
     it.image(rect_.x, rect_.y, image_, color_on_, color_off_);
+    fully_rendered_ = true;
+    deferred_ = false;
+    const_cast<UiState&>(state).images_rendered_this_frame++;
   }
 
  private:
+  void draw_placeholder(display::Display &it) const {
+    ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
+    draw_clipped_border(it, rect_.x + 2, rect_.y + 2, rect_.w - 4, rect_.h - 4,
+                        4, 4, 4, 4, RetroColors::DIMMER);
+    if (g_theme.label.font != nullptr) {
+      it.printf(rect_.x + rect_.w / 2, rect_.y + rect_.h / 2,
+                g_theme.label.font, RetroColors::DIMMER,
+                TextAlign::CENTER, "...");
+    }
+  }
+
   UiRect rect_;
   esphome::display::BaseImage *image_;
   Color color_on_;
   Color color_off_;
   Color bg_color_{RetroColors::VOID};
   Callback tap_callback_;
+  bool fully_rendered_ = false;
+  bool deferred_ = false;
 };
 
 class LabelWidget : public Widget {

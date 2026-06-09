@@ -50,6 +50,7 @@ class UiApp {
 
   void draw(display::Display &it, uint32_t now) {
     init();
+    state_.images_rendered_this_frame = 0;
     (void)now;
 #if UI_PROFILE
     if (UiInvalidation::is_full_dirty() &&

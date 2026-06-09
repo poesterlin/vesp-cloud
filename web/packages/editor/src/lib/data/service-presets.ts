@@ -181,9 +181,26 @@ export const SERVICE_PRESETS: Record<string, ServicePreset> = {
 };
 
 /**
+ * Get grouped services by domain for dropdown display
+ */
+export function getServicesByDomain(): Map<string, Array<{ service: string; preset: ServicePreset }>> {
+  const grouped = new Map<string, Array<{ service: string; preset: ServicePreset }>>();
+
+  for (const [service, preset] of Object.entries(SERVICE_PRESETS)) {
+    const domain = preset.domain;
+    if (!grouped.has(domain)) {
+      grouped.set(domain, []);
+    }
+    grouped.get(domain)!.push({ service, preset });
+  }
+
+  return grouped;
+}
+
+/**
  * Domain display names for UI
  */
-const DOMAIN_LABELS: Record<string, string> = {
+export const DOMAIN_LABELS: Record<string, string> = {
   light: "Lights",
   switch: "Switches",
   climate: "Climate",

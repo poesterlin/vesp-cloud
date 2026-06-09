@@ -24,9 +24,5 @@
     "vite-plugin-devtools-json": "1.0.0"
   },
   "module": "index.ts",
-  "type": "module",
-  "dependencies": {
-    "@aws-sdk/client-s3": "3.1064.0",
-    "@aws-sdk/types": "3.973.12"
-  }
+  "type": "module"
 }

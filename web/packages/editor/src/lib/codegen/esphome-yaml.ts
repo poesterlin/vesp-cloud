@@ -447,20 +447,6 @@ touchscreen:
         }
 
 interval:
-  - interval: 50ms
-    then:
-      - lambda: |-
-          auto *api = esphome::api::global_api_server;
-          bool connected = (api != nullptr && api->is_connected());
-          if (connected != g_ui_app.state().api_connected) {
-            g_ui_app.state().api_connected = connected;
-            UiRedraw::request_full();
-            id(main_display).update();
-            return;
-          }
-          if (!connected) {
-            id(main_display).update();
-          }
   - interval: 10s
     then:
       - lambda: |-

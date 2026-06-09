@@ -13,7 +13,7 @@ export interface BindingSegment {
 
 export type TemplateSegment = TextSegment | BindingSegment;
 
-const TEMPLATE_BINDING_REGEX = /\{\{([^}]+)\}\}/g;
+export const TEMPLATE_BINDING_REGEX = /\{\{([^}]+)\}\}/g;
 
 /**
  * Parse a `entity.id` or `entity.id.attribute` reference (as it appears
@@ -23,7 +23,7 @@ const TEMPLATE_BINDING_REGEX = /\{\{([^}]+)\}\}/g;
  * dots delimit the entity id and anything after the second dot is the
  * attribute path.
  */
-function parseBindingRef(ref: string): EntityBinding {
+export function parseBindingRef(ref: string): EntityBinding {
   const trimmed = ref.trim();
   const firstDot = trimmed.indexOf(".");
   if (firstDot === -1) return { entityId: trimmed };
@@ -94,7 +94,7 @@ function isIsoDate(str: string): boolean {
  * suppressed (returned as an empty string) so they don't dominate a
  * small label preview.
  */
-function getStateDisplay(entity: Entity): string {
+export function getStateDisplay(entity: Entity): string {
   if (entity.numeric_state !== undefined) {
     return `${Math.round(entity.numeric_state * 10) / 10}`;
   }
@@ -148,7 +148,7 @@ export function getBindingDisplay(
   return getStateDisplay(entity) || entity.entity_id;
 }
 
-const DOMAIN_ICONS: Record<string, string> = {
+export const DOMAIN_ICONS: Record<string, string> = {
   sensor: "📊",
   binary_sensor: "🔘",
   switch: "🔌",
@@ -182,4 +182,21 @@ const DOMAIN_ICONS: Record<string, string> = {
 export function getDomainIcon(binding: EntityBinding): string {
   const domain = binding.entityId.split(".")[0];
   return DOMAIN_ICONS[domain] ?? "📦";
+}
+
+/**
+ * Render a template string by substituting each `{{...}}` placeholder
+ * with the resolved binding display value. This is the inverse-ish of
+ * `parseTemplate` for non-editable preview surfaces such as the canvas
+ * TextRenderer.
+ */
+export function renderTemplate(
+  text: string,
+  getEntity: (entityId: string) => Entity | undefined,
+): string {
+  return parseTemplate(text)
+    .map((seg) =>
+      seg.type === "text" ? seg.value : getBindingDisplay(seg.value, getEntity),
+    )
+    .join("");
 }

@@ -61,7 +61,7 @@ export async function validateSessionToken(token: string) {
   return { session, user };
 }
 
-type SessionValidationResult = Awaited<ReturnType<typeof validateSessionToken>>;
+export type SessionValidationResult = Awaited<ReturnType<typeof validateSessionToken>>;
 
 export async function invalidateSession(sessionId: string) {
   const db = getDb();

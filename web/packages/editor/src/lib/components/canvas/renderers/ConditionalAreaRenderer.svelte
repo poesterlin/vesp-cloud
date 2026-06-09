@@ -6,7 +6,7 @@
   import { historyStore } from "$lib/stores/history.svelte";
   import { canvasPasteTargetStore } from "$lib/stores/canvas-paste-target.svelte";
   import { createComponent } from "$lib/utils/component-factory";
-  import { getRenderer } from "./renderer-registry";
+  import ComponentRenderer from "./ComponentRenderer.svelte";
   import Draggable from "../Draggable.svelte";
 
   interface Props {
@@ -18,7 +18,6 @@
 
   let contentEl: HTMLDivElement | undefined = $state();
   let isDragOver = $state(false);
-  let ChildRenderer = $derived(getRenderer('__component_renderer__'));
 
   // Which variant is currently being viewed/edited in the designer
   let activeVariantId = $derived(conditionalEditorStore.getActiveVariant(component.id, component.variants[0]?.id));
@@ -188,17 +187,15 @@
       onpointerdown={handleContentMouseDown}
     >
       {#if activeVariant}
-        {#if ChildRenderer}
-          {#each activeVariant.components as childComponent (childComponent.id)}
-            <ChildRenderer
-              component={childComponent}
-              parentOffset={{
-                x: (parentOffset?.x ?? 0) + component.position.x,
-                y: (parentOffset?.y ?? 0) + component.position.y,
-              }}
-            />
-          {/each}
-        {/if}
+        {#each activeVariant.components as childComponent (childComponent.id)}
+          <ComponentRenderer
+            component={childComponent}
+            parentOffset={{
+              x: (parentOffset?.x ?? 0) + component.position.x,
+              y: (parentOffset?.y ?? 0) + component.position.y,
+            }}
+          />
+        {/each}
       {/if}
 
       {#if activeVariant && activeVariant.components.length === 0}

@@ -1,5 +1,7 @@
 #pragma once
 
+constexpr int UI_MAX_IMAGES_PER_FRAME = 2;
+
 struct UiDirtyRect {
   int x = 0;
   int y = 0;
@@ -68,15 +70,27 @@ class UiInvalidation {
     return false;
   }
 
+  static void request_continue() { render_continue_ = true; }
+
+  static bool should_continue() { return render_continue_; }
+
   static void clear() {
-    needs_redraw_ = false;
-    full_dirty_ = false;
-    dirty_count_ = 0;
+    if (render_continue_) {
+      needs_redraw_ = true;
+      full_dirty_ = false;
+      dirty_count_ = 0;
+      render_continue_ = false;
+    } else {
+      needs_redraw_ = false;
+      full_dirty_ = false;
+      dirty_count_ = 0;
+    }
   }
 
  private:
   inline static bool needs_redraw_ = true;
   inline static bool full_dirty_ = true;
+  inline static bool render_continue_ = false;
   inline static UiDirtyRect dirty_rects_[MAX_DIRTY_RECTS];
   inline static int dirty_count_ = 0;
 };

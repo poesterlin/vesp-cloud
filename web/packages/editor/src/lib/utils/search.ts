@@ -43,3 +43,12 @@ export function fuzzyFilter<T>(
   });
   return (results as unknown as { obj: T }[]).map((r) => r.obj);
 }
+
+/**
+ * Simple fuzzy match test: returns true if `query` fuzzily matches `target`.
+ */
+export function fuzzyMatch(query: string, target: string): boolean {
+  if (!query || query.trim().length === 0) return true;
+  const result = fuzzysort.single(query, target);
+  return result !== null;
+}

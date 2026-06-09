@@ -4,7 +4,7 @@ export function colorToRgb(c: Color): string {
   return `rgb(${c.r}, ${c.g}, ${c.b})`;
 }
 
-function generateThemedBox(
+export function generateThemedBox(
   x: number,
   y: number,
   width: number,
@@ -49,7 +49,7 @@ function generateThemedBox(
   };
 }
 
-function generateThemedButton(
+export function generateThemedButton(
   x: number,
   y: number,
   width: number,

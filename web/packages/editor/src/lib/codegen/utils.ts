@@ -123,7 +123,9 @@ export type WidgetFactory = (typeName: string, args: string) => string;
 // Default icon font size used when a component does not specify size.
 // Kept in sync with `ICON_FONT_SIZE` in mdi-icons.ts so codegen and YAML
 // reference the same font id.
-const NOTIFICATION_OVERLAY_ICON_NAMES = [
+export const DEFAULT_ICON_FONT_SIZE = 24;
+
+export const NOTIFICATION_OVERLAY_ICON_NAMES = [
   "information",
   "alert",
   "alert-circle",

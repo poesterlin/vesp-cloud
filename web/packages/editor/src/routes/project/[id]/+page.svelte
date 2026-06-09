@@ -1,16 +1,14 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import DesignCanvas from "$lib/components/canvas/DesignCanvas.svelte";
   import ComponentPalette from "$lib/components/sidebar/ComponentPalette.svelte";
   import PropertyEditor from "$lib/components/sidebar/PropertyEditor.svelte";
   import Toolbar from "$lib/components/toolbar/Toolbar.svelte";
-  import BottomConsole from "$lib/components/BottomConsole.svelte";
+  import ExportPanel from "$lib/components/ExportPanel.svelte";
   import ProjectDebugModal from "$lib/components/ProjectDebugModal.svelte";
   import ViewTypeSelector from "$lib/components/sidebar/ViewTypeSelector.svelte";
   import DashboardPageList from "$lib/components/sidebar/DashboardPageList.svelte";
   import DetailViewList from "$lib/components/sidebar/DetailViewList.svelte";
   import { projectStore } from "$lib/stores/project.svelte";
-  import { deploymentStore } from "$lib/stores/deployment.svelte";
   import { page } from "$app/state";
   import { onMount } from "svelte";
 
@@ -19,6 +17,8 @@
 
   let { data } = $props();
 
+  let showExport = $state(false);
+  let exportCompiling = $state(false);
   let showSettings = $state(false);
   let showDebug = $state(false);
   let loading = $state(true);
@@ -42,11 +42,6 @@
     if (data.isCloud) {
       loadCreditBalance();
     }
-
-    // Resume polling if a compilation is already running on the server
-    if (data.activeJob) {
-      deploymentStore.restoreJob(data.activeJob.id, data.activeJob.status);
-    }
   });
 
   async function loadCreditBalance() {
@@ -61,7 +56,18 @@
   }
 
   function openExport() {
-    goto(`/project/${projectStore.serverProjectId}/deploy`);
+    showExport = !showExport;
+    if (showExport && data.isCloud) {
+      loadCreditBalance();
+    }
+  }
+
+  function handleEscapeClose(event: KeyboardEvent) {
+    if (event.key !== "Escape") return;
+    if (!showExport || exportCompiling) return;
+
+    showExport = false;
+    exportCompiling = false;
   }
 
   function clearSelection(event: MouseEvent) {
@@ -72,6 +78,8 @@
     }
   }
 </script>
+
+<svelte:window onkeydown={handleEscapeClose} />
 
 <svelte:head>
   <title>ESPHome Designer {projectStore.project ? `- ${projectStore.project.name}` : ''}</title>
@@ -95,136 +103,148 @@
   />
 
   <div class="editor-container">
-    <aside class="sidebar left">
-      <ViewTypeSelector />
-      {#if projectStore.viewMode === 'dashboard'}
-        <DashboardPageList />
-      {:else}
-        <DetailViewList />
-      {/if}
-      <div class="separator"></div>
-      <ComponentPalette />
-    </aside>
+  <aside class="sidebar left">
+    <ViewTypeSelector />
+    {#if projectStore.viewMode === 'dashboard'}
+      <DashboardPageList />
+    {:else}
+      <DetailViewList />
+    {/if}
+    <div class="separator"></div>
+    <ComponentPalette />
+  </aside>
 
-    <main class="canvas-area" onclick={(e)=> clearSelection(e)}>
-      <DesignCanvas />
-    </main>
+  <main class="canvas-area" onclick={(e)=> clearSelection(e)}>
+    <DesignCanvas />
+  </main>
 
-    <aside class="sidebar right">
-      <PropertyEditor />
-    </aside>
+  <aside class="sidebar right">
+    <PropertyEditor />
+  </aside>
+</div>
+
+{#if showExport}
+  <div class="modal-overlay" onclick={() => !exportCompiling && (showExport = false)}>
+    <div class="modal-content" onclick={(e: MouseEvent) => e.stopPropagation()}>
+      <ExportPanel
+        onClose={() => {
+          showExport = false;
+          exportCompiling = false;
+        }}
+        onCompilingChange={(isCompiling) => (exportCompiling = isCompiling)}
+      />
+    </div>
   </div>
+{/if}
 
-  <BottomConsole />
-
-  {#if showSettings}
-    <div class="modal-overlay" onclick={() => (showSettings = false)}>
-      <div class="modal-content settings-modal" onclick={(e: MouseEvent) => e.stopPropagation()}>
-        <ProjectSettings onClose={() => (showSettings = false)} />
-      </div>
+{#if showSettings}
+  <div class="modal-overlay" onclick={() => (showSettings = false)}>
+    <div class="modal-content settings-modal" onclick={(e: MouseEvent) => e.stopPropagation()}>
+      <ProjectSettings onClose={() => (showSettings = false)} />
     </div>
-  {/if}
+  </div>
+{/if}
 
-  {#if showDebug}
-    <div class="modal-overlay" onclick={() => (showDebug = false)}>
-      <div class="modal-content debug-modal" onclick={(e: MouseEvent) => e.stopPropagation()}>
-        <ProjectDebugModal onClose={() => (showDebug = false)} />
-      </div>
+{#if showDebug}
+  <div class="modal-overlay" onclick={() => (showDebug = false)}>
+    <div class="modal-content debug-modal" onclick={(e: MouseEvent) => e.stopPropagation()}>
+      <ProjectDebugModal onClose={() => (showDebug = false)} />
     </div>
-  {/if}
+  </div>
+{/if}
 
-  <style>
-    .editor-container {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
+<style>
+  .editor-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
 
-    .sidebar {
-      background: var(--color-bg-secondary);
-      border-color: var(--color-border);
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .sidebar.left {
-      width: 280px;
-      border-right: 1px solid var(--color-border);
-    }
+  .sidebar {
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .sidebar.left {
+    width: 280px;
+    border-right: 1px solid var(--color-border);
+  }
 
-    .sidebar.right {
-      width: 315px;
-      border-left: 1px solid var(--color-border);
-    }
+  .sidebar.right {
+    width: 315px;
+    border-left: 1px solid var(--color-border);
+  }
 
-    .separator {
-      height: 1px;
-      background: #333;
-      margin: 8px 0;
-    }
+  .separator {
+    height: 1px;
+    background: #333;
+    margin: 8px 0;
+  }
 
-    .canvas-area {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--color-bg-primary);
-      overflow: auto;
-      padding: var(--spacing-lg);
-    }
+  .canvas-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-primary);
+    overflow: auto;
+    padding: var(--spacing-lg);
+  }
 
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      backdrop-filter: blur(4px);
-    }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+  }
 
-    .modal-content {
-      background: var(--color-bg-primary);
-      border: 1px solid var(--color-border);
-      border-radius: 12px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-      max-width: 90vw;
-      max-height: 90vh;
-      overflow: hidden;
-    }
+  .modal-content {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: hidden;
+  }
 
-    .modal-content.settings-modal {
-      width: 600px;
-      height: 80vh;
-    }
+  .modal-content.settings-modal {
+    width: 600px;
+    height: 80vh;
+  }
 
-    .modal-content.debug-modal {
-      width: 800px;
-      height: 90vh;
-    }
+  .modal-content.debug-modal {
+    width: 800px;
+    height: 90vh;
+  }
 
-    .status-screen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      gap: var(--spacing-md);
-    }
+  .status-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    gap: var(--spacing-md);
+  }
 
-    .status-screen.error h1 {
-      color: #ff5252;
-    }
+  .status-screen.error h1 {
+    color: #ff5252;
+  }
 
-    .back-link {
-      color: var(--color-accent);
-      text-decoration: none;
-    }
+  .back-link {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
 
-    .back-link:hover {
-      text-decoration: underline;
-    }
-  </style>
+  .back-link:hover {
+    text-decoration: underline;
+  }
+</style>
 {/if}

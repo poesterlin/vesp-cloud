@@ -1,6 +1,8 @@
 import { json } from "@sveltejs/kit";
+import { existsSync } from "fs";
+import { join } from "path";
 import type { RequestHandler } from "./$types";
-import { getAllJobs, getProjectJobs, getJobStatus, submitCompilationJob } from "$lib/utils/worker";
+import { getAllJobs, getJobStatus, submitCompilationJob } from "$lib/utils/worker";
 import { deductCredits, CREDIT_COSTS, getBalance } from "$lib/credits";
 import { env } from "$env/dynamic/private";
 import { validateProject } from "$lib/codegen/validations";
@@ -84,14 +86,14 @@ export const GET: RequestHandler = async ({ url }) => {
     const latest = url.searchParams.get("latest");
 
     if (projectId && latest) {
-      const jobs = await getProjectJobs(projectId, 10);
-      const found = jobs.find((j) => j.status === "completed");
+      const allJobs = await getAllJobs();
+      const found = allJobs.find(
+        (j) =>
+          j.projectId === projectId &&
+          j.status === "completed" &&
+          existsSync(join(process.cwd(), "static", "builds", `${j.id}.bin`)),
+      );
       return found ? json(found) : json(null);
-    }
-
-    if (projectId) {
-      const jobs = await getProjectJobs(projectId, 10);
-      return json(jobs);
     }
 
     const allJobs = await getAllJobs();

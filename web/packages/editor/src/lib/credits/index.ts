@@ -1,5 +1,8 @@
+export { getStripe } from "./stripe/client";
 export { createCheckoutSession } from "./stripe/checkout";
+export type { CreateCheckoutParams } from "./stripe/checkout";
 export { processStripeEvent } from "./stripe/webhook";
-export { deductCredits, getBalance, ensureBalanceExists } from "./credits";
+export { addCredits, deductCredits, getBalance, ensureBalanceExists } from "./credits";
 export { CREDIT_COSTS } from "./costs";
-export { CREDIT_PACKS } from "./packs";
+export type { PaidAction } from "./costs";
+export { CREDIT_PACKS, getPackByPriceId } from "./packs";

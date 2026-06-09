@@ -106,6 +106,15 @@ export function emitConditionExpression(condition: Condition | undefined): strin
   }
 }
 
+/**
+ * Build a C++ lambda body string (without the `[&state]()` prefix) that
+ * evaluates to a boolean. Useful when callers want to compose multiple
+ * sub-expressions.
+ */
+export function emitConditionLambda(condition: Condition | undefined): string {
+  return `[&state]() { return ${emitConditionExpression(condition)}; }`;
+}
+
 export type ConditionEntityType = "bool" | "float" | "std::string";
 
 export interface ConditionEntityRef {

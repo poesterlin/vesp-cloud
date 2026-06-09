@@ -55,14 +55,26 @@ struct RenderScheduler {
   }
 };
 
+enum class AppStage {
+  Booting,
+  AwaitingConnection,
+  Ready
+};
+
 struct UiState {
   UiScreenId current_screen = UiScreenId::Home;
   int home_page_index = 0;
   int home_total_pages = 4;
-  bool api_connected = false;
   Observable<bool> button_a_on{false};
   Observable<bool> button_b_on{false};
   Observable<bool> led_switch{false};
   Observable<int> todo_pending_count{0};
   Observable<std::string> todo_items_formatted{"LIST EMPTY"};
+  Observable<bool> ha_connected{false};
+
+  AppStage app_stage = AppStage::Booting;
+  uint32_t ha_connected_at = 0;
+
+  int images_rendered_this_frame = 0;
+  static constexpr int MAX_IMAGES_PER_FRAME = 2;
 };

@@ -6,7 +6,6 @@
 #include "ui_invalidation.h"
 #include "ui_redraw.h"
 
-#include <cmath>
 #include <cstring>
 #include <esp_heap_caps.h>
 
@@ -106,41 +105,6 @@ inline void render_basic_ui(display::Display &it) {
   const uint32_t now = millis();
   g_ui_app.update(now);
 
-  static bool loading_surface_ready = false;
-
-  if (!g_ui_app.state().api_connected) {
-    UiRedraw::begin_draw();
-    if (!loading_surface_ready) {
-      draw_retro_background(it);
-      loading_surface_ready = true;
-    }
-
-    const Color c(0, 240, 255);
-    const Color dim(0, 120, 150);
-    const int cx = 240;
-    const int cy = 240;
-    const int panel_x = cx - 56;
-    const int panel_y = cy - 56;
-    const int panel_w = 112;
-    const int panel_h = 112;
-
-    ui_fast_filled_rectangle(it, panel_x + 1, panel_y + 1, panel_w - 2, panel_h - 2, RetroColors::DARK);
-    draw_clipped_border(it, panel_x, panel_y, panel_w, panel_h, 8, 8, 8, 8, RetroColors::CYAN_DIM);
-
-    it.circle(cx, cy, 25, dim);
-    it.circle(cx, cy, 15, dim);
-
-    float angle = (now % 1200) * 2.0f * 3.14159265f / 1200.0f;
-    it.line(cx, cy, cx + (int) (cosf(angle) * 25), cy + (int) (sinf(angle) * 25), c);
-    it.line(cx, cy, cx - (int) (cosf(angle) * 15), cy - (int) (sinf(angle) * 15), dim);
-    it.filled_circle(cx, cy, 5, c);
-
-    UiRedraw::end_draw();
-    return;
-  }
-
-  loading_surface_ready = false;
-
   if (!UiInvalidation::needs_redraw()) {
     return;
   }
@@ -154,5 +118,9 @@ inline void render_basic_ui(display::Display &it) {
 #else
   g_ui_app.draw(it, now);
 #endif
+  const bool more_pending = UiInvalidation::should_continue();
   UiRedraw::end_draw();
+  if (more_pending) {
+    UiRedraw::trigger_display_update();
+  }
 }

@@ -148,6 +148,7 @@ struct UiState {
   UiScreenId current_screen = UiScreenId::${screenName};
   int home_page_index = 0;
   int home_total_pages = ${Math.max(1, project.dashboardPages.length)};
+  Observable<bool> ha_connected{false};
 ${observableFields}
   int images_rendered_this_frame = 0;
   static constexpr int MAX_IMAGES_PER_FRAME = 2;

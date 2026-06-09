@@ -777,7 +777,8 @@ export function generateUIScreensHeader(project: Project): string {
       }
       setupBody += `  }\n\n`;
     }
-    setupBody += `  home->emplace_widget<PageIndicatorWidget>(460);\n\n`;
+    setupBody += `  home->emplace_widget<PageIndicatorWidget>(460);\n`;
+    setupBody += `  home->emplace_widget<LoadingWidget>();\n\n`;
   }
 
   for (const view of project.detailViews) {

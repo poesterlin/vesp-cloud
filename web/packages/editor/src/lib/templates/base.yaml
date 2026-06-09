@@ -81,3 +81,7 @@ ota:
 time:
   - platform: sntp
     id: sntp_time
+    timezone: ${timezone}
+    on_time_sync:
+      then:
+        - logger.log: "SNTP time sync accomplished"

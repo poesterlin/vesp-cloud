@@ -100,6 +100,7 @@
 
     projectStore.updateProject({
       notificationOverlay: config.notificationOverlay,
+      timezone: config.timezone,
     });
 
     projects = await projectStore.listProjects();

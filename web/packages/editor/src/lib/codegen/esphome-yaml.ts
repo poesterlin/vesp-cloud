@@ -263,7 +263,8 @@ export function generateESPHomeYAML(project: Project, _firmwareVersion?: string)
 
   return `substitutions:
   device_name: ${deviceName}
-  friendly_name: "${friendlyName}"${homeAssistantBaseUrlSubstitution}
+  friendly_name: "${friendlyName}"
+  timezone: "${project.timezone || "UTC"}"${homeAssistantBaseUrlSubstitution}
 
 packages:
   base: !include base.yaml
@@ -447,6 +448,20 @@ touchscreen:
         }
 
 interval:
+  - interval: 50ms
+    then:
+      - lambda: |-
+          auto *api = esphome::api::global_api_server;
+          bool connected = (api != nullptr && api->is_connected());
+          if (connected != g_ui_app.state().ha_connected) {
+            g_ui_app.state().ha_connected = connected;
+            UiRedraw::request_full();
+            id(main_display).update();
+            return;
+          }
+          if (!connected) {
+            id(main_display).update();
+          }
   - interval: 10s
     then:
       - lambda: |-

@@ -207,6 +207,10 @@ export interface Project {
   secrets?: SecretsConfig;
   pageHeader?: PageHeader;
   notificationOverlay?: NotificationOverlayConfig;
+  /**
+   * IANA timezone identifier (e.g. America/New_York, Europe/Berlin)
+   */
+  timezone?: string;
 }
 export interface Theme {
   id: string;

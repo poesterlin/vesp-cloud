@@ -877,7 +877,11 @@
         },
         "secrets": { "$ref": "#/definitions/SecretsConfig" },
         "pageHeader": { "$ref": "#/definitions/PageHeader" },
-        "notificationOverlay": { "$ref": "#/definitions/NotificationOverlayConfig" }
+        "notificationOverlay": { "$ref": "#/definitions/NotificationOverlayConfig" },
+        "timezone": {
+          "type": "string",
+          "description": "IANA timezone identifier (e.g. America/New_York, Europe/Berlin)"
+        }
       },
       "required": ["name", "display", "dashboardPages", "detailViews"],
       "additionalProperties": false

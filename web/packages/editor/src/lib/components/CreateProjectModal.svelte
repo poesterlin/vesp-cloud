@@ -5,6 +5,7 @@
 
   export interface CreateProjectConfig {
     name: string;
+    timezone: string;
     notificationOverlay: NotificationOverlayConfig;
   }
 
@@ -21,7 +22,7 @@
     severityEntityId: "input_select.notification_severity",
   };
 
-  let step = $state<"name" | "notifications">("name");
+  let step = $state<"name" | "timezone" | "notifications">("name");
   let projectName = $state("");
 
   let notificationOverlayEnabled = $state(false);
@@ -29,8 +30,82 @@
   let notificationBodyEntityId = $state(defaultNotificationOverlay.bodyEntityId);
   let notificationSeverityEntityId = $state(defaultNotificationOverlay.severityEntityId);
 
-  function goToStep(s: "name" | "notifications") {
+  // Timezone
+  function getBrowserTimezone(): string {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return "UTC";
+    }
+  }
+
+  const browserTz = getBrowserTimezone();
+  const browserOffset = $derived(getOffsetLabel(browserTz));
+
+  const allTimezones: string[] = (() => {
+    try {
+      if ("supportedValuesOf" in Intl) {
+        return (Intl as any).supportedValuesOf("timeZone") as string[];
+      }
+    } catch {}
+    // Fallback for older browsers without Intl.supportedValuesOf
+    return [
+      "UTC",
+      "Pacific/Midway", "Pacific/Honolulu", "America/Anchorage",
+      "America/Los_Angeles", "America/Phoenix", "America/Denver",
+      "America/Chicago", "America/New_York", "America/Halifax",
+      "America/Argentina/Buenos_Aires", "America/Sao_Paulo",
+      "Atlantic/South_Georgia", "Atlantic/Azores",
+      "Europe/London", "Europe/Dublin", "Europe/Paris",
+      "Europe/Berlin", "Europe/Zurich", "Europe/Stockholm",
+      "Europe/Warsaw", "Europe/Bucharest", "Europe/Helsinki",
+      "Europe/Moscow", "Europe/Istanbul",
+      "Africa/Cairo", "Africa/Johannesburg", "Africa/Lagos",
+      "Asia/Dubai", "Asia/Karachi", "Asia/Kolkata", "Asia/Dhaka",
+      "Asia/Jakarta", "Asia/Shanghai", "Asia/Singapore",
+      "Asia/Tokyo", "Asia/Seoul", "Australia/Sydney",
+      "Australia/Adelaide", "Pacific/Auckland", "Pacific/Fiji",
+    ];
+  })();
+
+  let timezone = $state(browserTz);
+  let tzSearch = $state("");
+  let tzListEl = $state<HTMLDivElement | null>(null);
+
+  const filteredTimezones = $derived(
+    tzSearch.trim()
+      ? allTimezones.filter(tz =>
+          tz.toLowerCase().includes(tzSearch.toLowerCase())
+        )
+      : allTimezones
+  );
+
+  let selectedTzIdx = $derived(
+    filteredTimezones.indexOf(timezone)
+  );
+
+  function selectTimezone(tz: string) {
+    timezone = tz;
+    tzSearch = "";
+  }
+
+  function goToStep(s: "name" | "timezone" | "notifications") {
     step = s;
+  }
+
+  function getOffsetLabel(tz: string): string {
+    try {
+      const now = new Date();
+      const tzFormatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        timeZoneName: "shortOffset",
+      });
+      const parts = tzFormatter.formatToParts(now);
+      const offsetPart = parts.find(p => p.type === "timeZoneName");
+      return offsetPart?.value ?? "";
+    } catch {
+      return "";
+    }
   }
 
   function handleCreate() {
@@ -50,6 +125,7 @@
 
     onCreate({
       name: projectName.trim(),
+      timezone,
       notificationOverlay,
     });
   }
@@ -68,6 +144,8 @@
       <h2>
         {#if step === "name"}
           New Project
+        {:else if step === "timezone"}
+          Timezone
         {:else}
           Notification Overlay
         {/if}
@@ -78,7 +156,7 @@
     {#if step === "name"}
       <form
         class="step-content"
-        onsubmit={(e) => { e.preventDefault(); goToStep("notifications"); }}
+        onsubmit={(e) => { e.preventDefault(); goToStep("timezone"); }}
         in:fly={{ y: 10, duration: 300, easing: cubicOut }}
       >
         <div class="field">
@@ -110,6 +188,77 @@
           </button>
         </footer>
       </form>
+    {:else if step === "timezone"}
+      <div
+        class="step-content"
+        in:fly={{ y: 10, duration: 300, easing: cubicOut }}
+      >
+        <div class="field">
+          <label>Select Timezone</label>
+          <p class="section-hint">
+            Used for time displays and scheduling. Defaults to your browser's timezone.
+          </p>
+
+          <button
+            class="browser-tz-pick"
+            class:active={timezone === browserTz}
+            onclick={() => selectTimezone(browserTz)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="browser-tz-icon">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M12 7V12L15 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <div class="browser-tz-text">
+              <span class="browser-tz-label">Your browser timezone</span>
+              <span class="browser-tz-value">{browserTz.replace("_", " ")} <span class="browser-tz-offset">{browserOffset}</span></span>
+            </div>
+            {#if timezone === browserTz}
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" class="tz-check">
+                <path d="M3 8L6.5 11.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            {/if}
+          </button>
+
+          <div class="tz-search-wrapper">
+            <input
+              type="text"
+              placeholder="Search timezones..."
+              bind:value={tzSearch}
+              class="tz-search"
+              autofocus
+            />
+          </div>
+
+          <div class="tz-list" bind:this={tzListEl}>
+            {#each filteredTimezones as tz}
+              <button
+                class="tz-option"
+                class:selected={tz === timezone}
+                onclick={() => selectTimezone(tz)}
+              >
+                <span class="tz-name">{tz.replace("_", " ")}</span>
+                <span class="tz-offset">{getOffsetLabel(tz)}</span>
+                {#if tz === timezone}
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="tz-check">
+                    <path d="M3 8L6.5 11.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                {/if}
+              </button>
+            {/each}
+          </div>
+        </div>
+
+        <footer>
+          <button type="button" class="btn-text" onclick={() => goToStep("name")}>&larr; Back</button>
+          <button
+            class="primary"
+            type="button"
+            onclick={() => goToStep("notifications")}
+          >
+            Next
+          </button>
+        </footer>
+      </div>
     {:else}
       <div
         class="step-content"
@@ -190,7 +339,7 @@ input_select:
         {/if}
 
         <footer>
-          <button type="button" class="btn-text" onclick={() => goToStep("name")}>&larr; Back</button>
+          <button type="button" class="btn-text" onclick={() => goToStep("timezone")}>&larr; Back</button>
           <button
             class="primary"
             type="button"
@@ -437,5 +586,166 @@ input_select:
 
   .btn-text:hover {
     color: #fff;
+  }
+
+  .primary {
+    padding: 0.6rem 1.4rem;
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+
+  .primary:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+  }
+
+  .primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .browser-tz-pick {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.9rem 1rem;
+    background: rgba(74, 158, 254, 0.06);
+    border: 1px solid rgba(74, 158, 254, 0.2);
+    border-radius: 10px;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: all 0.15s;
+    margin-top: 0.25rem;
+  }
+
+  .browser-tz-pick:hover {
+    background: rgba(74, 158, 254, 0.1);
+    border-color: var(--color-accent);
+  }
+
+  .browser-tz-pick.active {
+    background: rgba(74, 158, 254, 0.12);
+    border-color: var(--color-accent);
+  }
+
+  .browser-tz-icon {
+    color: var(--color-accent);
+    flex-shrink: 0;
+    opacity: 0.8;
+  }
+
+  .browser-tz-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .browser-tz-label {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .browser-tz-value {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .browser-tz-offset {
+    font-weight: 400;
+    color: var(--color-text-muted);
+    margin-left: 0.25rem;
+  }
+
+  .tz-search-wrapper {
+    margin-top: 0.5rem;
+  }
+
+  .tz-search {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: #fff;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+  }
+
+  .tz-search:focus {
+    border-color: var(--color-accent);
+    background: #252525;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(74, 158, 254, 0.1);
+  }
+
+  .tz-list {
+    margin-top: 0.75rem;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    background: #1a1a1a;
+  }
+
+  .tz-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    background: none;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: var(--color-text-secondary);
+    font-size: 0.88rem;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: background 0.1s;
+  }
+
+  .tz-option:last-child {
+    border-bottom: none;
+  }
+
+  .tz-option:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: #fff;
+  }
+
+  .tz-option.selected {
+    background: rgba(74, 158, 254, 0.1);
+    color: #fff;
+  }
+
+  .tz-name {
+    flex: 1;
+  }
+
+  .tz-offset {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+  }
+
+  .tz-option.selected .tz-offset {
+    color: var(--color-accent);
+  }
+
+  .tz-check {
+    color: var(--color-accent);
+    flex-shrink: 0;
   }
 </style>

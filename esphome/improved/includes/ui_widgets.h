@@ -628,5 +628,65 @@ class TodoPreviewWidget : public Widget {
   bool baseline_set_ = false;
 };
 
+class LoadingWidget : public Widget {
+ public:
+  UiRect bounds() const override { return UiRect{0, 185, 480, 170}; }
+
+  bool is_visible(const UiState &state) const override {
+    return state.ha_connected == false;
+  }
+
+  void update(uint32_t now) override {
+    (void)now;
+    mark_dirty();
+  }
+
+  void draw(display::Display &it, const UiState &state) override {
+    (void)state;
+    const bool first_pass = !baseline_set_;
+    baseline_set_ = true;
+
+    const int cx = 240, cy = 240;
+    const uint32_t t = millis();
+
+    if (first_pass) {
+      ui_fast_fill(it, RetroColors::VOID);
+    }
+
+    const int segments = 8;
+    for (int i = 0; i < segments; i++) {
+      float angle = (t * 0.004f) + (i * 2.0f * 3.14159265f / segments);
+      int r1 = 14, r2 = 20;
+      Color c = RetroColors::CYAN;
+      float alpha = 0.3f + 0.7f * (float)i / (float)(segments - 1);
+      c.r = (uint8_t)(c.r * alpha);
+      c.g = (uint8_t)(c.g * alpha);
+      c.b = (uint8_t)(c.b * alpha);
+      it.line(cx + (int)(cosf(angle) * r1), cy + (int)(sinf(angle) * r1),
+              cx + (int)(cosf(angle) * r2), cy + (int)(sinf(angle) * r2), c);
+    }
+
+    if (g_theme.header.font != nullptr) {
+      it.printf(cx, cy + 36, g_theme.header.font, RetroColors::CYAN,
+                TextAlign::CENTER, "CONNECTING");
+    }
+
+    draw_clipped_border(it, 150, 280, 180, 4, 2, 2, 2, 2, RetroColors::DIMMER);
+    const float progress = (float)(t % 2000) / 2000.0f;
+    const int pw = (int)(180.0f * progress);
+    if (pw > 0) {
+      ui_fast_filled_rectangle(it, 150, 280, pw, 4, RetroColors::CYAN);
+    }
+
+    if (g_theme.label.font != nullptr) {
+      it.printf(cx, cy + 54, g_theme.label.font, RetroColors::STEEL,
+                TextAlign::CENTER, "Home Display v2.0");
+    }
+  }
+
+ private:
+  bool baseline_set_ = false;
+};
+
 #include "ui_tab_container.h"
 #include "ui_chrome.h"

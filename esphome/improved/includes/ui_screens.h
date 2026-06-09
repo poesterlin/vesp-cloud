@@ -285,6 +285,8 @@ inline void setup_ui_screens(ScreenController &screens, UiState &state,
     }
 
     home->emplace_widget<PageIndicatorWidget>(460);
+
+    home->emplace_widget<LoadingWidget>();
   }
 
   // ===================== ACTIONS SCREEN =====================

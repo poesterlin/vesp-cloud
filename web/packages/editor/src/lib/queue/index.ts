@@ -23,6 +23,7 @@ export class CompilationQueue extends EventEmitter {
   private queue: CompilationJob[] = [];
   private jobs: Map<string, CompilationJob> = new Map();
   private isStopped = false;
+  private pythonSitePackages = '';
 
   constructor(private maxWorkers: number = 2) {
     super();
@@ -31,8 +32,25 @@ export class CompilationQueue extends EventEmitter {
   async start(): Promise<void> {
     console.log(`🚀 Starting compilation queue with ${this.maxWorkers} slots`);
     this.isStopped = false;
+    await this.resolvePythonSitePackages();
     await this.failInProgressJobs();
     this.processQueue();
+  }
+
+  private async resolvePythonSitePackages(): Promise<void> {
+    const venvPath = env.ESPHOME_VENV;
+    if (!venvPath) return;
+    try {
+      const libDir = join(venvPath, 'lib');
+      const entries = await fs.readdir(libDir);
+      const pythonDir = entries.find((e) => e.startsWith('python'));
+      if (pythonDir) {
+        this.pythonSitePackages = join(libDir, pythonDir, 'site-packages');
+        console.log(`Resolved Python site-packages: ${this.pythonSitePackages}`);
+      }
+    } catch {
+      console.warn('Could not resolve Python site-packages, using fallback');
+    }
   }
 
   async stop(): Promise<void> {
@@ -196,7 +214,7 @@ export class CompilationQueue extends EventEmitter {
             ...env,
             PATH: `${venvPath}/bin:${env.PATH}`,
             VIRTUAL_ENV: venvPath,
-            PYTHONPATH: `${venvPath}/lib/python3.11/site-packages`,
+            PYTHONPATH: this.pythonSitePackages || `${venvPath}/lib/python3.12/site-packages`,
             PLATFORMIO_PENV_NOT_USED: 'true',
             PLATFORMIO_CORE_DIR: join(tempDir, '.platformio'),
           },

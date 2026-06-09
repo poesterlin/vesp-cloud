@@ -4,7 +4,7 @@
 
 - [x] `getStats()` is incorrect: `total`, `completed`, and `failed` always return `0`.
 - [x] `this.jobs` in-memory map is never pruned and can grow indefinitely.
-- [ ] `PYTHONPATH` is hardcoded to Python `3.11`, which can break on version changes.
+- [x] `PYTHONPATH` is hardcoded to Python `3.11`, which can break on version changes.
 - [ ] Credits are deducted before compile and not refunded when compilation fails.
 <!-- - [ ] Worker/db init in `hooks.server.ts` is unawaited; requests can arrive before readiness. -->
 - [~] No per-user rate limiting on compile job submission. make it only 1 job.

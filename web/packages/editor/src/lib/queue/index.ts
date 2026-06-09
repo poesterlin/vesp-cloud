@@ -13,6 +13,8 @@ import { validateProject } from '$lib/codegen/validations';
 import { copyStaticTemplates } from '$lib/server/esphome-templates';
 import { uploadBinary, deleteBinaries } from '$lib/server/s3';
 import { addCredits, CREDIT_COSTS } from '$lib/credits';
+import { createLogger } from '$lib/server/logger';
+import type { Logger } from '$lib/server/logger';
 
 interface ActiveJob {
   job: CompilationJob;
@@ -140,7 +142,8 @@ export class CompilationQueue extends EventEmitter {
               reason: `compile-refund-restart:${job.projectId ?? job.id}`,
             });
           } catch (refundError) {
-            console.error(`Failed to refund credits for orphaned job ${job.id}:`, refundError);
+            const logger = createLogger(job.id);
+            logger.error(`Failed to refund credits: ${refundError}`);
           }
         }
       }
@@ -230,6 +233,7 @@ export class CompilationQueue extends EventEmitter {
   }
 
   private async runCompilation(job: CompilationJob): Promise<void> {
+    const logger = createLogger(job.id);
     const tempDir = join('/tmp/esphome-builds', job.projectId ?? job.id);
     const configFile = join(tempDir, 'config.yaml');
 
@@ -300,12 +304,12 @@ export class CompilationQueue extends EventEmitter {
 
       childProcess.stdout?.on('data', (data) => {
         stdout += data;
-        console.log(`[Job ${job.id}]: ${data}`);
+        logger.info(`stdout: ${data.toString().trim()}`);
       });
 
       childProcess.stderr?.on('data', (data) => {
         stderr += data;
-        console.error(`[Job ${job.id} ERROR]: ${data}`);
+        logger.warn(`stderr: ${data.toString().trim()}`);
       });
 
       childProcess.on('exit', async (code, signal) => {
@@ -328,7 +332,7 @@ export class CompilationQueue extends EventEmitter {
               await fs.access(binPath);
               const data = await fs.readFile(binPath);
               await uploadBinary(job.id, data);
-              console.log(`Binary uploaded to S3 for job ${job.id} (from ${name})`);
+              logger.info(`Binary uploaded to S3 (from ${name})`);
               uploaded = true;
               break;
             } catch (err: any) {
@@ -337,9 +341,10 @@ export class CompilationQueue extends EventEmitter {
           }
           if (!uploaded) {
             const files = await fs.readdir(pioDir).catch(() => []);
-            console.error(`No firmware binary found in ${pioDir}. Files: ${files.join(', ')}. S3 error: ${uploadError}`);
+            logger.error(`No firmware binary found in ${pioDir}. Files: ${files.join(', ')}. S3 error: ${uploadError}`);
           }
 
+          logger.info(`Compilation succeeded`);
           await this.handleJobResult(job.id, { output: stdout });
         } else {
           const reason = signal
@@ -392,7 +397,8 @@ export class CompilationQueue extends EventEmitter {
             reason: `compile-refund:${job.projectId ?? job.id}`,
           });
         } catch (refundError) {
-          console.error(`Failed to refund credits for job ${job.id}:`, refundError);
+          const logger = createLogger(job.id);
+          logger.error(`Failed to refund credits: ${refundError}`);
         }
       }
     } else {

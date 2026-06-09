@@ -3,6 +3,7 @@ import { getDb } from "$lib/db";
 import { stripeCustomers } from "$lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getPackByPriceId } from "../packs";
+import { createLogger } from "$lib/server/logger";
 
 export interface CreateCheckoutParams {
   userId: string;
@@ -12,6 +13,7 @@ export interface CreateCheckoutParams {
 }
 
 export async function createCheckoutSession(params: CreateCheckoutParams) {
+  const logger = createLogger(`checkout:${params.userId}`);
   const pack = getPackByPriceId(params.priceId);
   if (!pack) {
     throw new Error(`Unknown priceId: ${params.priceId}`);
@@ -38,6 +40,7 @@ export async function createCheckoutSession(params: CreateCheckoutParams) {
       userId: params.userId,
     });
     stripeCustomerId = customer.id;
+    logger.info(`Created Stripe customer: ${customer.id}`);
   }
 
   const session = await stripe.checkout.sessions.create({
@@ -52,5 +55,6 @@ export async function createCheckoutSession(params: CreateCheckoutParams) {
     allow_promotion_codes: true,
   });
 
+  logger.info(`Checkout session created: ${session.id} for pack ${pack.priceKey}`);
   return { url: session.url };
 }

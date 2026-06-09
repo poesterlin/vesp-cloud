@@ -40,8 +40,8 @@
 
 ## Logging and Observability
 
-- [ ] Logging uses plain `console.*` only; no structured logs or level controls. Add correlation IDs across API, queue, and subprocess logs.
-- [ ] Stripe success paths are minimally logged compared to error paths.
+- [x] Logging uses plain `console.*` only; no structured logs or level controls. Add correlation IDs across API, queue, and subprocess logs.
+- [x] Stripe success paths are minimally logged compared to error paths.
 
 ## Infrastructure and Ops
 

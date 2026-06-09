@@ -4,6 +4,7 @@ import { getPackByPriceId } from "../packs";
 import { getDb } from "$lib/db";
 import { stripeEvents } from "$lib/db/schema";
 import { eq } from "drizzle-orm";
+import { createLogger } from "$lib/server/logger";
 import type Stripe from "stripe";
 
 const trackedEvents = new Set<string>([
@@ -17,24 +18,28 @@ export function isTrackedEvent(type: string): boolean {
 export async function handleCompletedCheckout(
   sessionId: string
 ): Promise<void> {
+  const logger = createLogger(sessionId);
   const stripe = getStripe();
   const session = await stripe.checkout.sessions.retrieve(sessionId, {
     expand: ["line_items.data.price"],
   });
 
   const userId = session.metadata?.userId;
-  if (!userId) return;
-  if (session.mode !== "payment") return;
-  if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") return;
+  if (!userId) { logger.warn('No userId in session metadata'); return; }
+  if (session.mode !== "payment") { logger.info(`Skipping non-payment session: ${session.mode}`); return; }
+  if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") {
+    logger.info(`Skipping session with status: ${session.payment_status}`);
+    return;
+  }
 
   const lineItems = session.line_items?.data;
-  if (!lineItems || lineItems.length === 0) return;
+  if (!lineItems || lineItems.length === 0) { logger.warn('No line items in session'); return; }
 
   const priceId = lineItems[0].price?.id;
-  if (!priceId) return;
+  if (!priceId) { logger.warn('No price ID in line item'); return; }
 
   const pack = getPackByPriceId(priceId);
-  if (!pack) return;
+  if (!pack) { logger.warn(`Unknown price: ${priceId}`); return; }
 
   await addCredits({
     userId,
@@ -42,6 +47,8 @@ export async function handleCompletedCheckout(
     reason: `purchase:${pack.priceKey}`,
     stripeSessionId: session.id,
   });
+
+  logger.info(`Credited ${pack.credits} credits to user ${userId} for pack ${pack.priceKey}`);
 }
 
 export async function processStripeEvent(

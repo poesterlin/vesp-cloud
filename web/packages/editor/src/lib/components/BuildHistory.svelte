@@ -1,22 +1,24 @@
 <script lang="ts">
   import { projectStore } from "$lib/stores/project.svelte";
   import { deploymentStore, type JobStatus } from "$lib/stores/deployment.svelte";
-  import { onMount } from "svelte";
 
   let jobs = $state<JobStatus[]>([]);
   let loading = $state(true);
 
-  onMount(() => {
-    loadJobs();
-  });
-
-  async function loadJobs() {
-    if (!projectStore.serverProjectId) {
+  $effect(() => {
+    const projectId = projectStore.serverProjectId;
+    if (!projectId) {
       loading = false;
+      jobs = [];
       return;
     }
+    loadJobs(projectId);
+  });
+
+  async function loadJobs(projectId: string) {
+    loading = true;
     try {
-      const res = await fetch(`/api/compile?projectId=${projectStore.serverProjectId}`);
+      const res = await fetch(`/api/compile?projectId=${projectId}`);
       if (res.ok) {
         const data = await res.json();
         jobs = Array.isArray(data) ? data : [];
@@ -56,7 +58,15 @@
 
   async function publishJob(jobId: string) {
     await deploymentStore.publishBuild(jobId);
-    await loadJobs();
+    const projectId = projectStore.serverProjectId;
+    if (projectId) await loadJobs(projectId);
+  }
+
+  function flashBuild(jobId: string) {
+    deploymentStore.state.jobId = jobId;
+    deploymentStore.state.manifestUrl = `/api/manifest/${jobId}`;
+    deploymentStore.state.flow = "new";
+    deploymentStore.state.step = "flash";
   }
 
   const activeJob = $derived(jobs.find((j) => j.published && j.status === "completed"));
@@ -120,6 +130,9 @@
               <div class="build-actions">
                 <button class="action-btn" onclick={() => publishJob(job.id)} disabled={job.published}>
                   {job.published ? "Published" : "Publish OTA"}
+                </button>
+                <button class="action-btn secondary" onclick={() => flashBuild(job.id)}>
+                  Flash
                 </button>
                 <button class="action-btn secondary" onclick={() => downloadBin(job.id)}>
                   Download .bin

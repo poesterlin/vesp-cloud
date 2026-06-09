@@ -1,5 +1,5 @@
 import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent } from "@esphome-designer/schema";
-import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, textBindingVar, bindingKey, imageIdFromComponentId, escapeCString } from "./utils";
+import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString } from "./utils";
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
 import { ICON_FONT_ID, getIconGlyphs } from "./mdi-icons";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
@@ -65,10 +65,13 @@ function generateOnlineImagesYAML(project: Project): string {
   const lines: string[] = [];
   for (const c of collectImageComponents(project)) {
     if (!isHomeAssistantImage(c) || !c.imageBinding?.entityId) continue;
-    const onlineFormat = c.onlineFormat === "jpeg" ? "jpeg" : "png";
+    const primaryFormat = c.onlineFormat === "jpeg" ? "jpeg" : "png";
+    const fallbackFormat = primaryFormat === "jpeg" ? "png" : "jpeg";
+    const primaryId = imageIdFromComponentId(c.id);
+    const fallbackId = imageFallbackIdFromComponentId(c.id);
     lines.push(`  - url: "http://127.0.0.1/"`);
-    lines.push(`    id: ${imageIdFromComponentId(c.id)}`);
-    lines.push(`    format: ${onlineFormat}`);
+    lines.push(`    id: ${primaryId}`);
+    lines.push(`    format: ${primaryFormat}`);
     lines.push(`    type: ${c.image_type}`);
     lines.push(`    resize: ${imageResize(c)}`);
     if (c.transparency) lines.push(`    transparency: ${c.transparency}`);
@@ -76,8 +79,8 @@ function generateOnlineImagesYAML(project: Project): string {
     lines.push(`    on_download_finished:`);
     lines.push(`      then:`);
     lines.push(`        - lambda: |-`);
-    lines.push(`            g_ui_app.state().online_images_completed++;`);
     lines.push(`            if (g_ui_app.state().image_bootstrap_active) {`);
+    lines.push(`              g_ui_app.state().online_images_completed++;`);
     lines.push(`              const int done = g_ui_app.state().online_images_completed + g_ui_app.state().online_images_failed;`);
     lines.push(`              if (done >= g_ui_app.state().online_images_expected) {`);
     lines.push(`                g_ui_app.state().image_bootstrap_active = false;`);
@@ -88,8 +91,33 @@ function generateOnlineImagesYAML(project: Project): string {
     lines.push(`    on_error:`);
     lines.push(`      then:`);
     lines.push(`        - lambda: |-`);
-    lines.push(`            g_ui_app.state().online_images_failed++;`);
+    lines.push(`            id(${fallbackId}).update();`);
+    lines.push(`            UiRedraw::trigger_display_update();`);
+
+    lines.push(`  - url: "http://127.0.0.1/"`);
+    lines.push(`    id: ${fallbackId}`);
+    lines.push(`    format: ${fallbackFormat}`);
+    lines.push(`    type: ${c.image_type}`);
+    lines.push(`    resize: ${imageResize(c)}`);
+    if (c.transparency) lines.push(`    transparency: ${c.transparency}`);
+    if (c.byte_order) lines.push(`    byte_order: ${c.byte_order}`);
+    lines.push(`    on_download_finished:`);
+    lines.push(`      then:`);
+    lines.push(`        - lambda: |-`);
     lines.push(`            if (g_ui_app.state().image_bootstrap_active) {`);
+    lines.push(`              g_ui_app.state().online_images_completed++;`);
+    lines.push(`              const int done = g_ui_app.state().online_images_completed + g_ui_app.state().online_images_failed;`);
+    lines.push(`              if (done >= g_ui_app.state().online_images_expected) {`);
+    lines.push(`                g_ui_app.state().image_bootstrap_active = false;`);
+    lines.push(`              }`);
+    lines.push(`            }`);
+    lines.push(`            UiRedraw::request_full();`);
+    lines.push(`            UiRedraw::trigger_display_update();`);
+    lines.push(`    on_error:`);
+    lines.push(`      then:`);
+    lines.push(`        - lambda: |-`);
+    lines.push(`            if (g_ui_app.state().image_bootstrap_active) {`);
+    lines.push(`              g_ui_app.state().online_images_failed++;`);
     lines.push(`              const int done = g_ui_app.state().online_images_completed + g_ui_app.state().online_images_failed;`);
     lines.push(`              if (done >= g_ui_app.state().online_images_expected) {`);
     lines.push(`                g_ui_app.state().image_bootstrap_active = false;`);
@@ -170,7 +198,7 @@ function generateBindings(project: Project): string {
     const key = `${entityId}::${attribute}::${imageIdFromComponentId(ic.id)}`;
     if (claimed.has(key)) continue;
     claimed.add(key);
-    lines.push(`          bind_ha_image_url("${entityId}", "${attribute}", id(${imageIdFromComponentId(ic.id)}));`);
+    lines.push(`          bind_ha_image_url("${entityId}", "${attribute}", id(${imageIdFromComponentId(ic.id)}), id(${imageFallbackIdFromComponentId(ic.id)}));`);
   }
 
   for (const f of (project.state?.fields ?? []) as StateField[]) {
@@ -267,19 +295,20 @@ export function generateESPHomeYAML(project: Project, _firmwareVersion?: string)
     : '';
   const imageBindingHelper = onlineImagesEnabled
     ? `
-          auto bind_ha_image_url = [ha_base_url](const std::string& entity_id, const std::string& attribute, auto *target) {
+          auto bind_ha_image_url = [ha_base_url](const std::string& entity_id, const std::string& attribute, auto *primary, auto *fallback) {
             auto *api = esphome::api::global_api_server;
             if (api == nullptr) return;
             api->subscribe_home_assistant_state(
                 entity_id, esphome::optional<std::string>(attribute),
-                [target, ha_base_url](esphome::StringRef state) {
+                [primary, fallback, ha_base_url](esphome::StringRef state) {
                   std::string url(state.c_str(), state.size());
                   if (url.empty() || url == "unknown" || url == "unavailable") return;
                   if (!ha_base_url.empty() && url.rfind("/", 0) == 0) {
                     url = ha_base_url + url;
                   }
-                  target->set_url(url);
-                  target->update();
+                  primary->set_url(url);
+                  fallback->set_url(url);
+                  primary->update();
                   UiRedraw::trigger_display_update();
                 });
           };

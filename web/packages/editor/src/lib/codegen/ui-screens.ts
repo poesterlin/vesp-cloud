@@ -20,6 +20,7 @@ import {
   todoItemsVarFromBinding,
   textBindingVar,
   imageIdFromComponentId,
+  imageFallbackIdFromComponentId,
   type ScreenDescriptor,
   type WidgetFactory,
 } from "./utils";
@@ -304,8 +305,11 @@ function generateImageWidget(
   const h = c.size?.height ?? 100;
   const idSafe = c.id.replace(/[^a-zA-Z0-9_]/g, '_');
   const imageId = imageIdFromComponentId(c.id);
+  const fallbackImageId = imageFallbackIdFromComponentId(c.id);
+  const isHaImage = c.imageSource === "ha" || (c.imageSource == null && !!c.imageBinding?.entityId);
   const rect = `UiRect{${x}, ${y}, ${w}, ${h}}`;
-  let out = `${indent}auto *${idSafe} = ${factory('ImageWidget', `${rect}, id(${imageId})`)};\n`;
+  const ctorArgs = isHaImage ? `${rect}, id(${imageId}), id(${fallbackImageId})` : `${rect}, id(${imageId})`;
+  let out = `${indent}auto *${idSafe} = ${factory('ImageWidget', ctorArgs)};\n`;
   const bgColor = c.backgroundColor ? emitColor(c.backgroundColor) : defaultBgColor;
   if (bgColor) {
     out += `${indent}${idSafe}->set_bg_color(${bgColor});\n`;

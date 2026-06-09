@@ -117,15 +117,22 @@ class ImageWidget : public Widget {
   static constexpr int TILE_ROWS = 32;
 
   ImageWidget(UiRect rect, esphome::display::BaseImage *image,
+              esphome::display::BaseImage *fallback_image = nullptr,
               Color color_on = display::COLOR_ON,
               Color color_off = display::COLOR_OFF)
-      : rect_(rect), image_(image),
+      : rect_(rect), image_(image), fallback_image_(fallback_image),
         color_on_(color_on), color_off_(color_off) {}
 
   ImageWidget(UiRect rect, esphome::display::BaseImage &image,
               Color color_on = display::COLOR_ON,
               Color color_off = display::COLOR_OFF)
-      : ImageWidget(rect, &image, color_on, color_off) {}
+      : ImageWidget(rect, &image, nullptr, color_on, color_off) {}
+
+  ImageWidget(UiRect rect, esphome::display::BaseImage &image,
+              esphome::display::BaseImage &fallback_image,
+              Color color_on = display::COLOR_ON,
+              Color color_off = display::COLOR_OFF)
+      : ImageWidget(rect, &image, &fallback_image, color_on, color_off) {}
 
   void on_tap(Callback cb) { tap_callback_ = std::move(cb); }
 
@@ -150,12 +157,19 @@ class ImageWidget : public Widget {
   }
 
   void draw(display::Display &it, const UiState &state) override {
-    if (image_ == nullptr) return;
+    auto *img = select_image_();
+    if (img == nullptr) return;
 
-    auto *img = static_cast<esphome::image::Image *>(image_);
     if (img->get_data_start() == nullptr) {
       draw_placeholder(it);
       return;
+    }
+
+    if (active_image_ != img) {
+      active_image_ = img;
+      fully_rendered_ = false;
+      deferred_ = false;
+      tile_row_ = 0;
     }
 
     if (!fully_rendered_) {
@@ -168,17 +182,29 @@ class ImageWidget : public Widget {
         }
         return;
       }
-      render_tile(it, state);
+      render_tile(it, state, img);
       return;
     }
 
     ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
-    it.image(rect_.x, rect_.y, image_, color_on_, color_off_);
+    it.image(rect_.x, rect_.y, img, color_on_, color_off_);
   }
 
  private:
-  void render_tile(display::Display &it, const UiState &state) {
-    auto *img = static_cast<esphome::image::Image *>(image_);
+  esphome::image::Image *to_runtime_image_(esphome::display::BaseImage *img) const {
+    return static_cast<esphome::image::Image *>(img);
+  }
+
+  esphome::image::Image *select_image_() const {
+    auto *primary = to_runtime_image_(image_);
+    auto *fallback = to_runtime_image_(fallback_image_);
+    if (primary != nullptr && primary->get_data_start() != nullptr) return primary;
+    if (fallback != nullptr && fallback->get_data_start() != nullptr) return fallback;
+    if (primary != nullptr) return primary;
+    return fallback;
+  }
+
+  void render_tile(display::Display &it, const UiState &state, esphome::image::Image *img) {
     const int iw = img->get_width();
     const int ih = img->get_height();
     if (iw <= 0 || ih <= 0) { fully_rendered_ = true; return; }
@@ -226,6 +252,8 @@ class ImageWidget : public Widget {
 
   UiRect rect_;
   esphome::display::BaseImage *image_;
+  esphome::display::BaseImage *fallback_image_ = nullptr;
+  esphome::image::Image *active_image_ = nullptr;
   Color color_on_;
   Color color_off_;
   Color bg_color_{RetroColors::VOID};

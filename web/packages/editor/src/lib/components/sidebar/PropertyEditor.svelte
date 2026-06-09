@@ -496,19 +496,6 @@
               <option value="RGB">RGB</option>
             </select>
           </div>
-          {#if (selectedComponent.imageSource ?? (selectedComponent.imageBinding?.entityId ? "ha" : "static")) === "ha"}
-            <div class="field">
-              <span class="field-label">Online</span>
-              <select
-                value={selectedComponent.onlineFormat ?? "png"}
-                onchange={(e) =>
-                  updateProperty("onlineFormat", e.currentTarget.value)}
-              >
-                <option value="png">PNG</option>
-                <option value="jpeg">JPEG</option>
-              </select>
-            </div>
-          {/if}
           <div class="field">
             <span class="field-label">Resize</span>
             <input

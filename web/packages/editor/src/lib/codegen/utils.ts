@@ -59,6 +59,10 @@ export function imageIdFromComponentId(id: string): string {
   return `img_${safe || "image"}`;
 }
 
+export function imageFallbackIdFromComponentId(id: string): string {
+  return `${imageIdFromComponentId(id)}_alt`;
+}
+
 export function todoItemsVarFromBinding(binding: EntityBinding | undefined, fallbackId: string): string {
   if (!binding?.entityId) {
     return `todo_${stateVarFromEntity(fallbackId)}_all_items`;

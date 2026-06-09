@@ -1,8 +1,6 @@
 import { json } from "@sveltejs/kit";
-import { existsSync } from "fs";
-import { join } from "path";
 import type { RequestHandler } from "./$types";
-import { getAllJobs, getJobStatus, submitCompilationJob } from "$lib/utils/worker";
+import { getAllJobs, getProjectJobs, getJobStatus, submitCompilationJob } from "$lib/utils/worker";
 import { deductCredits, CREDIT_COSTS, getBalance } from "$lib/credits";
 import { env } from "$env/dynamic/private";
 import { validateProject } from "$lib/codegen/validations";
@@ -19,13 +17,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const { projectId, projectName, config, configPath, template } = await request.json();
 
     if (!projectId || !projectName || !config) {
-      return json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Validate project before queueing
     let parsedConfig: Project;
     try {
       parsedConfig = JSON.parse(config);
@@ -34,7 +28,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     }
     const validationErrors = validateProject(parsedConfig);
     if (validationErrors.length > 0) {
-      const messages = validationErrors.map((e) => `[${e.type}] ${e.message}`).join('; ');
+      const messages = validationErrors.map((e) => `[${e.type}] ${e.message}`).join("; ");
       return json({ error: `Project validation failed: ${messages}` }, { status: 400 });
     }
 
@@ -50,7 +44,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         const balance = await getBalance(locals.user.id);
         return json(
           { error: `Insufficient credits. Cost: ${cost}, balance: ${balance}` },
-          { status: 402 }
+          { status: 402 },
         );
       }
     }
@@ -61,22 +55,18 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       config,
       configPath || "",
       locals.user.id,
-      template
+      template,
     );
 
     return json(result);
   } catch (error: any) {
-    return json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return json({ error: error.message }, { status: 500 });
   }
 };
 
 export const GET: RequestHandler = async ({ url }) => {
   try {
     const jobId = url.searchParams.get("jobId");
-
     if (jobId) {
       const status = await getJobStatus(jobId);
       return json(status);
@@ -86,22 +76,19 @@ export const GET: RequestHandler = async ({ url }) => {
     const latest = url.searchParams.get("latest");
 
     if (projectId && latest) {
-      const allJobs = await getAllJobs();
-      const found = allJobs.find(
-        (j) =>
-          j.projectId === projectId &&
-          j.status === "completed" &&
-          existsSync(join(process.cwd(), "static", "builds", `${j.id}.bin`)),
-      );
+      const jobs = await getProjectJobs(projectId, 10);
+      const found = jobs.find((j) => j.status === "completed");
       return found ? json(found) : json(null);
+    }
+
+    if (projectId) {
+      const jobs = await getProjectJobs(projectId, 10);
+      return json(jobs);
     }
 
     const allJobs = await getAllJobs();
     return json(allJobs);
   } catch (error: any) {
-    return json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return json({ error: error.message }, { status: 500 });
   }
 };

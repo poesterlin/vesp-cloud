@@ -65,9 +65,10 @@ function generateOnlineImagesYAML(project: Project): string {
   const lines: string[] = [];
   for (const c of collectImageComponents(project)) {
     if (!isHomeAssistantImage(c) || !c.imageBinding?.entityId) continue;
+    const onlineFormat = c.onlineFormat === "jpeg" ? "jpeg" : "png";
     lines.push(`  - url: "http://127.0.0.1/"`);
     lines.push(`    id: ${imageIdFromComponentId(c.id)}`);
-    lines.push(`    format: ${c.onlineFormat ?? "png"}`);
+    lines.push(`    format: ${onlineFormat}`);
     lines.push(`    type: ${c.image_type}`);
     lines.push(`    resize: ${imageResize(c)}`);
     if (c.transparency) lines.push(`    transparency: ${c.transparency}`);

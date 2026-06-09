@@ -75,8 +75,19 @@ export async function getAllJobs(): Promise<CompilationJob[]> {
   if (!compilationQueue) {
     throw new Error('Compilation queue not started');
   }
-  
+
   return compilationQueue.getAllJobs();
+}
+
+export async function getProjectJobs(
+  projectId: string,
+  limit = 10,
+): Promise<CompilationJob[]> {
+  if (!compilationQueue) {
+    throw new Error('Compilation queue not started');
+  }
+
+  return compilationQueue.getProjectJobs(projectId, limit);
 }
 
 export function getQueueStats() {

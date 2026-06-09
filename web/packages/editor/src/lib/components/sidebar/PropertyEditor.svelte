@@ -506,7 +506,6 @@
               >
                 <option value="png">PNG</option>
                 <option value="jpeg">JPEG</option>
-                <option value="bmp">BMP</option>
               </select>
             </div>
           {/if}

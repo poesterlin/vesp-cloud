@@ -20,15 +20,20 @@ function binKey(jobId: string): string {
 
 export async function uploadBinary(jobId: string, data: Buffer): Promise<void> {
   if (!s3) throw new Error("S3 client not initialized");
-  await s3.write(binKey(jobId), data, {
-    type: "application/octet-stream",
+  await s3.write(binKey(jobId), data, { type: "application/octet-stream" });
+}
+
+export async function getBinaryStream(jobId: string): Promise<Response> {
+  if (!s3) throw new Error("S3 client not initialized");
+  const file = s3.file(binKey(jobId));
+  return new Response(file.stream(), {
+    headers: { "Content-Type": "application/octet-stream", "Cache-Control": "no-store" },
   });
 }
 
 export async function getBinaryBuffer(jobId: string): Promise<Response> {
   if (!s3) throw new Error("S3 client not initialized");
-  const key = binKey(jobId);
-  const file = s3.file(key);
+  const file = s3.file(binKey(jobId));
   const buffer = await file.arrayBuffer();
   return new Response(buffer, {
     headers: {
@@ -39,13 +44,23 @@ export async function getBinaryBuffer(jobId: string): Promise<Response> {
   });
 }
 
+export async function deleteBinary(jobId: string): Promise<void> {
+  if (!s3) return;
+  try { await s3.delete(binKey(jobId)); } catch {}
+}
+
 export async function deleteBinaries(jobIds: string[]): Promise<void> {
   if (!s3) return;
-  for (const id of jobIds) {
-    try {
-      await s3.delete(binKey(id));
-    } catch {
-      // Object may not exist, ignore
-    }
+  for (const id of jobIds) await deleteBinary(id);
+}
+
+export async function binaryExists(jobId: string): Promise<boolean> {
+  if (!s3) return false;
+  try {
+    const file = s3.file(binKey(jobId));
+    await file.arrayBuffer();
+    return true;
+  } catch {
+    return false;
   }
 }

@@ -553,7 +553,7 @@
               "description": "Home Assistant image/camera entity. The entity_picture attribute is used by default and loaded with online_image."
             },
             "onlineFormat": {
-              "enum": ["png", "jpeg", "bmp"],
+              "enum": ["png", "jpeg"],
               "default": "png",
               "description": "Encoded format expected from the online image URL when imageBinding is used."
             },

@@ -103,7 +103,7 @@ export type ImageComponent = BaseComponent & {
   /**
    * Encoded format expected from the online image URL when imageBinding is used.
    */
-  onlineFormat?: "png" | "jpeg" | "bmp";
+  onlineFormat?: "png" | "jpeg";
   /**
    * Specifies how to encode image internally.
    */

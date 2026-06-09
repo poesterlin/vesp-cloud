@@ -5,8 +5,6 @@
 
   let jobs = $state<JobStatus[]>([]);
   let loading = $state(true);
-  let selectedJobId = $state<string | null>(null);
-  let viewLogsFor = $state<string | null>(null);
 
   onMount(() => {
     loadJobs();
@@ -58,21 +56,6 @@
     await loadJobs();
   }
 
-  function setFlashJob(jobId: string) {
-    selectedJobId = jobId;
-    // Trigger a compile with a special flow to flash an existing build
-    // For now, we set the manifest URL directly
-    deploymentStore.state.manifestUrl = `/api/manifest/${jobId}`;
-    deploymentStore.state.step = "flash";
-    deploymentStore.state.jobId = jobId;
-  }
-
-  function downloadZip(jobId: string) {
-    const a = document.createElement("a");
-    a.href = `/api/compile/${jobId}/download`;
-    a.click();
-  }
-
   const activeJob = $derived(jobs.find((j) => j.published && j.status === "completed"));
 </script>
 
@@ -117,7 +100,7 @@
     {:else}
       <div class="builds-list">
         {#each jobs as job (job.id)}
-          <div class="build-item" class:selected={selectedJobId === job.id}>
+          <div class="build-item">
             <div class="build-main">
               <div class="build-meta">
                 <span class="build-id">{job.id.slice(0, 8)}</span>
@@ -130,35 +113,14 @@
               </div>
               <div class="build-date">{formatDate(job.createdAt)}</div>
             </div>
-            <div class="build-actions">
-              {#if job.status === "completed"}
+            {#if job.status === "completed"}
+              <div class="build-actions">
                 <button class="action-btn" onclick={() => publishJob(job.id)} disabled={job.published}>
                   {job.published ? "Published" : "Publish OTA"}
                 </button>
-                <button class="action-btn secondary" onclick={() => setFlashJob(job.id)}>
-                  Flash USB
-                </button>
                 <button class="action-btn secondary" onclick={() => downloadBin(job.id)}>
-                  .bin
+                  Download .bin
                 </button>
-                <button class="action-btn secondary" onclick={() => downloadZip(job.id)}>
-                  ZIP
-                </button>
-                {#if job.output}
-                  <button class="action-btn secondary" onclick={() => viewLogsFor = viewLogsFor === job.id ? null : job.id}>
-                    {viewLogsFor === job.id ? "Hide Logs" : "View Logs"}
-                  </button>
-                {/if}
-              {/if}
-            </div>
-            {#if viewLogsFor === job.id && job.output}
-              <div class="log-panel">
-                <pre>{job.output}</pre>
-              </div>
-            {/if}
-            {#if job.error && viewLogsFor === job.id}
-              <div class="log-panel error">
-                <pre>{job.error}</pre>
               </div>
             {/if}
           </div>
@@ -278,11 +240,6 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    transition: border-color 0.15s;
-  }
-
-  .build-item.selected {
-    border-color: var(--color-accent);
   }
 
   .build-main {
@@ -377,27 +334,5 @@
 
   .action-btn.secondary:hover {
     color: var(--color-text-primary);
-  }
-
-  .log-panel {
-    background: var(--color-bg-primary);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    padding: var(--spacing-md);
-    max-height: 200px;
-    overflow-y: auto;
-  }
-
-  .log-panel.error {
-    border-color: rgba(244, 67, 54, 0.3);
-  }
-
-  .log-panel pre {
-    margin: 0;
-    font-size: 11px;
-    font-family: monospace;
-    color: var(--color-text-secondary);
-    white-space: pre-wrap;
-    word-break: break-all;
   }
 </style>

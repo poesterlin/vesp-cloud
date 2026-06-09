@@ -155,7 +155,7 @@ ${observableFields}
   int online_images_expected = 0;
   int online_images_completed = 0;
   int online_images_failed = 0;
-  static constexpr uint32_t ONLINE_IMAGE_BOOTSTRAP_TIMEOUT_MS = 10000;
+  static constexpr uint32_t ONLINE_IMAGE_BOOTSTRAP_TIMEOUT_MS = 30000;
 
   bool should_show_loading() const {
     if (!ha_connected) return true;

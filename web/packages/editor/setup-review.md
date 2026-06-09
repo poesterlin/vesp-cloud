@@ -45,4 +45,4 @@
 
 ## Infrastructure and Ops
 
-- [ ] Production image includes broader dependency set than necessary (dev prune not explicit).
+- [x] Production image includes broader dependency set than necessary (dev prune not explicit).

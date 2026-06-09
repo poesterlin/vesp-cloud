@@ -37,6 +37,9 @@ COPY packages ./packages
 # Build all packages
 RUN bun run build
 
+# Prune devDependencies for production
+RUN bun install --production --frozen-lockfile
+
 # Production image
 FROM oven/bun:${BUN_VERSION}
 

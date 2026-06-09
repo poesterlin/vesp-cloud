@@ -1,4 +1,4 @@
-import type { Project } from '@esphome-designer/schema';
+import type { Component, Project } from '@esphome-designer/schema';
 
 interface ChangeItem {
   message: string;
@@ -8,18 +8,148 @@ export interface ProjectChanges {
   items: ChangeItem[];
 }
 
-function countComponents(project: Project): number {
-  let count = 0;
-  for (const page of project.dashboardPages) {
-    count += page.components.length;
+function getComponentName(c: any): string {
+  return c?.label || c?.text || c?.title || c?.name || c?.id || 'component';
+}
+
+function describeComponentChange(oldC: any, newC: any): string | null {
+  if (JSON.stringify(oldC) === JSON.stringify(newC)) return null;
+
+  const name = getComponentName(newC);
+  const changes: string[] = [];
+
+  if (oldC.position?.x !== newC.position?.x || oldC.position?.y !== newC.position?.y) {
+    changes.push('moved');
   }
-  for (const dv of project.detailViews) {
-    count += dv.components.length;
+  if (oldC.size?.width !== newC.size?.width || oldC.size?.height !== newC.size?.height) {
+    changes.push('resized');
   }
-  if (project.pageHeader?.components) {
-    count += project.pageHeader.components.length;
+
+  const textFields = ['text', 'label', 'title', 'onText', 'offText'];
+  for (const f of textFields) {
+    if (f in oldC && oldC[f] !== newC[f]) {
+      changes.push(`changed ${f}`);
+      break;
+    }
   }
-  return count;
+
+  const bindingFields = ['entityBinding', 'stateBinding', 'valueBinding', 'loadingBinding'];
+  for (const f of bindingFields) {
+    if (oldC[f]?.entityId !== newC[f]?.entityId) {
+      changes.push('changed binding');
+      break;
+    }
+  }
+
+  if (oldC.icon !== newC.icon) {
+    changes.push('changed icon');
+  }
+
+  const oldTabs = oldC.tabs?.length ?? 0;
+  const newTabs = newC.tabs?.length ?? 0;
+  if (newTabs > oldTabs) {
+    changes.push(`added ${newTabs - oldTabs} tab${newTabs - oldTabs > 1 ? 's' : ''}`);
+  } else if (newTabs < oldTabs) {
+    changes.push(`removed ${oldTabs - newTabs} tab${oldTabs - newTabs > 1 ? 's' : ''}`);
+  }
+
+  const oldItems = oldC.items?.length ?? 0;
+  const newItems = newC.items?.length ?? 0;
+  if (newItems > oldItems) {
+    changes.push(`added ${newItems - oldItems} item${newItems - oldItems > 1 ? 's' : ''}`);
+  } else if (newItems < oldItems) {
+    changes.push(`removed ${oldItems - newItems} item${oldItems - newItems > 1 ? 's' : ''}`);
+  }
+
+  const oldVariants = oldC.variants?.length ?? 0;
+  const newVariants = newC.variants?.length ?? 0;
+  if (newVariants > oldVariants) {
+    changes.push(`added ${newVariants - oldVariants} condition variant${newVariants - oldVariants > 1 ? 's' : ''}`);
+  } else if (newVariants < oldVariants) {
+    changes.push(`removed ${oldVariants - newVariants} condition variant${oldVariants - newVariants > 1 ? 's' : ''}`);
+  }
+
+  if (oldC.visible !== newC.visible) {
+    changes.push(newC.visible === false ? 'hidden' : 'shown');
+  }
+
+  if (oldC.variant !== newC.variant) {
+    changes.push(`changed style to "${newC.variant ?? 'default'}"`);
+  }
+
+  if (oldC.min !== newC.min || oldC.max !== newC.max) {
+    changes.push('changed range');
+  }
+
+  if (oldC.action?.type !== newC.action?.type || oldC.action?.service !== newC.action?.service) {
+    changes.push('changed action');
+  }
+
+  if (changes.length === 0) {
+    return `Modified "${name}"`;
+  }
+  return `Modified "${name}" (${changes.join(', ')})`;
+}
+
+function buildComponentMap(components: Component[]) {
+  const map = new Map<string, Component>();
+  for (const c of components) {
+    map.set(c.id, c);
+  }
+  return map;
+}
+
+function diffComponents(
+  context: string,
+  prevComponents: Component[],
+  currComponents: Component[],
+): ChangeItem[] {
+  const items: ChangeItem[] = [];
+  const prevMap = buildComponentMap(prevComponents);
+  const currMap = buildComponentMap(currComponents);
+
+  const added: string[] = [];
+  for (const c of currComponents) {
+    if (!prevMap.has(c.id)) {
+      added.push(getComponentName(c));
+    }
+  }
+  if (added.length === 1) {
+    items.push({ message: `Added "${added[0]}" ${context}` });
+  } else if (added.length > 1) {
+    items.push({ message: `Added ${added.length} components ${context}` });
+  }
+
+  const removed: string[] = [];
+  for (const c of prevComponents) {
+    if (!currMap.has(c.id)) {
+      removed.push(getComponentName(c));
+    }
+  }
+  if (removed.length === 1) {
+    items.push({ message: `Removed "${removed[0]}" ${context}` });
+  } else if (removed.length > 1) {
+    items.push({ message: `Removed ${removed.length} components ${context}` });
+  }
+
+  const modified: string[] = [];
+  for (const c of currComponents) {
+    const prev = prevMap.get(c.id);
+    if (prev) {
+      const desc = describeComponentChange(prev, c);
+      if (desc) modified.push(desc);
+    }
+  }
+
+  if (modified.length <= 3) {
+    for (const m of modified) {
+      items.push({ message: `${m} ${context}` });
+    }
+  } else {
+    items.push({ message: `Modified ${modified.length} components ${context}` });
+  }
+
+  return items;
 }
 
 export function diffProject(current: Project, previous: Project): ProjectChanges {
@@ -33,12 +163,7 @@ export function diffProject(current: Project, previous: Project): ProjectChanges
     if (!prev) {
       items.push({ message: `Added page "${page.name}"` });
     } else {
-      const compDiff = page.components.length - prev.components.length;
-      if (compDiff > 0) {
-        items.push({ message: `Added ${compDiff} component${compDiff > 1 ? 's' : ''} to page "${page.name}"` });
-      } else if (compDiff < 0) {
-        items.push({ message: `Removed ${Math.abs(compDiff)} component${Math.abs(compDiff) > 1 ? 's' : ''} from page "${page.name}"` });
-      }
+      items.push(...diffComponents(`on page "${page.name}"`, prev.components, page.components));
     }
   }
 
@@ -56,12 +181,7 @@ export function diffProject(current: Project, previous: Project): ProjectChanges
     if (!prev) {
       items.push({ message: `Added detail view "${dv.title}"` });
     } else {
-      const compDiff = dv.components.length - prev.components.length;
-      if (compDiff > 0) {
-        items.push({ message: `Added ${compDiff} component${compDiff > 1 ? 's' : ''} to detail view "${dv.title}"` });
-      } else if (compDiff < 0) {
-        items.push({ message: `Removed ${Math.abs(compDiff)} component${Math.abs(compDiff) > 1 ? 's' : ''} from detail view "${dv.title}"` });
-      }
+      items.push(...diffComponents(`on detail view "${dv.title}"`, prev.components, dv.components));
     }
   }
 
@@ -107,14 +227,13 @@ export function diffProject(current: Project, previous: Project): ProjectChanges
   } else if (!current.pageHeader && previous.pageHeader) {
     items.push({ message: 'Removed page header' });
   } else if (current.pageHeader && previous.pageHeader) {
-    const newCount = current.pageHeader.components?.length ?? 0;
-    const oldCount = previous.pageHeader.components?.length ?? 0;
-    const diff = newCount - oldCount;
-    if (diff > 0) {
-      items.push({ message: `Added ${diff} component${diff > 1 ? 's' : ''} to page header` });
-    } else if (diff < 0) {
-      items.push({ message: `Removed ${Math.abs(diff)} component${Math.abs(diff) > 1 ? 's' : ''} from page header` });
-    }
+    items.push(
+      ...diffComponents(
+        'on page header',
+        previous.pageHeader.components ?? [],
+        current.pageHeader.components ?? [],
+      ),
+    );
   }
 
   const prevOverlay = previous.notificationOverlay;

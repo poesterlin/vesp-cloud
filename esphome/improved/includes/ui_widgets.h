@@ -694,7 +694,8 @@ class LoadingWidget : public Widget {
 
   void draw(display::Display &it, const UiState &state) override {
     (void)state;
-    ui_fast_fill(it, RetroColors::VOID);
+    const int fx = 120, fy = 190, fw = 240, fh = 170;
+    ui_fast_filled_rectangle(it, fx, fy, fw, fh, RetroColors::VOID);
 
     const int cx = 240, cy = 240;
     const uint32_t t = millis();

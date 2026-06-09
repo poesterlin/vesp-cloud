@@ -24,11 +24,25 @@ export const PUT: RequestHandler = async ({ locals, params, request }) => {
   const { name, data } = body;
 
   const db = getDb();
+
+  let lastSavedData: unknown = undefined;
+  if (data !== undefined) {
+    const [current] = await db
+      .select({ data: projects.data })
+      .from(projects)
+      .where(and(eq(projects.id, params.id), eq(projects.userId, locals.user.id)));
+
+    if (current) {
+      lastSavedData = current.data;
+    }
+  }
+
   const [row] = await db
     .update(projects)
     .set({
       ...(name !== undefined && { name }),
       ...(data !== undefined && { data }),
+      ...(lastSavedData !== undefined && { lastSavedData }),
       updatedAt: new Date(),
     })
     .where(and(eq(projects.id, params.id), eq(projects.userId, locals.user.id)))

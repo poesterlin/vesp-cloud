@@ -35,6 +35,7 @@ export const projects = pgTable('project', {
     .references(() => usersTable.id, fullCascade),
   name: varchar('name', { length: 255 }).notNull(),
   data: jsonb('data').notNull(),
+  lastSavedData: jsonb('last_saved_data'),
   firmwareToken: uuid('firmware_token').notNull().defaultRandom().unique(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),

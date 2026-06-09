@@ -42,7 +42,7 @@
 
   <div class="deploy-body">
     <div class="deploy-left">
-      <ChangeSummary />
+      <ChangeSummary lastSavedData={data.lastSavedData} />
       <DeployWizard standalone />
     </div>
     <div class="deploy-right">

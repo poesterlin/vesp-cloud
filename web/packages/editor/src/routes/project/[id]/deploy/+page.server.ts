@@ -40,6 +40,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       name: row.name,
       data: row.data,
     },
+    lastSavedData: row.lastSavedData ?? null,
     activeJob: activeJob
       ? {
           id: activeJob.id,

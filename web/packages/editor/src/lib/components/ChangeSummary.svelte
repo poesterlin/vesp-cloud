@@ -3,10 +3,24 @@
   import { diffProject, type ProjectChanges } from "$lib/diff";
   import type { Project } from "@esphome-designer/schema";
 
+  interface Props {
+    lastSavedData: unknown;
+  }
+
+  let { lastSavedData }: Props = $props();
+
   let changes = $state<ProjectChanges | null>(null);
   let loading = $state(true);
+  let referenceLabel = $state('your last save');
 
-  async function loadLastBuild() {
+  function tryDiff(prevConfig: Project) {
+    const current = projectStore.project;
+    if (!current) return false;
+    changes = diffProject(current, prevConfig);
+    return true;
+  }
+
+  async function loadComparison() {
     const projectId = projectStore.serverProjectId;
     if (!projectId) {
       loading = false;
@@ -15,33 +29,34 @@
 
     try {
       const res = await fetch(`/api/compile?projectId=${encodeURIComponent(projectId)}&latest=true`);
-      if (!res.ok) {
-        loading = false;
-        return;
+      if (res.ok) {
+        const job = await res.json();
+        if (job?.config) {
+          const prevConfig = JSON.parse(job.config) as Project;
+          if (tryDiff(prevConfig)) {
+            referenceLabel = 'your last firmware build';
+            loading = false;
+            return;
+          }
+        }
       }
-      const job = await res.json();
-      if (!job || !job.config) {
-        loading = false;
-        return;
-      }
-
-      const prevConfig = JSON.parse(job.config) as Project;
-      const current = projectStore.project;
-      if (!current) {
-        loading = false;
-        return;
-      }
-
-      changes = diffProject(current, prevConfig);
     } catch {
-      // Failed to load — show nothing
+      // continue to fallback
     }
+
+    if (lastSavedData) {
+      const prevConfig = lastSavedData as Project;
+      if (tryDiff(prevConfig)) {
+        referenceLabel = 'your last save';
+      }
+    }
+
     loading = false;
   }
 
   $effect(() => {
     if (projectStore.serverProjectId) {
-      loadLastBuild();
+      loadComparison();
     }
   });
 </script>
@@ -53,7 +68,7 @@
   </div>
 {:else if changes && changes.items.length > 0}
   <div class="change-summary">
-    <h3 class="summary-title">What's changed since your last firmware build</h3>
+    <h3 class="summary-title">What's changed since {referenceLabel}</h3>
     <ul class="change-list">
       {#each changes.items as change}
         <li>{change.message}</li>
@@ -62,7 +77,7 @@
   </div>
 {:else if changes && changes.items.length === 0}
   <div class="change-summary no-changes">
-    No changes since your last firmware build.
+    No changes since {referenceLabel}.
   </div>
 {/if}
 

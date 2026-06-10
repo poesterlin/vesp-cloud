@@ -98,10 +98,15 @@
     const next = new Map(diffs);
     if (next.has(job.id)) {
       next.delete(job.id);
-    } else if (job.config && projectStore.project) {
+    } else if (job.config) {
       try {
-        const prev = JSON.parse(job.config) as Project;
-        const changes = diffProject(projectStore.project, prev);
+        const idx = jobs.findIndex((j) => j.id === job.id);
+        const prior = idx >= 0 && idx + 1 < jobs.length ? jobs[idx + 1] : null;
+        const base = prior?.config ? (JSON.parse(prior.config) as Project) : null;
+        const current = JSON.parse(job.config) as Project;
+        const changes = base
+          ? diffProject(current, base)
+          : { items: [{ message: "First build" }] };
         next.set(job.id, changes.items.map((i) => i.message));
       } catch {
         next.set(job.id, ["Could not read build config"]);
@@ -294,7 +299,7 @@
             {#if diffs.has(job.id)}
               <div class="diff-panel">
                 <div class="diff-header">
-                  <span>Changes since this build</span>
+                  <span>Changes</span>
                   <button class="diff-close" onclick={() => toggleDiff(job)} aria-label="Close">
                     <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                       <path d={mdiIcons.mdiClose} />

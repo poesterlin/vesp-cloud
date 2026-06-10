@@ -25,6 +25,12 @@ export function generateSecretsYAML(project: Project): string {
   lines.push(`firmware_update_url: "${firmwareUpdateUrl}"`);
   lines.push(`firmware_manifest_url: "${manifestUrlFor(firmwareUpdateUrl)}"`);
 
+  if (project.secrets?.homeAssistantBaseUrl) {
+    lines.push(``);
+    lines.push(`# Home Assistant base URL for resolving relative entity_picture paths`);
+    lines.push(`home_assistant_base_url: "${project.secrets.homeAssistantBaseUrl}"`);
+  }
+
   return lines.join("\n");
 }
 
@@ -32,5 +38,8 @@ export function generateSecretsYAML(project: Project): string {
  * Check if project has any secrets configured
  */
 export function hasSecrets(project: Project): boolean {
-  return !!project.secrets?.firmwareUpdateUrl;
+  return !!(
+    project.secrets?.firmwareUpdateUrl ||
+    project.secrets?.homeAssistantBaseUrl
+  );
 }

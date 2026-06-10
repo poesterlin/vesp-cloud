@@ -489,6 +489,10 @@ export interface SecretsConfig {
    * Firmware update URL for OTA via HTTP (auto-populated from server)
    */
   firmwareUpdateUrl?: string;
+  /**
+   * Optional base URL used to resolve relative Home Assistant entity_picture URLs
+   */
+  homeAssistantBaseUrl?: string;
 }
 /**
  * Project-level page header shown on all dashboard pages

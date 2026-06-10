@@ -101,6 +101,36 @@ describe("image component codegen", () => {
     expect(yaml).toContain("http_request:");
   });
 
+  test("resolves relative HA image URLs when HA base URL is configured", () => {
+    const project = makeProject({
+      secrets: { homeAssistantBaseUrl: "http://homeassistant.local:8123" },
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Page",
+          components: [
+            {
+              id: "album-art",
+              type: "image",
+              position: { x: 0, y: 0 },
+              size: { width: 120, height: 120 },
+              file: "images/fallback.png",
+              image_type: "RGB565",
+              imageBinding: { entityId: "image.album_art" },
+            },
+          ],
+        },
+      ],
+    });
+
+    const yaml = generateESPHomeYAML(project);
+    const secrets = generateSecretsYAML(project);
+    expect(yaml).toContain("home_assistant_base_url: !secret home_assistant_base_url");
+    expect(yaml).toContain('const std::string ha_base_url = "${home_assistant_base_url}";');
+    expect(yaml).toContain('url = ha_base_url + url;');
+    expect(secrets).toContain('home_assistant_base_url: "http://homeassistant.local:8123"');
+  });
+
   test("emits HTTP firmware update entity when firmware URL is configured", () => {
     const project = makeProject({
       secrets: { firmwareUpdateUrl: "https://example.com/api/firmware/token" },

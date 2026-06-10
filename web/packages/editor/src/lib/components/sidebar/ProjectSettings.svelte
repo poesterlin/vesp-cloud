@@ -30,6 +30,7 @@
   let notificationSeverityEntityId = $state(
     projectStore.project?.notificationOverlay?.severityEntityId ?? defaultNotificationOverlay.severityEntityId
   );
+  let homeAssistantBaseUrl = $state(projectStore.project?.secrets?.homeAssistantBaseUrl ?? "");
   
   let newFontId = $state("");
   let newFontFile = $state("");
@@ -126,6 +127,10 @@
       theme,
       timezone,
       notificationOverlay,
+      secrets: {
+        ...projectStore.project?.secrets,
+        homeAssistantBaseUrl: homeAssistantBaseUrl.trim().replace(/\/+$/, "") || undefined,
+      },
     });
     onClose();
   }
@@ -262,6 +267,23 @@
           bind:value={notificationSeverityEntityId}
           placeholder="input_select.notification_severity"
           disabled={!notificationOverlayEnabled}
+        />
+      </div>
+    </section>
+
+    <section>
+      <h3>Home Assistant</h3>
+      <p class="section-hint">
+        Optional. Used only to resolve relative image URLs from Home Assistant entities, such as <code>/api/image_proxy/...</code>.
+      </p>
+
+      <div class="field">
+        <label for="ha-base-url">Home Assistant Base URL</label>
+        <input
+          id="ha-base-url"
+          type="url"
+          bind:value={homeAssistantBaseUrl}
+          placeholder="http://homeassistant.local:8123"
         />
       </div>
     </section>

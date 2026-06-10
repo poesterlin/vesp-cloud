@@ -273,6 +273,7 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
     : '';
   const onlineImagesEnabled = hasOnlineImages(project);
   const onlineImageCount = countOnlineImages(project);
+  const homeAssistantBaseUrlEnabled = onlineImagesEnabled && !!project.secrets?.homeAssistantBaseUrl;
   const httpOtaEnabled = !!(project.secrets?.firmwareUpdateUrl);
   const httpRequestEnabled = onlineImagesEnabled || httpOtaEnabled;
   const bindings = generateBindings(project);
@@ -293,16 +294,35 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   const httpUpdateYaml = httpOtaEnabled
     ? `\nupdate:\n  - platform: http_request\n    name: Firmware Update\n    source: !secret firmware_manifest_url\n`
     : '';
+  const homeAssistantBaseUrlSubstitution = homeAssistantBaseUrlEnabled
+    ? `\n  home_assistant_base_url: !secret home_assistant_base_url`
+    : '';
+  const haBaseUrlLocal = homeAssistantBaseUrlEnabled
+    ? `\n          const std::string ha_base_url = "\${home_assistant_base_url}";\n`
+    : '';
+  const imageHelperCapture = homeAssistantBaseUrlEnabled ? '[ha_base_url]' : '[]';
+  const imageCallbackCapture = homeAssistantBaseUrlEnabled
+    ? '[primary, fallback, ha_base_url]'
+    : '[primary, fallback]';
+  const relativeImageHandling = homeAssistantBaseUrlEnabled
+    ? `
+                  if (url.rfind("/", 0) == 0) {
+                    url = ha_base_url + url;
+                  }`
+    : `
+                  if (url.rfind("/", 0) == 0) return;`;
   const imageBindingHelper = onlineImagesEnabled
     ? `
-          auto bind_ha_image_url = [](const std::string& entity_id, const std::string& attribute, auto *primary, auto *fallback) {
+          auto bind_ha_image_url = ${imageHelperCapture}(const std::string& entity_id, const std::string& attribute, auto *primary, auto *fallback) {
             auto *api = esphome::api::global_api_server;
             if (api == nullptr) return;
             api->subscribe_home_assistant_state(
                 entity_id, esphome::optional<std::string>(attribute),
-                [primary, fallback](esphome::StringRef state) {
+                ${imageCallbackCapture}(esphome::StringRef state) {
                   std::string url(state.c_str(), state.size());
                   if (url.empty() || url == "unknown" || url == "unavailable") return;
+${relativeImageHandling}
+                  if (url.rfind("http://", 0) != 0 && url.rfind("https://", 0) != 0) return;
                   primary->set_url(url);
                   fallback->set_url(url);
                   primary->update();
@@ -315,7 +335,7 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   return `substitutions:
   device_name: ${deviceName}
   friendly_name: "${friendlyName}"
-  timezone: "${project.timezone || "UTC"}"
+  timezone: "${project.timezone || "UTC"}"${homeAssistantBaseUrlSubstitution}
 
 packages:
   base: !include base.yaml
@@ -353,6 +373,7 @@ ${projectVersionYaml}
           g_ui_app.state().image_bootstrap_started_at = 0;
           UiRedraw::request_full();
           id(main_display).update();
+${haBaseUrlLocal}
 
           auto bind_ha_bool = [](const std::string& entity_id, Observable<bool>* target) {
             auto *api = esphome::api::global_api_server;

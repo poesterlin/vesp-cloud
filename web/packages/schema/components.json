@@ -789,6 +789,10 @@
         "firmwareUpdateUrl": {
           "type": "string",
           "description": "Firmware update URL for OTA via HTTP (auto-populated from server)"
+        },
+        "homeAssistantBaseUrl": {
+          "type": "string",
+          "description": "Optional base URL used to resolve relative Home Assistant entity_picture URLs"
         }
       },
       "additionalProperties": false

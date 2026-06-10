@@ -8,13 +8,20 @@ import { createLogger } from '$lib/server/logger';
 
 export const GET: RequestHandler = async ({ params, url, request }) => {
   const db = getDb();
+  const logger = createLogger(params.token);
+  const userAgent = request.headers.get('user-agent') ?? 'unknown';
+
+  logger.info(`manifest request: path=${url.pathname} device="${userAgent}"`);
 
   const [project] = await db
     .select({ id: projects.id })
     .from(projects)
     .where(eq(projects.firmwareToken, params.token));
 
-  if (!project) error(404, 'Not found');
+  if (!project) {
+    logger.warn('manifest request rejected: token not found');
+    error(404, 'Not found');
+  }
 
   const [job] = await db
     .select({ id: compilationJobs.id, completedAt: compilationJobs.completedAt })
@@ -28,10 +35,11 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
     )
     .orderBy(desc(compilationJobs.completedAt));
 
-  if (!job) error(404, 'No published firmware');
+  if (!job) {
+    logger.warn(`manifest request rejected: no published firmware for project=${project.id}`);
+    error(404, 'No published firmware');
+  }
 
-  const logger = createLogger(params.token);
-  const userAgent = request.headers.get('user-agent') ?? 'unknown';
   const { size, md5 } = await getBinaryStats(job.id);
   logger.info(`manifest check: projectId=${project.id} device="${userAgent}" size=${size}`);
 

@@ -12,11 +12,12 @@ services:
       - MINIO_BUCKET=${MINIO_BUCKET}
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - PUBLIC_BASE_URL=https://${DOMAIN}
     networks:
       - traefik_web
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.esphome.rule=Host(`esphome.oesterlin.dev`)"
+      - "traefik.http.routers.esphome.rule=Host(`${DOMAIN}`)"
       - "traefik.http.services.esphome.loadbalancer.server.port=3000"
     volumes:
       - esphome_builds:/tmp/esphome-builds

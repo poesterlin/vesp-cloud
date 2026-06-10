@@ -6,15 +6,23 @@ import { eq, and, desc } from 'drizzle-orm';
 import { ensureS3, binKey } from '$lib/server/s3';
 import { createLogger } from '$lib/server/logger';
 
-export const GET: RequestHandler = async ({ params, request }) => {
+export const GET: RequestHandler = async ({ params, request, url }) => {
   const db = getDb();
+  const logger = createLogger(params.token);
+  const userAgent = request.headers.get('user-agent') ?? 'unknown';
+  const ifNoneMatch = request.headers.get('if-none-match');
+
+  logger.info(`firmware request: path=${url.pathname} device="${userAgent}" etag=${ifNoneMatch ?? 'none'}`);
 
   const [project] = await db
     .select({ id: projects.id, name: projects.name })
     .from(projects)
     .where(eq(projects.firmwareToken, params.token));
 
-  if (!project) error(404, 'Not found');
+  if (!project) {
+    logger.warn('firmware request rejected: token not found');
+    error(404, 'Not found');
+  }
 
   const [job] = await db
     .select({ id: compilationJobs.id, completedAt: compilationJobs.completedAt })
@@ -28,18 +36,21 @@ export const GET: RequestHandler = async ({ params, request }) => {
     )
     .orderBy(desc(compilationJobs.completedAt));
 
-  if (!job) error(404, 'No published firmware');
+  if (!job) {
+    logger.warn(`firmware request rejected: no published firmware for project="${project.name}"`);
+    error(404, 'No published firmware');
+  }
 
   const s3 = ensureS3();
   const s3File = s3.file(binKey(job.id));
-  if (!(await s3File.exists())) error(404, 'Binary not found');
+  if (!(await s3File.exists())) {
+    logger.warn(`firmware request rejected: S3 binary missing for job=${job.id}`);
+    error(404, 'Binary not found');
+  }
 
   const etag = `"${job.id}"`;
   const version = job.completedAt?.toISOString() ?? job.id;
 
-  const logger = createLogger(params.token);
-  const ifNoneMatch = request.headers.get('if-none-match');
-  const userAgent = request.headers.get('user-agent') ?? 'unknown';
   logger.info(`update check: project="${project.name}" device="${userAgent}" etag=${ifNoneMatch ?? 'none'} current=${job.id}`);
 
   if (ifNoneMatch === etag) {

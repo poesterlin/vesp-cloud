@@ -293,22 +293,30 @@
       groupMap.get(key)!.entities.push(entity);
     }
 
-    return Array.from(groupMap.entries()).map(([key, group]) => {
-      const primaryEntity = group.entities.find(
-        (entity) =>
-          normalizeName(getDisplayName(entity)) ===
-          normalizeName(group.deviceName),
-      );
-      const entity = primaryEntity || group.entities[0];
+    return Array.from(groupMap.entries())
+      .map(([key, group]) => {
+        const primaryEntity = group.entities.find(
+          (entity) =>
+            normalizeName(getDisplayName(entity)) ===
+            normalizeName(group.deviceName),
+        );
+        const entity = primaryEntity || group.entities[0];
 
-      return {
-        key,
-        ...group,
-        entity,
-        hasMultiple: group.entities.length > 1,
-        entityCount: group.entities.length,
-      };
-    });
+        return {
+          key,
+          ...group,
+          entity,
+          hasMultiple: group.entities.length > 1,
+          entityCount: group.entities.length,
+        };
+      })
+      .sort((a, b) => {
+        const aHasDevice = !!a.entity.device_id;
+        const bHasDevice = !!b.entity.device_id;
+        if (aHasDevice && !bHasDevice) return -1;
+        if (!aHasDevice && bHasDevice) return 1;
+        return 0;
+      });
   });
 
   // Get display name for entity

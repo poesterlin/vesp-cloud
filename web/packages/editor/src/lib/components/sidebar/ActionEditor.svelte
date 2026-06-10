@@ -41,6 +41,15 @@
   const serviceName = $derived(serviceAction?.service ?? "");
   const serviceTargetEntity = $derived(serviceAction?.target?.entityId ?? "");
 
+  const serviceNeedsEntityTarget = $derived.by(() => {
+    if (!serviceName) return false;
+    const [domain, svc] = serviceName.split(".");
+    if (!domain || !svc) return false;
+    const svcInfo = homeAssistantStore.services[domain]?.[svc];
+    if (!svcInfo?.fields) return false;
+    return "entity_id" in svcInfo.fields;
+  });
+
   let customMode = $state(false);
   let showServicePicker = $state(false);
 
@@ -190,6 +199,7 @@
       </button>
     </div>
 
+    {#if serviceNeedsEntityTarget}
     <div class="target-section">
       <span class="field-label">Target</span>
       <EntityPicker
@@ -202,6 +212,7 @@
         onUpdate={(binding) => handleEntityTargetChange(binding?.entityId)}
       />
     </div>
+    {/if}
   {/if}
 </div>
 

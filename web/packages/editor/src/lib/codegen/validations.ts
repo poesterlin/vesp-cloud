@@ -108,21 +108,6 @@ function validateAction(action: OnTapAction | ActionBinding | undefined, fieldNa
 
   const fieldLabel = FIELD_LABELS[fieldName] ?? fieldName;
 
-  if (action.type === "SERVICE_CALL") {
-    const hasTarget = !!(action.target?.entityId || action.target?.deviceId);
-    if (!hasTarget) {
-      return [
-        {
-          type: "error" as const,
-          message: `"${fieldLabel}" needs a target entity or device`,
-          componentId,
-          componentLabel: compLabel,
-          field: fieldName,
-        },
-      ];
-    }
-  }
-
   if (action.type === "OPEN_DETAIL") {
     if (!action.targetId) {
       return [

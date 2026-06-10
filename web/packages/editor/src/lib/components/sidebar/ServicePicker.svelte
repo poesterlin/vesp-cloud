@@ -34,7 +34,7 @@
         const entries: ServiceEntry[] = [];
         for (const [svcName, svcInfo] of Object.entries(domainServices)) {
           const fieldKeys = svcInfo.fields ? Object.keys(svcInfo.fields) : [];
-          if (fieldKeys.length > 1 || (fieldKeys.length === 1 && fieldKeys[0] !== "entity_id")) continue;
+          if (fieldKeys.length > 0 && !fieldKeys.includes("entity_id")) continue;
           entries.push({
             domain,
             service: `${domain}.${svcName}`,

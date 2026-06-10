@@ -6,8 +6,13 @@
 
 import type { Project } from "@esphome-designer/schema";
 
+function manifestUrlFor(firmwareUrl: string): string {
+  return `${firmwareUrl.replace(/\/$/, "")}/manifest`;
+}
+
 export function generateSecretsYAML(project: Project): string {
   const lines: string[] = [];
+  const firmwareUpdateUrl = project.secrets?.firmwareUpdateUrl ?? "http://YOUR_SERVER/api/firmware/YOUR_TOKEN";
 
   lines.push(`# ============================================`);
   lines.push(`# ESPHome Secrets`);
@@ -17,7 +22,8 @@ export function generateSecretsYAML(project: Project): string {
 
   // Firmware update URL (for OTA via HTTP)
   lines.push(`# Firmware Update URL (auto-populated when project is published)`);
-  lines.push(`firmware_update_url: "${project.secrets?.firmwareUpdateUrl ?? "http://YOUR_SERVER/api/firmware/YOUR_TOKEN"}"`);
+  lines.push(`firmware_update_url: "${firmwareUpdateUrl}"`);
+  lines.push(`firmware_manifest_url: "${manifestUrlFor(firmwareUpdateUrl)}"`);
   lines.push(``);
   lines.push(`# Home Assistant base URL for resolving relative entity_picture paths`);
   lines.push(`home_assistant_base_url: "${project.secrets?.homeAssistantBaseUrl ?? "http://homeassistant.local:8123"}"`);

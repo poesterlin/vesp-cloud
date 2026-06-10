@@ -290,6 +290,9 @@ export function generateESPHomeYAML(project: Project, _firmwareVersion?: string)
   const httpOtaYaml = httpOtaEnabled
     ? `\nota:\n  - platform: http_request\n`
     : '';
+  const httpUpdateYaml = httpOtaEnabled
+    ? `\nupdate:\n  - platform: http_request\n    name: Firmware Update\n    source: !secret firmware_manifest_url\n`
+    : '';
   const haBaseUrlLocal = onlineImagesEnabled
     ? `\n          const std::string ha_base_url = "\${home_assistant_base_url}";\n`
     : '';
@@ -324,7 +327,7 @@ packages:
   base: !include base.yaml
   fonts: !include fonts.yaml
   hardware: !include hardware.yaml
-${imageYaml}${onlineImageYaml}${httpRequestYaml}${httpOtaYaml}
+${imageYaml}${onlineImageYaml}${httpRequestYaml}${httpOtaYaml}${httpUpdateYaml}
 
 esphome:
   on_boot:

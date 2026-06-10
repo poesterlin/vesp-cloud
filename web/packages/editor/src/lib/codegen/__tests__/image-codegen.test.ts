@@ -2,6 +2,7 @@
 import { describe, expect, test } from "bun:test";
 import type { Project } from "@esphome-designer/schema";
 import { generateESPHomeYAML } from "../esphome-yaml";
+import { generateSecretsYAML } from "../secrets";
 import { generateUIScreensHeader } from "../ui-screens";
 
 function makeProject(overrides: Partial<Project> = {}): Project {
@@ -98,5 +99,28 @@ describe("image component codegen", () => {
     expect(yaml).toContain('bind_ha_image_url("image.album_art", "entity_picture", id(img_albumart), id(img_albumart_alt));');
     expect(yaml).toContain("home_assistant_base_url: !secret home_assistant_base_url");
     expect(yaml).toContain("http_request:");
+  });
+
+  test("emits HTTP firmware update entity when firmware URL is configured", () => {
+    const project = makeProject({
+      secrets: { firmwareUpdateUrl: "https://example.com/api/firmware/token" },
+    });
+
+    const yaml = generateESPHomeYAML(project);
+    expect(yaml).toContain("http_request:");
+    expect(yaml).toContain("ota:\n  - platform: http_request");
+    expect(yaml).toContain("update:\n  - platform: http_request");
+    expect(yaml).toContain("name: Firmware Update");
+    expect(yaml).toContain("source: !secret firmware_manifest_url");
+  });
+
+  test("emits firmware manifest URL secret", () => {
+    const project = makeProject({
+      secrets: { firmwareUpdateUrl: "https://example.com/api/firmware/token/" },
+    });
+
+    const yaml = generateSecretsYAML(project);
+    expect(yaml).toContain('firmware_update_url: "https://example.com/api/firmware/token/"');
+    expect(yaml).toContain('firmware_manifest_url: "https://example.com/api/firmware/token/manifest"');
   });
 });

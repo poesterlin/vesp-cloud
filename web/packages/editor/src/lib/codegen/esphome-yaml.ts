@@ -282,9 +282,6 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   const iconFontAssignment = iconGlyphs.size > 0
     ? `\n          g_theme.icon.font = id(${ICON_FONT_ID});`
     : '';
-  const homeAssistantBaseUrlSubstitution = onlineImagesEnabled
-    ? `\n  home_assistant_base_url: !secret home_assistant_base_url`
-    : '';
   const imageYaml = generateStaticImagesYAML(project);
   const onlineImageYaml = generateOnlineImagesYAML(project);
   const httpRequestYaml = httpRequestEnabled
@@ -296,22 +293,16 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   const httpUpdateYaml = httpOtaEnabled
     ? `\nupdate:\n  - platform: http_request\n    name: Firmware Update\n    source: !secret firmware_manifest_url\n`
     : '';
-  const haBaseUrlLocal = onlineImagesEnabled
-    ? `\n          const std::string ha_base_url = "\${home_assistant_base_url}";\n`
-    : '';
   const imageBindingHelper = onlineImagesEnabled
     ? `
-          auto bind_ha_image_url = [ha_base_url](const std::string& entity_id, const std::string& attribute, auto *primary, auto *fallback) {
+          auto bind_ha_image_url = [](const std::string& entity_id, const std::string& attribute, auto *primary, auto *fallback) {
             auto *api = esphome::api::global_api_server;
             if (api == nullptr) return;
             api->subscribe_home_assistant_state(
                 entity_id, esphome::optional<std::string>(attribute),
-                [primary, fallback, ha_base_url](esphome::StringRef state) {
+                [primary, fallback](esphome::StringRef state) {
                   std::string url(state.c_str(), state.size());
                   if (url.empty() || url == "unknown" || url == "unavailable") return;
-                  if (!ha_base_url.empty() && url.rfind("/", 0) == 0) {
-                    url = ha_base_url + url;
-                  }
                   primary->set_url(url);
                   fallback->set_url(url);
                   primary->update();
@@ -324,7 +315,7 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   return `substitutions:
   device_name: ${deviceName}
   friendly_name: "${friendlyName}"
-  timezone: "${project.timezone || "UTC"}"${homeAssistantBaseUrlSubstitution}
+  timezone: "${project.timezone || "UTC"}"
 
 packages:
   base: !include base.yaml
@@ -362,7 +353,6 @@ ${projectVersionYaml}
           g_ui_app.state().image_bootstrap_started_at = 0;
           UiRedraw::request_full();
           id(main_display).update();
-${haBaseUrlLocal}
 
           auto bind_ha_bool = [](const std::string& entity_id, Observable<bool>* target) {
             auto *api = esphome::api::global_api_server;

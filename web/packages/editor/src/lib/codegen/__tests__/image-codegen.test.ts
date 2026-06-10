@@ -97,7 +97,7 @@ describe("image component codegen", () => {
     expect(yaml).not.toContain("home_assistant_bearer_token");
     expect(yaml).not.toContain("Authorization:");
     expect(yaml).toContain('bind_ha_image_url("image.album_art", "entity_picture", id(img_albumart), id(img_albumart_alt));');
-    expect(yaml).toContain("home_assistant_base_url: !secret home_assistant_base_url");
+    expect(yaml).not.toContain("home_assistant_base_url");
     expect(yaml).toContain("http_request:");
   });
 

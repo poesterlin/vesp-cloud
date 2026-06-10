@@ -13,6 +13,8 @@
       projectStore.loadFromServer(data.project);
     }
 
+    deploymentStore.reset();
+
     if (data.activeJob) {
       deploymentStore.restoreJob(data.activeJob.id, data.activeJob.status);
     }

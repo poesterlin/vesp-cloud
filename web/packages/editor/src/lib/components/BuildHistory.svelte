@@ -2,10 +2,13 @@
   import * as mdiIcons from "@mdi/js";
   import { projectStore } from "$lib/stores/project.svelte";
   import { deploymentStore, type JobStatus } from "$lib/stores/deployment.svelte";
+  import { diffProject } from "$lib/diff";
+  import type { Project } from "@esphome-designer/schema";
 
   let jobs = $state<JobStatus[]>([]);
   let loading = $state(true);
   let popoverOk = $state(false);
+  let diffs = $state<Map<string, string[]>>(new Map());
 
   $effect(() => {
     const projectId = projectStore.serverProjectId;
@@ -19,6 +22,16 @@
 
   $effect(() => {
     popoverOk = typeof HTMLElement !== 'undefined' && 'popover' in HTMLElement.prototype;
+  });
+
+  $effect(() => {
+    const step = deploymentStore.state.step;
+    const err = deploymentStore.state.error;
+    const projectId = projectStore.serverProjectId;
+    if (!projectId) return;
+    if (step === "ready" || step === "done" || err) {
+      loadJobs(projectId);
+    }
   });
 
   async function loadJobs(projectId: string) {
@@ -78,6 +91,23 @@
       console.error("Failed to roll back project", e);
       window.alert("Could not roll back to this build.");
     }
+  }
+
+  function toggleDiff(job: JobStatus) {
+    if (isBusy) return;
+    const next = new Map(diffs);
+    if (next.has(job.id)) {
+      next.delete(job.id);
+    } else if (job.config && projectStore.project) {
+      try {
+        const prev = JSON.parse(job.config) as Project;
+        const changes = diffProject(projectStore.project, prev);
+        next.set(job.id, changes.items.map((i) => i.message));
+      } catch {
+        next.set(job.id, ["Could not read build config"]);
+      }
+    }
+    diffs = next;
   }
 
   function flashBuild(jobId: string) {
@@ -173,16 +203,8 @@
                   </span>
                 {/if}
               </div>
-              <div class="build-date">{timeAgo(job.createdAt)}</div>
-            </div>
-            {#if job.status === "completed"}
-              <div class="build-actions">
-                <button class="action-btn" onclick={() => flashBuild(job.id)} disabled={isBusy}>
-                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d={mdiIcons.mdiUsbPort} />
-                  </svg>
-                  Flash
-                </button>
+              <div class="build-right">
+                <div class="build-date">{timeAgo(job.createdAt)}</div>
                 {#if popoverOk}
                   <button
                     class="menu-toggle"
@@ -219,6 +241,14 @@
                         Roll back project
                       </button>
                     </li>
+                    <li>
+                      <button onclick={() => toggleDiff(job)} disabled={isBusy || !job.config}>
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d={mdiIcons.mdiCompare} />
+                        </svg>
+                        {diffs.has(job.id) ? "Hide changes" : "View changes"}
+                      </button>
+                    </li>
                   </menu>
                 {:else}
                   <details class="power-menu-fallback">
@@ -240,9 +270,42 @@
                         </svg>
                         Roll back project
                       </button>
+                      <button onclick={() => toggleDiff(job)} disabled={isBusy || !job.config}>
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d={mdiIcons.mdiCompare} />
+                        </svg>
+                        {diffs.has(job.id) ? "Hide changes" : "View changes"}
+                      </button>
                     </div>
                   </details>
                 {/if}
+              </div>
+            </div>
+            {#if job.status === "completed"}
+              <div class="build-actions">
+                <button class="action-btn" onclick={() => flashBuild(job.id)} disabled={isBusy}>
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d={mdiIcons.mdiUsbPort} />
+                  </svg>
+                  Flash
+                </button>
+              </div>
+            {/if}
+            {#if diffs.has(job.id)}
+              <div class="diff-panel">
+                <div class="diff-header">
+                  <span>Changes since this build</span>
+                  <button class="diff-close" onclick={() => toggleDiff(job)} aria-label="Close">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d={mdiIcons.mdiClose} />
+                    </svg>
+                  </button>
+                </div>
+                <ul class="diff-list">
+                  {#each diffs.get(job.id) ?? [] as msg}
+                    <li>{msg}</li>
+                  {/each}
+                </ul>
               </div>
             {/if}
           </div>
@@ -412,6 +475,13 @@
   .build-date {
     font-size: 12px;
     color: var(--color-text-secondary);
+  }
+
+  .build-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
   }
 
   .status-badge {
@@ -600,5 +670,71 @@
   .power-menu-content button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  .diff-panel {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .diff-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .diff-header span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+  }
+
+  .diff-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .diff-close:hover {
+    color: var(--color-text-primary);
+    background: var(--color-bg-tertiary);
+  }
+
+  .diff-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .diff-list li {
+    position: relative;
+    padding-left: 16px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+
+  .diff-list li::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 6px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--color-accent);
   }
 </style>

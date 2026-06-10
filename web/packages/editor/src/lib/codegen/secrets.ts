@@ -34,12 +34,4 @@ export function generateSecretsYAML(project: Project): string {
   return lines.join("\n");
 }
 
-/**
- * Check if project has any secrets configured
- */
-export function hasSecrets(project: Project): boolean {
-  return !!(
-    project.secrets?.firmwareUpdateUrl ||
-    project.secrets?.homeAssistantBaseUrl
-  );
-}
+

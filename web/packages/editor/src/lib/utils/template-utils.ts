@@ -184,19 +184,4 @@ export function getDomainIcon(binding: EntityBinding): string {
   return DOMAIN_ICONS[domain] ?? "📦";
 }
 
-/**
- * Render a template string by substituting each `{{...}}` placeholder
- * with the resolved binding display value. This is the inverse-ish of
- * `parseTemplate` for non-editable preview surfaces such as the canvas
- * TextRenderer.
- */
-export function renderTemplate(
-  text: string,
-  getEntity: (entityId: string) => Entity | undefined,
-): string {
-  return parseTemplate(text)
-    .map((seg) =>
-      seg.type === "text" ? seg.value : getBindingDisplay(seg.value, getEntity),
-    )
-    .join("");
-}
+

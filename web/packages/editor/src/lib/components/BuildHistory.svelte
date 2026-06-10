@@ -1,14 +1,24 @@
 <script lang="ts">
   import * as mdiIcons from "@mdi/js";
   import { projectStore } from "$lib/stores/project.svelte";
-  import { deploymentStore, type JobStatus } from "$lib/stores/deployment.svelte";
+  import {
+    deploymentStore,
+    type JobStatus,
+  } from "$lib/stores/deployment.svelte";
   import { diffProject } from "$lib/diff";
   import type { Project } from "@esphome-designer/schema";
+
+  interface Props {
+    onFlash?: (jobId: string) => void;
+  }
+
+  let { onFlash }: Props = $props();
 
   let jobs = $state<JobStatus[]>([]);
   let loading = $state(true);
   let popoverOk = $state(false);
   let diffs = $state<Map<string, string[]>>(new Map());
+  let expanded = $state(false);
 
   $effect(() => {
     const projectId = projectStore.serverProjectId;
@@ -21,7 +31,8 @@
   });
 
   $effect(() => {
-    popoverOk = typeof HTMLElement !== 'undefined' && 'popover' in HTMLElement.prototype;
+    popoverOk =
+      typeof HTMLElement !== "undefined" && "popover" in HTMLElement.prototype;
   });
 
   $effect(() => {
@@ -31,6 +42,15 @@
     if (!projectId) return;
     if (step === "ready" || step === "done" || err) {
       loadJobs(projectId);
+    }
+  });
+
+  $effect(() => {
+    if (jobs.length > 0 && diffs.size === 0) {
+      const latest = jobs[0];
+      if (latest?.config) {
+        toggleDiff(latest);
+      }
     }
   });
 
@@ -58,7 +78,8 @@
     if (diffMin < 1) return "just now";
     if (diffMin < 60) return `${diffMin} min ago`;
     const diffHour = Math.floor(diffMin / 60);
-    if (diffHour < 24) return `${diffHour} hour${diffHour === 1 ? "" : "s"} ago`;
+    if (diffHour < 24)
+      return `${diffHour} hour${diffHour === 1 ? "" : "s"} ago`;
     const diffDay = Math.floor(diffHour / 24);
     return `${diffDay} day${diffDay === 1 ? "" : "s"} ago`;
   }
@@ -78,7 +99,10 @@
 
     try {
       const config = JSON.parse(job.config);
-      const name = typeof config.name === "string" ? config.name : projectStore.project?.name;
+      const name =
+        typeof config.name === "string"
+          ? config.name
+          : projectStore.project?.name;
       const res = await fetch(`/api/projects/${projectStore.serverProjectId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -102,12 +126,17 @@
       try {
         const idx = jobs.findIndex((j) => j.id === job.id);
         const prior = idx >= 0 && idx + 1 < jobs.length ? jobs[idx + 1] : null;
-        const base = prior?.config ? (JSON.parse(prior.config) as Project) : null;
+        const base = prior?.config
+          ? (JSON.parse(prior.config) as Project)
+          : null;
         const current = JSON.parse(job.config) as Project;
         const changes = base
           ? diffProject(current, base)
           : { items: [{ message: "First build" }] };
-        next.set(job.id, changes.items.map((i) => i.message));
+        next.set(
+          job.id,
+          changes.items.map((i) => i.message),
+        );
       } catch {
         next.set(job.id, ["Could not read build config"]);
       }
@@ -115,218 +144,319 @@
     diffs = next;
   }
 
-  function flashBuild(jobId: string) {
+  function handleFlash(jobId: string) {
     if (isBusy) return;
-    deploymentStore.state.jobId = jobId;
-    deploymentStore.state.manifestUrl = `/api/manifest/${jobId}`;
-    deploymentStore.state.flow = "new";
-    deploymentStore.state.step = "flash";
+    onFlash?.(jobId);
   }
 
-  const activeJob = $derived(jobs.find((j) => j.published && j.status === "completed"));
-  const isBusy = $derived(deploymentStore.state.compiling || deploymentStore.state.publishing);
+  const activeJob = $derived(
+    jobs.find((j) => j.published && j.status === "completed"),
+  );
+  const isBusy = $derived(
+    deploymentStore.state.compiling || deploymentStore.state.publishing,
+  );
+  const isCompiling = $derived(deploymentStore.state.compiling);
+  const activeJobId = $derived(deploymentStore.state.jobId);
+  const filteredJobs = $derived(
+    isCompiling && activeJobId
+      ? jobs.filter(
+          (j) =>
+            j.id !== activeJobId &&
+            !["running", "queued", "pending"].includes(j.status),
+        )
+      : jobs,
+  );
+  const visibleJobs = $derived(
+    expanded ? filteredJobs : filteredJobs.slice(0, 1),
+  );
+  const hasMore = $derived(filteredJobs.length > 1);
 </script>
 
-<div class="build-history">
-  <div class="history-heading">
-    <span>Release Board</span>
-    {#if isBusy}
-      <small>Actions locked while work is running</small>
-    {/if}
-  </div>
-
-  <!-- Active Release Spotlight -->
-  {#if activeJob}
-    <div class="active-card">
-      <div class="active-header">
-        <span class="active-badge">
+<div class="build-list-section">
+  {#if isCompiling}
+    <div class="active-build-row">
+      <div class="build-row-main">
+        <div class="build-status-icon compiling">
+          <div class="spinner"></div>
+        </div>
+        <div class="build-info">
+          <span class="build-status-text"
+            >{deploymentStore.state.status || "Building..."}</span
+          >
+          {#if !deploymentStore.state.error}
+            <div class="progress-bar">
+              <div
+                class="progress-fill"
+                style="width: {deploymentStore.state.progress}%"
+              ></div>
+            </div>
+          {/if}
+        </div>
+      </div>
+      {#if deploymentStore.state.error}
+        <span class="status-badge failed">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d={mdiIcons.mdiCheckCircle} />
+            <path d={mdiIcons.mdiAlertCircle} />
           </svg>
-          Current firmware
+          Failed
         </span>
-        <span class="active-date">Updated {timeAgo(activeJob.createdAt)}</span>
-      </div>
-      <div class="active-body">
-        <div class="active-row">
-          <span class="active-label">Delivery</span>
-          <span class="active-value">Device updates</span>
-        </div>
-        <div class="active-row">
-          <span class="active-label">Status</span>
-          <span class="status-badge success">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d={mdiIcons.mdiCloudCheck} />
-            </svg>
-            Live
-          </span>
-        </div>
-      </div>
-    </div>
-  {:else}
-    <div class="active-card empty">
-      <p>No firmware published yet. Build your project to get started.</p>
+      {:else}
+        <span class="status-badge running">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d={mdiIcons.mdiProgressClock} />
+          </svg>
+          Building
+        </span>
+      {/if}
     </div>
   {/if}
 
-  <!-- Previous Builds List -->
-  <div class="builds-section">
-    <h3>Builds</h3>
-    {#if loading}
-      <p class="loading">Loading build history...</p>
-    {:else if jobs.length === 0}
-      <p class="empty">No builds yet. Compile your project to get started.</p>
-    {:else}
-      <div class="builds-list">
-        {#each jobs as job, index (job.id)}
-          <div class="build-item">
-            <div class="build-main">
-              <div class="build-meta">
-                <span class="build-name">{jobs.length - index}</span>
-                <span class="status-badge" class:success={job.status === "completed"} class:failed={job.status === "failed"} class:running={job.status === "running"}>
-                  {#if job.status === "completed"}
-                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d={mdiIcons.mdiCheckCircle} />
-                    </svg>
-                  {:else if job.status === "failed"}
-                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d={mdiIcons.mdiAlertCircle} />
-                    </svg>
-                  {:else}
-                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d={mdiIcons.mdiProgressClock} />
-                    </svg>
-                  {/if}
-                  {job.status}
-                </span>
-                {#if job.published}
-                  <span class="status-badge published">
-                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d={mdiIcons.mdiCloudCheck} />
-                    </svg>
-                    Live
-                  </span>
+  {#if loading}
+    <p class="empty-state">Loading builds...</p>
+  {:else if jobs.length === 0 && !isCompiling}
+    <p class="empty-state">
+      No builds yet. Click "New Build" to compile your project.
+    </p>
+  {:else}
+    <div class="builds-list">
+      {#each visibleJobs as job, idx (job.id)}
+        {@const isFirst = idx === 0}
+        <div class="build-item" class:published={job.published}>
+          <div class="build-row">
+            <div class="build-row-main">
+              <div
+                class="build-status-icon"
+                class:success={job.status === "completed"}
+                class:failed={job.status === "failed"}
+                class:running={job.status === "running" ||
+                  job.status === "queued" ||
+                  job.status === "pending"}
+              >
+                {#if job.status === "completed"}
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d={mdiIcons.mdiCheckCircle} />
+                  </svg>
+                {:else if job.status === "failed"}
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d={mdiIcons.mdiAlertCircle} />
+                  </svg>
+                {:else}
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d={mdiIcons.mdiProgressClock} />
+                  </svg>
                 {/if}
               </div>
-              <div class="build-right">
-                <div class="build-date">{timeAgo(job.createdAt)}</div>
-                {#if popoverOk}
-                  <button
-                    class="menu-toggle"
-                    command="toggle-popover"
-                    commandfor="power-menu-{job.id}"
-                    popovertarget="power-menu-{job.id}"
-                    style="anchor-name: --power-{job.id};"
-                    aria-label="Power user actions"
-                    title="Power user actions"
-                  >
-                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d={mdiIcons.mdiDotsHorizontal} />
-                    </svg>
-                  </button>
-                  <menu
-                    class="power-menu"
-                    popover
-                    id="power-menu-{job.id}"
-                    style="position-anchor: --power-{job.id};"
-                  >
-                    <li>
-                      <button onclick={() => downloadBin(job.id)} disabled={isBusy}>
-                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d={mdiIcons.mdiDownload} />
-                        </svg>
-                        Download .bin
-                      </button>
-                    </li>
-                    <li>
-                      <button onclick={() => rollbackProject(job)} disabled={isBusy || !job.config}>
-                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d={mdiIcons.mdiRestore} />
-                        </svg>
-                        Roll back project
-                      </button>
-                    </li>
-                    <li>
-                      <button onclick={() => toggleDiff(job)} disabled={isBusy || !job.config}>
-                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d={mdiIcons.mdiCompare} />
-                        </svg>
-                        {diffs.has(job.id) ? "Hide changes" : "View changes"}
-                      </button>
-                    </li>
-                  </menu>
-                {:else}
-                  <details class="power-menu-fallback">
-                    <summary aria-label="Power user actions" title="Power user actions">
-                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d={mdiIcons.mdiDotsHorizontal} />
-                      </svg>
-                    </summary>
-                    <div class="power-menu-content">
-                      <button onclick={() => downloadBin(job.id)} disabled={isBusy}>
-                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d={mdiIcons.mdiDownload} />
-                        </svg>
-                        Download .bin
-                      </button>
-                      <button onclick={() => rollbackProject(job)} disabled={isBusy || !job.config}>
-                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d={mdiIcons.mdiRestore} />
-                        </svg>
-                        Roll back project
-                      </button>
-                      <button onclick={() => toggleDiff(job)} disabled={isBusy || !job.config}>
-                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d={mdiIcons.mdiCompare} />
-                        </svg>
-                        {diffs.has(job.id) ? "Hide changes" : "View changes"}
-                      </button>
-                    </div>
-                  </details>
+              <div class="build-info">
+                <div class="build-info-row">
+                  <span class="build-time">{timeAgo(job.createdAt)}</span>
+                  {#if job.published}
+                    <span class="badge live">Live</span>
+                  {/if}
+                </div>
+                {#if job.status === "failed" && job.error}
+                  <span class="build-error">{job.error}</span>
                 {/if}
               </div>
             </div>
-            {#if job.status === "completed"}
-              <div class="build-actions">
-                <button class="action-btn" onclick={() => flashBuild(job.id)} disabled={isBusy}>
+
+            <div class="build-actions">
+              {#if isFirst && job.status === "completed"}
+                <button
+                  class="action-btn flash-btn"
+                  onclick={() => handleFlash(job.id)}
+                  disabled={isBusy}
+                >
                   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d={mdiIcons.mdiUsbPort} />
                   </svg>
                   Flash
                 </button>
-              </div>
-            {/if}
-            {#if diffs.has(job.id)}
-              <div class="diff-panel">
-                <div class="diff-header">
-                  <span>Changes</span>
-                  <button class="diff-close" onclick={() => toggleDiff(job)} aria-label="Close">
+              {/if}
+
+              {#if popoverOk}
+                <button
+                  class="menu-toggle"
+                  command="toggle-popover"
+                  commandfor="power-menu-{job.id}"
+                  popovertarget="power-menu-{job.id}"
+                  style="anchor-name: --power-{job.id};"
+                  aria-label="Build actions"
+                  title="Build actions"
+                >
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d={mdiIcons.mdiDotsHorizontal} />
+                  </svg>
+                </button>
+                <menu
+                  class="power-menu"
+                  popover
+                  id="power-menu-{job.id}"
+                  style="position-anchor: --power-{job.id};"
+                >
+                  {#if job.status === "completed"}
+                    <li>
+                      <button
+                        onclick={() => handleFlash(job.id)}
+                        disabled={isBusy}
+                      >
+                        <svg
+                          class="icon"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path d={mdiIcons.mdiUsbPort} />
+                        </svg>
+                        Flash via USB
+                      </button>
+                    </li>
+                  {/if}
+                  <li>
+                    <button
+                      onclick={() => downloadBin(job.id)}
+                      disabled={isBusy}
+                    >
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d={mdiIcons.mdiDownload} />
+                      </svg>
+                      Download .bin
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onclick={() => rollbackProject(job)}
+                      disabled={isBusy || !job.config}
+                    >
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d={mdiIcons.mdiRestore} />
+                      </svg>
+                      Roll back project
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onclick={() => toggleDiff(job)}
+                      disabled={isBusy || !job.config}
+                    >
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d={mdiIcons.mdiCompare} />
+                      </svg>
+                      {diffs.has(job.id) ? "Hide changes" : "View changes"}
+                    </button>
+                  </li>
+                </menu>
+              {:else}
+                <details class="power-menu-fallback">
+                  <summary aria-label="Build actions" title="Build actions">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d={mdiIcons.mdiDotsHorizontal} />
+                    </svg>
+                  </summary>
+                  <div class="power-menu-content">
+                    {#if job.status === "completed"}
+                      <button
+                        onclick={() => handleFlash(job.id)}
+                        disabled={isBusy}
+                      >
+                        <svg
+                          class="icon"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path d={mdiIcons.mdiUsbPort} />
+                        </svg>
+                        Flash via USB
+                      </button>
+                    {/if}
+                    <button
+                      onclick={() => downloadBin(job.id)}
+                      disabled={isBusy}
+                    >
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d={mdiIcons.mdiDownload} />
+                      </svg>
+                      Download .bin
+                    </button>
+                    <button
+                      onclick={() => rollbackProject(job)}
+                      disabled={isBusy || !job.config}
+                    >
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d={mdiIcons.mdiRestore} />
+                      </svg>
+                      Roll back project
+                    </button>
+                    <button
+                      onclick={() => toggleDiff(job)}
+                      disabled={isBusy || !job.config}
+                    >
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d={mdiIcons.mdiCompare} />
+                      </svg>
+                      {diffs.has(job.id) ? "Hide changes" : "View changes"}
+                    </button>
+                  </div>
+                </details>
+              {/if}
+            </div>
+          </div>
+
+          {#if diffs.has(job.id)}
+            <div class="diff-panel">
+              <div class="diff-header">
+                <span>Changes</span>
+                {#if !isFirst}
+                  <button
+                    class="diff-close"
+                    onclick={() => toggleDiff(job)}
+                    aria-label="Close"
+                  >
                     <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                       <path d={mdiIcons.mdiClose} />
                     </svg>
                   </button>
-                </div>
-                <ul class="diff-list">
-                  {#each diffs.get(job.id) ?? [] as msg}
-                    <li>{msg}</li>
-                  {/each}
-                </ul>
+                {/if}
               </div>
-            {/if}
-          </div>
-        {/each}
-      </div>
+              <ul class="diff-list">
+                {#each diffs.get(job.id) ?? [] as msg}
+                  <li>{msg}</li>
+                {/each}
+              </ul>
+            </div>
+          {/if}
+        </div>
+      {/each}
+    </div>
+
+    {#if hasMore}
+      <button class="toggle-more" onclick={() => (expanded = !expanded)}>
+        {expanded
+          ? "Show less"
+          : `Show ${jobs.length - 1} older build${jobs.length - 1 === 1 ? "" : "s"}`}
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
+          class:expanded
+        >
+          <path
+            d="M3 5L6 8L9 5"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
     {/if}
-  </div>
+  {/if}
 </div>
 
 <style>
-  .build-history {
+  .build-list-section {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-xl);
-    padding: var(--spacing-xl);
-    overflow-y: auto;
+    gap: var(--spacing-sm);
   }
 
   .icon {
@@ -336,103 +466,166 @@
     flex-shrink: 0;
   }
 
-  .history-heading {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .history-heading span {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 750;
-    color: var(--color-text-primary);
-  }
-
-  .history-heading small {
-    color: #ffb74d;
-    font-size: 12px;
-  }
-
-  h3 {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
+  .empty-state {
     color: var(--color-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .active-card {
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
+    font-size: 13px;
+    margin: 0;
     padding: var(--spacing-lg);
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
+    text-align: center;
   }
 
-  .active-card.empty {
-    color: var(--color-text-secondary);
-    font-size: 14px;
-  }
-
-  .active-header {
+  .active-build-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-accent);
+    border-radius: 10px;
   }
 
-  .active-badge {
-    display: inline-flex;
+  .build-row-main {
+    display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
+    gap: var(--spacing-md);
+    min-width: 0;
+  }
+
+  .build-status-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+  }
+
+  .build-status-icon.success {
     background: rgba(76, 175, 80, 0.15);
     color: #66bb6a;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
   }
 
-  .active-date {
-    font-size: 12px;
-    color: var(--color-text-secondary);
+  .build-status-icon.failed {
+    background: rgba(244, 67, 54, 0.15);
+    color: #f44336;
   }
 
-  .active-body {
+  .build-status-icon.running {
+    background: rgba(33, 150, 243, 0.15);
+    color: #64b5f6;
+  }
+
+  .build-status-icon.compiling {
+    background: rgba(33, 150, 243, 0.15);
+    color: #64b5f6;
+  }
+
+  .build-info {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: 2px;
+    min-width: 0;
   }
 
-  .active-row {
+  .build-info-row {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .build-status-text {
     font-size: 13px;
-  }
-
-  .active-label {
-    color: var(--color-text-secondary);
-  }
-
-  .active-value {
+    font-weight: 500;
     color: var(--color-text-primary);
-    font-weight: 600;
+  }
+
+  .build-time {
     font-size: 13px;
-  }
-
-  .builds-section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
-  }
-
-  .loading,
-  .empty {
     color: var(--color-text-secondary);
-    font-size: 13px;
+  }
+
+  .build-error {
+    font-size: 12px;
+    color: #f44336;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .badge.live {
+    background: rgba(76, 175, 80, 0.15);
+    color: #66bb6a;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 3px;
+    background: var(--color-bg-tertiary);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 2px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--color-accent);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: capitalize;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+
+  .status-badge.failed {
+    background: rgba(244, 67, 54, 0.15);
+    color: #f44336;
+  }
+
+  .status-badge.running {
+    background: rgba(33, 150, 243, 0.15);
+    color: #64b5f6;
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .builds-list {
@@ -451,82 +644,23 @@
     gap: var(--spacing-sm);
   }
 
-  .build-main {
+  .build-row {
     display: flex;
-    justify-content: space-between;
     align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-md);
   }
 
-  .build-meta {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    flex-wrap: wrap;
-  }
-
-  .build-name {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: var(--color-bg-tertiary);
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--color-text-primary);
-  }
-
-  .build-date {
-    font-size: 12px;
-    color: var(--color-text-secondary);
-  }
-
-  .build-right {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    flex-shrink: 0;
-  }
-
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 500;
-    text-transform: capitalize;
-    background: var(--color-bg-tertiary);
-    color: var(--color-text-secondary);
-  }
-
-  .status-badge.success {
-    background: rgba(76, 175, 80, 0.15);
-    color: #66bb6a;
-  }
-
-  .status-badge.failed {
-    background: rgba(244, 67, 54, 0.15);
-    color: #f44336;
-  }
-
-  .status-badge.running {
-    background: rgba(33, 150, 243, 0.15);
-    color: #64b5f6;
-  }
-
-  .status-badge.published {
-    background: rgba(255, 152, 0, 0.15);
-    color: #ffb74d;
+  .build-item.published {
+    border-color: rgba(76, 175, 80, 0.35);
   }
 
   .build-actions {
     display: flex;
-    gap: var(--spacing-xs);
-    flex-wrap: wrap;
     align-items: center;
+    gap: var(--spacing-sm);
+    margin-left: auto;
+    flex-shrink: 0;
   }
 
   .action-btn {
@@ -733,7 +867,7 @@
   }
 
   .diff-list li::before {
-    content: '';
+    content: "";
     position: absolute;
     left: 2px;
     top: 6px;
@@ -741,5 +875,36 @@
     height: 5px;
     border-radius: 50%;
     background: var(--color-accent);
+  }
+
+  .toggle-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: var(--spacing-sm);
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .toggle-more:hover {
+    color: var(--color-text-primary);
+    border-color: var(--color-accent);
+    background: var(--color-bg-secondary);
+  }
+
+  .toggle-more svg {
+    transition: transform 0.2s;
+  }
+
+  .toggle-more svg.expanded {
+    transform: rotate(180deg);
   }
 </style>

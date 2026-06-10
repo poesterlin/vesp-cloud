@@ -500,7 +500,7 @@
   }
 
   .power-menu {
-    position-area: block-end span-inline-start;
+    position-area: block-end span-inline-end;
     position-try: flip-block;
     margin: 0;
     padding: 6px;

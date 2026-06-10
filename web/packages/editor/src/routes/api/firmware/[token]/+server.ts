@@ -6,6 +6,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import { existsSync, createReadStream, statSync } from 'fs';
 import { join } from 'path';
 import { getStaticBuildsDir } from '$lib/server/static-paths';
+import { createLogger } from '$lib/server/logger';
 
 export const GET: RequestHandler = async ({ params, request }) => {
   const db = getDb();
@@ -40,13 +41,18 @@ export const GET: RequestHandler = async ({ params, request }) => {
   const etag = `"${job.id}"`;
   const version = job.completedAt?.toISOString() ?? job.id;
 
-  // Support conditional requests — device can skip download if already up to date
+  const logger = createLogger(params.token);
   const ifNoneMatch = request.headers.get('if-none-match');
+  const userAgent = request.headers.get('user-agent') ?? 'unknown';
+  logger.info(`update check: project="${project.name}" device="${userAgent}" etag=${ifNoneMatch ?? 'none'} current=${job.id}`);
+
   if (ifNoneMatch === etag) {
+    logger.info(`up to date: project="${project.name}"`);
     return new Response(null, { status: 304 });
   }
 
   const { size } = statSync(binPath);
+  logger.info(`serving update: project="${project.name}" size=${size}`);
   const stream = createReadStream(binPath);
   const webStream = new ReadableStream({
     start(controller) {

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import DesignCanvas from "$lib/components/canvas/DesignCanvas.svelte";
   import ComponentPalette from "$lib/components/sidebar/ComponentPalette.svelte";
   import PropertyEditor from "$lib/components/sidebar/PropertyEditor.svelte";
@@ -21,12 +20,6 @@
   let showDebug = $state(false);
   let loading = $state(true);
   let error = $state<string | null>(null);
-  let creditBalance = $state<number | null>(null);
-
-  const compileCost = 1;
-  let showExportInfo = $derived(
-    data.isCloud && creditBalance !== null && creditBalance < compileCost,
-  );
 
   onMount(() => {
     if (data.project) {
@@ -37,29 +30,10 @@
       loading = false;
     }
 
-    if (data.isCloud) {
-      loadCreditBalance();
-    }
-
     if (data.activeJob) {
       deploymentStore.restoreJob(data.activeJob.id, data.activeJob.status);
     }
   });
-
-  async function loadCreditBalance() {
-    try {
-      const res = await fetch("/api/credits/balance");
-      if (!res.ok) return;
-      const payload = await res.json();
-      creditBalance = typeof payload.balance === "number" ? payload.balance : null;
-    } catch {
-      creditBalance = null;
-    }
-  }
-
-  function openExport() {
-    goto(`/project/${projectStore.serverProjectId}/deploy`);
-  }
 
   function clearSelection(event: MouseEvent) {
     const isSelf = (event.target as HTMLElement).classList.contains("canvas-area");

@@ -1,0 +1,43 @@
+services:
+  app:
+    image: ghcr.io/poesterlin/home-display-editor:main
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/esphome
+      CONCURRENT_JOBS: 1
+      APP_EDITION: self-hosted
+      PUBLIC_BASE_URL: https://${DOMAIN}
+      LOG_LEVEL: debug
+    networks:
+      - internal
+    ports:
+      - "3000:3000"
+    tmpfs:
+      - /tmp/esphome-builds:size=12g
+    volumes:
+      - platformio_data:/data/platformio
+      - pio_cache:/data/pio-build-cache
+      - ccache_data:/data/ccache
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: esphome
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+
+volumes:
+  platformio_data:
+  pio_cache:
+  ccache_data:
+  postgres_data:
+
+networks:
+  internal:

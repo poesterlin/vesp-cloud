@@ -6,8 +6,8 @@ import {
   generateUITypesHeader,
 } from '$lib/codegen/esphome';
 import { validateProject } from '$lib/codegen/validations';
-import { getDb } from '$lib/db';
-import { compilationJobs } from '$lib/db/schema';
+import { getDb } from '@esphome-designer/db';
+import { compilationJobs } from '@esphome-designer/db/schema';
 import type { Project } from '@esphome-designer/schema';
 import { error, json } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';

@@ -26,13 +26,14 @@ Copy `custom_components/esphome_display` to your Home Assistant `config/custom_c
 
 ## TODOs
 
-- [ ] https://hacs.xyz/docs/publish/action/
-- [ ] [add hacks manifest in /](https://hacs.xyz/docs/publish/integration/#manifestjson)
+- [ ] update branding, name, repo, domain
+- [x] https://hacs.xyz/docs/publish/action/
+- [x] [add hacs manifest in /](https://hacs.xyz/docs/publish/integration/#hacsjson)
 - [ ] add account emails for account/pw recovery
 - [ ] add more analytics
-- [ ] allow flashing older builds / store in s3
-- [ ] test ota update flow
+- [x] allow flashing older builds / store in s3
+- [x] test ota update flow
 - [ ] record demo
 - [ ] record instructions
-- [ ] make export model not a modal
+- [x] make export model not a modal
 - [ ] derive build preview images from the canvas

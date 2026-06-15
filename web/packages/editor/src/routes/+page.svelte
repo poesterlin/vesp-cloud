@@ -314,6 +314,26 @@
               and autocomplete. Install our HACS integration for the easiest
               setup.
             </p>
+            <ol class="hacs-steps">
+              <li>
+                <span class="step-badge">1</span>
+                Open HACS → <strong>Integrations → Custom repositories</strong>
+              </li>
+              <li>
+                <span class="step-badge">2</span>
+                Add <code>https://github.com/poesterlin/home-display</code> as an
+                <strong>Integration</strong> repository
+              </li>
+              <li>
+                <span class="step-badge">3</span>
+                Install <strong>ESPHome Display Notifications &amp; Data Bridge</strong>
+                and restart Home Assistant
+              </li>
+              <li>
+                <span class="step-badge">4</span>
+                Use the integration's <strong>Download Metadata File</strong> and import it here
+              </li>
+            </ol>
             <button class="primary" onclick={() => haFileInput.click()}>
               <svg width="16" height="16" viewBox="0 0 24 24" class="icon">
                 <path d={mdiIcons.mdiUpload} />
@@ -750,6 +770,56 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+  }
+
+  .hacs-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: left;
+    max-width: 420px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .hacs-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+
+  .hacs-steps li strong {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .hacs-steps li code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 0.75rem;
+    color: var(--color-accent);
+    background: rgba(74, 158, 254, 0.1);
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.3rem;
+    word-break: break-all;
+  }
+
+  .step-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(74, 158, 254, 0.15);
+    color: var(--color-accent);
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 0.05rem;
   }
 
   .ha-message {

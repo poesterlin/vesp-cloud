@@ -1,7 +1,7 @@
-import type { CompilationJob, NewCompilationJob } from '$lib/db/schema';
+import type { CompilationJob, NewCompilationJob } from '@esphome-designer/db/schema';
 import { CompilationQueue } from '$lib/queue/index.js';
 import { v4 as uuidv4 } from 'uuid';
-export { getDb, schema } from '$lib/db/index.js';
+export { getDb, schema } from '@esphome-designer/db';
 
 interface CompilationResult {
   jobId: string | undefined;

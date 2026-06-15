@@ -1,7 +1,7 @@
-import { getDb } from "$lib/db";
-import { creditBalances, creditTransactions } from "$lib/db/schema";
+import { getDb } from "@esphome-designer/db";
+import { creditBalances, creditTransactions } from "@esphome-designer/db/schema";
 import { eq } from "drizzle-orm";
-import type { CreditBalance } from "$lib/db/schema";
+import type { CreditBalance } from "@esphome-designer/db/schema";
 
 interface AddCreditsParams {
   userId: string;

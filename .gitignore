@@ -22,3 +22,5 @@ temp/
 esphome/.esphome/
 
 esphome/secrets.yaml
+
+web/packages/admin/.svelte-kit/

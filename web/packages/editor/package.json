@@ -18,6 +18,7 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@esphome-designer/db": "workspace:*",
     "@esphome-designer/schema": "workspace:*",
     "@fontsource/roboto": "5.2.10",
     "@node-rs/argon2": "2.0.2",
@@ -26,7 +27,6 @@
     "drizzle-orm": "^0.45.2",
     "fuzzysort": "3.1.0",
     "jszip": "3.10.1",
-    "pg": "^8.20.0",
     "stripe": "^17.0.0",
     "uuid": "14.0.0"
   },

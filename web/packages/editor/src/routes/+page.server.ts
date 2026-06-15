@@ -1,5 +1,5 @@
-import { getDb } from '$lib/db';
-import { projects } from '$lib/db/schema';
+import { getDb } from '@esphome-designer/db';
+import { projects } from '@esphome-designer/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 

@@ -195,10 +195,12 @@
           <h2>Recommended: HACS Integration</h2>
           <p>A Home Assistant integration that makes looking up entity IDs simple and gives the editor real example data to work with. <em>Strongly recommended.</em></p>
           <ol class="steps">
-            <li><span class="step-badge">1</span> Install the integration via HACS (link coming soon)</li>
-            <li><span class="step-badge">2</span> Navigate to the dashboard it creates in Home Assistant</li>
-            <li><span class="step-badge">3</span> Use <strong>Download Metadata File</strong> to export a JSON file</li>
-            <li><span class="step-badge">4</span> Drag the file into the editor to populate entities &amp; devices</li>
+            <li><span class="step-badge">1</span> Open HACS → <strong>Integrations → Custom repositories</strong></li>
+            <li><span class="step-badge">2</span> Add <code>https://github.com/poesterlin/home-display</code> as an <strong>Integration</strong> repository</li>
+            <li><span class="step-badge">3</span> Install <strong>ESPHome Display Notifications &amp; Data Bridge</strong> and restart Home Assistant</li>
+            <li><span class="step-badge">4</span> Navigate to the dashboard it creates in Home Assistant</li>
+            <li><span class="step-badge">5</span> Use <strong>Download Metadata File</strong> to export a JSON file</li>
+            <li><span class="step-badge">6</span> Drag the file into the editor to populate entities &amp; devices</li>
           </ol>
         </div>
       </div>
@@ -660,6 +662,16 @@
 
   .steps li strong {
     color: #fff;
+  }
+
+  .steps li code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 0.8rem;
+    color: var(--color-accent);
+    background: rgba(74, 158, 254, 0.1);
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.35rem;
+    word-break: break-all;
   }
 
   .step-badge {

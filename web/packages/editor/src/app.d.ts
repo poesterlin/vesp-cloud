@@ -1,4 +1,4 @@
-import type { Session } from '$lib/db/schema';
+import type { Session } from '@esphome-designer/db/schema';
 
 declare global {
   namespace App {

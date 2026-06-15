@@ -3,9 +3,9 @@ import { spawn, type ChildProcess } from 'child_process';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { cpus } from 'os';
-import { getDb, schema } from '$lib/db/index.js';
+import { getDb, schema } from '@esphome-designer/db';
 import { eq, desc, inArray, and } from 'drizzle-orm';
-import type { CompilationJob, NewCompilationJob } from '$lib/db/schema';
+import type { CompilationJob, NewCompilationJob } from '@esphome-designer/db/schema';
 
 import type { Project } from '@esphome-designer/schema';
 import { generateESPHomeYAML, generateUITypesHeader, generateUIStateHeader, generateUIScreensHeader, generateFontsYAML } from '$lib/codegen/esphome';

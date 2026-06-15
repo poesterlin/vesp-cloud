@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getDb } from '$lib/db';
-import { projects, compilationJobs } from '$lib/db/schema';
+import { getDb } from '@esphome-designer/db';
+import { projects, compilationJobs } from '@esphome-designer/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { getOtaBinaryStats, otaBinaryExists, ensureS3, factoryBinKey } from '$lib/server/s3';
 import { createLogger } from '$lib/server/logger';

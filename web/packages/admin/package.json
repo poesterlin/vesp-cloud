@@ -1,0 +1,29 @@
+{
+  "name": "@esphome-designer/admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bunx --bun vite dev",
+    "build": "bunx --bun vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@esphome-designer/db": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "jose": "6.2.3"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-auto": "^7.0.1",
+    "@sveltejs/adapter-node": "5.5.4",
+    "@sveltejs/kit": "^2.59.0",
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "svelte": "^5.54.0",
+    "@types/node": "latest",
+    "svelte-check": "^4.4.5",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.10"
+  }
+}

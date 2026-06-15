@@ -1,7 +1,7 @@
 import { startWorker, stopWorker } from "$lib/utils/worker";
 import { json, type Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
-import { getDb } from "./lib/db";
+import { getDb } from "@esphome-designer/db";
 import * as auth from "$lib/server/auth";
 import { env } from "$env/dynamic/private";
 
@@ -12,7 +12,7 @@ if (!workerStarted) {
   (async () => {
     try {
       console.log("Initializing database...");
-      getDb();
+      getDb(env.DATABASE_URL);
       console.log("Database ready");
 
       startWorker(parseInt(env.CONCURRENT_JOBS || "2"));

@@ -35,13 +35,12 @@ services:
       - TSIDP_ISSUER=${TSIDP_ISSUER}
       - TSIDP_CLIENT_ID=${TSIDP_CLIENT_ID}
       - TSIDP_CLIENT_SECRET=${TSIDP_CLIENT_SECRET}
-      - URL=https://espadmin.${DOMAIN}
-      - NODE_ENV=production
+      - URL=https://${ADMIN_DOMAIN}
     networks:
       - traefik_web
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.esphome-admin.rule=Host(`espadmin.${DOMAIN}`)"
+      - "traefik.http.routers.esphome-admin.rule=Host(`${ADMIN_DOMAIN}`)"
       - "traefik.http.services.esphome-admin.loadbalancer.server.port=3000"
 
 volumes:

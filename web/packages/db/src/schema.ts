@@ -5,7 +5,7 @@ const fullCascade = { onDelete: 'cascade', onUpdate: 'cascade' } as const;
 // ── Users ──────────────────────────────────────────────────────────────────
 export const usersTable = pgTable('user', {
   id: text('id').primaryKey(),
-  email: text('email').unique('user_email_unique', { nulls: 'distinct' }),
+  email: text('email').notNull().unique('user_email_unique'),
   username: text('username').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull(),
@@ -26,6 +26,19 @@ export const sessionTable = pgTable('session', {
 });
 
 export type Session = typeof sessionTable.$inferSelect;
+
+// ── Password Reset Tokens ──────────────────────────────────────────────────
+export const passwordResetTokens = pgTable('password_reset_token', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => usersTable.id, fullCascade),
+  expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true, mode: 'date' }),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+});
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 
 // ── Projects ───────────────────────────────────────────────────────────────
 export const projects = pgTable('project', {

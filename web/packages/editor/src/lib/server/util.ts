@@ -20,6 +20,47 @@ export function validatePassword(password: unknown): password is string {
   );
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+export function validateEmail(email: unknown): email is string {
+  return typeof email === 'string' && EMAIL_PATTERN.test(normalizeEmail(email));
+}
+
+export function getSafeRedirectPath(redirectTo: unknown, requestUrl: URL, fallback = '/'): string {
+  if (typeof redirectTo !== 'string') {
+    return fallback;
+  }
+
+  const value = redirectTo.trim();
+  if (!value) {
+    return fallback;
+  }
+
+  if (value.startsWith('/')) {
+    if (value.startsWith('//')) {
+      return fallback;
+    }
+
+    const relativeUrl = new URL(value, requestUrl);
+    return relativeUrl.pathname + relativeUrl.search;
+  }
+
+  try {
+    const absoluteUrl = new URL(value);
+    if (absoluteUrl.host !== requestUrl.host) {
+      return fallback;
+    }
+
+    return absoluteUrl.pathname + absoluteUrl.search;
+  } catch {
+    return fallback;
+  }
+}
+
 export function assert(condition: any, message: string): asserts condition;
 export function assert(condition: any, code: number, message: string): asserts condition;
 export function assert(condition: any, code: number | string, message?: string): asserts condition {

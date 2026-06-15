@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { enhance } from '$app/forms';
   import { page } from '$app/state';
 
   let { form } = $props();
@@ -8,33 +9,26 @@
 
 <div class="auth-page">
   <div class="auth-card">
-    <h1>Sign In</h1>
+    <h1>Reset Password</h1>
     <p class="subtitle">ESPHome Designer</p>
 
     {#if form?.message}
-      <div class="error-message">{form.message}</div>
+      <div class="success-message">{form.message}</div>
     {/if}
 
-    <form method="POST" action="?/login">
-      <input type="hidden" name="redirectTo" value={redirectParam} />
-
+    <form method="POST" action="?/requestReset" use:enhance>
       <div class="field">
-        <label for="username">Username</label>
-        <input id="username" name="username" type="text" required />
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email" required />
       </div>
 
-      <div class="field">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" required />
-      </div>
-
-      <button type="submit" class="primary">Sign In</button>
+      <button type="submit" class="primary">Send Reset Link</button>
     </form>
 
-    <p class="helper"><a href="/forgot-password{redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}">Forgot password?</a></p>
+    <p class="helper">We’ll email a one-time link if the account exists.</p>
 
     <p class="switch-link">
-      Don't have an account? <a href="/register{redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}">Register</a>
+      <a href="/login{redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}">Back to Sign In</a>
     </p>
   </div>
 </div>
@@ -70,10 +64,10 @@
     font-size: 0.95rem;
   }
 
-  .error-message {
-    background: rgba(255, 82, 82, 0.1);
-    border: 1px solid rgba(255, 82, 82, 0.2);
-    color: #ff5252;
+  .success-message {
+    background: rgba(46, 204, 113, 0.12);
+    border: 1px solid rgba(46, 204, 113, 0.25);
+    color: #6ee7a8;
     padding: 0.75rem 1rem;
     border-radius: 0.75rem;
     font-size: 0.85rem;
@@ -136,15 +130,6 @@
     margin: 1rem 0 0;
     color: var(--color-text-muted);
     font-size: 0.85rem;
-  }
-
-  .helper a {
-    color: var(--color-accent);
-    text-decoration: none;
-  }
-
-  .helper a:hover {
-    text-decoration: underline;
   }
 
   .switch-link {

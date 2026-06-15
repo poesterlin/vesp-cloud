@@ -1,41 +1,36 @@
 <script lang="ts">
-  import { page } from '$app/state';
+  import { enhance } from '$app/forms';
 
-  let { form } = $props();
-
-  const redirectParam = $derived(page.url.searchParams.get('redirect') || '');
+  let { data, form } = $props();
 </script>
 
 <div class="auth-page">
   <div class="auth-card">
-    <h1>Sign In</h1>
+    <h1>Reset Password</h1>
     <p class="subtitle">ESPHome Designer</p>
 
     {#if form?.message}
       <div class="error-message">{form.message}</div>
     {/if}
 
-    <form method="POST" action="?/login">
-      <input type="hidden" name="redirectTo" value={redirectParam} />
+    {#if !data.valid}
+      <p class="helper">This reset link is invalid or expired. Request a new one from the sign in page.</p>
+      <p class="switch-link"><a href="/forgot-password">Request a new link</a></p>
+      <p class="switch-link"><a href="/login">Back to Sign In</a></p>
+    {:else}
+      <p class="helper">Choose a new password for your account.</p>
 
-      <div class="field">
-        <label for="username">Username</label>
-        <input id="username" name="username" type="text" required />
-      </div>
+      <form method="POST" action="?/resetPassword" use:enhance>
+        <input type="hidden" name="token" value={data.token} />
 
-      <div class="field">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" required />
-      </div>
+        <div class="field">
+          <label for="password">New Password</label>
+          <input id="password" name="password" type="password" required />
+        </div>
 
-      <button type="submit" class="primary">Sign In</button>
-    </form>
-
-    <p class="helper"><a href="/forgot-password{redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}">Forgot password?</a></p>
-
-    <p class="switch-link">
-      Don't have an account? <a href="/register{redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}">Register</a>
-    </p>
+        <button type="submit" class="primary">Update Password</button>
+      </form>
+    {/if}
   </div>
 </div>
 
@@ -66,7 +61,7 @@
 
   .subtitle {
     color: var(--color-text-muted);
-    margin: 0 0 2rem 0;
+    margin: 0 0 1.5rem 0;
     font-size: 0.95rem;
   }
 
@@ -77,7 +72,13 @@
     padding: 0.75rem 1rem;
     border-radius: 0.75rem;
     font-size: 0.85rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .helper {
+    margin: 0 0 1.25rem;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
   }
 
   form {
@@ -132,24 +133,9 @@
     opacity: 0.9;
   }
 
-  .helper {
-    margin: 1rem 0 0;
-    color: var(--color-text-muted);
-    font-size: 0.85rem;
-  }
-
-  .helper a {
-    color: var(--color-accent);
-    text-decoration: none;
-  }
-
-  .helper a:hover {
-    text-decoration: underline;
-  }
-
   .switch-link {
     text-align: center;
-    margin-top: 1.5rem;
+    margin-top: 0.75rem;
     color: var(--color-text-muted);
     font-size: 0.9rem;
   }

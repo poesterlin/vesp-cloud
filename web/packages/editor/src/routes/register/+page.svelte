@@ -17,16 +17,16 @@
     {/if}
 
     <form method="POST" action="?/register" use:enhance>
-      <input type="hidden" name="redirect" value={redirectParam} />
+      <input type="hidden" name="redirectTo" value={redirectParam} />
 
       <div class="field">
         <label for="username">Username</label>
-        <input id="username" name="username" type="text" required autofocus />
+        <input id="username" name="username" type="text" required />
       </div>
 
       <div class="field">
-        <label for="email">Email (optional)</label>
-        <input id="email" name="email" type="email" />
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required autocomplete="email" />
       </div>
 
       <div class="field">

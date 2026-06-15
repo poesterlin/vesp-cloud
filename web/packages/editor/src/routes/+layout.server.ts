@@ -1,7 +1,16 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 
-const PUBLIC_PATHS = ['/login', '/register', '/terms', '/intro', '/api/firmware', '/api/stripe/webhook'];
+const PUBLIC_PATHS = [
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/terms',
+  '/intro',
+  '/api/firmware',
+  '/api/stripe/webhook',
+];
 
 export const load: LayoutServerLoad = async (event) => {
   const path = event.url.pathname;

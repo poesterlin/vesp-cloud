@@ -41,38 +41,49 @@
   const serviceName = $derived(serviceAction?.service ?? "");
   const serviceTargetEntity = $derived(serviceAction?.target?.entityId ?? "");
 
-  const serviceNeedsEntityTarget = $derived.by(() => {
-    if (!serviceName) return false;
+  const serviceInfo = $derived.by(() => {
+    if (!serviceName) return null;
     const [domain, svc] = serviceName.split(".");
-    if (!domain || !svc) return false;
-    const svcInfo = homeAssistantStore.services[domain]?.[svc];
-    if (!svcInfo?.fields) return false;
-    return "entity_id" in svcInfo.fields;
+    if (!domain || !svc) return null;
+    return homeAssistantStore.services[domain]?.[svc] ?? null;
+  });
+
+  const serviceAllowedTargetDomains = $derived.by<string[]>(() => {
+    if (!serviceInfo?.common_targets) return [];
+    return serviceInfo.common_targets.filter(
+      (target): target is string => typeof target === "string" && target.length > 0,
+    );
+  });
+
+  const serviceNeedsEntityTarget = $derived.by(() => {
+    if (serviceTargetEntity) return true;
+    if (serviceAllowedTargetDomains.length > 0) return true;
+    return !!serviceInfo?.fields && "entity_id" in serviceInfo.fields;
   });
 
   let customMode = $state(false);
   let showServicePicker = $state(false);
 
-  const serviceKeySet = $derived.by(() => {
-    const keys = new Set<string>();
+  const serviceKeys = $derived.by(() => {
+    const keys: string[] = [];
     const dumpServices = homeAssistantStore.services;
     if (Object.keys(dumpServices).length > 0) {
       for (const [domain, domainServices] of Object.entries(dumpServices)) {
         if (!domainServices) continue;
         for (const svcName of Object.keys(domainServices)) {
-          keys.add(`${domain}.${svcName}`);
+          keys.push(`${domain}.${svcName}`);
         }
       }
     } else {
       for (const service of Object.keys(SERVICE_PRESETS)) {
-        keys.add(service);
+        keys.push(service);
       }
     }
     return keys;
   });
 
   const isCustom = $derived(
-    customMode || (!!serviceName && !serviceKeySet.has(serviceName)),
+    customMode || (!!serviceName && !serviceKeys.includes(serviceName)),
   );
 
   const displayName = $derived.by(() => {
@@ -199,10 +210,15 @@
       </button>
     </div>
 
-    {#if serviceNeedsEntityTarget}
     <div class="target-section">
-      <span class="field-label">Target</span>
+      <span class="field-label">Target (optional)</span>
       <EntityPicker
+        allowedDomains={serviceAllowedTargetDomains.length > 0
+          ? serviceAllowedTargetDomains
+          : undefined}
+        preselectedDomain={serviceAllowedTargetDomains.length === 1
+          ? serviceAllowedTargetDomains[0]
+          : undefined}
         component={{
           type: "light_state",
           stateBinding: serviceTargetEntity
@@ -212,6 +228,13 @@
         onUpdate={(binding) => handleEntityTargetChange(binding?.entityId)}
       />
     </div>
+    {#if !serviceNeedsEntityTarget && serviceName}
+      <div class="hint">
+        <p>
+          This action may work without a target. Add one if your service call
+          should apply to a specific entity.
+        </p>
+      </div>
     {/if}
   {/if}
 </div>
@@ -282,6 +305,11 @@
     font-size: 11px;
     text-transform: uppercase;
     font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  .target-hint {
+    font-size: 11px;
     color: var(--color-text-muted);
   }
 

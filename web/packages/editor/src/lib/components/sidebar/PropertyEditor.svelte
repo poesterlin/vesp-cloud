@@ -27,6 +27,16 @@
     "chevron-left",
   ]);
 
+  const LIGHT_STATE_ALLOWED_DOMAINS = [
+    "light",
+    "switch",
+    "fan",
+    "input_boolean",
+    "automation",
+    "camera",
+    "media_player",
+  ];
+
   function getNavIcon(action: NavigationAction): string | undefined {
     return NAV_ICONS[action.type];
   }
@@ -740,6 +750,9 @@
           preselectedDomain={selectedComponent.type === "todo_list"
             ? "todo"
             : "light"}
+          allowedDomains={selectedComponent.type === "light_state"
+            ? LIGHT_STATE_ALLOWED_DOMAINS
+            : undefined}
           component={selectedComponent}
           onUpdate={(binding) => {
             if (selectedComponent.type === "todo_list") {

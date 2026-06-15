@@ -53,6 +53,7 @@
     onUpdate?: (binding: EntityBinding | undefined) => void;
     numericOnly?: boolean;
     preselectedDomain?: string;
+    allowedDomains?: string[];
   }
 
   let {
@@ -60,7 +61,13 @@
     onUpdate,
     numericOnly = false,
     preselectedDomain = undefined,
+    allowedDomains = undefined,
   }: Props = $props();
+
+  const allowedDomainSet = $derived.by<Set<string> | null>(() => {
+    if (!allowedDomains || allowedDomains.length === 0) return null;
+    return new Set(allowedDomains);
+  });
 
   // Get current binding based on component type
   const currentBinding = $derived.by<EntityBinding | undefined>(() => {
@@ -92,6 +99,9 @@
   let selectedEntity = $state<Entity | null>(null);
   let selectedDomain = $state<string | null>(null);
   let selectedAreaFilter = $state("");
+  let manualEntityId = $state("");
+  let manualAttribute = $state("");
+  let showManualInputs = $state(false);
 
   $effect(() => {
     if (isModalOpen && inputEl) {
@@ -101,10 +111,15 @@
 
   // Sync state when binding changes
   $effect(() => {
+    manualEntityId = currentBinding?.entityId ?? "";
+    manualAttribute = currentBinding?.attribute ?? "";
+
     if (currentBinding?.entityId) {
       const entity = homeAssistantStore.getEntity(currentBinding.entityId);
       if (entity) {
         selectedEntity = entity;
+      } else {
+        selectedEntity = null;
       }
     } else {
       selectedEntity = null;
@@ -200,11 +215,14 @@
   // Get all entities (filtered by numericOnly if needed)
   const allFilteredEntities = $derived.by(() => {
     if (!homeAssistantStore.isLoaded) return [];
-    return numericOnly
-      ? homeAssistantStore.entities.filter(
-          (e: Entity) => e.numeric_state !== undefined,
+    const domainFiltered = allowedDomainSet
+      ? homeAssistantStore.entities.filter((e: Entity) =>
+          allowedDomainSet.has(e.domain),
         )
       : homeAssistantStore.entities;
+    return numericOnly
+      ? domainFiltered.filter((e: Entity) => e.numeric_state !== undefined)
+      : domainFiltered;
   });
 
   // Available domains sorted by entity count
@@ -222,6 +240,7 @@
 
   const selectedDomainEntities = $derived.by(() => {
     if (!homeAssistantStore.isLoaded || !selectedDomain) return [];
+    if (allowedDomainSet && !allowedDomainSet.has(selectedDomain)) return [];
     return applyNumericFilter(homeAssistantStore.getEntitiesByDomain(selectedDomain));
   });
 
@@ -256,7 +275,9 @@
     if (!homeAssistantStore.isLoaded) return [];
 
     if (searchQuery) {
-      return applyNumericFilter(homeAssistantStore.searchEntities(searchQuery));
+      const searched = applyNumericFilter(homeAssistantStore.searchEntities(searchQuery));
+      if (!allowedDomainSet) return searched;
+      return searched.filter((entity) => allowedDomainSet.has(entity.domain));
     } else if (selectedDomain) {
       if (selectedAreaFilter) {
         return selectedDomainEntities.filter(
@@ -386,8 +407,29 @@
 
   function clearSelection() {
     selectedEntity = null;
+    manualEntityId = "";
+    manualAttribute = "";
     onUpdate?.(undefined);
     showAttributes = false;
+  }
+
+  function applyManualBinding() {
+    const entityId = manualEntityId.trim();
+    const attribute = manualAttribute.trim();
+
+    if (!entityId) {
+      onUpdate?.(undefined);
+      selectedEntity = null;
+      showAttributes = false;
+      return;
+    }
+
+    onUpdate?.({
+      entityId,
+      attribute: attribute || undefined,
+    });
+
+    selectedEntity = homeAssistantStore.getEntity(entityId) ?? null;
   }
 
   function openModal() {
@@ -395,6 +437,7 @@
     searchQuery = "";
     selectedDomain = preselectedDomain ?? null;
     selectedAreaFilter = "";
+    showManualInputs = !homeAssistantStore.isLoaded;
   }
 
   function closeModal() {
@@ -418,13 +461,16 @@
 <div class="entity-picker">
   {#if !homeAssistantStore.isLoaded}
     <div class="empty-state">
-      <svg class="icon empty-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d={uiIcons.empty}></path>
-      </svg>
-      <span class="empty-text">No Home Assistant data loaded</span>
-      <span class="empty-hint"
-        >Import your Home Assistant export to see available entities</span
-      >
+      <div class="empty-copy">
+        <svg class="icon empty-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d={uiIcons.empty}></path>
+        </svg>
+        <span class="empty-text">No Home Assistant data loaded</span>
+        <span class="empty-hint"
+          >Import your Home Assistant export to browse entities, or add one manually in the picker</span
+        >
+      </div>
+      <button class="change-btn" onclick={openModal}>Open entity picker</button>
     </div>
   {:else}
     <!-- Entity Mode -->
@@ -588,158 +634,229 @@
       </div>
 
       <div class="modal-body">
-        {#if searchQuery}
-          <!-- Search Results (Grouped by Device) -->
-          <div class="results-panel">
-            <div class="panel-header">
-              <span>Search Results</span>
-              <span class="result-count">{filteredEntities.length} found</span>
-            </div>
-            <div class="entity-grid">
-              {#each searchResultGroups as group}
+        <div
+          class="manual-overlay-entry {showManualInputs || !homeAssistantStore.isLoaded
+            ? 'expanded'
+            : 'collapsed'}"
+        >
+          {#if showManualInputs || !homeAssistantStore.isLoaded}
+            <div class="manual-overlay-header">
+              <span>Manual entry</span>
+              {#if homeAssistantStore.isLoaded}
                 <button
-                  class="entity-card {group.hasMultiple
-                    ? 'primary-entity'
-                    : ''}"
-                  onclick={() => selectEntity(group.entity)}
+                  type="button"
+                  class="manual-toggle"
+                  onclick={() => {
+                    showManualInputs = false;
+                  }}
                 >
-                  <svg
-                    class="icon entity-icon"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path d={getDomainIcon(group.entity.domain)}></path>
-                  </svg>
-                  <div class="entity-info">
-                    <span class="entity-name"
-                      >{getDisplayName(group.entity)}</span
-                    >
-                    <span class="entity-meta">
-                      {#if group.area}
-                        <span class="entity-area">{group.area}</span>
-                      {/if}
-                      {#if getStateDisplay(group.entity)}
-                        <span class="entity-state"
-                          >{getStateDisplay(group.entity)}</span
-                        >
-                      {/if}
-                    </span>
-                  </div>
+                  Hide
                 </button>
-              {/each}
-              {#if searchResultGroups.length === 0}
-                <div class="no-results">No entities match your search</div>
+              {:else}
+                <span class="result-count">No dump loaded</span>
               {/if}
             </div>
-          </div>
-        {:else}
-          <!-- Browse Mode -->
-          <div class="browse-layout">
-            <!-- Sidebar -->
-            <div class="browse-sidebar">
-              <div class="filter-list">
-                {#each availableDomains as { domain, count }}
+            <div class="manual-entry-grid">
+              <input
+                type="text"
+                value={manualEntityId}
+                placeholder="Entity ID (e.g. light.living_room)"
+                oninput={(e) => {
+                  manualEntityId = e.currentTarget.value;
+                  applyManualBinding();
+                }}
+              />
+              <input
+                type="text"
+                value={manualAttribute}
+                placeholder="Attribute path if needed (e.g. brightness)"
+                oninput={(e) => {
+                  manualAttribute = e.currentTarget.value;
+                  applyManualBinding();
+                }}
+              />
+            </div>
+          {/if}
+          {#if homeAssistantStore.isLoaded && !showManualInputs}
+            <button
+              type="button"
+              class="manual-collapsed-toggle"
+              onclick={() => {
+                showManualInputs = true;
+              }}
+            >
+              Missing entity from dump? Enter manually
+            </button>
+          {/if}
+        </div>
+
+        {#if homeAssistantStore.isLoaded}
+          {#if searchQuery}
+            <!-- Search Results (Grouped by Device) -->
+            <div class="results-panel">
+              <div class="panel-header">
+                <span>Search Results</span>
+                <span class="result-count">{filteredEntities.length} found</span>
+              </div>
+              <div class="entity-grid">
+                {#each searchResultGroups as group}
                   <button
-                    class="filter-item {selectedDomain === domain
-                      ? 'active'
+                    class="entity-card {group.hasMultiple
+                      ? 'primary-entity'
                       : ''}"
-                    onclick={() => {
-                      selectedDomain = domain;
-                      selectedAreaFilter = "";
-                    }}
+                    onclick={() => selectEntity(group.entity)}
                   >
                     <svg
-                      class="icon filter-icon"
+                      class="icon entity-icon"
                       viewBox="0 0 24 24"
                       aria-hidden="true"
                     >
-                      <path d={getDomainIcon(domain)}></path>
+                      <path d={getDomainIcon(group.entity.domain)}></path>
                     </svg>
-                    <span class="filter-name">{getDomainLabel(domain)}</span>
-                    <span class="filter-count">{count}</span>
+                    <div class="entity-info">
+                      <span class="entity-name"
+                        >{getDisplayName(group.entity)}</span
+                      >
+                      <span class="entity-meta">
+                        {#if group.area}
+                          <span class="entity-area">{group.area}</span>
+                        {/if}
+                        {#if getStateDisplay(group.entity)}
+                          <span class="entity-state"
+                            >{getStateDisplay(group.entity)}</span
+                          >
+                        {/if}
+                      </span>
+                    </div>
                   </button>
                 {/each}
+                {#if searchResultGroups.length === 0}
+                  <div class="no-results">No entities match your search</div>
+                {/if}
               </div>
             </div>
-
-            <!-- Entity List -->
-            <div class="browse-content">
-              {#if filteredEntities.length > 0}
-                <div class="panel-header">
-                  <span class="icon-label-group">
-                    {#if selectedDomain}
-                      <svg
-                        class="icon inline-icon"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path d={getDomainIcon(selectedDomain)}></path>
-                      </svg>
-                      {getDomainLabel(selectedDomain)}
-                    {/if}
-                  </span>
-                  <div class="panel-controls">
-                    <label class="room-filter">
-                      <svg class="icon inline-icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d={uiIcons.location}></path>
-                      </svg>
-                      <select bind:value={selectedAreaFilter}>
-                        <option value="">All rooms</option>
-                        {#each availableAreasForSelectedDomain as area}
-                          <option value={area}>{area}</option>
-                        {/each}
-                      </select>
-                    </label>
-                    <span class="result-count"
-                      >{filteredEntities.length} entities</span
-                    >
-                  </div>
-                </div>
-                <div class="entity-grid">
-                  {#each filteredEntities as entity}
+          {:else}
+            <!-- Browse Mode -->
+            <div class="browse-layout">
+              <!-- Sidebar -->
+              <div class="browse-sidebar">
+                <div class="filter-list">
+                  {#each availableDomains as { domain, count }}
                     <button
-                      class="entity-card"
-                      onclick={() => selectEntity(entity)}
+                      class="filter-item {selectedDomain === domain
+                        ? 'active'
+                        : ''}"
+                      onclick={() => {
+                        selectedDomain = domain;
+                        selectedAreaFilter = "";
+                      }}
                     >
                       <svg
-                        class="icon entity-icon"
+                        class="icon filter-icon"
                         viewBox="0 0 24 24"
                         aria-hidden="true"
                       >
-                        <path d={getDomainIcon(entity.domain)}></path>
+                        <path d={getDomainIcon(domain)}></path>
                       </svg>
-                      <div class="entity-info">
-                        <span class="entity-name">{getDisplayName(entity)}</span
-                        >
-                        <span class="entity-meta">
-                          {#if entity.area}
-                            <span class="entity-area">{entity.area}</span>
-                          {/if}
-                          {#if getStateDisplay(entity)}
-                            <span class="entity-state"
-                              >{getStateDisplay(entity)}</span
-                            >
-                          {/if}
-                        </span>
-                      </div>
+                      <span class="filter-name">{getDomainLabel(domain)}</span>
+                      <span class="filter-count">{count}</span>
                     </button>
                   {/each}
                 </div>
-              {:else}
-                <div class="browse-empty">
-                  <svg
-                    class="icon browse-empty-icon"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path d={uiIcons.emptyBrowse}></path>
-                  </svg>
-                  <span class="browse-empty-text"
-                    >Select a type to browse entities</span
-                  >
-                </div>
-              {/if}
+              </div>
+
+              <!-- Entity List -->
+              <div class="browse-content">
+                {#if filteredEntities.length > 0}
+                  <div class="panel-header">
+                    <span class="icon-label-group">
+                      {#if selectedDomain}
+                        <svg
+                          class="icon inline-icon"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path d={getDomainIcon(selectedDomain)}></path>
+                        </svg>
+                        {getDomainLabel(selectedDomain)}
+                      {/if}
+                    </span>
+                    <div class="panel-controls">
+                      <label class="room-filter">
+                        <svg class="icon inline-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d={uiIcons.location}></path>
+                        </svg>
+                        <select bind:value={selectedAreaFilter}>
+                          <option value="">All rooms</option>
+                          {#each availableAreasForSelectedDomain as area}
+                            <option value={area}>{area}</option>
+                          {/each}
+                        </select>
+                      </label>
+                      <span class="result-count"
+                        >{filteredEntities.length} entities</span
+                      >
+                    </div>
+                  </div>
+                  <div class="entity-grid">
+                    {#each filteredEntities as entity}
+                      <button
+                        class="entity-card"
+                        onclick={() => selectEntity(entity)}
+                      >
+                        <svg
+                          class="icon entity-icon"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path d={getDomainIcon(entity.domain)}></path>
+                        </svg>
+                        <div class="entity-info">
+                          <span class="entity-name">{getDisplayName(entity)}</span
+                          >
+                          <span class="entity-meta">
+                            {#if entity.area}
+                              <span class="entity-area">{entity.area}</span>
+                            {/if}
+                            {#if getStateDisplay(entity)}
+                              <span class="entity-state"
+                                >{getStateDisplay(entity)}</span
+                              >
+                            {/if}
+                          </span>
+                        </div>
+                      </button>
+                    {/each}
+                  </div>
+                {:else}
+                  <div class="browse-empty">
+                    <svg
+                      class="icon browse-empty-icon"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path d={uiIcons.emptyBrowse}></path>
+                    </svg>
+                    <span class="browse-empty-text"
+                      >Select a type to browse entities</span
+                    >
+                  </div>
+                {/if}
+              </div>
             </div>
+          {/if}
+        {:else}
+          <div class="browse-empty">
+            <svg
+              class="icon browse-empty-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d={uiIcons.empty}></path>
+            </svg>
+            <span class="browse-empty-text"
+              >No dump loaded. Manual entry is available above.</span
+            >
           </div>
         {/if}
       </div>
@@ -781,6 +898,14 @@
     border: 1px dashed var(--color-border);
   }
 
+  .empty-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+  }
+
   .empty-icon {
     width: 32px;
     height: 32px;
@@ -796,6 +921,90 @@
   .empty-hint {
     color: var(--color-text-muted);
     font-size: 11px;
+  }
+
+  .manual-overlay-entry {
+    background: color-mix(in srgb, var(--color-bg-primary) 75%, transparent);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .manual-overlay-entry.expanded {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .manual-overlay-entry.collapsed {
+    padding: 6px 16px;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  }
+
+  .manual-overlay-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+
+  .manual-toggle {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .manual-toggle:hover {
+    color: var(--color-text-primary);
+    border-color: var(--color-text-muted);
+  }
+
+  .manual-collapsed-toggle {
+    align-self: flex-end;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 11px;
+    padding: 2px 0;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .manual-collapsed-toggle:hover {
+    color: var(--color-text-secondary);
+  }
+
+  .manual-entry-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .manual-entry-grid input {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    outline: none;
+  }
+
+  .manual-entry-grid input:focus {
+    border-color: var(--color-primary, #0066cc);
+  }
+
+  @media (max-width: 700px) {
+    .manual-entry-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   /* Select Button */
@@ -1025,7 +1234,9 @@
     border-radius: 12px;
     width: 100%;
     max-width: 800px;
-    max-height: 80vh;
+    min-height: 720px;
+    height: 720px;
+    max-height: 720px;
     display: flex;
     flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);

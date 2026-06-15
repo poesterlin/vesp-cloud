@@ -17,6 +17,15 @@ A comprehensive visual design system and code generation suite for ESPHome-power
 3. Start the dev server: `bun run dev`.
 
 ### Home Assistant Component
+
+#### HACS (recommended)
+1. Open HACS in Home Assistant.
+2. Go to **Integrations** → **Custom repositories**.
+3. Add `https://github.com/poesterlin/home-display` as an **Integration** repository.
+4. Install **ESPHome Display Notifications & Data Bridge**.
+5. Restart Home Assistant.
+
+#### Manual
 Copy `custom_components/esphome_display` to your Home Assistant `config/custom_components/` directory.
 
 ### ESPHome Test Firmware

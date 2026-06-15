@@ -50,6 +50,7 @@
 
   interface Props {
     component: PickerComponent;
+    binding?: EntityBinding;
     onUpdate?: (binding: EntityBinding | undefined) => void;
     numericOnly?: boolean;
     preselectedDomain?: string;
@@ -58,6 +59,7 @@
 
   let {
     component,
+    binding = undefined,
     onUpdate,
     numericOnly = false,
     preselectedDomain = undefined,
@@ -71,6 +73,9 @@
 
   // Get current binding based on component type
   const currentBinding = $derived.by<EntityBinding | undefined>(() => {
+    if (binding) {
+      return binding;
+    }
     if (component.type === "text") {
       return component.textBinding;
     }

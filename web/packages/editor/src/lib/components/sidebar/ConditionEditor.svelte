@@ -1,6 +1,8 @@
 <script lang="ts">
-  import type { Condition, EntityCondition } from "@esphome-designer/schema";
+  import type { Condition, EntityBinding, EntityCondition } from "@esphome-designer/schema";
+  import { homeAssistantStore } from "$lib/stores/homeassistant.svelte";
   import Self from "./ConditionEditor.svelte";
+  import EntityPicker from "./EntityPicker.svelte";
 
   interface Props {
     condition: Condition | undefined;
@@ -20,6 +22,16 @@
     { value: "not_contains", label: "not contains" },
     { value: "matches", label: "matches (regex)" },
   ];
+
+  const selectedEntity = $derived(
+    condition?.type === "entity" && condition.entityId
+      ? homeAssistantStore.getEntity(condition.entityId)
+      : undefined,
+  );
+
+  const stateOptions = $derived(
+    selectedEntity?.state_options?.filter((option) => option.trim() !== "") ?? [],
+  );
 
   function setConditionType(type: string) {
     if (type === "none") {
@@ -44,6 +56,21 @@
     if (condition?.type === "entity") {
       onUpdate({ ...condition, ...updates });
     }
+  }
+
+  function updateEntityBinding(binding: EntityBinding | undefined) {
+    if (condition?.type !== "entity") return;
+    updateEntityCondition({
+      entityId: binding?.entityId ?? "",
+      attribute: binding?.attribute,
+    });
+  }
+
+  function parseConditionValue(value: string): string | number | boolean {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    if (value !== "" && !isNaN(Number(value))) return Number(value);
+    return value;
   }
 
   function addSubCondition() {
@@ -94,21 +121,13 @@
     <div class="condition-subform">
       <div class="field">
         <span class="field-label">Entity</span>
-        <input
-          type="text"
-          value={condition.entityId}
-          placeholder="light.living_room"
-          oninput={(e) => updateEntityCondition({ entityId: e.currentTarget.value })}
-        />
-      </div>
-
-      <div class="field">
-        <span class="field-label">Attr</span>
-        <input
-          type="text"
-          value={condition.attribute ?? ""}
-          placeholder="state (default)"
-          oninput={(e) => updateEntityCondition({ attribute: e.currentTarget.value || null })}
+        <EntityPicker
+          component={{ type: "condition" }}
+          binding={{
+            entityId: condition.entityId,
+            attribute: condition.attribute,
+          }}
+          onUpdate={updateEntityBinding}
         />
       </div>
 
@@ -130,15 +149,24 @@
           type="text"
           value={String(condition.value)}
           oninput={(e) => {
-            const v = e.currentTarget.value;
-            let parsed: string | number | boolean = v;
-            if (v === "true") parsed = true;
-            else if (v === "false") parsed = false;
-            else if (v !== "" && !isNaN(Number(v))) parsed = Number(v);
-            updateEntityCondition({ value: parsed });
+            updateEntityCondition({ value: parseConditionValue(e.currentTarget.value) });
           }}
         />
       </div>
+
+      {#if stateOptions.length > 0 && !condition.attribute}
+        <div class="suggestion-row" aria-label="State suggestions">
+          {#each stateOptions as option}
+            <button
+              type="button"
+              class:active={condition.value === parseConditionValue(option)}
+              onclick={() => updateEntityCondition({ value: parseConditionValue(option) })}
+            >
+              {option}
+            </button>
+          {/each}
+        </div>
+      {/if}
     </div>
   {/if}
 
@@ -229,6 +257,29 @@
     flex: 1;
     min-width: 0;
     font-size: 12px;
+  }
+
+  .suggestion-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding-left: 53px;
+  }
+
+  .suggestion-row button {
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .suggestion-row button:hover,
+  .suggestion-row button.active {
+    border-color: var(--color-accent);
+    color: var(--color-text-primary);
   }
 
   .compound-editor {

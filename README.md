@@ -38,8 +38,9 @@ Copy `custom_components/esphome_display` to your Home Assistant `config/custom_c
 - [ ] update branding, name, repo, domain
 - [x] https://hacs.xyz/docs/publish/action/
 - [x] [add hacs manifest in /](https://hacs.xyz/docs/publish/integration/#hacsjson)
-- [ ] add account emails for account/pw recovery
-- [ ] add more analytics
+- [ ] submit to hacs
+- [x] add account emails for account/pw recovery
+- [x] add more analytics
 - [x] allow flashing older builds / store in s3
 - [x] test ota update flow
 - [ ] record demo

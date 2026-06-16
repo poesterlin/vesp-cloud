@@ -218,6 +218,10 @@ class Widget {
   // the full screen, which means "I might be anywhere -> always redraw me".
   virtual UiRect bounds() const { return UiRect{0, 0, 480, 480}; }
 
+  void set_render_offset_y(int y) { render_offset_y_ = y; }
+  void set_scroll_exempt(bool exempt) { scroll_exempt_ = exempt; }
+  bool scroll_exempt() const { return scroll_exempt_; }
+
   // Override the rect that mark_dirty() invalidates. By default mark_dirty
   // invalidates bounds(); widgets inside a "container" like a conditional
   // area set this to the container rect so that when they (dis)appear, the
@@ -257,9 +261,16 @@ class Widget {
   }
 
  protected:
+  UiRect screen_rect(UiRect r) const {
+    r.y += render_offset_y_;
+    return r;
+  }
+
   std::function<bool()> visibility_check_;
   UiRect dirty_bounds_{0, 0, 0, 0};
+  int render_offset_y_ = 0;
   bool has_custom_dirty_bounds_ = false;
+  bool scroll_exempt_ = false;
   bool last_visibility_ = false;
   bool visibility_baseline_set_ = false;
 };
@@ -268,11 +279,12 @@ class RectWidget : public Widget {
  public:
   RectWidget(UiRect rect, Color color) : rect_(rect), color_(color) {}
 
-  UiRect bounds() const override { return rect_; }
+  UiRect bounds() const override { return screen_rect(rect_); }
 
   void draw(display::Display &it, const UiState &state) override {
     (void)state;
-    ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, color_);
+    const UiRect r = screen_rect(rect_);
+    ui_fast_filled_rectangle(it, r.x, r.y, r.w, r.h, color_);
   }
 
  private:
@@ -313,13 +325,13 @@ class ImageWidget : public Widget {
 
   void set_bg_color(Color c) { bg_color_ = c; }
 
-  UiRect bounds() const override { return rect_; }
+  UiRect bounds() const override { return screen_rect(rect_); }
 
   bool handle_touch(const TouchEvent &event, uint32_t now) override {
     (void)now;
     if (!tap_callback_ || !fully_rendered_) return false;
     if (event.type != TouchType::Tap) return false;
-    if (rect_.contains(event.x, event.y)) {
+    if (bounds().contains(event.x, event.y)) {
       tap_callback_();
       return true;
     }
@@ -356,11 +368,12 @@ class ImageWidget : public Widget {
       return;
     }
 
+    const UiRect r = screen_rect(rect_);
     const int iw = img->get_width();
     const int ih = img->get_height();
-    const int ox = rect_.x + (rect_.w - iw) / 2;
-    const int oy = rect_.y + (rect_.h - ih) / 2;
-    ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
+    const int ox = r.x + (r.w - iw) / 2;
+    const int oy = r.y + (r.h - ih) / 2;
+    ui_fast_filled_rectangle(it, r.x, r.y, r.w, r.h, bg_color_);
     it.image(ox, oy, img, color_on_, color_off_);
   }
 
@@ -377,11 +390,12 @@ class ImageWidget : public Widget {
     const int ih = img->get_height();
     if (iw <= 0 || ih <= 0) { fully_rendered_ = true; return; }
 
-    const int ox = rect_.x + (rect_.w - iw) / 2;
-    const int oy = rect_.y + (rect_.h - ih) / 2;
+    const UiRect r = screen_rect(rect_);
+    const int ox = r.x + (r.w - iw) / 2;
+    const int oy = r.y + (r.h - ih) / 2;
 
     if (tile_row_ == 0) {
-      ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
+      ui_fast_filled_rectangle(it, r.x, r.y, r.w, r.h, bg_color_);
     }
 
     int tile_h = TILE_ROWS;
@@ -406,11 +420,12 @@ class ImageWidget : public Widget {
   }
 
   void draw_placeholder(display::Display &it, bool downloading) const {
-    ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
-    draw_clipped_border(it, rect_.x + 2, rect_.y + 2, rect_.w - 4, rect_.h - 4,
+    const UiRect r = screen_rect(rect_);
+    ui_fast_filled_rectangle(it, r.x, r.y, r.w, r.h, bg_color_);
+    draw_clipped_border(it, r.x + 2, r.y + 2, r.w - 4, r.h - 4,
                         4, 4, 4, 4, RetroColors::DIMMER);
     if (g_theme.label.font != nullptr) {
-      it.printf(rect_.x + rect_.w / 2, rect_.y + rect_.h / 2,
+      it.printf(r.x + r.w / 2, r.y + r.h / 2,
                 g_theme.label.font, RetroColors::DIMMER,
                 TextAlign::CENTER, downloading ? "LOADING..." : "...");
     }
@@ -449,7 +464,7 @@ class LabelWidget : public Widget {
     has_align_override_ = true;
   }
 
-  UiRect bounds() const override { return rect_; }
+  UiRect bounds() const override { return screen_rect(rect_); }
 
   void bind(const bool *value, const char *on_text = "ON", const char *off_text = "OFF") {
     bound_bool_ = value;
@@ -518,8 +533,9 @@ class LabelWidget : public Widget {
     auto *f = style_->font;
     auto cl = style_->color;
     auto a = text_align();
-    const int x = text_anchor_x(a);
-    const int y = text_anchor_y();
+    const UiRect r = screen_rect(rect_);
+    const int x = text_anchor_x(r, a);
+    const int y = text_anchor_y(r);
 
     // All string render paths truncate to rect_.w with an ellipsis so the
     // label never bleeds outside its bounds, no matter what HA streams in.
@@ -553,10 +569,10 @@ class LabelWidget : public Widget {
       last_bool_ = *bound_bool_;
       bool_baseline_set_ = true;
     } else if (text_fn_) {
-      ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
+      ui_fast_filled_rectangle(it, r.x, r.y, r.w, r.h, bg_color_);
       ui_print_truncated(it, x, y, f, cl, a, last_text_, max_text_w);
     } else if (printer_) {
-      ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
+      ui_fast_filled_rectangle(it, r.x, r.y, r.w, r.h, bg_color_);
       // printer_ wraps a templated bound value; we can't easily intercept
       // the formatted result, but in practice these are short numeric
       // labels (gauges, percentages) that fit by construction.
@@ -582,13 +598,13 @@ class LabelWidget : public Widget {
     return ui_text_align_vertical_center(has_align_override_ ? align_ : style_->align);
   }
 
-  int text_anchor_x(TextAlign align) const {
-    if (ui_text_align_is_right(align)) return rect_.x + rect_.w;
-    if (ui_text_align_is_center(align)) return rect_.x + (rect_.w / 2);
-    return rect_.x;
+  int text_anchor_x(UiRect r, TextAlign align) const {
+    if (ui_text_align_is_right(align)) return r.x + r.w;
+    if (ui_text_align_is_center(align)) return r.x + (r.w / 2);
+    return r.x;
   }
 
-  int text_anchor_y() const { return rect_.y + (rect_.h / 2); }
+  int text_anchor_y(UiRect r) const { return r.y + (r.h / 2); }
 
   UiRect rect_;
   const char *text_;
@@ -611,7 +627,7 @@ class IconWidget : public Widget {
   IconWidget(UiRect rect, const char *glyph, const Theme::TextStyle &style)
       : rect_(rect), glyph_(glyph), style_(&style) {}
 
-  UiRect bounds() const override { return rect_; }
+  UiRect bounds() const override { return screen_rect(rect_); }
 
   void set_color(Color c) {
     color_override_ = c;
@@ -625,8 +641,9 @@ class IconWidget : public Widget {
 
     auto *f = style_->font;
     auto color = has_color_override_ ? color_override_ : style_->color;
-    const int cx = rect_.x + rect_.w / 2;
-    const int cy = rect_.y + rect_.h / 2;
+    const UiRect r = screen_rect(rect_);
+    const int cx = r.x + r.w / 2;
+    const int cy = r.y + r.h / 2;
     it.printf(cx, cy, f, color, TextAlign::CENTER, "%s", glyph_);
   }
 
@@ -645,7 +662,7 @@ class ButtonWidget : public Widget {
   ButtonWidget(UiRect rect, const char *label, Callback callback, const Theme::ButtonStyle &style)
       : rect_(rect), label_(label), callback_(callback), style_(&style) {}
 
-  UiRect bounds() const override { return rect_; }
+  UiRect bounds() const override { return screen_rect(rect_); }
 
   // Configure an optional icon glyph drawn above the label using the
   // provided text style (typically `g_theme.icon` so the MDI font is used).
@@ -698,20 +715,21 @@ class ButtonWidget : public Widget {
     auto bc = style_->border_color;
     auto tc = style_->text_color;
 
-    int c = (rect_.h < 40) ? 4 : 6;
-    draw_clipped_box(it, rect_.x, rect_.y, rect_.w, rect_.h,
+    const UiRect r = screen_rect(rect_);
+    int c = (r.h < 40) ? 4 : 6;
+    draw_clipped_box(it, r.x, r.y, r.w, r.h,
                      c, bc, RetroColors::DIM, true);
 
     if (loading_) {
-      it.printf(rect_.x + rect_.w / 2, rect_.y + rect_.h / 2, f, tc, TextAlign::CENTER, "...");
+      it.printf(r.x + r.w / 2, r.y + r.h / 2, f, tc, TextAlign::CENTER, "...");
       return;
     }
 
     const bool has_icon = icon_glyph_ != nullptr && icon_glyph_[0] != '\0'
                          && icon_style_ != nullptr && icon_style_->font != nullptr;
     const bool has_label = label_ != nullptr && label_[0] != '\0';
-    const int cx = rect_.x + rect_.w / 2;
-    const int cy = rect_.y + rect_.h / 2;
+    const int cx = r.x + r.w / 2;
+    const int cy = r.y + r.h / 2;
 
     if (has_icon && has_label) {
       // Try horizontal first (icon left of label). Falls back to the
@@ -722,7 +740,7 @@ class ButtonWidget : public Widget {
       it.get_text_bounds(0, 0, icon_glyph_, icon_style_->font, TextAlign::TOP_LEFT, &ix, &iy, &iw, &ih);
       const int gap = 6;
       const int side_pad = 8;
-      const int horiz_budget = rect_.w - 2 * side_pad - iw - gap;
+      const int horiz_budget = r.w - 2 * side_pad - iw - gap;
       // Minimum label budget to bother going horizontal: room for at
       // least ~3 chars + ellipsis. Below that, vertical is more legible.
       int eps_x, eps_y, eps_w, eps_h;
@@ -731,7 +749,7 @@ class ButtonWidget : public Widget {
       // Stack only when the button is clearly tall enough for two
       // legible lines; otherwise prefer the horizontal layout even on
       // small buttons because the alternative is a clipped stack.
-      const bool tall_enough_for_stack = rect_.h >= 56;
+      const bool tall_enough_for_stack = r.h >= 56;
 
       if (horiz_fits && !tall_enough_for_stack) {
         bool truncated = false;
@@ -742,7 +760,7 @@ class ButtonWidget : public Widget {
         // pair stays visually centered even when truncated.
         const int extra = truncated ? (UI_TRUNC_DOTS_W + 2) : 0;
         const int total_w = iw + gap + lw + extra;
-        const int start_x = rect_.x + (rect_.w - total_w) / 2;
+        const int start_x = r.x + (r.w - total_w) / 2;
         it.printf(start_x + iw / 2, cy, icon_style_->font, tc, TextAlign::CENTER, "%s", icon_glyph_);
         const int label_x = start_x + iw + gap;
         it.printf(label_x, cy, f, tc, TextAlign::CENTER_LEFT, "%s", disp.c_str());
@@ -754,12 +772,12 @@ class ButtonWidget : public Widget {
         }
       } else {
         it.printf(cx, cy - 12, icon_style_->font, tc, TextAlign::CENTER, "%s", icon_glyph_);
-        ui_print_truncated(it, cx, cy + 14, f, tc, TextAlign::CENTER, label_, rect_.w - 12);
+        ui_print_truncated(it, cx, cy + 14, f, tc, TextAlign::CENTER, label_, r.w - 12);
       }
     } else if (has_icon) {
       it.printf(cx, cy, icon_style_->font, tc, TextAlign::CENTER, "%s", icon_glyph_);
     } else if (has_label) {
-      ui_print_truncated(it, cx, cy, f, tc, TextAlign::CENTER, label_, rect_.w - 12);
+      ui_print_truncated(it, cx, cy, f, tc, TextAlign::CENTER, label_, r.w - 12);
     }
   }
 
@@ -767,7 +785,7 @@ class ButtonWidget : public Widget {
   bool hit_test(int tx, int ty) const {
     const int sx = rect_.w < 40 ? 15 : (rect_.w < 60 ? 10 : 0);
     const int sy = rect_.h < 40 ? 15 : (rect_.h < 60 ? 10 : 0);
-    return rect_.contains(tx, ty, sx, sy);
+    return bounds().contains(tx, ty, sx, sy);
   }
 
   UiRect rect_;
@@ -795,7 +813,7 @@ class ImageToggleWidget : public Widget {
 
   void bind(const bool *on_state) { on_state_ = on_state; }
 
-  UiRect bounds() const override { return rect_; }
+  UiRect bounds() const override { return screen_rect(rect_); }
 
   void update(uint32_t now) override {
     if (loading_timeout_ms_ > 0 && loading_ &&
@@ -845,28 +863,29 @@ class ImageToggleWidget : public Widget {
 
     Color icon_color = is_on ? on_color_ : off_color_;
 
+    const UiRect r = screen_rect(rect_);
     int c = 6;
-    draw_clipped_box(it, rect_.x, rect_.y, rect_.w, rect_.h,
+    draw_clipped_box(it, r.x, r.y, r.w, r.h,
                      c, icon_color, RetroColors::DIM, true);
 
     if (loading_) {
       float angle = (millis() % 1000) * 2.0f * 3.14159265f / 1000.0f;
-      int cx = rect_.x + 28;
-      int cy = rect_.y + rect_.h / 2;
+      int cx = r.x + 28;
+      int cy = r.y + r.h / 2;
       int r = 10;
       it.line(cx, cy, cx + (int)(cosf(angle) * r),
               cy + (int)(sinf(angle) * r), icon_color);
       if (label_ != nullptr && g_theme.label.font != nullptr) {
-        const int max_w = rect_.x + rect_.w - (rect_.x + 52) - 6;
-        ui_print_truncated(it, rect_.x + 52, rect_.y + rect_.h / 2,
+        const int max_w = r.x + r.w - (r.x + 52) - 6;
+        ui_print_truncated(it, r.x + 52, r.y + r.h / 2,
                            g_theme.label.font, icon_color,
                            TextAlign::CENTER_LEFT, label_, max_w);
       }
       return;
     }
 
-    int icon_x = rect_.x + 28;
-    int icon_y = rect_.y + rect_.h / 2;
+    int icon_x = r.x + 28;
+    int icon_y = r.y + r.h / 2;
     const bool has_mdi_icon =
         icon_glyph_ != nullptr && icon_glyph_[0] != '\0' &&
         g_theme.icon.font != nullptr;
@@ -887,8 +906,8 @@ class ImageToggleWidget : public Widget {
     }
 
     if (label_ != nullptr && g_theme.label.font != nullptr) {
-      const int max_w = rect_.x + rect_.w - (rect_.x + 52) - 6;
-      ui_print_truncated(it, rect_.x + 52, rect_.y + rect_.h / 2,
+      const int max_w = r.x + r.w - (r.x + 52) - 6;
+      ui_print_truncated(it, r.x + 52, r.y + r.h / 2,
                          g_theme.label.font, Color(255, 255, 255),
                          TextAlign::CENTER_LEFT, label_, max_w);
     }
@@ -900,7 +919,7 @@ class ImageToggleWidget : public Widget {
   bool hit_test(int tx, int ty) const {
     const int sx = rect_.w < 40 ? 15 : (rect_.w < 60 ? 10 : 0);
     const int sy = rect_.h < 40 ? 15 : (rect_.h < 60 ? 10 : 0);
-    return rect_.contains(tx, ty, sx, sy);
+    return bounds().contains(tx, ty, sx, sy);
   }
 
   UiRect rect_;
@@ -940,11 +959,11 @@ class TodoPreviewWidget : public Widget {
     else row_height_ = row_height;
   }
 
-  UiRect bounds() const override { return rect_; }
+  UiRect bounds() const override { return screen_rect(rect_); }
 
   bool handle_touch(const TouchEvent &event, uint32_t now) override {
     (void)now;
-    if (!rect_.contains(event.x, event.y)) return false;
+    if (!bounds().contains(event.x, event.y)) return false;
 
     if (event.type == TouchType::Down && scrollable_) {
       dragging_ = true;
@@ -1011,17 +1030,18 @@ class TodoPreviewWidget : public Widget {
     const Color due_ok = RetroColors::AMBER;
     const Color due_overdue = RetroColors::RED;
     const Color dim = RetroColors::GRAY;
+    const UiRect r = screen_rect(rect_);
 
     // Clipped-corner container
-    draw_clipped_box(it, rect_.x, rect_.y, rect_.w, rect_.h,
+    draw_clipped_box(it, r.x, r.y, r.w, r.h,
                      8, border, bg, false);
     // Inner double-line
-    draw_clipped_border(it, rect_.x + 2, rect_.y + 2, rect_.w - 4, rect_.h - 4,
+    draw_clipped_border(it, r.x + 2, r.y + 2, r.w - 4, r.h - 4,
                         6, 6, 6, 6, RetroColors::AMBER_DIM);
 
     if (items_ == nullptr || items_->empty()) {
       if (g_theme.label.font != nullptr) {
-        it.printf(rect_.x + rect_.w / 2, rect_.y + rect_.h / 2, g_theme.label.font,
+        it.printf(r.x + r.w / 2, r.y + r.h / 2, g_theme.label.font,
                   dim, TextAlign::CENTER, "LIST EMPTY");
       }
       last_items_.clear();
@@ -1035,7 +1055,7 @@ class TodoPreviewWidget : public Widget {
 
     if (rows_.empty()) {
       if (g_theme.label.font != nullptr) {
-        it.printf(rect_.x + rect_.w / 2, rect_.y + rect_.h / 2, g_theme.label.font,
+        it.printf(r.x + r.w / 2, r.y + r.h / 2, g_theme.label.font,
                   dim, TextAlign::CENTER, "LIST EMPTY");
       }
       last_items_ = *items_;
@@ -1062,11 +1082,11 @@ class TodoPreviewWidget : public Widget {
 
     for (int i = start_index; i < static_cast<int>(rows_.size()) && drawn < row_limit; i++) {
       auto &row = rows_[i];
-      const int y = rect_.y + top_padding + drawn * row_height_ - pixel_offset;
-      if (y + row_height_ < rect_.y + top_padding) {
+      const int y = r.y + top_padding + drawn * row_height_ - pixel_offset;
+      if (y + row_height_ < r.y + top_padding) {
         continue;
       }
-      if (y > rect_.y + rect_.h - 2) {
+      if (y > r.y + r.h - 2) {
         break;
       }
 
@@ -1080,26 +1100,26 @@ class TodoPreviewWidget : public Widget {
         if (g_theme.icon.font != nullptr &&
             incomplete_icon_ != nullptr && complete_icon_ != nullptr &&
             incomplete_icon_[0] != '\0' && complete_icon_[0] != '\0') {
-          it.printf(rect_.x + 16, row_cy, g_theme.icon.font,
+          it.printf(r.x + 16, row_cy, g_theme.icon.font,
                     check_color, TextAlign::CENTER,
                     "%s", completed ? complete_icon_ : incomplete_icon_);
         } else {
-          it.printf(rect_.x + 10, row_cy, g_theme.label.font,
+          it.printf(r.x + 10, row_cy, g_theme.label.font,
                     check_color, TextAlign::CENTER_LEFT,
                     "%s", completed ? "[x]" : "[ ]");
         }
       }
 
-      int text_x = rect_.x + 38;
+      int text_x = r.x + 38;
       if (!row.due.empty() && g_theme.label.font != nullptr) {
         const int due_max_w = 92;
-        ui_print_truncated(it, rect_.x + 38, row_cy, g_theme.label.font,
+        ui_print_truncated(it, r.x + 38, row_cy, g_theme.label.font,
                            overdue ? due_overdue : due_ok,
                            TextAlign::CENTER_LEFT, row.due, due_max_w);
-        text_x = rect_.x + 134;
+        text_x = r.x + 134;
       }
       if (g_theme.label.font != nullptr) {
-        const int summary_max_w = rect_.x + rect_.w - text_x - 4;
+        const int summary_max_w = r.x + r.w - text_x - 4;
         bool summary_truncated = false;
         summary = ui_truncate_to_width(it, g_theme.label.font, summary, summary_max_w, &summary_truncated);
         const Color summary_color = completed ? dim : text;
@@ -1128,7 +1148,7 @@ class TodoPreviewWidget : public Widget {
     }
 
     if (drawn == 0 && g_theme.label.font != nullptr) {
-      it.printf(rect_.x + rect_.w / 2, rect_.y + rect_.h / 2, g_theme.label.font,
+      it.printf(r.x + r.w / 2, r.y + r.h / 2, g_theme.label.font,
                 dim, TextAlign::CENTER, "LIST EMPTY");
     }
 
@@ -1162,7 +1182,7 @@ class TodoPreviewWidget : public Widget {
 
   int row_at(int tx, int ty) const {
     (void)tx;
-    const int top = rect_.y + 8;
+    const int top = screen_rect(rect_).y + 8;
     const int local_y = ty - top + (scrollable_ ? scroll_offset_ : 0);
     if (local_y < 0) return -1;
     const int idx = local_y / row_height_;

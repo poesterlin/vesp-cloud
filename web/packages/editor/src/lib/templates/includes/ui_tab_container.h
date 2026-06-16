@@ -31,9 +31,10 @@ class TabContainerWidget : public Widget {
     return ptr;
   }
 
-  UiRect bounds() const override { return rect_; }
+  UiRect bounds() const override { return screen_rect(rect_); }
 
   void draw(display::Display &it, const UiState &state) override {
+    const UiRect r = screen_rect(rect_);
     const bool full = UiInvalidation::is_full_dirty();
     const bool legacy_partial =
         !full && UiInvalidation::dirty_count() == 0 && UiInvalidation::needs_redraw();
@@ -42,15 +43,15 @@ class TabContainerWidget : public Widget {
     // covers their full area (e.g. tab switch marks the container's whole
     // rect). A small dirty rect from a child must NOT trigger a bg repaint,
     // because that would erase sibling widgets that won't redraw this frame.
-    const int bar_y = rect_.y;
+    const int bar_y = r.y;
     const int bar_h = kTabBarHeight;
-    const int body_y = rect_.y + kTabBarHeight;
-    const int body_h = rect_.h - kTabBarHeight;
+    const int body_y = r.y + kTabBarHeight;
+    const int body_h = r.h - kTabBarHeight;
 
     const bool draw_bar = full || legacy_partial ||
-        rect_fully_covered(rect_.x, bar_y, rect_.w, bar_h);
+        rect_fully_covered(r.x, bar_y, r.w, bar_h);
     const bool draw_body_bg = full || legacy_partial ||
-        rect_fully_covered(rect_.x, body_y, rect_.w, body_h);
+        rect_fully_covered(r.x, body_y, r.w, body_h);
 
     if (draw_body_bg) {
       draw_background(it);
@@ -64,13 +65,16 @@ class TabContainerWidget : public Widget {
       // If we repainted the body bg we must redraw every child that lives
       // there or it'll vanish.
       if (draw_body_bg) {
+        w->set_render_offset_y(render_offset_y_);
         w->draw(it, state);
         continue;
       }
       if (full || legacy_partial) {
+        w->set_render_offset_y(render_offset_y_);
         w->draw(it, state);
         continue;
       }
+      w->set_render_offset_y(render_offset_y_);
       const auto b = w->bounds();
       if (!UiInvalidation::needs_redraw_in(b.x, b.y, b.w, b.h)) continue;
       w->draw(it, state);
@@ -102,6 +106,7 @@ class TabContainerWidget : public Widget {
 
     for (auto it_w = tabs_[active_tab_].widgets.rbegin();
          it_w != tabs_[active_tab_].widgets.rend(); ++it_w) {
+      (*it_w)->set_render_offset_y(render_offset_y_);
       if ((*it_w)->handle_touch(event, now)) {
         return true;
       }
@@ -141,22 +146,24 @@ class TabContainerWidget : public Widget {
   }
 
   void draw_background(display::Display &it) const {
-    ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
+    const UiRect r = screen_rect(rect_);
+    ui_fast_filled_rectangle(it, r.x, r.y, r.w, r.h, bg_color_);
   }
 
   void draw_tab_bar(display::Display &it) const {
-    ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, kTabBarHeight,
+    const UiRect r = screen_rect(rect_);
+    ui_fast_filled_rectangle(it, r.x, r.y, r.w, kTabBarHeight,
                              RetroColors::DIM);
 
     if (tabs_.empty()) return;
 
     int tab_count = static_cast<int>(tabs_.size());
-    int tab_w = (rect_.w - kTabPadding * (tab_count + 1)) / tab_count;
+    int tab_w = (r.w - kTabPadding * (tab_count + 1)) / tab_count;
     auto *font = tab_style_->font;
 
     for (int i = 0; i < tab_count; i++) {
-      int tx = rect_.x + kTabPadding + i * (tab_w + kTabPadding);
-      int ty = rect_.y + kTabVertPadding;
+      int tx = r.x + kTabPadding + i * (tab_w + kTabPadding);
+      int ty = r.y + kTabVertPadding;
       int th = kTabBarHeight - kTabVertPadding * 2;
 
       if (i == active_tab_) {

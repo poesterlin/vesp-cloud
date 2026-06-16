@@ -111,6 +111,31 @@ describe("todo_list codegen", () => {
     expect(out).toContain("[&screens]() { screens.navigate_to(UiScreenId::DetailDetail1); }");
   });
 
+  test("makes tall detail views vertically scrollable below fixed header", () => {
+    const project = makeProject({
+      detailViews: [
+        {
+          id: "detail_1",
+          title: "Detail",
+          height: 580,
+          components: [
+            {
+              id: "bottom",
+              type: "button",
+              position: { x: 20, y: 520 },
+              size: { width: 120, height: 40 },
+              label: "Bottom",
+            },
+          ],
+        },
+      ],
+    });
+
+    const out = generateUIScreensHeader(project);
+    expect(out).toContain("detaildetail1->set_scroll_area(50, 430, 580);");
+    expect(out).toContain("detaildetail1_header->set_scroll_exempt(true);");
+  });
+
   test("adds generated todo string state field", () => {
     const project = makeProject({
       dashboardPages: [

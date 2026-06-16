@@ -34,6 +34,16 @@ class GenericScreen : public Screen {
     widgets_.push_back(std::move(widget));
   }
 
+  void set_scroll_area(int y, int h, int content_h) {
+    scroll_enabled_ = content_h > h;
+    scroll_y_ = 0;
+    scroll_start_y_ = 0;
+    scroll_area_y_ = y;
+    scroll_area_h_ = h;
+    max_scroll_ = scroll_enabled_ ? (content_h - h) : 0;
+    if (max_scroll_ < 0) max_scroll_ = 0;
+  }
+
   template<typename T, typename... Args>
   T* emplace_widget(Args&&... args) {
     auto widget = std::make_unique<T>(std::forward<Args>(args)...);
@@ -43,6 +53,9 @@ class GenericScreen : public Screen {
   }
 
   void enter() override {
+    scroll_y_ = 0;
+    dragging_scroll_ = false;
+    apply_scroll_offsets();
     for (auto &w : widgets_) w->enter();
   }
 
@@ -59,6 +72,37 @@ class GenericScreen : public Screen {
   }
 
   bool handle_touch(const TouchEvent &event, uint32_t now, const UiState &state) override {
+    apply_scroll_offsets();
+
+    if (scroll_enabled_) {
+      for (auto &w : widgets_) {
+        if (w->scroll_exempt() && w->is_visible(state) && w->handle_touch(event, now)) return true;
+      }
+
+      const bool in_scroll_area = event.y >= scroll_area_y_ && event.y < scroll_area_y_ + scroll_area_h_;
+      if (event.type == TouchType::Down && in_scroll_area) {
+        dragging_scroll_ = true;
+        scroll_start_y_ = scroll_y_;
+        return true;
+      }
+      if (event.type == TouchType::Move && dragging_scroll_) {
+        int next = scroll_start_y_ + event.dy;
+        if (next > 0) next = 0;
+        if (next < -max_scroll_) next = -max_scroll_;
+        if (next != scroll_y_) {
+          scroll_y_ = next;
+          apply_scroll_offsets();
+          scroll_dirty_ = true;
+          UiInvalidation::request_partial();
+        }
+        return true;
+      }
+      if (event.type == TouchType::Up && dragging_scroll_) {
+        dragging_scroll_ = false;
+        return true;
+      }
+    }
+
     for (auto &w : widgets_) {
       if (w->is_visible(state) && w->handle_touch(event, now)) return true;
     }
@@ -73,18 +117,41 @@ class GenericScreen : public Screen {
       return;
     }
     const bool full = UiInvalidation::is_full_dirty();
+    const bool scroll_partial = scroll_enabled_ && scroll_dirty_ && !full;
     const bool legacy_partial =
-        !full && UiInvalidation::dirty_count() == 0 && UiInvalidation::needs_redraw();
+        !full && !scroll_partial && UiInvalidation::dirty_count() == 0 && UiInvalidation::needs_redraw();
+    apply_scroll_offsets();
+    if (scroll_partial) {
+      ui_fast_filled_rectangle(it, 0, scroll_area_y_, 480, scroll_area_h_, RetroColors::VOID);
+    }
     for (auto &w : widgets_) {
       if (!w->is_visible(state)) continue;
+      if (scroll_partial && w->scroll_exempt()) continue;
       if (!full && !legacy_partial) {
         const auto b = w->bounds();
-        if (!UiInvalidation::needs_redraw_in(b.x, b.y, b.w, b.h)) continue;
+        if (!scroll_partial) {
+          if (!UiInvalidation::needs_redraw_in(b.x, b.y, b.w, b.h)) continue;
+        }
       }
       w->draw(it, state);
     }
+    scroll_dirty_ = false;
   }
 
  private:
+  void apply_scroll_offsets() {
+    for (auto &w : widgets_) {
+      w->set_render_offset_y((scroll_enabled_ && !w->scroll_exempt()) ? scroll_y_ : 0);
+    }
+  }
+
   std::vector<std::unique_ptr<Widget>> widgets_;
+  bool scroll_enabled_ = false;
+  bool dragging_scroll_ = false;
+  bool scroll_dirty_ = false;
+  int scroll_y_ = 0;
+  int scroll_start_y_ = 0;
+  int scroll_area_y_ = 0;
+  int scroll_area_h_ = 480;
+  int max_scroll_ = 0;
 };

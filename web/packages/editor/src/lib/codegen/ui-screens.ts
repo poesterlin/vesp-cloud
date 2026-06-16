@@ -150,6 +150,27 @@ function cppLineCommentText(s: string): string {
   return s.replace(/[\r\n]/g, ' ');
 }
 
+function componentBottom(c: Component): number {
+  const selfBottom = c.position.y + (c.size?.height ?? 0);
+  if (c.type === 'tab_container') {
+    const childBottom = Math.max(0, ...c.tabs.flatMap(tab =>
+      tab.components.map(child => c.position.y + TAB_BAR_HEIGHT + componentBottom(child))
+    ));
+    return Math.max(selfBottom, childBottom);
+  }
+  if (c.type === 'conditional_area') {
+    const childBottom = Math.max(0, ...c.variants.flatMap(variant =>
+      variant.components.map(child => c.position.y + componentBottom(child))
+    ));
+    return Math.max(selfBottom, childBottom);
+  }
+  return selfBottom;
+}
+
+function detailContentHeight(view: { height?: number; components: Component[] }): number {
+  return Math.max(view.height ?? 0, 0, ...view.components.map(componentBottom));
+}
+
 function detailScreenId(id: string, title: string): string {
   return 'Detail' + (toCppIdentifier(id) || toCppIdentifier(title) || 'View');
 }
@@ -797,9 +818,14 @@ export function generateUIScreensHeader(project: Project): string {
   for (const view of project.detailViews) {
     const cppName = detailScreenId(view.id, view.title);
     const screenVar = cppName.toLowerCase();
+    const headerHeight = 50;
+    const visibleContentHeight = Math.max(0, dh - headerHeight);
+    const contentHeight = Math.round(detailContentHeight(view));
     setupBody += `  auto *${screenVar} = screens.get_screen(UiScreenId::${cppName});\n`;
-    setupBody += `  ${screenVar}->emplace_widget<DetailHeaderWidget>(g_theme.header.font, g_theme.label.font, "${escapeCString(view.title)}",\n`;
+    setupBody += `  ${screenVar}->set_scroll_area(${headerHeight}, ${visibleContentHeight}, ${contentHeight});\n`;
+    setupBody += `  auto *${screenVar}_header = ${screenVar}->emplace_widget<DetailHeaderWidget>(g_theme.header.font, g_theme.label.font, "${escapeCString(view.title)}",\n`;
     setupBody += `      [&screens]() { screens.navigate_to(UiScreenId::Home); });\n`;
+    setupBody += `  ${screenVar}_header->set_scroll_exempt(true);\n`;
     if (view.components.length === 0) {
       setupBody += '\n';
       continue;

@@ -18,6 +18,32 @@ inline void ui_fast_filled_rectangle(display::Display &it, int x, int y, int w, 
     return;
   }
 
+  // This path writes pixels straight to the panel via draw_pixels_at(), which
+  // bypasses the display's clipping region. Higher-level callers (scroll
+  // viewport) rely on start_clipping() to keep fills inside an area, so we
+  // clamp manually here. Without this, button/box backgrounds drawn through
+  // this function bleed past the clip rect (e.g. over a fixed header).
+  if (it.is_clipping()) {
+    const auto clip = it.get_clipping();
+    const int clip_left = clip.x;
+    const int clip_top = clip.y;
+    const int clip_right = clip.x + clip.w;   // exclusive
+    const int clip_bottom = clip.y + clip.h;  // exclusive
+
+    int x0 = x > clip_left ? x : clip_left;
+    int y0 = y > clip_top ? y : clip_top;
+    int x1 = (x + w) < clip_right ? (x + w) : clip_right;
+    int y1 = (y + h) < clip_bottom ? (y + h) : clip_bottom;
+
+    x = x0;
+    y = y0;
+    w = x1 - x0;
+    h = y1 - y0;
+    if (w <= 0 || h <= 0) {
+      return;
+    }
+  }
+
   static constexpr int FILL_BUF_COLS = 480;
   static constexpr int FILL_BUF_ROWS = 64;
   static constexpr int FILL_BUF_PIXELS = FILL_BUF_COLS * FILL_BUF_ROWS;

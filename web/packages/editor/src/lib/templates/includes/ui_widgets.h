@@ -671,6 +671,11 @@ class ButtonWidget : public Widget {
     icon_style_ = icon_style;
   }
 
+  void set_border_color(Color c) {
+    border_color_override_ = c;
+    has_border_color_override_ = true;
+  }
+
   void update(uint32_t now) override {
     if (loading_timeout_ms_ > 0 && loading_ && (now - loading_start_ms_ > loading_timeout_ms_)) {
       loading_ = false;
@@ -712,7 +717,7 @@ class ButtonWidget : public Widget {
     if (style_ == nullptr || style_->font == nullptr) return;
 
     auto *f = style_->font;
-    auto bc = style_->border_color;
+    auto bc = has_border_color_override_ ? border_color_override_ : style_->border_color;
     auto tc = style_->text_color;
 
     const UiRect r = screen_rect(rect_);
@@ -794,6 +799,8 @@ class ButtonWidget : public Widget {
   const Theme::ButtonStyle *style_ = nullptr;
   const char *icon_glyph_ = nullptr;
   const Theme::TextStyle *icon_style_ = nullptr;
+  Color border_color_override_{0, 0, 0};
+  bool has_border_color_override_ = false;
   bool loading_ = false;
   uint32_t loading_start_ms_ = 0;
   uint32_t loading_timeout_ms_ = 350;

@@ -129,7 +129,10 @@ class GenericScreen : public Screen {
     }
     for (auto &w : widgets_) {
       if (!w->is_visible(state)) continue;
-      if (scroll_enabled_ && w->scroll_exempt()) continue;
+      // During a scroll-only repaint we erase + redraw just the scroll area,
+      // so fixed (exempt) widgets are untouched and must NOT be repainted --
+      // repainting them every scroll frame is what caused header flicker.
+      if (scroll_partial && w->scroll_exempt()) continue;
       bool clip_to_scroll_area = false;
       if (scroll_enabled_ && !w->scroll_exempt()) {
         const auto b = w->bounds();
@@ -149,26 +152,15 @@ class GenericScreen : public Screen {
         }
       }
       if (clip_to_scroll_area) {
-        const int clip_right = scroll_area_x_ + scroll_area_w_ - 1;
-        const int clip_bottom = scroll_area_y_ + scroll_area_h_ - 1;
+        // ESPHome start_clipping(l, t, r, b) treats r/b as exclusive edges
+        // (it stores w = r - l), so pass x + w / y + h directly.
+        const int clip_right = scroll_area_x_ + scroll_area_w_;
+        const int clip_bottom = scroll_area_y_ + scroll_area_h_;
         it.start_clipping(scroll_area_x_, scroll_area_y_, clip_right, clip_bottom);
       }
       w->draw(it, state);
       if (clip_to_scroll_area) {
         it.end_clipping();
-      }
-    }
-    if (scroll_enabled_) {
-      // Always draw fixed widgets last while scrolling is enabled so they
-      // remain visually on top across full, partial and scroll-partial passes.
-      for (auto &w : widgets_) {
-        if (!w->scroll_exempt()) continue;
-        if (!w->is_visible(state)) continue;
-        if (!full && !legacy_partial && !scroll_partial) {
-          const auto b = w->bounds();
-          if (!UiInvalidation::needs_redraw_in(b.x, b.y, b.w, b.h)) continue;
-        }
-        w->draw(it, state);
       }
     }
     scroll_dirty_ = false;

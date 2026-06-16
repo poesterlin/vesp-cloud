@@ -15,9 +15,7 @@
   const borderColor = $derived(
     colorToCss(component.borderColor, colorToCss(theme.colors.accent)),
   );
-  const foregroundColor = $derived(
-    colorToCss(component.foregroundColor, colorToCss(theme.colors.foreground)),
-  );
+  const foregroundColor = $derived(colorToCss(theme.colors.foreground));
   const dimFill = "rgb(25, 30, 40)";
 
   const iconSize = 20;

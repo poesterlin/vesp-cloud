@@ -439,6 +439,55 @@ describe("generateUIScreensHeader icon emission", () => {
     expect(out).not.toContain("set_icon");
   });
 
+  test("buttons with custom border color call set_border_color", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Page",
+          components: [
+            {
+              id: "b1",
+              type: "button",
+              position: { x: 0, y: 0 },
+              size: { width: 80, height: 36 },
+              label: "Colored",
+              borderColor: { r: 255, g: 0, b: 0 },
+            },
+          ],
+        },
+      ],
+    });
+    const out = generateUIScreensHeader(project);
+    expect(out).toContain("g_theme.primary");
+    expect(out).toContain("b1->set_border_color(Color(255, 0, 0));");
+    expect(out).not.toContain("btn_style_b1");
+    expect(out).not.toContain("Theme::ButtonStyle");
+  });
+
+  test("buttons without custom colors use g_theme.primary", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Page",
+          components: [
+            {
+              id: "b1",
+              type: "button",
+              position: { x: 0, y: 0 },
+              size: { width: 80, height: 36 },
+              label: "Default",
+            },
+          ],
+        },
+      ],
+    });
+    const out = generateUIScreensHeader(project);
+    expect(out).toContain("g_theme.primary");
+    expect(out).not.toContain("btn_style_b1");
+  });
+
   test("unknown icon yields a skip comment and no widget", () => {
     const project = makeProject({
       dashboardPages: [

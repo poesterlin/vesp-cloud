@@ -872,9 +872,9 @@ class ImageToggleWidget : public Widget {
       float angle = (millis() % 1000) * 2.0f * 3.14159265f / 1000.0f;
       int cx = r.x + 28;
       int cy = r.y + r.h / 2;
-      int r = 10;
-      it.line(cx, cy, cx + (int)(cosf(angle) * r),
-              cy + (int)(sinf(angle) * r), icon_color);
+      const int radius = 10;
+      it.line(cx, cy, cx + (int)(cosf(angle) * radius),
+              cy + (int)(sinf(angle) * radius), icon_color);
       if (label_ != nullptr && g_theme.label.font != nullptr) {
         const int max_w = r.x + r.w - (r.x + 52) - 6;
         ui_print_truncated(it, r.x + 52, r.y + r.h / 2,

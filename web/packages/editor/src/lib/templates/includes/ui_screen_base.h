@@ -127,6 +127,18 @@ class GenericScreen : public Screen {
     for (auto &w : widgets_) {
       if (!w->is_visible(state)) continue;
       if (scroll_partial && w->scroll_exempt()) continue;
+      if (scroll_enabled_ && !w->scroll_exempt()) {
+        const auto b = w->bounds();
+        const int view_top = scroll_area_y_;
+        const int view_bottom = scroll_area_y_ + scroll_area_h_;
+        // Without a clip rect in the low-level renderer, drawing a widget
+        // that only partially overlaps the scroll viewport can spill pixels
+        // into fixed UI regions (header/footer). Match previous detail-screen
+        // behavior: only draw fully visible scrolling widgets.
+        const bool intersects = (b.y < view_bottom) && (b.y + b.h > view_top);
+        const bool fully_inside = (b.y >= view_top) && (b.y + b.h <= view_bottom);
+        if (!intersects || !fully_inside) continue;
+      }
       if (!full && !legacy_partial) {
         const auto b = w->bounds();
         if (!scroll_partial) {
@@ -134,6 +146,15 @@ class GenericScreen : public Screen {
         }
       }
       w->draw(it, state);
+    }
+    if (scroll_partial && scroll_enabled_) {
+      // Restore fixed widgets after the scrolling pass so the header/footer
+      // always wins if any content draw path overpaints outside the viewport.
+      for (auto &w : widgets_) {
+        if (!w->scroll_exempt()) continue;
+        if (!w->is_visible(state)) continue;
+        w->draw(it, state);
+      }
     }
     scroll_dirty_ = false;
   }

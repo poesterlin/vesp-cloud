@@ -356,8 +356,12 @@ class ImageWidget : public Widget {
       return;
     }
 
+    const int iw = img->get_width();
+    const int ih = img->get_height();
+    const int ox = rect_.x + (rect_.w - iw) / 2;
+    const int oy = rect_.y + (rect_.h - ih) / 2;
     ui_fast_filled_rectangle(it, rect_.x, rect_.y, rect_.w, rect_.h, bg_color_);
-    it.image(rect_.x, rect_.y, img, color_on_, color_off_);
+    it.image(ox, oy, img, color_on_, color_off_);
   }
 
  private:

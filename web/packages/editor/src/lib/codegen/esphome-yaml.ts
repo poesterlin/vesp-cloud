@@ -38,7 +38,9 @@ function collectImageComponents(project: Project): ImageComponent[] {
 }
 
 function imageResize(c: ImageComponent): string {
-  return c.resize ?? `${c.size?.width ?? 100}x${c.size?.height ?? 100}`;
+  const sizeResize = `${c.size?.width ?? 100}x${c.size?.height ?? 100}`;
+  if (!c.resize || c.resize === "100x100") return sizeResize;
+  return c.resize;
 }
 
 function isHomeAssistantImage(c: ImageComponent): boolean {

@@ -140,6 +140,33 @@ describe("image component codegen", () => {
     expect(yaml).toContain("http_request:");
   });
 
+  test("uses current image frame for legacy default resize", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Page",
+          components: [
+            {
+              id: "album-art",
+              type: "image",
+              position: { x: 0, y: 0 },
+              size: { width: 72, height: 64 },
+              file: "images/fallback.png",
+              image_type: "RGB565",
+              imageBinding: { entityId: "image.album_art" },
+              resize: "100x100",
+            },
+          ],
+        },
+      ],
+    });
+
+    const yaml = generateESPHomeYAML(project);
+    expect(yaml).toContain("resize: 72x64");
+    expect(yaml).not.toContain("resize: 100x100");
+  });
+
   test("resolves relative HA image URLs when HA base URL is configured", () => {
     const project = makeProject({
       secrets: { homeAssistantBaseUrl: "http://homeassistant.local:8123" },

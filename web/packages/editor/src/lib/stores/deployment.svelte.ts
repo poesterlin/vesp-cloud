@@ -27,6 +27,11 @@ export type JobStatus = {
   config?: string | null;
 };
 
+/** Average build duration used to pace the deploy progress bar. */
+const AVG_BUILD_MS = 270_000;
+const PROGRESS_START = 10;
+const PROGRESS_CAP = 85;
+
 function createDeploymentStore() {
   let state = $state<DeploymentState>({
     step: "idle",
@@ -42,10 +47,36 @@ function createDeploymentStore() {
   });
 
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
+  let progressTimer: ReturnType<typeof setInterval> | null = null;
+  let compileStartedAt: number | null = null;
+
+  function stopProgressTimer() {
+    if (progressTimer) clearInterval(progressTimer);
+    progressTimer = null;
+    compileStartedAt = null;
+  }
+
+  function startProgressTimer(fromProgress = PROGRESS_START) {
+    stopProgressTimer();
+    const range = PROGRESS_CAP - PROGRESS_START;
+    const fraction =
+      range > 0 ? Math.min(1, (fromProgress - PROGRESS_START) / range) : 0;
+    compileStartedAt = Date.now() - fraction * AVG_BUILD_MS;
+    progressTimer = setInterval(() => {
+      if (!state.compiling || compileStartedAt === null) return;
+      const elapsed = Date.now() - compileStartedAt;
+      const target = Math.min(
+        PROGRESS_CAP,
+        PROGRESS_START + (elapsed / AVG_BUILD_MS) * range,
+      );
+      state.progress = Math.max(state.progress, target);
+    }, 500);
+  }
 
   function reset() {
     if (pollTimer) clearTimeout(pollTimer);
     pollTimer = null;
+    stopProgressTimer();
     state.step = "idle";
     state.flow = null;
     state.compiling = false;
@@ -83,12 +114,14 @@ function createDeploymentStore() {
 
       state.jobId = data.jobId;
       state.published = false;
-      state.progress = 10;
+      state.progress = PROGRESS_START;
       state.status = "Build queued...";
+      startProgressTimer();
       pollStatus(data.jobId);
     } catch (err: any) {
       state.error = err.message;
       state.compiling = false;
+      stopProgressTimer();
     }
   }
 
@@ -101,11 +134,10 @@ function createDeploymentStore() {
 
         if (job.status === "queued") {
           state.status = "Waiting in queue...";
-          state.progress = 15;
         } else if (job.status === "running") {
           state.status = "Compiling firmware...";
-          state.progress = Math.min(state.progress + 5, 85);
         } else if (job.status === "completed") {
+          stopProgressTimer();
           state.progress = 100;
           state.status = "Build complete!";
           state.compiling = false;
@@ -114,6 +146,7 @@ function createDeploymentStore() {
           publishBuild(jobId);
           return;
         } else if (job.status === "failed") {
+          stopProgressTimer();
           state.error = job.error || "Compilation failed";
           state.compiling = false;
           return;
@@ -121,6 +154,7 @@ function createDeploymentStore() {
 
         pollTimer = setTimeout(poll, 2000);
       } catch (err: any) {
+        stopProgressTimer();
         state.error = err.message;
         state.compiling = false;
       }
@@ -154,16 +188,19 @@ function createDeploymentStore() {
     state.error = null;
     state.published = false;
 
+    let fromProgress = PROGRESS_START;
     if (status === "queued" || status === "pending") {
       state.status = "Waiting in queue...";
-      state.progress = 15;
+      fromProgress = 15;
     } else if (status === "running") {
       state.status = "Compiling firmware...";
-      state.progress = 50;
+      fromProgress = 50;
     } else {
       state.status = "Resuming...";
-      state.progress = 30;
+      fromProgress = 30;
     }
+    state.progress = fromProgress;
+    startProgressTimer(fromProgress);
 
     pollStatus(jobId);
   }

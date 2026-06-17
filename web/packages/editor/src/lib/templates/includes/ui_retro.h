@@ -1,6 +1,7 @@
 #pragma once
 
 #include "esphome.h"
+#include "ui_theme.h"
 
 // Forward reference to the fast fill helper defined in ui_renderer.h
 void ui_fast_filled_rectangle(display::Display &it, int x, int y, int w, int h, Color color);
@@ -11,6 +12,7 @@ void ui_fast_fill(display::Display &it, Color color);
 // ============================================================================
 namespace RetroColors {
   const Color BLACK(0, 0, 0);
+#if UI_THEME_RETRO
   const Color VOID(2, 3, 5);
   const Color DARK(8, 12, 18);
   const Color DIM(25, 30, 40);
@@ -25,6 +27,22 @@ namespace RetroColors {
   const Color GREEN(0, 255, 100);
   const Color GREEN_GLOW(0, 60, 25);
   const Color GREEN_DIM(0, 140, 55);
+#else
+  const Color VOID(13, 17, 23);           // #0D1117 - Sleek dark charcoal background
+  const Color DARK(22, 27, 34);           // #161B22 - Clean dark gray for borders/separators
+  const Color DIM(30, 36, 45);            // #1E242D - Medium dark gray for card backgrounds
+  const Color DIMMER(48, 54, 61);         // #30363D - Gray for inactive elements
+  const Color STEEL(139, 148, 158);       // #8B949E - Muted steel text/accent
+  const Color CYAN(0, 230, 118);          // #00E676 - Main neon green accent (matching Spotify green)
+  const Color CYAN_GLOW(0, 50, 25);       // glow halo
+  const Color CYAN_DIM(0, 150, 75);       // muted green
+  const Color AMBER(255, 75, 58);         // #FF4B3A - Secondary neon coral/orange accent
+  const Color AMBER_GLOW(80, 20, 15);
+  const Color AMBER_DIM(180, 50, 40);
+  const Color GREEN(0, 230, 118);
+  const Color GREEN_GLOW(0, 50, 25);
+  const Color GREEN_DIM(0, 150, 75);
+#endif
   const Color RED(255, 55, 55);
   const Color RED_GLOW(80, 10, 10);
   const Color RED_DIM(150, 30, 30);
@@ -34,28 +52,90 @@ namespace RetroColors {
   const Color BLUE(80, 180, 255);
   const Color BLUE_GLOW(20, 50, 80);
   const Color BLUE_DIM(40, 100, 150);
+#if UI_THEME_RETRO
   const Color WHITE(230, 240, 250);
   const Color LIGHT(170, 185, 200);
   const Color GRAY(120, 130, 145);
   const Color DARK_GRAY(60, 68, 80);
+#else
+  const Color WHITE(240, 246, 252);       // #F0F6FC - Premium high-contrast white
+  const Color LIGHT(201, 209, 217);       // #C9D1D9 - Soft light gray for general text
+  const Color GRAY(139, 148, 158);        // #8B949E - Medium gray
+  const Color DARK_GRAY(72, 79, 88);      // #484F58 - Darker gray
+#endif
 
   // Scanline & grid overlay colours (barely visible on RGB565)
   const Color SCANLINE(2, 2, 3);
   const Color GRID_LINE(6, 9, 14);
 }
 
+#if !UI_THEME_RETRO
 // ============================================================================
-//  Clipped-corner polygon (mathematical approach from analysis document)
-//
-//  Given width W, height H, corner-cut size c:
-//    P1=(c,0)  P2=(W-c,0)     P3=(W,c)       P4=(W,H-c)
-//    P5=(W-c,H) P6=(c,H)      P7=(0,H-c)     P8=(0,c)
-//
-//  Supports asymmetric corners: c_tl, c_tr, c_br, c_bl
+//  Rounded Corner Drawing Helpers (using Bresenham/Sqrt logic for accuracy)
+// ============================================================================
+inline void draw_corner_arc(display::Display &it, int cx, int cy, int r, int corner, Color color) {
+  if (r <= 0) return;
+  int x = 0;
+  int y = r;
+  int d = 3 - 2 * r;
+  while (x <= y) {
+    switch (corner) {
+      case 0: // Top-Left
+        it.draw_pixel_at(cx - x, cy - y, color);
+        it.draw_pixel_at(cx - y, cy - x, color);
+        break;
+      case 1: // Top-Right
+        it.draw_pixel_at(cx + x, cy - y, color);
+        it.draw_pixel_at(cx + y, cy - x, color);
+        break;
+      case 2: // Bottom-Right
+        it.draw_pixel_at(cx + x, cy + y, color);
+        it.draw_pixel_at(cx + y, cy + x, color);
+        break;
+      case 3: // Bottom-Left
+        it.draw_pixel_at(cx - x, cy + y, color);
+        it.draw_pixel_at(cx - y, cy + x, color);
+        break;
+    }
+    if (d < 0) {
+      d += 4 * x + 6;
+    } else {
+      d += 4 * (x - y) + 10;
+      y--;
+    }
+    x++;
+  }
+}
+
+inline void fill_corner_arc(display::Display &it, int cx, int cy, int r, int corner, Color color) {
+  if (r <= 0) return;
+  for (int dy = 0; dy <= r; dy++) {
+    int dx = std::round(std::sqrt(r * r - dy * dy));
+    switch (corner) {
+      case 0: // Top-Left
+        it.line(cx - dx, cy - dy, cx, cy - dy, color);
+        break;
+      case 1: // Top-Right
+        it.line(cx, cy - dy, cx + dx, cy - dy, color);
+        break;
+      case 2: // Bottom-Right
+        it.line(cx, cy + dy, cx + dx, cy + dy, color);
+        break;
+      case 3: // Bottom-Left
+        it.line(cx - dx, cy + dy, cx, cy + dy, color);
+        break;
+    }
+  }
+}
+#endif
+
+// ============================================================================
+//  Rounded border and filled box functions
 // ============================================================================
 inline void draw_clipped_border(display::Display &it, int x, int y, int w, int h,
                                 int c_tl = 6, int c_tr = 6, int c_br = 6, int c_bl = 6,
                                 Color color = RetroColors::CYAN) {
+#if UI_THEME_RETRO
   if (w <= 0 || h <= 0) return;
 
   int max_c = ((w < h ? w : h) / 2) - 1;
@@ -92,16 +172,38 @@ inline void draw_clipped_border(display::Display &it, int x, int y, int w, int h
   // Top-left clip
   if (c_tl > 0)
     it.line(x1, y1 + c_tl, x1 + c_tl, y1, color);
+#else
+  int r = c_tl;
+  if (w <= 0 || h <= 0) return;
+  int max_r = ((w < h ? w : h) / 2) - 1;
+  if (r > max_r) r = max_r;
+  if (r < 0) r = 0;
+
+  if (r == 0) {
+    it.rectangle(x, y, w, h, color);
+    return;
+  }
+
+  // Draw 4 straight edge segments
+  it.line(x + r, y, x + w - r - 1, y, color);
+  it.line(x + r, y + h - 1, x + w - r - 1, y + h - 1, color);
+  it.line(x, y + r, x, y + h - r - 1, color);
+  it.line(x + w - 1, y + r, x + w - 1, y + h - r - 1, color);
+
+  // Draw 4 corner arcs
+  draw_corner_arc(it, x + r, y + r, r, 0, color);                 // Top-Left
+  draw_corner_arc(it, x + w - 1 - r, y + r, r, 1, color);         // Top-Right
+  draw_corner_arc(it, x + w - 1 - r, y + h - 1 - r, r, 2, color); // Bottom-Right
+  draw_corner_arc(it, x + r, y + h - 1 - r, r, 3, color);         // Bottom-Left
+#endif
 }
 
-// ============================================================================
-//  Filled clipped box - fill interior + draw border polygon
-// ============================================================================
 inline void draw_clipped_box(display::Display &it, int x, int y, int w, int h,
                              int c_tl = 6, int c_tr = 6, int c_br = 6, int c_bl = 6,
                              Color border = RetroColors::CYAN,
                              Color fill = RetroColors::DIM,
                              bool glow = true) {
+#if UI_THEME_RETRO
   if (glow) {
     // Thick dim halo behind the border
     draw_clipped_border(it, x - 2, y - 2, w + 4, h + 4,
@@ -113,16 +215,49 @@ inline void draw_clipped_box(display::Display &it, int x, int y, int w, int h,
   ui_fast_filled_rectangle(it, x + 1, y + 1, w - 2, h - 2, fill);
   // Bright border on top
   draw_clipped_border(it, x, y, w, h, c_tl, c_tr, c_br, c_bl, border);
+#else
+  int r = c_tl;
+  if (w <= 0 || h <= 0) return;
+  int max_r = ((w < h ? w : h) / 2) - 1;
+  if (r > max_r) r = max_r;
+  if (r < 0) r = 0;
+
+  if (glow) {
+    // Subtle glow border offset by 1px
+    draw_clipped_border(it, x - 1, y - 1, w + 2, h + 2, r + 1, r + 1, r + 1, r + 1,
+                        Color(border.red / 4, border.green / 4, border.blue / 4));
+  }
+
+  if (r == 0) {
+    ui_fast_filled_rectangle(it, x, y, w, h, fill);
+    it.rectangle(x, y, w, h, border);
+    return;
+  }
+
+  // Fill interior using fast filled rectangles (cross pattern)
+  ui_fast_filled_rectangle(it, x + r, y, w - 2 * r, h, fill);
+  ui_fast_filled_rectangle(it, x, y + r, r, h - 2 * r, fill);
+  ui_fast_filled_rectangle(it, x + w - r, y + r, r, h - 2 * r, fill);
+
+  // Fill the 4 corners
+  fill_corner_arc(it, x + r, y + r, r, 0, fill);                 // Top-Left
+  fill_corner_arc(it, x + w - 1 - r, y + r, r, 1, fill);         // Top-Right
+  fill_corner_arc(it, x + w - 1 - r, y + h - 1 - r, r, 2, fill); // Bottom-Right
+  fill_corner_arc(it, x + r, y + h - 1 - r, r, 3, fill);         // Bottom-Left
+
+  // Draw the border outline on top
+  draw_clipped_border(it, x, y, w, h, r, r, r, r, border);
+#endif
 }
 
-// Convenience: symmetric corners
+// Convenience wrapper for symmetric corners
 inline void draw_clipped_box(display::Display &it, int x, int y, int w, int h,
                              int c, Color border, Color fill, bool glow = true) {
   draw_clipped_box(it, x, y, w, h, c, c, c, c, border, fill, glow);
 }
 
 // ============================================================================
-//  Double-line clipped border (outer + inner offset = "retro terminal" look)
+//  Double-line rounded border (outer + inner offset = clean modern card look)
 // ============================================================================
 inline void draw_double_clipped_border(display::Display &it, int x, int y, int w, int h,
                                        int c = 6, int margin = 3,
@@ -134,6 +269,7 @@ inline void draw_double_clipped_border(display::Display &it, int x, int y, int w
                         c - margin, c - margin, c - margin, c - margin, inner);
 }
 
+#if UI_THEME_RETRO
 // ============================================================================
 //  CRT scanline overlay - dark horizontal lines every N pixels
 // ============================================================================
@@ -154,11 +290,12 @@ inline void draw_grid_background(display::Display &it, int x, int y, int w, int 
   for (int gy = y + spacing; gy < y + h; gy += spacing)
     it.line(x, gy, x + w, gy, color);
 }
+#endif
 
-// ============================================================================
-//  Full-screen retro background: void fill + grid + scanlines + frame decor
+//  Clean modern background: flat void fill
 // ============================================================================
 inline void draw_retro_background(display::Display &it) {
+#if UI_THEME_RETRO
   const int W = 480, H = 480;
 
   ui_fast_fill(it, RetroColors::VOID);
@@ -194,6 +331,9 @@ inline void draw_retro_background(display::Display &it) {
     int th = (i % 3 == 0) ? 4 : 2;
     ui_fast_filled_rectangle(it, tx, gy - th, 1, th, gc);
   }
+#else
+  ui_fast_fill(it, RetroColors::VOID);
+#endif
 }
 
 // ============================================================================

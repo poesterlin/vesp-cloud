@@ -8,7 +8,7 @@ import { eq, desc, inArray, and } from 'drizzle-orm';
 import type { CompilationJob, NewCompilationJob } from '@esphome-designer/db/schema';
 
 import type { Project } from '@esphome-designer/schema';
-import { generateESPHomeYAML, generateUITypesHeader, generateUIStateHeader, generateUIScreensHeader, generateFontsYAML } from '$lib/codegen/esphome';
+import { generateESPHomeYAML, generateUITypesHeader, generateUIStateHeader, generateUIThemeHeader, generateUIScreensHeader, generateFontsYAML } from '$lib/codegen/esphome';
 import { generateSecretsYAML } from '$lib/codegen/secrets';
 import { validateProject } from '$lib/codegen/validations';
 import { sanitizeDeviceName } from '$lib/codegen/utils';
@@ -314,6 +314,8 @@ export class CompilationQueue extends EventEmitter {
     };
 
     try {
+      const project = JSON.parse(job.config) as Project;
+
       const templateCopyStart = Date.now();
       await fs.mkdir(tempDir, { recursive: true });
       await copyStaticTemplates(tempDir);
@@ -335,7 +337,6 @@ export class CompilationQueue extends EventEmitter {
         firmwareUpdateUrl = `${baseUrl}/api/firmware/${proj.firmwareToken}`;
       }
 
-      const project = JSON.parse(job.config) as Project;
       if (firmwareUpdateUrl) {
         project.secrets = { ...project.secrets, firmwareUpdateUrl };
       }
@@ -354,6 +355,7 @@ export class CompilationQueue extends EventEmitter {
       await Promise.all([
         fs.writeFile(join(tempDir, 'includes', 'ui_types.h'), generateUITypesHeader(project)),
         fs.writeFile(join(tempDir, 'includes', 'ui_state.h'), generateUIStateHeader(project)),
+        fs.writeFile(join(tempDir, 'includes', 'ui_theme.h'), generateUIThemeHeader(project)),
         fs.writeFile(join(tempDir, 'includes', 'ui_screens.h'), generateUIScreensHeader(project)),
       ]);
 

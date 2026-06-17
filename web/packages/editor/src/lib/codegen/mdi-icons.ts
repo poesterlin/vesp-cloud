@@ -132,10 +132,18 @@ export function generateIconFontYAML(
  * does not reference any known icons.
  */
 export function generateFontsYAML(project: Project, baseFontsYaml: string): string {
+  const preferredFont = project.theme?.id === "retro"
+    ? "Share Tech Mono"
+    : "Turret Road";
+  const themedBaseFonts = baseFontsYaml.replace(
+    /(file:\s*")gfonts:\/\/[^"]+(")/g,
+    `$1gfonts://${preferredFont}$2`,
+  );
+
   const icons = collectProjectIconNames(project);
   const iconLines = generateIconFontYAML(icons);
-  if (iconLines.length === 0) return baseFontsYaml;
+  if (iconLines.length === 0) return themedBaseFonts;
 
-  const base = baseFontsYaml.replace(/\s+$/, "");
+  const base = themedBaseFonts.replace(/\s+$/, "");
   return `${base}\n\n${iconLines.join("\n")}\n`;
 }

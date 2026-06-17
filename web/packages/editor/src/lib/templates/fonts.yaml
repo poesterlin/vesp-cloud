@@ -1,20 +1,20 @@
 font:
-  - file: "gfonts://Share Tech Mono"
+  - file: "gfonts://Turret Road"
     id: font_tiny
     size: 12
     glyphs: "'°!\"%()+*-.,/:;<=>?@[\\]^_`{|}~ 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÄÖÜäöüß"
 
-  - file: "gfonts://Share Tech Mono"
+  - file: "gfonts://Turret Road"
     id: font_small
     size: 16
     glyphs: "'°!\"%()+*-.,/:;<=>?@[\\]^_`{|}~ 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÄÖÜäöüß"
 
-  - file: "gfonts://Share Tech Mono"
+  - file: "gfonts://Turret Road"
     id: font_medium
     size: 22
     glyphs: "'°!\"%()+*-.,/:;<=>?@[\\]^_`{|}~ 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÄÖÜäöüß"
 
-  - file: "gfonts://Share Tech Mono"
+  - file: "gfonts://Turret Road"
     id: font_large
     size: 32
     glyphs: "'°!\"%()+*-.,/:;<=>?@[\\]^_`{|}~ 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÄÖÜäöüß"

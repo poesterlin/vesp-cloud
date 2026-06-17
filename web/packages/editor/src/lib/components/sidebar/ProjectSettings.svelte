@@ -125,6 +125,28 @@
     </section>
 
     <section>
+      <h3>Theme</h3>
+      <p class="section-hint">
+        Select the display theme used for editor previews and generated firmware
+        style values.
+      </p>
+      <div class="theme-grid">
+        {#each themes as theme}
+          <button
+            type="button"
+            class="theme-card {selectedThemeId === theme.id ? 'active' : ''}"
+            onclick={() => (selectedThemeId = theme.id)}
+          >
+            <div class="theme-preview placeholder">
+              <span>Theme Preview Image</span>
+            </div>
+            <strong>{theme.name}</strong>
+          </button>
+        {/each}
+      </div>
+    </section>
+
+    <section>
       <h3>Home Assistant</h3>
       <p class="section-hint">
         Optional. Used only to resolve relative image URLs from Home Assistant
@@ -301,6 +323,8 @@
     border-radius: var(--radius-md);
     cursor: pointer;
     align-items: center;
+    color: var(--color-text-primary);
+    font: inherit;
   }
 
   .theme-card.active {
@@ -316,13 +340,16 @@
     overflow: hidden;
   }
 
-  .theme-preview .accent {
-    position: absolute;
-    bottom: 20%;
-    right: 20%;
-    width: 30%;
-    height: 30%;
-    border-radius: 50%;
+  .theme-preview.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--color-border);
+    background: var(--color-bg-primary);
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   .font-list {

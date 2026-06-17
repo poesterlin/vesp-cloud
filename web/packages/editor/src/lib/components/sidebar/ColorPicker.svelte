@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { projectStore } from "$lib/stores/project.svelte";
   import type { Color } from "@esphome-designer/schema";
 
   let { value, onUpdate, label } = $props<{
@@ -30,7 +29,32 @@
     onUpdate(undefined);
   }
 
-  const themeColors = $derived(projectStore.theme.colors);
+  const MERGED_PALETTE = [
+    { name: "Ink Black", hex: "#001219" },
+    { name: "Blue Slate", hex: "#577590" },
+    { name: "Cerulean", hex: "#277da1" },
+    { name: "Dark Teal", hex: "#005f73" },
+    { name: "Dark Cyan", hex: "#0a9396" },
+    { name: "Seaweed", hex: "#43aa8b" },
+    { name: "Willow Green", hex: "#90be6d" },
+    { name: "Pearl Aqua", hex: "#94d2bd" },
+    { name: "Wheat", hex: "#e9d8a6" },
+    { name: "Tuscan Sun", hex: "#f9c74f" },
+    { name: "Carrot Orange", hex: "#f8961e" },
+    { name: "Golden Orange", hex: "#ee9b00" },
+    { name: "Pumpkin Spice", hex: "#f3722c" },
+    { name: "Atomic Tangerine", hex: "#f9844a" },
+    { name: "Burnt Caramel", hex: "#ca6702" },
+    { name: "Rusty Spice", hex: "#bb3e03" },
+    { name: "Oxidized Iron", hex: "#ae2012" },
+    { name: "Brown Red", hex: "#9b2226" },
+    { name: "Strawberry Red", hex: "#f94144" },
+  ] as const;
+
+  const colorPresets = MERGED_PALETTE.map((preset) => ({
+    name: preset.name,
+    color: fromHex(preset.hex),
+  }));
 </script>
 
 <div class="color-picker-container">
@@ -51,12 +75,12 @@
     </div>
     
     <div class="presets">
-      {#each Object.entries(themeColors) as [name, color]}
+      {#each colorPresets as preset}
         <button
           class="preset-btn"
-          style="background-color: rgb({color.r}, {color.g}, {color.b})"
-          title={name}
-          onclick={() => onUpdate(color)}
+          style="background-color: rgb({preset.color.r}, {preset.color.g}, {preset.color.b})"
+          title={preset.name}
+          onclick={() => onUpdate(preset.color)}
         ></button>
       {/each}
     </div>

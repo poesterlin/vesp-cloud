@@ -554,6 +554,7 @@ ${imageBindingHelper}
                 });
           };
 ${bindings ? bindings + '\n' : ''}${notificationBindings ? notificationBindings + '\n' : ''}  includes:
+    - includes/ui_theme.h
     - includes/ui_types.h
     - includes/ui_state.h
     - includes/ui_invalidation.h

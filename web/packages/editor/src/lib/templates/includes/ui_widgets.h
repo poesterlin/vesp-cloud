@@ -1021,6 +1021,7 @@ class TodoPreviewWidget : public Widget {
       if (idx < 0 || idx >= static_cast<int>(rows_.size())) return true;
       auto &row = rows_[idx];
       if (row.loading) return true;
+      if (todo_entity_ == nullptr || todo_entity_[0] == '\0') return true;
       row.loading = true;
       row.loading_start = now;
       mark_dirty();
@@ -1621,9 +1622,10 @@ class HvacWidget : public Widget {
     const int btns_y = r.y + h - btn_h - pad;
 
     // Two temp buttons (compact) + power button
-    const int temp_btn_w = (w - pad * 2) / 5;
-    const int power_btn_w = (w - pad * 2) - temp_btn_w * 2;
-    const int btn_gap = 0;
+    const int btn_gap = 4;
+    const int total_w = w - pad * 2 - btn_gap * 2;
+    const int temp_btn_w = total_w / 5;
+    const int power_btn_w = total_w - temp_btn_w * 2;
 
     // Temp down button
     {
@@ -1638,7 +1640,7 @@ class HvacWidget : public Widget {
 
     // Temp up button
     {
-      const int bx = r.x + pad + temp_btn_w;
+      const int bx = r.x + pad + temp_btn_w + btn_gap;
       const int by = btns_y;
       if (event.x >= bx && event.x <= bx + temp_btn_w &&
           event.y >= by && event.y <= by + btn_h) {
@@ -1649,7 +1651,7 @@ class HvacWidget : public Widget {
 
     // Power button
     {
-      const int bx = r.x + pad + temp_btn_w * 2;
+      const int bx = r.x + pad + (temp_btn_w + btn_gap) * 2;
       const int by = btns_y;
       if (event.x >= bx && event.x <= bx + power_btn_w &&
           event.y >= by && event.y <= by + btn_h) {
@@ -1721,8 +1723,10 @@ class HvacWidget : public Widget {
     const int btn_h = 26;
     const int btns_y = r.y + h - btn_h - pad;
     {
-      const int temp_btn_w = (w - pad * 2) / 5;
-      const int power_btn_w = (w - pad * 2) - temp_btn_w * 2;
+      const int btn_gap = 4;
+      const int total_w = w - pad * 2 - btn_gap * 2;
+      const int temp_btn_w = total_w / 5;
+      const int power_btn_w = total_w - temp_btn_w * 2;
 
       auto draw_icon_btn = [&](int bx, int bw, int bh, const char *glyph,
                                 Color bc, Color tc) {
@@ -1753,14 +1757,14 @@ class HvacWidget : public Widget {
 
       // Temp up
       {
-        const int bx = r.x + pad + temp_btn_w;
+        const int bx = r.x + pad + temp_btn_w + btn_gap;
         Color bc = temp_up_active ? temp_accent : temp_dim;
         draw_icon_btn(bx, temp_btn_w, btn_h, icon_up_, bc, text);
       }
 
       // Power
       {
-        const int bx = r.x + pad + temp_btn_w * 2;
+        const int bx = r.x + pad + (temp_btn_w + btn_gap) * 2;
         Color bc = power_active ? on_color_ : off_color_;
         draw_icon_btn(bx, power_btn_w, btn_h, icon_power_, bc, text);
       }

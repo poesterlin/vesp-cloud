@@ -7,6 +7,7 @@
 #include "esphome/components/image/image.h"
 #include <algorithm>
 #include <cmath>
+#include <map>
 #include <memory>
 #include <vector>
 #include <functional>
@@ -1022,18 +1023,22 @@ class TodoPreviewWidget : public Widget {
       const int idx = row_at(event.x, event.y);
       if (idx < 0 || idx >= static_cast<int>(rows_.size())) return true;
       auto &row = rows_[idx];
-      if (row.loading) return true;
+      // Guard: at least one entity must be configured
       if (todo_entity_ == nullptr || todo_entity_[0] == '\0') {
         if (bridge_entity_ == nullptr || bridge_entity_[0] == '\0') return true;
       }
+      // Second tap cancels a pending operation
+      if (row.loading) {
+        row.loading = false;
+        row.ha_sent = false;
+        mark_dirty();
+        return true;
+      }
+      // First tap — start 2-second countdown; HA call is sent later
       row.loading = true;
       row.loading_start = now;
+      row.ha_sent = false;
       mark_dirty();
-      if (!row.completed) {
-        push_complete_to_ha(idx);
-      } else {
-        push_needs_action_to_ha(idx);
-      }
       return true;
     }
 
@@ -1048,19 +1053,46 @@ class TodoPreviewWidget : public Widget {
   void update(uint32_t now) override {
     if (items_ == nullptr) return;
     if (!baseline_set_ || *items_ != last_items_) {
+      // Preserve loading state across parse_rows by matching on summary
+      // text.  Indices can shift when items leave the pending list.
+      struct Saved { uint32_t start; bool sent; };
+      std::map<std::string, Saved> saved;
+      for (auto &row : rows_) {
+        if (row.loading)
+          saved[row.summary] = {row.loading_start, row.ha_sent};
+      }
       parse_rows(*items_);
+      for (auto &row : rows_) {
+        auto it = saved.find(row.summary);
+        if (it != saved.end()) {
+          row.loading = true;
+          row.loading_start = it->second.start;
+          row.ha_sent = it->second.sent;
+        }
+      }
       if (!scrollable_) scroll_offset_ = 0;
       mark_dirty();
     }
-    // Check loading timeouts — if HA never confirms, clear the spinner
-    bool any_timeout = false;
-    for (auto &row : rows_) {
-      if (row.loading && (now - row.loading_start > TodoRow::loading_timeout_ms)) {
+    // 2-second countdown before actually calling HA; second tap cancels.
+    bool any_action = false;
+    for (size_t i = 0; i < rows_.size(); i++) {
+      auto &row = rows_[i];
+      if (!row.loading) continue;
+      if (!row.ha_sent && (now - row.loading_start > 2000)) {
+        if (!row.completed)
+          push_complete_to_ha(static_cast<int>(i));
+        else
+          push_needs_action_to_ha(static_cast<int>(i));
+        row.ha_sent = true;
+        any_action = true;
+      }
+      if (now - row.loading_start > TodoRow::loading_timeout_ms) {
         row.loading = false;
-        any_timeout = true;
+        row.ha_sent = false;
+        any_action = true;
       }
     }
-    if (any_timeout) mark_dirty();
+    if (any_action) mark_dirty();
     Widget::update(now);
   }
 
@@ -1215,6 +1247,7 @@ class TodoPreviewWidget : public Widget {
     bool completed = false;
     bool loading = false;
     uint32_t loading_start = 0;
+    bool ha_sent = false;
     static constexpr uint32_t loading_timeout_ms = 5000;
   };
 

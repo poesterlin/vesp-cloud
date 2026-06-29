@@ -67,6 +67,13 @@ display:
     update_interval: never
     auto_clear_enabled: false
     init_sequence:
+      # Software reset. Without this, OTA reboots leave the panel's internal
+      # scan counter running from before the reboot; the re-init lands at an
+      # arbitrary line offset and the top ~10 rows wrap to the bottom.
+      # Power-cycling (cable flash) hides this because the panel loses power
+      # and its counter starts at 0.
+      - [0x01]
+      - delay 120ms
       - [0xFF, 0x77, 0x01, 0x00, 0x00, 0x10]
       - [0xC0, 0x3B, 0x00]
       - [0xC1, 0x0D, 0x02]

@@ -390,9 +390,28 @@ ota:
   - platform: http_request
     on_begin:
       then:
-        - light.turn_off: display_backlight
+        - lambda: |-
+            // Show a static "UPDATING" splash and keep the backlight on
+            // (dimmed). Painting through render_basic_ui() during the OTA
+            // would queue real UI redraws on top of the splash as the
+            // cache-bus contention from flash erase/write starves the RGB
+            // DMA bounce buffer -- the user sees that as wild flicker.
+            // The g_ota_in_progress flag short-circuits every subsequent
+            // display update to render_ota_splash() until the new
+            // firmware reboots the device.
+            g_ota_font = id(font_medium);
+            g_ota_in_progress = true;
+            UiRedraw::request_full();
+            id(main_display).update();
+        - light.turn_on:
+            id: display_backlight
+            brightness: 30%
     on_error:
       then:
+        - lambda: |-
+            g_ota_in_progress = false;
+            UiRedraw::request_full();
+            id(main_display).update();
         - light.turn_on:
             id: display_backlight
             brightness: 100%

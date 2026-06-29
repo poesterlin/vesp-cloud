@@ -97,6 +97,30 @@ inline void ui_fast_filled_rectangle(display::Display &it, int x, int y, int w, 
 
 inline void ui_fast_fill(display::Display &it, Color color) { ui_fast_filled_rectangle(it, 0, 0, it.get_width(), it.get_height(), color); }
 
+// --- OTA splash -------------------------------------------------------------
+// When an OTA update begins, the on_begin lambda sets g_ota_in_progress = true
+// and calls id(main_display).update(). render_basic_ui() short-circuits to
+// render_ota_splash() for as long as the flag stays set, so subsequent
+// updates triggered by touch handlers / intervals keep painting the splash
+// instead of the running UI. This avoids the wild flicker that happens when
+// the ESP32 is erasing/writing main flash on the same cache bus the RGB-DMA
+// bounce buffer lives on -- the user just sees a static "UPDATING" screen
+// until the device reboots into the new firmware.
+//
+// Set g_ota_font from the OTA on_begin lambda (e.g. g_ota_font = id(font_medium))
+// before triggering the first update; render_ota_splash() falls back to a
+// plain black fill if it is null.
+inline bool g_ota_in_progress = false;
+inline esphome::font::Font *g_ota_font = nullptr;
+
+inline void render_ota_splash(display::Display &it) {
+  ui_fast_fill(it, RetroColors::BLACK);
+  if (g_ota_font == nullptr) return;
+
+  it.print(240, 220, g_ota_font, RetroColors::CYAN, TextAlign::CENTER, "UPDATING");
+  it.print(240, 260, g_ota_font, RetroColors::DIMMER, TextAlign::CENTER, "do not power off");
+}
+
 // --- Profiling --------------------------------------------------------------
 // Set UI_PROFILE 1 (e.g. via -DUI_PROFILE=1 in the YAML build flags, or just
 // flip this define) to log per-frame timing. Each redraw prints:
@@ -128,6 +152,15 @@ inline void ui_profile_log(uint32_t total_us) {
 #endif
 
 inline void render_basic_ui(display::Display &it) {
+  // OTA splash takes priority over the normal UI path. We do NOT call
+  // g_ui_app.update() here -- during OTA the ESP32 is busy erasing/writing
+  // flash and polling widgets / firing HA callbacks would just waste CPU
+  // and twitch state mid-update.
+  if (g_ota_in_progress) {
+    render_ota_splash(it);
+    return;
+  }
+
   const uint32_t now = millis();
   g_ui_app.update(now);
 

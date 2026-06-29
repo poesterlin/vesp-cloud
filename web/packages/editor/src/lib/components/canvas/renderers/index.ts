@@ -14,3 +14,4 @@ export { default as RectangleRenderer } from "./RectangleRenderer.svelte";
 export { default as ImageRenderer } from "./ImageRenderer.svelte";
 export { default as ConditionalAreaRenderer } from "./ConditionalAreaRenderer.svelte";
 export { default as LightStateRenderer } from "./LightStateRenderer.svelte";
+export { default as HvacRenderer } from "./HvacRenderer.svelte";

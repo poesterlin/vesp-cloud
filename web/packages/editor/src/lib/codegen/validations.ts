@@ -11,6 +11,7 @@ import type {
   TodoListComponent,
   ImageComponent,
   TextComponent,
+  HvacComponent,
   EntityBinding,
   Condition,
   EntityCondition,
@@ -50,6 +51,7 @@ function componentLabel(c: Component): string {
     icon: "Icon",
     image: "Image",
     light_state: "Light State",
+    hvac: "HVAC Control",
     todo_list: "To-Do List",
     slider: "Slider",
     gauge: "Gauge",
@@ -70,6 +72,7 @@ const RULES: ValidationRule[] = [
   validateLightStateBinding,
   validateTodoListBinding,
   validateImageHaBinding,
+  validateHvacBinding,
 ];
 
 export function validateProject(project: Project): ValidationError[] {
@@ -212,6 +215,8 @@ function validateCodegenSafeStrings(project: Project): ValidationError[] {
       }
     } else if (c.type === 'light_state') {
       errors.push(...validateBinding((c as LightStateComponent).stateBinding, c, 'stateBinding'));
+    } else if (c.type === 'hvac') {
+      errors.push(...validateBinding((c as HvacComponent).stateBinding, c, 'stateBinding'));
     } else if (c.type === 'todo_list') {
       const todo = c as TodoListComponent;
       errors.push(...validateBinding(todo.itemsBinding, c, 'itemsBinding'));
@@ -372,6 +377,26 @@ function validateImageHaBinding(project: Project): ValidationError[] {
       errors.push({
         type: "error" as const,
         message: `Needs an entity binding for Home Assistant image`,
+        componentId: c.id,
+        componentLabel: componentLabel(c),
+      });
+    }
+  }
+
+  return errors;
+}
+
+function validateHvacBinding(project: Project): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const components = collectAllComponents(project);
+
+  for (const c of components) {
+    if (c.type !== "hvac") continue;
+    const hvac = c as HvacComponent;
+    if (!hvac.stateBinding?.entityId) {
+      errors.push({
+        type: "error" as const,
+        message: `Needs a climate entity binding to control`,
         componentId: c.id,
         componentLabel: componentLabel(c),
       });

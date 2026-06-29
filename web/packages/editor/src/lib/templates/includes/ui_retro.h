@@ -269,6 +269,22 @@ inline void draw_double_clipped_border(display::Display &it, int x, int y, int w
                         c - margin, c - margin, c - margin, c - margin, inner);
 }
 
+// Dashed horizontal line with configurable dash/space length
+inline void draw_dashed_hline(display::Display &it, int x1, int x2, int y,
+                              Color color, int dash_len = 3, int space_len = 3) {
+  int x = x1;
+  bool draw = true;
+  while (x < x2) {
+    int seg_end = x + (draw ? dash_len : space_len);
+    if (seg_end > x2) seg_end = x2;
+    if (draw) {
+      it.line(x, y, seg_end, y, color);
+    }
+    x = seg_end;
+    draw = !draw;
+  }
+}
+
 #if UI_THEME_RETRO
 // ============================================================================
 //  CRT scanline overlay - dark horizontal lines every N pixels

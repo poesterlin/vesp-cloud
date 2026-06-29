@@ -115,6 +115,18 @@ export function createComponent(type: string, x: number, y: number): Component {
         size: { width: 120, height: 44 },
       } as Component;
 
+    case "hvac":
+      return {
+        ...base,
+        type: "hvac",
+        label: "Climate",
+        tempStep: 0.5,
+        minTemp: 10,
+        maxTemp: 30,
+        onMode: "heat",
+        size: { width: 150, height: 105 },
+      } as Component;
+
     case "auto_layout_list":
       return {
         ...base,

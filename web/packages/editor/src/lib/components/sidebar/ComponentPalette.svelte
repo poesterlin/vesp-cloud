@@ -9,6 +9,7 @@
     mdiFormatListChecks,
     mdiTab,
     mdiSourceBranch,
+    mdiThermometer,
   } from '@mdi/js';
 
   interface ComponentTemplate {
@@ -48,6 +49,12 @@
       label: "Light",
       icon: mdiLightbulbOutline,
       description: "Visual on/off indicator for lights or switches",
+    },
+    {
+      type: "hvac",
+      label: "HVAC",
+      icon: mdiThermometer,
+      description: "Climate control with temperature setting and on/off",
     },
     {
       type: "image",

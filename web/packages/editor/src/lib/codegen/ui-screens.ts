@@ -11,6 +11,7 @@ import type {
   ImageComponent,
   RectangleComponent,
   TodoListComponent,
+  HvacComponent,
   Color,
   OnTapAction,
 } from "@esphome-designer/schema";
@@ -292,6 +293,36 @@ function generateLightWidget(c: LightStateComponent, stateVar: string,
   return out;
 }
 
+function generateHvacWidget(c: HvacComponent,
+    factory: WidgetFactory, indent: string, offX = 0, offY = 0, visibilityExpr?: string,
+    dirtyBoundsExpr?: string): string {
+  const x = c.position.x + offX;
+  const y = c.position.y + offY;
+  const w = c.size?.width ?? 150;
+  const h = c.size?.height ?? 105;
+  const label = c.label ?? 'Climate';
+  const entityId = c.stateBinding?.entityId ?? c.id;
+  const base = stateVarFromEntity(entityId);
+  const tempStep = c.tempStep ?? 0.5;
+  const minTemp = c.minTemp ?? 10;
+  const maxTemp = c.maxTemp ?? 30;
+  const onMode = c.onMode ?? 'heat';
+  const onColor = c.onColor ? emitColor(c.onColor) : 'Color(255, 180, 0)';
+  const offColor = c.offColor ? emitColor(c.offColor) : 'Color(80, 80, 80)';
+  const iconDown = getMdiUtf8CEscape('minus') ?? '"-"';
+  const iconUp = getMdiUtf8CEscape('plus') ?? '"+"';
+  const iconPower = getMdiUtf8CEscape('power') ?? '"?"';
+  const idSafe = safeCppIdentifier(c.id, 'component');
+  let out = `${indent}auto *hvac_${idSafe} = ${factory('HvacWidget', `${rect(x, y, w, h)}, "${escapeCString(label)}", state.${base}_hvac_mode.ptr(), state.${base}_current_temp.ptr(), state.${base}_target_temp.ptr(), state.${base}_hvac_action.ptr(), "${escapeCString(entityId)}", ${iconDown}, ${iconUp}, ${iconPower}, ${tempStep}f, ${minTemp}f, ${maxTemp}f, "${escapeCString(onMode)}", ${onColor}, ${offColor}`)};\n`;
+  if (visibilityExpr) {
+    out += `${indent}hvac_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
+  }
+  if (dirtyBoundsExpr) {
+    out += `${indent}hvac_${idSafe}->set_dirty_bounds(${dirtyBoundsExpr});\n`;
+  }
+  return out;
+}
+
 function generateTodoListWidget(
     c: TodoListComponent,
     itemsVar: string,
@@ -458,6 +489,9 @@ function generateComponentSetup(
     case 'light_state': {
       const stateVar = stateVarFromEntity(c.stateBinding?.entityId ?? c.id);
       return generateLightWidget(c, stateVar, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
+    }
+    case 'hvac': {
+      return generateHvacWidget(c as HvacComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     }
     case 'todo_list': {
       const itemsVar = todoItemsVarFromBinding(c.itemsBinding, c.id);
@@ -745,6 +779,9 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
     case 'light_state': {
       const stateVar = stateVarFromEntity(c.stateBinding?.entityId ?? c.id);
       return generateLightWidget(c, stateVar, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
+    }
+    case 'hvac': {
+      return generateHvacWidget(c as HvacComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     }
     case 'todo_list': {
       const itemsVar = todoItemsVarFromBinding(c.itemsBinding, c.id);

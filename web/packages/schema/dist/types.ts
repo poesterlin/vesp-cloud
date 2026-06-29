@@ -17,6 +17,7 @@ export type Component =
   | ImageComponent
   | TodoListComponent
   | LightStateComponent
+  | HvacComponent
   | AutoLayoutListComponent
   | ConditionalAreaComponent
   | TabContainerComponent;
@@ -146,6 +147,20 @@ export type LightStateComponent = BaseComponent & {
   offText?: string;
   showIcon?: boolean;
   icon?: string;
+  onColor?: Color;
+  offColor?: Color;
+};
+export type HvacComponent = BaseComponent & {
+  type: "hvac";
+  label?: string;
+  stateBinding?: EntityBinding3;
+  tempStep?: number;
+  minTemp?: number;
+  maxTemp?: number;
+  /**
+   * HA hvac_mode to set when turning on (heat, cool, etc.)
+   */
+  onMode?: string;
   onColor?: Color;
   offColor?: Color;
 };
@@ -363,6 +378,13 @@ export interface Color2 {
  * Home Assistant image/camera entity. The entity_picture attribute is used by default and loaded with online_image.
  */
 export interface EntityBinding2 {
+  entityId: string;
+  attribute?: string | null;
+}
+/**
+ * Home Assistant climate entity (climate.xxx)
+ */
+export interface EntityBinding3 {
   entityId: string;
   attribute?: string | null;
 }

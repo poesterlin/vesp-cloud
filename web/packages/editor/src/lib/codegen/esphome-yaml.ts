@@ -1,4 +1,4 @@
-import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent } from "@esphome-designer/schema";
+import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent, HvacComponent } from "@esphome-designer/schema";
 import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted } from "./utils";
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
 import { ICON_FONT_ID, getIconGlyphs } from "./mdi-icons";
@@ -203,6 +203,42 @@ function generateBindings(project: Project): string {
     if (claimed.has(stateVar)) continue;
     claimed.add(stateVar);
     lines.push(`          bind_ha_bool("${escapeCString(entityId)}", &g_ui_app.state().${stateVar});`);
+  }
+
+  for (const c of allComponents) {
+    if (c.type !== 'hvac') continue;
+    const hc = c as HvacComponent;
+    const entityId = hc.stateBinding?.entityId;
+    if (!entityId) continue;
+    const base = stateVarFromEntity(entityId);
+
+    // hvac_mode: the entity's state (off, heat, cool, etc.)
+    const modeVar = `${base}_hvac_mode`;
+    if (!claimed.has(modeVar)) {
+      claimed.add(modeVar);
+      lines.push(`          bind_ha_string("${escapeCString(entityId)}", &g_ui_app.state().${modeVar});`);
+    }
+
+    // current_temperature attribute
+    const curTempVar = `${base}_current_temp`;
+    if (!claimed.has(curTempVar)) {
+      claimed.add(curTempVar);
+      lines.push(`          bind_ha_float_attr("${escapeCString(entityId)}", "current_temperature", &g_ui_app.state().${curTempVar});`);
+    }
+
+    // temperature attribute (target)
+    const tgtTempVar = `${base}_target_temp`;
+    if (!claimed.has(tgtTempVar)) {
+      claimed.add(tgtTempVar);
+      lines.push(`          bind_ha_float_attr("${escapeCString(entityId)}", "temperature", &g_ui_app.state().${tgtTempVar});`);
+    }
+
+    // hvac_action attribute (heating, cooling, idle)
+    const actionVar = `${base}_hvac_action`;
+    if (!claimed.has(actionVar)) {
+      claimed.add(actionVar);
+      lines.push(`          bind_ha_string_attr("${escapeCString(entityId)}", "hvac_action", &g_ui_app.state().${actionVar});`);
+    }
   }
 
   for (const c of allComponents) {
@@ -527,6 +563,23 @@ ${imageBindingHelper}
             if (api == nullptr) return;
             api->subscribe_home_assistant_state(
                 entity_id, esphome::optional<std::string>(),
+                [target](esphome::StringRef state) {
+                  std::string s(state.c_str(), state.size());
+                  if (s.empty()) return;
+                  char *end = nullptr;
+                  float v = strtof(s.c_str(), &end);
+                  if (end == s.c_str()) return;
+                  target->set(v);
+                  UiRedraw::trigger_display_update();
+                });
+          };
+
+          auto bind_ha_float_attr = [](const std::string& entity_id, const std::string& attribute,
+                                      Observable<float>* target) {
+            auto *api = esphome::api::global_api_server;
+            if (api == nullptr) return;
+            api->subscribe_home_assistant_state(
+                entity_id, esphome::optional<std::string>(attribute),
                 [target](esphome::StringRef state) {
                   std::string s(state.c_str(), state.size());
                   if (s.empty()) return;

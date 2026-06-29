@@ -1,4 +1,4 @@
-import type { Project, LightStateComponent, Component, TodoListComponent, TextComponent } from "@esphome-designer/schema";
+import type { Project, LightStateComponent, Component, TodoListComponent, TextComponent, HvacComponent } from "@esphome-designer/schema";
 import { toCppIdentifier, firstScreenId, cppDefaultValue, cppTypeFor, stateVarFromEntity, collectAllComponents, todoItemsVarFromBinding, textBindingVar } from "./utils";
 import { collectConditionEntities } from "./condition-expr";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
@@ -30,6 +30,25 @@ function collectTodoItemsVars(project: Project): string[] {
     vars.add(todoItemsVarFromBinding(tc.itemsBinding, tc.id));
   }
   return [...vars];
+}
+
+function collectHvacStateVars(project: Project): { varName: string; cppType: string; initValue: string }[] {
+  const result: { varName: string; cppType: string; initValue: string }[] = [];
+  const allComponents = collectAllComponents([
+    ...project.dashboardPages.flatMap(p => p.components),
+    ...project.detailViews.flatMap(v => v.components),
+  ]);
+  for (const c of allComponents) {
+    if (c.type !== 'hvac') continue;
+    const hc = c as HvacComponent;
+    const entityId = hc.stateBinding?.entityId ?? hc.id;
+    const base = stateVarFromEntity(entityId);
+    result.push({ varName: `${base}_hvac_mode`, cppType: 'std::string', initValue: '"off"' });
+    result.push({ varName: `${base}_current_temp`, cppType: 'float', initValue: '0.0f' });
+    result.push({ varName: `${base}_target_temp`, cppType: 'float', initValue: '20.0f' });
+    result.push({ varName: `${base}_hvac_action`, cppType: 'std::string', initValue: '""' });
+  }
+  return result;
 }
 
 function collectTextEntityVars(project: Project): string[] {
@@ -66,6 +85,8 @@ export function generateUIStateHeader(project: Project): string {
   for (const v of todoItemsVars) existingNames.add(v);
   const textVars = collectTextEntityVars(project).filter(v => !existingNames.has(v));
   for (const v of textVars) existingNames.add(v);
+  const hvacVars = collectHvacStateVars(project).filter(v => !existingNames.has(v.varName));
+  for (const v of hvacVars) existingNames.add(v.varName);
   const conditionEntities = collectConditionEntities(project).filter(e => !existingNames.has(e.varName));
 
   const overlayEnabled = project.notificationOverlay != null && project.notificationOverlay.enabled !== false;
@@ -83,6 +104,7 @@ export function generateUIStateHeader(project: Project): string {
     ...todoItemsVars.map(v => `  Observable<std::string> ${v}{"LIST EMPTY"};`),
     ...textVars.map(v => `  Observable<std::string> ${v}{""};`),
     ...conditionEntities.map(e => `  Observable<${cppTypeFor(e.cppType)}> ${e.varName}{${cppDefaultValue(e.cppType)}};`),
+    ...hvacVars.map(v => `  Observable<${cppTypeFor(v.cppType)}> ${v.varName}{${v.initValue}};`),
     ...overlayVars,
   ];
 

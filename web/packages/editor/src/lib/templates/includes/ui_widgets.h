@@ -990,7 +990,6 @@ class TodoPreviewWidget : public Widget {
   UiRect bounds() const override { return screen_rect(rect_); }
 
   bool handle_touch(const TouchEvent &event, uint32_t now) override {
-    (void)now;
     if (!bounds().contains(event.x, event.y)) return false;
 
     if (event.type == TouchType::Down && scrollable_) {
@@ -1020,12 +1019,15 @@ class TodoPreviewWidget : public Widget {
     if (event.type == TouchType::Tap && checkable_) {
       const int idx = row_at(event.x, event.y);
       if (idx < 0 || idx >= static_cast<int>(rows_.size())) return true;
-      rows_[idx].completed = !rows_[idx].completed;
+      auto &row = rows_[idx];
+      if (row.loading) return true;
+      row.loading = true;
+      row.loading_start = now;
       mark_dirty();
-      if (rows_[idx].completed) {
-        push_complete_to_ha(rows_[idx].summary);
+      if (!row.completed) {
+        push_complete_to_ha(row.summary);
       } else {
-        push_needs_action_to_ha(rows_[idx].summary);
+        push_needs_action_to_ha(row.summary);
       }
       return true;
     }
@@ -1039,13 +1041,21 @@ class TodoPreviewWidget : public Widget {
   }
 
   void update(uint32_t now) override {
-    (void)now;
     if (items_ == nullptr) return;
     if (!baseline_set_ || *items_ != last_items_) {
       parse_rows(*items_);
       if (!scrollable_) scroll_offset_ = 0;
       mark_dirty();
     }
+    // Check loading timeouts — if HA never confirms, clear the spinner
+    bool any_timeout = false;
+    for (auto &row : rows_) {
+      if (row.loading && (now - row.loading_start > TodoRow::loading_timeout_ms)) {
+        row.loading = false;
+        any_timeout = true;
+      }
+    }
+    if (any_timeout) mark_dirty();
     Widget::update(now);
   }
 
@@ -1120,21 +1130,29 @@ class TodoPreviewWidget : public Widget {
 
       const int row_cy = y + row_height_ / 2;
       const bool overdue = row.overdue;
-      const bool completed = row.completed;
+      const bool completed = row.completed && !row.loading;
       std::string summary = row.summary;
 
       if (g_theme.label.font != nullptr) {
-        const Color check_color = completed ? Color(0, 220, 120) : border;
-        if (g_theme.icon.font != nullptr &&
-            incomplete_icon_ != nullptr && complete_icon_ != nullptr &&
-            incomplete_icon_[0] != '\0' && complete_icon_[0] != '\0') {
-          it.printf(r.x + 16, row_cy, g_theme.icon.font,
-                    check_color, TextAlign::CENTER,
-                    "%s", completed ? complete_icon_ : incomplete_icon_);
+        if (row.loading) {
+          // Spinning line animation while waiting for HA confirmation
+          float angle = (millis() % 1000) * 2.0f * 3.14159265f / 1000.0f;
+          int cx = r.x + 16;
+          int cy = row_cy;
+          it.line(cx, cy, cx + (int)(cosf(angle) * 8), cy + (int)(sinf(angle) * 8), border);
         } else {
-          it.printf(r.x + 10, row_cy, g_theme.label.font,
-                    check_color, TextAlign::CENTER_LEFT,
-                    "%s", completed ? "[x]" : "[ ]");
+          const Color check_color = completed ? Color(0, 220, 120) : border;
+          if (g_theme.icon.font != nullptr &&
+              incomplete_icon_ != nullptr && complete_icon_ != nullptr &&
+              incomplete_icon_[0] != '\0' && complete_icon_[0] != '\0') {
+            it.printf(r.x + 16, row_cy, g_theme.icon.font,
+                      check_color, TextAlign::CENTER,
+                      "%s", completed ? complete_icon_ : incomplete_icon_);
+          } else {
+            it.printf(r.x + 10, row_cy, g_theme.label.font,
+                      check_color, TextAlign::CENTER_LEFT,
+                      "%s", completed ? "[x]" : "[ ]");
+          }
         }
       }
 
@@ -1190,6 +1208,9 @@ class TodoPreviewWidget : public Widget {
     std::string due;
     bool overdue = false;
     bool completed = false;
+    bool loading = false;
+    uint32_t loading_start = 0;
+    static constexpr uint32_t loading_timeout_ms = 5000;
   };
 
   static void trim_inplace(std::string &value) {
@@ -1541,6 +1562,338 @@ class NotificationOverlayWidget : public Widget {
   std::string last_dismissed_;
   bool baseline_set_ = false;
   bool was_visible_ = false;
+};
+
+class HvacWidget : public Widget {
+ public:
+  using Callback = std::function<void()>;
+
+  HvacWidget(UiRect rect, const char *label,
+             const std::string *hvac_mode, const float *current_temp,
+             const float *target_temp, const std::string *action,
+             const char *entity_id,
+             const char *icon_down = "\uF0374", const char *icon_up = "\uF0415",
+             const char *icon_power = "\uF040E",
+             float temp_step = 0.5f, float min_temp = 10.0f, float max_temp = 30.0f,
+             const char *on_mode = "heat",
+             Color on_color = Color(255, 180, 0),
+             Color off_color = Color(80, 80, 80))
+      : rect_(rect), label_(label),
+        hvac_mode_ptr_(hvac_mode), current_temp_ptr_(current_temp),
+        target_temp_ptr_(target_temp), action_ptr_(action),
+        entity_id_(entity_id),
+        icon_down_(icon_down), icon_up_(icon_up), icon_power_(icon_power),
+        temp_step_(temp_step), min_temp_(min_temp), max_temp_(max_temp),
+        on_mode_(on_mode),
+        on_color_(on_color), off_color_(off_color) {}
+
+  UiRect bounds() const override { return screen_rect(rect_); }
+
+  void update(uint32_t now) override {
+    if (loading_timeout_ms_ > 0 && loading_ &&
+        (now - loading_start_ms_ > loading_timeout_ms_)) {
+      loading_ = false;
+      mark_dirty();
+    }
+    bool changed = false;
+    if (hvac_mode_ptr_ && *hvac_mode_ptr_ != last_hvac_mode_) { changed = true; }
+    if (current_temp_ptr_ && *current_temp_ptr_ != last_current_temp_) { changed = true; }
+    if (target_temp_ptr_ && *target_temp_ptr_ != last_target_temp_) { changed = true; }
+    if (action_ptr_ && *action_ptr_ != last_action_) { changed = true; }
+    if (changed) mark_dirty();
+    Widget::update(now);
+  }
+
+  bool handle_touch(const TouchEvent &event, uint32_t now) override {
+    if (event.type != TouchType::Tap) return false;
+    if (loading_) return false;
+    if (esphome::api::global_api_server == nullptr ||
+        !esphome::api::global_api_server->is_connected()) {
+      return false;
+    }
+
+    const UiRect r = screen_rect(rect_);
+    const int w = r.w;
+    const int h = r.h;
+
+    const int pad = 6;
+    const int btn_h = 26;
+    const int btns_y = r.y + h - btn_h - pad;
+
+    // Two temp buttons (compact) + power button
+    const int temp_btn_w = (w - pad * 2) / 5;
+    const int power_btn_w = (w - pad * 2) - temp_btn_w * 2;
+    const int btn_gap = 0;
+
+    // Temp down button
+    {
+      const int bx = r.x + pad;
+      const int by = btns_y;
+      if (event.x >= bx && event.x <= bx + temp_btn_w &&
+          event.y >= by && event.y <= by + btn_h) {
+        temp_down(now);
+        return true;
+      }
+    }
+
+    // Temp up button
+    {
+      const int bx = r.x + pad + temp_btn_w;
+      const int by = btns_y;
+      if (event.x >= bx && event.x <= bx + temp_btn_w &&
+          event.y >= by && event.y <= by + btn_h) {
+        temp_up(now);
+        return true;
+      }
+    }
+
+    // Power button
+    {
+      const int bx = r.x + pad + temp_btn_w * 2;
+      const int by = btns_y;
+      if (event.x >= bx && event.x <= bx + power_btn_w &&
+          event.y >= by && event.y <= by + btn_h) {
+        toggle_power(now);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  void draw(display::Display &it, const UiState &state) override {
+    (void)state;
+
+    const UiRect r = screen_rect(rect_);
+    const int w = r.w;
+    const int h = r.h;
+
+    const bool is_on = hvac_mode_ptr_ && *hvac_mode_ptr_ != "off";
+    const Color accent = is_on ? on_color_ : off_color_;
+    const Color dim = RetroColors::STEEL;
+    const Color text = RetroColors::WHITE;
+    const Color bg(10, 14, 22);
+    const bool has_icon_font = g_theme.icon.font != nullptr && g_theme.icon.font->get_width() > 0;
+
+    // Clipped-corner container
+    const int c = 6;
+    draw_clipped_box(it, r.x, r.y, w, h, c, accent, bg, false);
+
+    const int pad = 6;
+
+    // ---- Header: mode dot + mode text + current temp ----
+    const int header_y = r.y + pad + 2;
+    {
+      const int center_y = header_y + 10;
+
+      // Mode dot
+      const int dot_r = 4;
+      const int dot_x = r.x + pad + 6;
+      if (is_on) {
+        it.filled_circle(dot_x, center_y, dot_r, accent);
+      }
+      it.circle(dot_x, center_y, dot_r, accent);
+
+      // Mode text (small, next to dot)
+      if (hvac_mode_ptr_ && g_theme.label.font != nullptr) {
+        const char *mode_str = hvac_mode_ptr_->c_str();
+        Color mode_color = is_on ? accent : dim;
+        it.printf(dot_x + 10, center_y, g_theme.label.font, mode_color,
+                  TextAlign::CENTER_LEFT, "%s", mode_str);
+      }
+
+      // Current temp (right-aligned in header)
+      if (current_temp_ptr_ && g_theme.header.font != nullptr) {
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%.1f°", *current_temp_ptr_);
+        it.printf(r.x + w - pad, center_y, g_theme.header.font, text,
+                  TextAlign::CENTER_RIGHT, "%s", buf);
+      }
+    }
+
+    // ---- Label (small, below header) ----
+    const int label_y = header_y + 16;
+    if (label_ && label_[0] && g_theme.label.font != nullptr) {
+      const int max_label_w = w - pad * 2 - 4;
+      ui_print_truncated(it, r.x + pad, label_y,
+                         g_theme.label.font, dim,
+                         TextAlign::TOP_LEFT, label_, max_label_w);
+    }
+
+    // ---- Target temperature line ----
+    const int target_y = label_y + 16;
+    {
+      if (target_temp_ptr_ && g_theme.label.font != nullptr) {
+        const int line_center_y = target_y + 6;
+        // Compact dashed segment + "TARGET" + target temp
+        draw_dashed_hline(it, r.x + pad, r.x + pad + 20, line_center_y + 2, dim, 2, 2);
+        it.printf(r.x + pad + 24, target_y, g_theme.label.font, dim,
+                  TextAlign::TOP_LEFT, "TRGT");
+
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%.1f°", *target_temp_ptr_);
+        it.printf(r.x + r.w / 2, target_y, g_theme.label.font, text,
+                  TextAlign::TOP_CENTER, "%s", buf);
+
+        draw_dashed_hline(it, r.x + r.w / 2 + 40, r.x + w - pad, line_center_y + 2, dim, 2, 2);
+      }
+    }
+
+    // ---- Bottom buttons ----
+    const int btn_h = 26;
+    const int btns_y = r.y + h - btn_h - pad;
+    {
+      const int temp_btn_w = (w - pad * 2) / 5;
+      const int power_btn_w = (w - pad * 2) - temp_btn_w * 2;
+
+      auto draw_icon_btn = [&](int bx, int bw, int bh, const char *glyph,
+                                Color bc, Color tc) {
+        const int mc = 3;
+        draw_clipped_box(it, bx, btns_y, bw, bh, mc, bc, RetroColors::DIM, true);
+        if (glyph && glyph[0] && g_theme.icon.font != nullptr) {
+          it.printf(bx + bw / 2, btns_y + bh / 2, g_theme.icon.font, tc,
+                    TextAlign::CENTER, "%s", glyph);
+        } else if (g_theme.label.font != nullptr) {
+          it.printf(bx + bw / 2, btns_y + bh / 2, g_theme.label.font, tc,
+                    TextAlign::CENTER, "%s", glyph && glyph[0] ? glyph : "?");
+        }
+      };
+
+      const bool temp_down_active = loading_ && pending_action_ == 1;
+      const bool temp_up_active = loading_ && pending_action_ == 2;
+      const bool power_active = loading_ && pending_action_ == 3;
+
+      const Color temp_dim(60, 60, 80);
+      const Color temp_accent(255, 180, 0);
+
+      // Temp down
+      {
+        const int bx = r.x + pad;
+        Color bc = temp_down_active ? temp_accent : temp_dim;
+        draw_icon_btn(bx, temp_btn_w, btn_h, icon_down_, bc, text);
+      }
+
+      // Temp up
+      {
+        const int bx = r.x + pad + temp_btn_w;
+        Color bc = temp_up_active ? temp_accent : temp_dim;
+        draw_icon_btn(bx, temp_btn_w, btn_h, icon_up_, bc, text);
+      }
+
+      // Power
+      {
+        const int bx = r.x + pad + temp_btn_w * 2;
+        Color bc = power_active ? on_color_ : off_color_;
+        draw_icon_btn(bx, power_btn_w, btn_h, icon_power_, bc, text);
+      }
+    }
+
+    // Save last values
+    if (hvac_mode_ptr_) last_hvac_mode_ = *hvac_mode_ptr_;
+    if (current_temp_ptr_) last_current_temp_ = *current_temp_ptr_;
+    if (target_temp_ptr_) last_target_temp_ = *target_temp_ptr_;
+    if (action_ptr_) last_action_ = *action_ptr_;
+  }
+
+ private:
+  void send_ha_service(const std::string &service,
+                       const std::vector<std::pair<std::string, std::string>> &data) {
+    auto *api = esphome::api::global_api_server;
+    if (api == nullptr || !api->is_connected()) return;
+    esphome::api::HomeAssistantServiceCallAction<> call(api, false);
+    call.set_service(service);
+    call.init_data(data.size() + 1);
+    call.add_data("entity_id", entity_id_);
+    for (const auto &kv : data) {
+      call.add_data(kv.first, kv.second);
+    }
+    call.play();
+  }
+
+  void toggle_power(uint32_t now) {
+    if (hvac_mode_ptr_ == nullptr) return;
+    loading_ = true;
+    pending_action_ = 3;
+    loading_start_ms_ = now;
+    mark_dirty();
+
+    if (*hvac_mode_ptr_ == "off") {
+      send_ha_service("climate.set_hvac_mode", {{"hvac_mode", on_mode_}});
+    } else {
+      send_ha_service("climate.set_hvac_mode", {{"hvac_mode", "off"}});
+    }
+
+    char name_buf[24];
+    snprintf(name_buf, sizeof(name_buf), "hvacpw_%p", this);
+    esphome::App.scheduler.set_timeout(nullptr, name_buf, loading_timeout_ms_,
+        [this]() {
+          loading_ = false;
+          pending_action_ = 0;
+          mark_dirty();
+          UiRedraw::trigger_display_update();
+        });
+  }
+
+  void temp_up(uint32_t now) {
+    if (target_temp_ptr_ == nullptr || hvac_mode_ptr_ == nullptr) return;
+    float new_temp = *target_temp_ptr_ + temp_step_;
+    if (new_temp > max_temp_) new_temp = max_temp_;
+    set_temperature(new_temp, now);
+    pending_action_ = 2;
+  }
+
+  void temp_down(uint32_t now) {
+    if (target_temp_ptr_ == nullptr || hvac_mode_ptr_ == nullptr) return;
+    float new_temp = *target_temp_ptr_ - temp_step_;
+    if (new_temp < min_temp_) new_temp = min_temp_;
+    set_temperature(new_temp, now);
+    pending_action_ = 1;
+  }
+
+  void set_temperature(float temperature, uint32_t now) {
+    loading_ = true;
+    loading_start_ms_ = now;
+    mark_dirty();
+
+    char temp_buf[16];
+    snprintf(temp_buf, sizeof(temp_buf), "%.1f", temperature);
+    send_ha_service("climate.set_temperature", {{"temperature", temp_buf}});
+
+    char name_buf[24];
+    snprintf(name_buf, sizeof(name_buf), "hvactm_%p", this);
+    esphome::App.scheduler.set_timeout(nullptr, name_buf, loading_timeout_ms_,
+        [this]() {
+          loading_ = false;
+          pending_action_ = 0;
+          mark_dirty();
+          UiRedraw::trigger_display_update();
+        });
+  }
+
+  UiRect rect_;
+  const char *label_;
+  const std::string *hvac_mode_ptr_ = nullptr;
+  const float *current_temp_ptr_ = nullptr;
+  const float *target_temp_ptr_ = nullptr;
+  const std::string *action_ptr_ = nullptr;
+  std::string entity_id_;
+  const char *icon_down_;
+  const char *icon_up_;
+  const char *icon_power_;
+  float temp_step_;
+  float min_temp_;
+  float max_temp_;
+  std::string on_mode_;
+  Color on_color_;
+  Color off_color_;
+  bool loading_ = false;
+  uint32_t loading_start_ms_ = 0;
+  uint32_t loading_timeout_ms_ = 350;
+  int pending_action_ = 0;
+  std::string last_hvac_mode_;
+  float last_current_temp_ = 0.0f;
+  float last_target_temp_ = 0.0f;
+  std::string last_action_;
 };
 
 class LoadingWidget : public Widget {

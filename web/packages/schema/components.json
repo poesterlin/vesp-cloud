@@ -651,6 +651,33 @@
         }
       ]
     },
+    "HvacComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "hvac" },
+            "label": { "type": "string" },
+            "stateBinding": {
+              "$ref": "#/definitions/EntityBinding",
+              "description": "Home Assistant climate entity (climate.xxx)"
+            },
+            "tempStep": { "type": "number", "default": 0.5 },
+            "minTemp": { "type": "number", "default": 10 },
+            "maxTemp": { "type": "number", "default": 30 },
+            "onMode": {
+              "type": "string",
+              "default": "heat",
+              "description": "HA hvac_mode to set when turning on (heat, cool, etc.)"
+            },
+            "onColor": { "$ref": "#/definitions/Color" },
+            "offColor": { "$ref": "#/definitions/Color" }
+          },
+          "required": ["type", "size"]
+        }
+      ]
+    },
     "Component": {
       "oneOf": [
         { "$ref": "#/definitions/TextComponent" },
@@ -664,6 +691,7 @@
         { "$ref": "#/definitions/ImageComponent" },
         { "$ref": "#/definitions/TodoListComponent" },
         { "$ref": "#/definitions/LightStateComponent" },
+        { "$ref": "#/definitions/HvacComponent" },
         { "$ref": "#/definitions/AutoLayoutListComponent" },
         { "$ref": "#/definitions/ConditionalAreaComponent" },
         { "$ref": "#/definitions/TabContainerComponent" }

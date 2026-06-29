@@ -37,6 +37,10 @@
     "media_player",
   ];
 
+  const CLIMATE_ALLOWED_DOMAINS = [
+    "climate",
+  ];
+
   function getNavIcon(action: NavigationAction): string | undefined {
     return NAV_ICONS[action.type];
   }
@@ -285,7 +289,7 @@
       </div>
     </div>
 
-    {#if selectedComponent.size}
+    {#if selectedComponent.size && selectedComponent.type !== "hvac"}
       <div class="property-section">
         <label class="section-label">Size</label>
         <div class="field-row">
@@ -298,7 +302,7 @@
                 updateSize("width", parseInt(e.currentTarget.value) || 10)}
             />
           </div>
-          {#if selectedComponent?.type !== "light_state"}
+          {#if selectedComponent?.type !== "light_state" && selectedComponent?.type !== "hvac"}
             <div class="field">
               <span class="field-label">H</span>
               <input
@@ -595,6 +599,88 @@
       </div>
     {/if}
 
+    {#if selectedComponent.type === "hvac"}
+      <div class="property-section">
+        <label class="section-label">HVAC Control</label>
+        <div class="field">
+          <span class="field-label">Label</span>
+          <input
+            type="text"
+            value={selectedComponent.label ?? ""}
+            oninput={(e) => updateProperty("label", e.currentTarget.value)}
+          />
+        </div>
+        <div class="field">
+          <span class="field-label">Step</span>
+          <input
+            type="number"
+            min="0.1"
+            max="5"
+            step="0.5"
+            value={selectedComponent.tempStep ?? 0.5}
+            oninput={(e) =>
+              updateProperty(
+                "tempStep",
+                Math.max(0.1, Math.min(5, parseFloat(e.currentTarget.value) || 0.5)),
+              )}
+          />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <span class="field-label">Min °C</span>
+            <input
+              type="number"
+              value={selectedComponent.minTemp ?? 10}
+              oninput={(e) =>
+                updateProperty(
+                  "minTemp",
+                  parseFloat(e.currentTarget.value) || 10,
+                )}
+            />
+          </div>
+          <div class="field">
+            <span class="field-label">Max °C</span>
+            <input
+              type="number"
+              value={selectedComponent.maxTemp ?? 30}
+              oninput={(e) =>
+                updateProperty(
+                  "maxTemp",
+                  parseFloat(e.currentTarget.value) || 30,
+                )}
+            />
+          </div>
+        </div>
+        <div class="field">
+          <span class="field-label">On Mode</span>
+          <select
+            value={selectedComponent.onMode ?? "heat"}
+            onchange={(e) => updateProperty("onMode", e.currentTarget.value)}
+          >
+            <option value="heat">Heat</option>
+            <option value="cool">Cool</option>
+            <option value="heat_cool">Heat/Cool</option>
+            <option value="auto">Auto</option>
+            <option value="fan_only">Fan Only</option>
+            <option value="dry">Dry</option>
+          </select>
+        </div>
+      </div>
+      <div class="property-section">
+        <label class="section-label">Styling</label>
+        <ColorPicker
+          label="On Color"
+          value={selectedComponent.onColor}
+          onUpdate={(color) => updateProperty("onColor", color)}
+        />
+        <ColorPicker
+          label="Off Color"
+          value={selectedComponent.offColor}
+          onUpdate={(color) => updateProperty("offColor", color)}
+        />
+      </div>
+    {/if}
+
     {#if selectedComponent.type === "conditional_area"}
       <div class="property-section">
         <label class="section-label">Variants</label>
@@ -754,16 +840,20 @@
     {/if}
 
     <!-- Entity Binding (only for components that display entity values) -->
-    {#if selectedComponent.type === "todo_list" || selectedComponent.type === "light_state"}
+    {#if selectedComponent.type === "todo_list" || selectedComponent.type === "light_state" || selectedComponent.type === "hvac"}
       <div class="property-section">
         <label class="section-label">Entity Binding</label>
         <EntityPicker
           preselectedDomain={selectedComponent.type === "todo_list"
             ? "todo"
-            : "light"}
+            : selectedComponent.type === "hvac"
+              ? "climate"
+              : "light"}
           allowedDomains={selectedComponent.type === "light_state"
             ? LIGHT_STATE_ALLOWED_DOMAINS
-            : undefined}
+            : selectedComponent.type === "hvac"
+              ? CLIMATE_ALLOWED_DOMAINS
+              : undefined}
           component={selectedComponent}
           onUpdate={(binding) => {
             if (selectedComponent.type === "todo_list") {
@@ -775,7 +865,7 @@
         />
       </div>
     {/if}
-    {#if selectedComponent.type !== "light_state" && selectedComponent.type !== "text"}
+    {#if selectedComponent.type !== "light_state" && selectedComponent.type !== "hvac" && selectedComponent.type !== "text"}
       <div class="property-section">
         <label class="section-label">Actions</label>
         <ActionEditor

@@ -187,7 +187,9 @@ export function collectProjectIconNames(project: Project): Set<string> {
           addIcon(light.icon ?? "lightbulb");
         }
       } else if (c.type === "hvac") {
-        addIcon("thermometer");
+        addIcon("minus");
+        addIcon("plus");
+        addIcon("power");
       } else if (c.type === "auto_layout_list") {
         const list = c as AutoLayoutListComponent;
         for (const item of list.items as AutoLayoutListItem[]) {

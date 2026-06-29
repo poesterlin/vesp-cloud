@@ -145,7 +145,7 @@ describe("HVAC codegen - ui-screens", () => {
       ],
     });
     const header = generateUIScreensHeader(project);
-    expect(header).toContain("0.5f, 10f, 30f");
+    expect(header).toContain("0.5f, 10.0f, 30.0f");
     expect(header).toContain('"heat"');
   });
 });

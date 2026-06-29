@@ -38,10 +38,6 @@
     {@const w = component.size.width}
     {@const h = component.size.height}
 
-    <!-- Bottom buttons -->
-    {@const tempBtnW = Math.round(w / 5)}
-    {@const powerBtnW = w - 16 - tempBtnW * 2}
-
     <div class="hvac-wrap" style:width="100%" style:height="100%">
       <svg
         width="100%"
@@ -75,44 +71,18 @@
           stroke-width="0.5"
           transform="translate(2, 2)"
         />
-
-        <!-- Target line: left dash -->
-        <line
-          x1="8"
-          y1={Math.round(h * 0.43)}
-          x2={Math.round(w * 0.21)}
-          y2={Math.round(h * 0.43)}
-          stroke={textDim}
-          stroke-width="0.5"
-          stroke-dasharray="2,2"
-        />
-        <!-- Target line: right dash -->
-        <line
-          x1={Math.round(w * 0.79)}
-          y1={Math.round(h * 0.43)}
-          x2={w - 8}
-          y2={Math.round(h * 0.43)}
-          stroke={textDim}
-          stroke-width="0.5"
-          stroke-dasharray="2,2"
-        />
-
       </svg>
 
-      <!-- Header: mode dot + mode + current temp -->
-      <div class="hvac-header">
-        <span class="mode-dot" style:background={onColor}></span>
-        <span class="mode-text" style:color={onColor}>{onMode}</span>
-        <span class="current-temp" style:color={textWhite}>21.5°</span>
+      <!-- Top row: label + mode -->
+      <div class="top-row">
+        <span class="top-label" style:color={textDim}>{label}</span>
+        <span class="top-mode" style:color={onColor}>{onMode}</span>
       </div>
 
-      <!-- Label -->
-      <div class="hvac-label-row" style:max-width={`${w - 16}px`} style:color={textDim}>{label}</div>
-
-      <!-- Target row -->
+      <!-- Center: target temp + "Target" -->
       <div class="target-row">
-        <span class="target-label" style:color={textDim}>TRGT</span>
         <span class="target-value" style:color={textWhite}>22.0°</span>
+        <span class="target-label" style:color={textDim}>Target</span>
       </div>
 
       <!-- Bottom buttons row -->
@@ -135,76 +105,57 @@
     overflow: hidden;
   }
 
-  .hvac-header {
+  .top-row {
     position: absolute;
     top: 8px;
     left: 10px;
     right: 10px;
     display: flex;
-    align-items: center;
-    gap: 5px;
-    height: 16px;
+    align-items: flex-start;
+    justify-content: space-between;
+    height: 14px;
   }
 
-  .mode-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    box-shadow: 0 0 4px currentColor;
-  }
-
-  .mode-text {
-    font-family: var(--display-font, monospace);
-    font-size: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 600;
-  }
-
-  .current-temp {
-    margin-left: auto;
-    font-family: var(--display-font, monospace);
-    font-size: 13px;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
-  .hvac-label-row {
-    position: absolute;
-    top: 26px;
-    left: 10px;
-    right: 10px;
+  .top-label {
     font-family: var(--display-font, monospace);
     font-size: 7px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 70%;
+  }
+
+  .top-mode {
+    font-family: var(--display-font, monospace);
+    font-size: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    flex-shrink: 0;
   }
 
   .target-row {
     position: absolute;
-    top: 42%;
+    top: 50%;
     left: 0;
     right: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .target-label {
-    font-family: var(--display-font, monospace);
-    font-size: 7px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    opacity: 0.8;
+    transform: translateY(-40%);
   }
 
   .target-value {
     font-family: var(--display-font, monospace);
     font-size: 13px;
     font-weight: 700;
+  }
+
+  .target-label {
+    font-family: var(--display-font, monospace);
+    font-size: 7px;
+    opacity: 0.8;
+    margin-top: 2px;
   }
 
   .buttons-row {

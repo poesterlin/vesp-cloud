@@ -309,11 +309,12 @@ function generateHvacWidget(c: HvacComponent,
   const onMode = c.onMode ?? 'heat';
   const onColor = c.onColor ? emitColor(c.onColor) : 'Color(255, 180, 0)';
   const offColor = c.offColor ? emitColor(c.offColor) : 'Color(80, 80, 80)';
-  const iconDown = getMdiUtf8CEscape('minus') ?? '"-"';
-  const iconUp = getMdiUtf8CEscape('plus') ?? '"+"';
-  const iconPower = getMdiUtf8CEscape('power') ?? '"?"';
+  const iconDown = getMdiUtf8CEscape('minus') ?? '\\-';
+  const iconUp = getMdiUtf8CEscape('plus') ?? '\\+';
+  const iconPower = getMdiUtf8CEscape('power') ?? '?';
   const idSafe = safeCppIdentifier(c.id, 'component');
-  let out = `${indent}auto *hvac_${idSafe} = ${factory('HvacWidget', `${rect(x, y, w, h)}, "${escapeCString(label)}", state.${base}_hvac_mode.ptr(), state.${base}_current_temp.ptr(), state.${base}_target_temp.ptr(), state.${base}_hvac_action.ptr(), "${escapeCString(entityId)}", ${iconDown}, ${iconUp}, ${iconPower}, ${tempStep}f, ${minTemp}f, ${maxTemp}f, "${escapeCString(onMode)}", ${onColor}, ${offColor}`)};\n`;
+  const fmtFloat = (v: number) => Number.isInteger(v) ? `${v}.0f` : `${v}f`;
+  let out = `${indent}auto *hvac_${idSafe} = ${factory('HvacWidget', `${rect(x, y, w, h)}, "${escapeCString(label)}", state.${base}_hvac_mode.ptr(), state.${base}_current_temp.ptr(), state.${base}_target_temp.ptr(), state.${base}_hvac_action.ptr(), "${escapeCString(entityId)}", "${iconDown}", "${iconUp}", "${iconPower}", ${fmtFloat(tempStep)}, ${fmtFloat(minTemp)}, ${fmtFloat(maxTemp)}, "${escapeCString(onMode)}", ${onColor}, ${offColor}`)};\n`;
   if (visibilityExpr) {
     out += `${indent}hvac_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
   }

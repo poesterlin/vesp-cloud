@@ -1673,7 +1673,6 @@ class HvacWidget : public Widget {
     const Color dim = RetroColors::STEEL;
     const Color text = RetroColors::WHITE;
     const Color bg(10, 14, 22);
-    const bool has_icon_font = g_theme.icon.font != nullptr && g_theme.icon.font->get_width() > 0;
 
     // Clipped-corner container
     const int c = 6;
@@ -1681,61 +1680,40 @@ class HvacWidget : public Widget {
 
     const int pad = 6;
 
-    // ---- Header: mode dot + mode text + current temp ----
-    const int header_y = r.y + pad + 2;
+    // ---- Top row: label (left) + mode (right) ----
+    const int top_y = r.y + pad + 2;
     {
-      const int center_y = header_y + 10;
-
-      // Mode dot
-      const int dot_r = 4;
-      const int dot_x = r.x + pad + 6;
-      if (is_on) {
-        it.filled_circle(dot_x, center_y, dot_r, accent);
+      if (label_ && label_[0] && g_theme.label.font != nullptr) {
+        const int max_label_w = w - pad * 2 - 40;
+        ui_print_truncated(it, r.x + pad, top_y,
+                           g_theme.label.font, dim,
+                           TextAlign::TOP_LEFT, label_, max_label_w);
       }
-      it.circle(dot_x, center_y, dot_r, accent);
 
-      // Mode text (small, next to dot)
-      if (hvac_mode_ptr_ && g_theme.label.font != nullptr) {
-        const char *mode_str = hvac_mode_ptr_->c_str();
+      if (hvac_mode_ptr_ && !hvac_mode_ptr_->empty() && g_theme.label.font != nullptr) {
         Color mode_color = is_on ? accent : dim;
-        it.printf(dot_x + 10, center_y, g_theme.label.font, mode_color,
-                  TextAlign::CENTER_LEFT, "%s", mode_str);
-      }
-
-      // Current temp (right-aligned in header)
-      if (current_temp_ptr_ && g_theme.header.font != nullptr) {
-        char buf[16];
-        snprintf(buf, sizeof(buf), "%.1f°", *current_temp_ptr_);
-        it.printf(r.x + w - pad, center_y, g_theme.header.font, text,
-                  TextAlign::CENTER_RIGHT, "%s", buf);
+        it.printf(r.x + w - pad, top_y, g_theme.label.font, mode_color,
+                  TextAlign::TOP_RIGHT, "%s", hvac_mode_ptr_->c_str());
       }
     }
 
-    // ---- Label (small, below header) ----
-    const int label_y = header_y + 16;
-    if (label_ && label_[0] && g_theme.label.font != nullptr) {
-      const int max_label_w = w - pad * 2 - 4;
-      ui_print_truncated(it, r.x + pad, label_y,
-                         g_theme.label.font, dim,
-                         TextAlign::TOP_LEFT, label_, max_label_w);
-    }
-
-    // ---- Target temperature line ----
-    const int target_y = label_y + 16;
+    // ---- Center: target temperature + "Target" label ----
     {
-      if (target_temp_ptr_ && g_theme.label.font != nullptr) {
-        const int line_center_y = target_y + 6;
-        // Compact dashed segment + "TARGET" + target temp
-        draw_dashed_hline(it, r.x + pad, r.x + pad + 20, line_center_y + 2, dim, 2, 2);
-        it.printf(r.x + pad + 24, target_y, g_theme.label.font, dim,
-                  TextAlign::TOP_LEFT, "TRGT");
+      const int btn_h = 26;
+      const int btns_y = r.y + h - btn_h - pad;
+      const int content_bottom = btns_y - pad;
+      const int center_y = top_y + 12 + (content_bottom - (top_y + 12)) / 2;
 
+      if (target_temp_ptr_ && g_theme.header.font != nullptr) {
         char buf[16];
         snprintf(buf, sizeof(buf), "%.1f°", *target_temp_ptr_);
-        it.printf(r.x + r.w / 2, target_y, g_theme.label.font, text,
-                  TextAlign::TOP_CENTER, "%s", buf);
+        it.printf(r.x + w / 2, center_y - 4, g_theme.header.font, text,
+                  TextAlign::CENTER, "%s", buf);
 
-        draw_dashed_hline(it, r.x + r.w / 2 + 40, r.x + w - pad, line_center_y + 2, dim, 2, 2);
+        if (g_theme.label.font != nullptr) {
+          it.printf(r.x + w / 2, center_y + 14, g_theme.label.font, dim,
+                    TextAlign::CENTER, "Target");
+        }
       }
     }
 
@@ -1805,7 +1783,7 @@ class HvacWidget : public Widget {
     call.init_data(data.size() + 1);
     call.add_data("entity_id", entity_id_);
     for (const auto &kv : data) {
-      call.add_data(kv.first, kv.second);
+      call.add_data(kv.first.c_str(), kv.second);
     }
     call.play();
   }

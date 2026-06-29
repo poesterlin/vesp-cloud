@@ -51,16 +51,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Optional("default_severity", default="info"): SelectSelector(
                         SelectSelectorConfig(
                             options=[
-                                ("Info (blue)", "info"),
-                                ("Warning (amber)", "warn"),
-                                ("Alert (red)", "alert"),
-                                ("Question (green)", "question"),
+                                {"label": "Info (blue)", "value": "info"},
+                                {"label": "Warning (amber)", "value": "warn"},
+                                {"label": "Alert (red)", "value": "alert"},
+                                {"label": "Question (green)", "value": "question"},
                             ],
                             mode=SelectSelectorMode.DROPDOWN,
                         )
                     ),
                     vol.Optional("todo_entities"): EntitySelector(
-                        EntitySelectorConfig(domain="todo", multiple=True)
+                        EntitySelectorConfig(domain=["todo"], multiple=True)
                     ),
                 }
             ),

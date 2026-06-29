@@ -2,40 +2,19 @@
   "config": {
     "step": {
       "user": {
-        "title": "Welcome to ESPHome Display",
-        "description": "This integration simplifies sending notifications to your ESPHome display devices.\n\nNo YAML configuration needed—everything is set up through the web interface!\n\nNotification overlay helper entities (input_text.notification_title, input_text.notification_body, input_select.notification_severity) will be auto-created if they don't already exist."
-      },
-      "add_device": {
-        "title": "Add Display Device",
-        "description": "Configure a new ESPHome display device. {devices_added} device(s) already configured.",
+        "title": "ESPHome Display Helpers",
+        "description": "This integration creates helper entities so your ESPHome display can show notifications and to-do lists.\n\nPick what you want to enable below — everything is optional.",
         "data": {
-          "name": "Display Name",
-          "esphome_device": "ESPHome Device Name",
-          "default_severity": "Default Notification Severity",
-          "todo_entities": "To-Do Lists (Optional)"
+          "notifications": "Enable notification helpers",
+          "default_severity": "Default notification severity",
+          "todo_entities": "Todo lists to bridge"
         },
         "data_description": {
-          "name": "A friendly name for this display (e.g., 'Kitchen Display')",
-          "esphome_device": "The device name from your ESPHome YAML (e.g., 'kitchen_screen')",
-          "default_severity": "Default alert level when not specified: info (blue), warn (amber), alert (red), question (green)",
-          "todo_entities": "Optional: Comma-separated Home Assistant to-do list entity IDs (e.g. todo.shopping,todo.chores)"
-        }
-      },
-      "add_more_devices": {
-        "title": "Add Another Device?",
-        "description": "You've successfully configured {devices_added} display device(s).\n\nWould you like to add another display?",
-        "data": {
-          "add_another": "Add another display device"
+          "notifications": "Creates input_text.notification_title / notification_body and input_select.notification_severity so you can push notifications to your display",
+          "default_severity": "Alert level used when no severity is specified",
+          "todo_entities": "Each selected list gets a sensor that reformats items for ESPHome to read"
         }
       }
-    },
-    "error": {
-      "name_required": "Display name is required",
-      "name_exists": "A device with this name already exists",
-      "esphome_device_required": "ESPHome device name is required"
-    },
-    "abort": {
-      "already_configured": "ESPHome Display is already configured"
     }
   },
   "options": {
@@ -44,11 +23,18 @@
         "title": "ESPHome Display Options",
         "description": "Adjust integration-wide settings",
         "data": {
-          "default_timeout": "Default Notification Timeout (seconds)"
+          "default_timeout": "Default notification timeout (seconds)"
         },
         "data_description": {
-          "default_timeout": "How long notifications should display by default before auto-closing (0 = manual dismiss only)"
+          "default_timeout": "How long notifications display by default before auto-closing (0 = manual dismiss only)"
         }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "to_do_items": {
+        "name": "To-Do Items"
       }
     }
   }

@@ -1,7 +1,7 @@
 {
   "manifest_version": 1,
   "domain": "esphome_display",
-  "name": "ESPHome Display Notifications & Data Bridge",
+  "name": "ESPHome Display Helpers",
   "codeowners": ["@poesterlin"],
   "config_flow": true,
   "documentation": "https://github.com/poesterlin/home-display",

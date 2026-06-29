@@ -973,11 +973,13 @@ class TodoPreviewWidget : public Widget {
                     Callback on_tap = nullptr,
                     const char *incomplete_icon = "",
                     const char *complete_icon = "",
-                    const char *todo_entity = "")
+                    const char *todo_entity = "",
+                    const char *bridge_entity = "")
       : rect_(rect), items_(items), scrollable_(scrollable),
         checkable_(checkable), on_tap_(std::move(on_tap)),
         incomplete_icon_(incomplete_icon),
-        complete_icon_(complete_icon), todo_entity_(todo_entity) {
+        complete_icon_(complete_icon), todo_entity_(todo_entity),
+        bridge_entity_(bridge_entity) {
     if (max_items < 1) max_items_ = 1;
     else if (max_items > 10) max_items_ = 10;
     else max_items_ = max_items;
@@ -1021,7 +1023,9 @@ class TodoPreviewWidget : public Widget {
       if (idx < 0 || idx >= static_cast<int>(rows_.size())) return true;
       auto &row = rows_[idx];
       if (row.loading) return true;
-      if (todo_entity_ == nullptr || todo_entity_[0] == '\0') return true;
+      if (todo_entity_ == nullptr || todo_entity_[0] == '\0') {
+        if (bridge_entity_ == nullptr || bridge_entity_[0] == '\0') return true;
+      }
       row.loading = true;
       row.loading_start = now;
       mark_dirty();
@@ -1283,9 +1287,27 @@ class TodoPreviewWidget : public Widget {
   }
 
   void push_todo_status(const std::string &summary, const char *status) {
-    if (todo_entity_ == nullptr || todo_entity_[0] == '\0') return;
     auto *api = esphome::api::global_api_server;
     if (api == nullptr || !api->is_connected()) return;
+
+    // Prefer the HACS bridge service (uses the same entity for read &
+    // write). Falls back to a direct todo.update_item call when a
+    // standalone todo entity is configured instead.
+    if (bridge_entity_ != nullptr && bridge_entity_[0] != '\0') {
+      esphome::api::HomeAssistantServiceCallAction<> call(api, false);
+      call.set_service("esphome_display.complete_item");
+      const bool non_default = (status != nullptr && strcmp(status, "completed") != 0);
+      call.init_data(non_default ? 3 : 2);
+      call.add_data("entity_id", bridge_entity_);
+      call.add_data("item", summary);
+      if (non_default) {
+        call.add_data("status", status);
+      }
+      call.play();
+      return;
+    }
+
+    if (todo_entity_ == nullptr || todo_entity_[0] == '\0') return;
     esphome::api::HomeAssistantServiceCallAction<> call(api, false);
     call.set_service("todo.update_item");
     call.init_data(3);
@@ -1313,6 +1335,7 @@ class TodoPreviewWidget : public Widget {
   const char *incomplete_icon_ = nullptr;
   const char *complete_icon_ = nullptr;
   const char *todo_entity_ = nullptr;
+  const char *bridge_entity_ = nullptr;
   std::vector<TodoRow> rows_;
   int scroll_offset_ = 0;
   bool dragging_ = false;

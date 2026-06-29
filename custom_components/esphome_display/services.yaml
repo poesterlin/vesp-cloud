@@ -1,1 +1,24 @@
-{}
+complete_item:
+  name: Complete To-Do Item
+  description: Mark a to-do item as complete on the source todo list.
+  target:
+    entity:
+      domain: sensor
+  fields:
+    item:
+      name: Item Summary
+      description: The summary text of the item to complete (exact match).
+      required: true
+      example: "Buy milk"
+      selector:
+        text: {}
+    status:
+      name: Status
+      description: Target status for the item.
+      required: false
+      default: "completed"
+      selector:
+        select:
+          options:
+            - "completed"
+            - "needs_action"

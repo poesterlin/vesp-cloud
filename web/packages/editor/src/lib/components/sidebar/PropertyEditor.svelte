@@ -575,18 +575,7 @@
               updateProperty("checkable", e.currentTarget.checked)}
           />
         </div>
-        {#if selectedComponent.checkable}
-          <div class="field">
-            <span class="field-label">Todo Entity</span>
-            <input
-              type="text"
-              value={selectedComponent.todoEntityId ?? ""}
-              placeholder="todo.todo"
-              oninput={(e) =>
-                updateProperty("todoEntityId", e.currentTarget.value)}
-            />
-          </div>
-        {/if}
+
       </div>
     {/if}
 

@@ -9,136 +9,61 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import (
+    BooleanSelector,
+    EntitySelector,
+    EntitySelectorConfig,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
-    TextSelector,
-    TextSelectorConfig,
-    TextSelectorType,
 )
 
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-# Validation schemas
-DEVICE_SCHEMA = vol.Schema(
-    {
-        vol.Required("name"): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.TEXT)
-        ),
-        vol.Required("esphome_device"): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.TEXT)
-        ),
-        vol.Optional("default_severity", default="info"): SelectSelector(
-            SelectSelectorConfig(
-                options=["info", "warn", "alert", "question"],
-                mode=SelectSelectorMode.DROPDOWN,
-            )
-        ),
-        vol.Optional("todo_entities"): TextSelector(
-            TextSelectorConfig(
-                type=TextSelectorType.TEXT,
-                multiline=False,
-                prefix="todo.",
-            )
-        ),
-    }
-)
-
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for ESPHome Display."""
 
-    VERSION = 1
-
-    def __init__(self) -> None:
-        """Initialize the config flow."""
-        self.devices: dict[str, dict[str, Any]] = {}
+    VERSION = 2
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle the initial step - welcome screen."""
+        """Single-screen setup: pick which helpers to enable."""
+
         if user_input is not None:
-            return await self.async_step_add_device()
+            return self.async_create_entry(
+                title="ESPHome Display Helpers",
+                data={
+                    "notifications": user_input.get("notifications", True),
+                    "default_severity": user_input.get("default_severity", "info"),
+                    "todo_entities": user_input.get("todo_entities", []),
+                },
+            )
 
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema({}),
-        )
-
-    async def async_step_add_device(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
-        """Handle adding a new device."""
-        errors = {}
-
-        if user_input is not None:
-            # Validate inputs
-            name = user_input.get("name", "").strip()
-            esphome_device = user_input.get("esphome_device", "").strip()
-
-            if not name:
-                errors["name"] = "name_required"
-            elif name in self.devices:
-                errors["name"] = "name_exists"
-
-            if not esphome_device:
-                errors["esphome_device"] = "esphome_device_required"
-
-            if not errors:
-                # Parse comma-separated todo entities
-                todo_raw = user_input.get("todo_entities", "").strip()
-                todo_list = [
-                    e.strip() for e in todo_raw.split(",") if e.strip()
-                ] if todo_raw else []
-
-                # Store device config
-                self.devices[name] = {
-                    "esphome_device": esphome_device,
-                    "default_severity": user_input.get("default_severity", "info"),
-                    "todo_entities": todo_list,
-                }
-
-                # Ask if adding more devices
-                return await self.async_step_add_more_devices()
-
-        return self.async_show_form(
-            step_id="add_device",
-            data_schema=DEVICE_SCHEMA,
-            errors=errors,
-            description_placeholders={
-                "devices_added": str(len(self.devices)),
-            },
-        )
-
-    async def async_step_add_more_devices(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
-        """Ask if user wants to add more devices."""
-        if user_input is not None:
-            if user_input.get("add_another"):
-                return await self.async_step_add_device()
-            else:
-                # Finish setup
-                return self.async_create_entry(
-                    title=f"ESPHome Display ({len(self.devices)} device{'s' if len(self.devices) != 1 else ''})",
-                    data={"devices": self.devices},
-                )
-
-        return self.async_show_form(
-            step_id="add_more_devices",
             data_schema=vol.Schema(
                 {
-                    vol.Required("add_another", default=False): cv.boolean,
+                    vol.Required("notifications", default=True): BooleanSelector(),
+                    vol.Optional("default_severity", default="info"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[
+                                ("Info (blue)", "info"),
+                                ("Warning (amber)", "warn"),
+                                ("Alert (red)", "alert"),
+                                ("Question (green)", "question"),
+                            ],
+                            mode=SelectSelectorMode.DROPDOWN,
+                        )
+                    ),
+                    vol.Optional("todo_entities"): EntitySelector(
+                        EntitySelectorConfig(domain="todo", multiple=True)
+                    ),
                 }
             ),
-            description_placeholders={
-                "devices_added": str(len(self.devices)),
-            },
         )
 
     @staticmethod
@@ -151,7 +76,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class ESPHomeDisplayOptionsFlow(config_entries.OptionsFlow):
-    """Handle ESPHome Display options flow."""
+    """Handle ESPHome Display options."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""

@@ -346,8 +346,9 @@ function generateTodoListWidget(
   const incompleteIcon = getMdiUtf8CEscape("checkbox-blank-outline") ?? "";
   const completeIcon = getMdiUtf8CEscape("checkbox-marked") ?? "";
   const todoEntity = c.todoEntityId ?? "";
+  const bridgeEntity = c.itemsBinding?.entityId ?? "";
   const idSafe = safeCppIdentifier(c.id, 'component');
-  let out = `${indent}auto *todo_${idSafe} = ${factory('TodoPreviewWidget', `${rect(x, y, w, h)}, state.${itemsVar}.ptr(), ${maxItems}, ${rowHeight}, ${scrollable}, ${checkable}, ${onTap || '[](){}'}, "${incompleteIcon}", "${completeIcon}", "${escapeCString(todoEntity)}"`)};\n`;
+  let out = `${indent}auto *todo_${idSafe} = ${factory('TodoPreviewWidget', `${rect(x, y, w, h)}, state.${itemsVar}.ptr(), ${maxItems}, ${rowHeight}, ${scrollable}, ${checkable}, ${onTap || '[](){}'}, "${incompleteIcon}", "${completeIcon}", "${escapeCString(todoEntity)}", "${escapeCString(bridgeEntity)}"`)};\n`;
   if (visibilityExpr) {
     out += `${indent}todo_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
   }

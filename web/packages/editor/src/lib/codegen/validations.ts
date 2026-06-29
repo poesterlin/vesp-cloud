@@ -361,15 +361,6 @@ function validateTodoListBinding(project: Project): ValidationError[] {
         componentLabel: componentLabel(c),
       });
     }
-    if (tl.checkable && !tl.todoEntityId) {
-      errors.push({
-        type: "error" as const,
-        message: `Checkable to-do lists need a todoEntityId to mark items complete`,
-        componentId: c.id,
-        componentLabel: componentLabel(c),
-        field: 'todoEntityId',
-      });
-    }
   }
 
   return errors;

@@ -1,4 +1,4 @@
-"""ESPHome Display Integration - Notification & Data Bridge."""
+"""ESPHome Display Integration — notification helpers & todo list bridging."""
 
 import json
 import logging
@@ -8,39 +8,35 @@ from typing import Any
 import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import (
+    area_registry as ar,
     config_validation as cv,
     device_registry as dr,
     entity_registry as er,
-    area_registry as ar,
 )
-from homeassistant.const import CONF_NAME
 
 from .const import DOMAIN
 from .notification_entities import async_ensure_notification_entities
 from .panel import async_register_panel, async_unregister_panel
 
-METADATA_VERSION = "1.0.0"
-
-# Sensitive attributes to strip from entity metadata
-SENSITIVE_ATTRIBUTES = {
-    "latitude",
-    "longitude",
-    "access_token",
-    "ip_address",
-    "mac_address",
-    "serial_number",
-    "password",
-    "token",
-    "api_key",
-    "secret",
-}
-
 _LOGGER = logging.getLogger(__name__)
 
-# Domain-specific suggested actions
-DOMAIN_ACTIONS: dict[str, list[str]] = {
+CONF_NOTIFICATIONS = "notifications"
+CONF_DEFAULT_SEVERITY = "default_severity"
+CONF_TODO_ENTITIES = "todo_entities"
+CONF_DEVICES = "devices"  # old v1 format
+
+PLATFORMS = ["sensor"]
+
+_METADATA_VERSION = "1.0.0"
+
+_SENSITIVE_ATTRIBUTES = {
+    "latitude", "longitude", "access_token", "ip_address",
+    "mac_address", "serial_number", "password", "token", "api_key", "secret",
+}
+
+_DOMAIN_ACTIONS: dict[str, list[str]] = {
     "light": ["Turn On", "Turn Off", "Toggle", "Set Brightness", "Set Color"],
     "switch": ["Turn On", "Turn Off", "Toggle"],
     "cover": ["Open", "Close", "Stop", "Set Position"],
@@ -59,8 +55,7 @@ DOMAIN_ACTIONS: dict[str, list[str]] = {
     "camera": ["Turn On", "Turn Off", "Snapshot"],
 }
 
-# Domain-specific state options
-DOMAIN_STATE_OPTIONS: dict[str, list[str]] = {
+_DOMAIN_STATE_OPTIONS: dict[str, list[str]] = {
     "light": ["on", "off"],
     "switch": ["on", "off"],
     "binary_sensor": ["on", "off"],
@@ -74,149 +69,67 @@ DOMAIN_STATE_OPTIONS: dict[str, list[str]] = {
     "person": ["home", "not_home"],
     "device_tracker": ["home", "not_home"],
     "alarm_control_panel": [
-        "disarmed",
-        "armed_home",
-        "armed_away",
-        "armed_night",
-        "triggered",
+        "disarmed", "armed_home", "armed_away", "armed_night", "triggered",
     ],
 }
 
-# Sensor display type inference based on device_class
-SENSOR_DISPLAY_TYPES: dict[str, str] = {
-    "temperature": "gauge",
-    "humidity": "gauge",
-    "pressure": "gauge",
-    "battery": "gauge",
-    "power": "graph",
-    "energy": "graph",
-    "voltage": "gauge",
-    "current": "gauge",
-    "illuminance": "gauge",
-    "signal_strength": "gauge",
-    "timestamp": "value",
-    "duration": "value",
+_SENSOR_DISPLAY_TYPES: dict[str, str] = {
+    "temperature": "gauge", "humidity": "gauge", "pressure": "gauge",
+    "battery": "gauge", "power": "graph", "energy": "graph",
+    "voltage": "gauge", "current": "gauge", "illuminance": "gauge",
+    "signal_strength": "gauge", "timestamp": "value", "duration": "value",
     "monetary": "value",
 }
 
-# Common service icons and metadata
-SERVICE_METADATA: dict[str, dict[str, str | list[str]]] = {
-    "turn_on": {
-        "icon": "mdi:power-on",
-        "targets": [
-            "light",
-            "switch",
-            "fan",
-            "media_player",
-            "input_boolean",
-            "automation",
-            "camera",
-        ],
-    },
-    "turn_off": {
-        "icon": "mdi:power-off",
-        "targets": [
-            "light",
-            "switch",
-            "fan",
-            "media_player",
-            "input_boolean",
-            "automation",
-            "camera",
-        ],
-    },
-    "toggle": {
-        "icon": "mdi:toggle-switch",
-        "targets": ["light", "switch", "fan", "input_boolean"],
-    },
-    "lock": {"icon": "mdi:lock", "targets": ["lock"]},
-    "unlock": {"icon": "mdi:lock-open", "targets": ["lock"]},
-    "open_cover": {"icon": "mdi:arrow-up-box", "targets": ["cover"]},
-    "close_cover": {"icon": "mdi:arrow-down-box", "targets": ["cover"]},
-    "stop_cover": {"icon": "mdi:stop", "targets": ["cover"]},
-    "set_cover_position": {"icon": "mdi:arrow-expand-vertical", "targets": ["cover"]},
-    "set_temperature": {
-        "icon": "mdi:thermometer",
-        "targets": ["climate", "water_heater"],
-    },
-    "set_hvac_mode": {"icon": "mdi:hvac", "targets": ["climate"]},
-    "media_play": {"icon": "mdi:play", "targets": ["media_player"]},
-    "media_pause": {"icon": "mdi:pause", "targets": ["media_player"]},
-    "media_stop": {"icon": "mdi:stop", "targets": ["media_player"]},
-    "volume_up": {"icon": "mdi:volume-plus", "targets": ["media_player"]},
-    "volume_down": {"icon": "mdi:volume-minus", "targets": ["media_player"]},
-    "volume_set": {"icon": "mdi:volume-high", "targets": ["media_player"]},
-    "select_source": {"icon": "mdi:video-input-component", "targets": ["media_player"]},
-    "start": {"icon": "mdi:play", "targets": ["vacuum", "script"]},
-    "pause": {"icon": "mdi:pause", "targets": ["vacuum"]},
-    "return_to_base": {"icon": "mdi:home", "targets": ["vacuum"]},
-    "press": {"icon": "mdi:gesture-tap-button", "targets": ["button"]},
-    "set_value": {"icon": "mdi:numeric", "targets": ["input_number", "number"]},
-    "select_option": {"icon": "mdi:form-select", "targets": ["input_select", "select"]},
-    "activate": {"icon": "mdi:play-circle", "targets": ["scene"]},
-    "trigger": {"icon": "mdi:play", "targets": ["automation"]},
-    "reload": {"icon": "mdi:reload", "targets": ["automation", "script", "scene"]},
+_SERVICE_METADATA: dict[str, dict[str, Any]] = {
+    "turn_on":             {"icon": "mdi:power-on",              "targets": ["light", "switch", "fan", "media_player", "input_boolean", "automation", "camera"]},
+    "turn_off":            {"icon": "mdi:power-off",             "targets": ["light", "switch", "fan", "media_player", "input_boolean", "automation", "camera"]},
+    "toggle":              {"icon": "mdi:toggle-switch",         "targets": ["light", "switch", "fan", "input_boolean"]},
+    "lock":                {"icon": "mdi:lock",                  "targets": ["lock"]},
+    "unlock":              {"icon": "mdi:lock-open",             "targets": ["lock"]},
+    "open_cover":          {"icon": "mdi:arrow-up-box",         "targets": ["cover"]},
+    "close_cover":         {"icon": "mdi:arrow-down-box",       "targets": ["cover"]},
+    "stop_cover":          {"icon": "mdi:stop",                  "targets": ["cover"]},
+    "set_cover_position":  {"icon": "mdi:arrow-expand-vertical", "targets": ["cover"]},
+    "set_temperature":     {"icon": "mdi:thermometer",           "targets": ["climate", "water_heater"]},
+    "set_hvac_mode":       {"icon": "mdi:hvac",                  "targets": ["climate"]},
+    "media_play":          {"icon": "mdi:play",                  "targets": ["media_player"]},
+    "media_pause":         {"icon": "mdi:pause",                 "targets": ["media_player"]},
+    "media_stop":          {"icon": "mdi:stop",                  "targets": ["media_player"]},
+    "volume_up":           {"icon": "mdi:volume-plus",           "targets": ["media_player"]},
+    "volume_down":         {"icon": "mdi:volume-minus",          "targets": ["media_player"]},
+    "volume_set":          {"icon": "mdi:volume-high",           "targets": ["media_player"]},
+    "select_source":       {"icon": "mdi:video-input-component", "targets": ["media_player"]},
+    "start":               {"icon": "mdi:play",                  "targets": ["vacuum", "script"]},
+    "pause":               {"icon": "mdi:pause",                 "targets": ["vacuum"]},
+    "return_to_base":      {"icon": "mdi:home",                  "targets": ["vacuum"]},
+    "press":               {"icon": "mdi:gesture-tap-button",    "targets": ["button"]},
+    "set_value":           {"icon": "mdi:numeric",               "targets": ["input_number", "number"]},
+    "select_option":       {"icon": "mdi:form-select",           "targets": ["input_select", "select"]},
+    "activate":            {"icon": "mdi:play-circle",           "targets": ["scene"]},
+    "trigger":             {"icon": "mdi:play",                  "targets": ["automation"]},
+    "reload":              {"icon": "mdi:reload",                "targets": ["automation", "script", "scene"]},
 }
 
-CONF_DEVICES = "devices"
-CONF_ESPHOME_DEVICE = "esphome_device"
-CONF_DEFAULT_SEVERITY = "default_severity"
-CONF_TODO_ENTITY = "todo_entity"
-CONF_TODO_ENTITIES = "todo_entities"
-
-# Device configuration schema (for YAML setup)
-DEVICE_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_NAME): cv.string,
-        vol.Required(CONF_ESPHOME_DEVICE): cv.string,
-        vol.Optional(CONF_DEFAULT_SEVERITY, default="info"): vol.In(
-            ["info", "warn", "alert", "question"]
-        ),
-        vol.Optional(CONF_TODO_ENTITY): cv.entity_id,
-        vol.Optional(CONF_TODO_ENTITIES, default=[]): vol.All(
-            cv.ensure_list, [cv.entity_id]
-        ),
-    }
-)
-
-# Integration configuration schema (for YAML setup)
-CONFIG_SCHEMA = vol.Schema(
-    {
-        DOMAIN: vol.Schema(
-            {
-                vol.Required(CONF_DEVICES): vol.All(cv.ensure_list, [DEVICE_SCHEMA]),
-            }
-        ),
-    },
-    extra=vol.ALLOW_EXTRA,
-)
-
-PLATFORMS = ["sensor"]
-
+# ── Metadata exporter (websocket) ──────────────────────────────────
 
 class MetadataExporter:
-    """Helper class to export Home Assistant metadata."""
+    """Gathers HA metadata for the visual editor panel."""
 
     def __init__(self, hass: HomeAssistant) -> None:
-        """Initialize the exporter."""
         self.hass = hass
         self._entity_registry: er.EntityRegistry | None = None
         self._area_registry: ar.AreaRegistry | None = None
         self._device_registry: dr.DeviceRegistry | None = None
-        self._area_lookup: dict[str, str] = {}  # entity_id -> area_name
+        self._area_lookup: dict[str, str] = {}
 
     async def async_gather_all(self) -> dict[str, Any]:
-        """Gather all metadata asynchronously."""
-        # Load registries
         self._entity_registry = er.async_get(self.hass)
         self._area_registry = ar.async_get(self.hass)
         self._device_registry = dr.async_get(self.hass)
-
-        # Build entity -> area lookup
         self._build_area_lookup()
-
         return {
-            "version": METADATA_VERSION,
+            "version": _METADATA_VERSION,
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "entities": self._gather_entities(),
             "services": self._gather_services(),
@@ -225,208 +138,137 @@ class MetadataExporter:
         }
 
     def _build_area_lookup(self) -> None:
-        """Build a lookup from entity_id to area name."""
-        if (
-            not self._entity_registry
-            or not self._area_registry
-            or not self._device_registry
-        ):
+        if not self._entity_registry or not self._area_registry or not self._device_registry:
             return
-
         for entity in self._entity_registry.entities.values():
             area_name = None
-
-            # First check if entity has direct area assignment
             if entity.area_id:
                 area = self._area_registry.async_get_area(entity.area_id)
                 if area:
                     area_name = area.name
-            # Otherwise check if device has area assignment
             elif entity.device_id:
                 device = self._device_registry.async_get(entity.device_id)
                 if device and device.area_id:
                     area = self._area_registry.async_get_area(device.area_id)
                     if area:
                         area_name = area.name
-
             if area_name:
                 self._area_lookup[entity.entity_id] = area_name
 
     def _gather_entities(self) -> list[dict[str, Any]]:
-        """Gather entity metadata with privacy filtering and enhanced data."""
         entities = []
-
         for state in self.hass.states.async_all():
             entity_id = state.entity_id
             domain = entity_id.split(".")[0]
-
-            # Filter out sensitive attributes
-            safe_attributes = [
-                attr
-                for attr in state.attributes.keys()
-                if attr.lower() not in SENSITIVE_ATTRIBUTES
-                and not any(s in attr.lower() for s in SENSITIVE_ATTRIBUTES)
+            safe_attrs = [
+                a for a in state.attributes
+                if a.lower() not in _SENSITIVE_ATTRIBUTES
+                and not any(s in a.lower() for s in _SENSITIVE_ATTRIBUTES)
             ]
-
-            entity_data: dict[str, Any] = {
+            data: dict[str, Any] = {
                 "entity_id": entity_id,
                 "domain": domain,
                 "name": state.attributes.get("friendly_name", entity_id),
                 "state": state.state,
-                "attributes": safe_attributes,
-                "last_changed": state.last_changed.isoformat()
-                if state.last_changed
-                else None,
-                "last_updated": state.last_updated.isoformat()
-                if state.last_updated
-                else None,
+                "attributes": safe_attrs,
+                "last_changed": state.last_changed.isoformat() if state.last_changed else None,
+                "last_updated": state.last_updated.isoformat() if state.last_updated else None,
             }
-
-            # Attempt to add numeric value for conditional rendering
             try:
                 if state.state not in ("unknown", "unavailable"):
-                    entity_data["numeric_state"] = float(state.state)
+                    data["numeric_state"] = float(state.state)
             except (ValueError, TypeError):
                 pass
-
-            # Add optional metadata if present
-            if device_class := state.attributes.get("device_class"):
-                entity_data["device_class"] = device_class
+            if dc := state.attributes.get("device_class"):
+                data["device_class"] = dc
             if unit := state.attributes.get("unit_of_measurement"):
-                entity_data["unit"] = unit
-
-            # Enhanced metadata: icon
+                data["unit"] = unit
             if icon := state.attributes.get("icon"):
-                entity_data["icon"] = icon
-
-            # Enhanced metadata: area (from lookup)
+                data["icon"] = icon
             if area := self._area_lookup.get(entity_id):
-                entity_data["area"] = area
-
-            # Enhanced metadata: device_id (for linking to devices)
+                data["area"] = area
             if self._entity_registry:
-                entity_entry = self._entity_registry.async_get(entity_id)
-                if entity_entry and entity_entry.device_id:
-                    entity_data["device_id"] = entity_entry.device_id
-
-            # Enhanced metadata: suggested actions (domain-based)
-            if domain in DOMAIN_ACTIONS:
-                entity_data["suggested_actions"] = DOMAIN_ACTIONS[domain]
-
-            # Enhanced metadata: state options (domain-based)
-            if domain in DOMAIN_STATE_OPTIONS:
-                entity_data["state_options"] = DOMAIN_STATE_OPTIONS[domain]
-
-            # Dynamic state options from attributes (overrides domain defaults)
+                entry = self._entity_registry.async_get(entity_id)
+                if entry and entry.device_id:
+                    data["device_id"] = entry.device_id
+            if domain in _DOMAIN_ACTIONS:
+                data["suggested_actions"] = _DOMAIN_ACTIONS[domain]
+            if domain in _DOMAIN_STATE_OPTIONS:
+                data["state_options"] = _DOMAIN_STATE_OPTIONS[domain]
             if options := state.attributes.get("options"):
-                entity_data["state_options"] = options
+                data["state_options"] = options
             elif hvac_modes := state.attributes.get("hvac_modes"):
-                entity_data["state_options"] = hvac_modes
+                data["state_options"] = hvac_modes
             elif preset_modes := state.attributes.get("preset_modes"):
-                # Preset modes might be secondary, but useful if primary state options aren't clear
-                if "state_options" not in entity_data:
-                    entity_data["state_options"] = preset_modes
-
-            # Sensor-specific metadata
+                if "state_options" not in data:
+                    data["state_options"] = preset_modes
             if domain == "sensor":
-                if state_class := state.attributes.get("state_class"):
-                    entity_data["state_class"] = state_class
-
-                # Infer suggested display type from device_class
-                if device_class and device_class in SENSOR_DISPLAY_TYPES:
-                    entity_data["suggested_display"] = SENSOR_DISPLAY_TYPES[
-                        device_class
-                    ]
-                elif state_class == "measurement":
-                    entity_data["suggested_display"] = "gauge"
-                elif state_class == "total_increasing":
-                    entity_data["suggested_display"] = "graph"
+                if sc := state.attributes.get("state_class"):
+                    data["state_class"] = sc
+                dc = state.attributes.get("device_class")
+                if dc and dc in _SENSOR_DISPLAY_TYPES:
+                    data["suggested_display"] = _SENSOR_DISPLAY_TYPES[dc]
+                elif state.attributes.get("state_class") == "measurement":
+                    data["suggested_display"] = "gauge"
+                elif state.attributes.get("state_class") == "total_increasing":
+                    data["suggested_display"] = "graph"
                 else:
-                    entity_data["suggested_display"] = "value"
-
-            entities.append(entity_data)
-
+                    data["suggested_display"] = "value"
+            entities.append(data)
         return entities
 
     def _gather_services(self) -> dict[str, dict[str, Any]]:
-        """Gather service metadata with enhanced information."""
         services: dict[str, dict[str, Any]] = {}
-
         for domain, domain_services in self.hass.services.async_services().items():
             services[domain] = {}
-
-            for service_name, service_info in domain_services.items():
-                # Generate friendly name from snake_case
-                friendly_name = service_name.replace("_", " ").title()
-
-                service_data: dict[str, Any] = {
-                    "name": service_name,
-                    "friendly_name": friendly_name,
+            for sname, sinfo in domain_services.items():
+                sd: dict[str, Any] = {
+                    "name": sname,
+                    "friendly_name": sname.replace("_", " ").title(),
                 }
-
-                # Add icon and common targets from SERVICE_METADATA if available
-                if service_name in SERVICE_METADATA:
-                    meta = SERVICE_METADATA[service_name]
+                if sname in _SERVICE_METADATA:
+                    meta = _SERVICE_METADATA[sname]
                     if "icon" in meta:
-                        service_data["icon"] = meta["icon"]
+                        sd["icon"] = meta["icon"]
                     if "targets" in meta:
-                        service_data["common_targets"] = meta["targets"]
-
-                # Try to get schema if available (structure varies by HA version)
-                schema = getattr(service_info, "schema", None)
+                        sd["common_targets"] = meta["targets"]
+                schema = getattr(sinfo, "schema", None)
                 if schema:
-                    fields = self._extract_fields_from_schema(schema)
+                    fields = self._extract_fields(schema)
                     if fields:
-                        service_data["fields"] = fields
-
-                services[domain][service_name] = service_data
-
+                        sd["fields"] = fields
+                services[domain][sname] = sd
         return services
 
-    def _extract_fields_from_schema(
-        self, schema: vol.Schema
-    ) -> dict[str, dict[str, Any]]:
-        """Extract field metadata from a voluptuous schema."""
+    @staticmethod
+    def _extract_fields(schema: vol.Schema) -> dict[str, dict[str, Any]]:
         fields: dict[str, dict[str, Any]] = {}
-
         if not hasattr(schema, "schema"):
             return fields
-
-        schema_dict = schema.schema
-        if not isinstance(schema_dict, dict):
+        sd = schema.schema
+        if not isinstance(sd, dict):
             return fields
-
-        for key, validator in schema_dict.items():
-            field_name = str(key)
-            if hasattr(key, "schema"):
-                field_name = str(key.schema)
-
-            field_info: dict[str, Any] = {"name": field_name}
-
-            # Determine if field is required
+        for key, validator in sd.items():
+            fname = str(key.schema) if hasattr(key, "schema") else str(key)
+            info: dict[str, Any] = {"name": fname}
             if isinstance(key, vol.Required):
-                field_info["required"] = True
+                info["required"] = True
             elif isinstance(key, vol.Optional):
-                field_info["required"] = False
-                # Only include default if it's JSON-serializable (not a function)
+                info["required"] = False
                 if key.default is not vol.UNDEFINED and not callable(key.default):
                     try:
-                        json.dumps(key.default)  # Test if serializable
-                        field_info["default"] = key.default
+                        json.dumps(key.default)
+                        info["default"] = key.default
                     except (TypeError, ValueError):
-                        pass  # Skip non-serializable defaults
-
-            # Extract selector info from validator if possible
-            selector = self._infer_selector(validator)
+                        pass
+            selector = MetadataExporter._infer_selector(validator)
             if selector:
-                field_info["selector"] = selector
-
-            fields[field_name] = field_info
-
+                info["selector"] = selector
+            fields[fname] = info
         return fields
 
-    def _infer_selector(self, validator: Any) -> dict[str, Any] | None:
-        """Infer selector type from validator."""
+    @staticmethod
+    def _infer_selector(validator: Any) -> dict[str, Any] | None:
         if validator is cv.string or validator is str:
             return {"text": {}}
         if validator is cv.boolean or validator is bool:
@@ -440,75 +282,51 @@ class MetadataExporter:
         return None
 
     def _gather_areas(self) -> list[dict[str, Any]]:
-        """Gather area metadata."""
         areas = []
-
         if not self._area_registry:
             return areas
-
         for area in self._area_registry.async_list_areas():
-            area_data: dict[str, Any] = {
-                "id": area.id,
-                "name": area.name,
-            }
-
+            ad: dict[str, Any] = {"id": area.id, "name": area.name}
             if area.icon:
-                area_data["icon"] = area.icon
-
-            # Count entities and devices in this area
-            entity_count = sum(
-                1 for entity_id, area_name in self._area_lookup.items()
-                if area_name == area.name
-            )
-            if entity_count:
-                area_data["entity_count"] = entity_count
-
-            areas.append(area_data)
-
+                ad["icon"] = area.icon
+            count = sum(1 for aname in self._area_lookup.values() if aname == area.name)
+            if count:
+                ad["entity_count"] = count
+            areas.append(ad)
         return areas
 
     async def _gather_devices(self) -> list[dict[str, Any]]:
-        """Gather device metadata."""
         devices = []
-        device_registry = dr.async_get(self.hass)
-
-        for device in device_registry.devices.values():
+        registry = dr.async_get(self.hass)
+        for device in registry.devices.values():
             if device.disabled:
                 continue
-
-            device_data: dict[str, Any] = {
+            dd: dict[str, Any] = {
                 "id": device.id,
                 "name": device.name or device.id,
                 "friendly_name": device.name_by_user or device.name or device.id,
             }
-
             if device.area_id:
-                device_data["area_id"] = device.area_id
-                # Also resolve the area name
+                dd["area_id"] = device.area_id
                 if self._area_registry:
                     area = self._area_registry.async_get_area(device.area_id)
                     if area:
-                        device_data["area_name"] = area.name
-
+                        dd["area_name"] = area.name
             if device.manufacturer:
-                device_data["manufacturer"] = device.manufacturer
+                dd["manufacturer"] = device.manufacturer
             if device.model:
-                device_data["model"] = device.model
+                dd["model"] = device.model
             if device.sw_version:
-                device_data["sw_version"] = device.sw_version
-
-            # Get entity IDs belonging to this device
+                dd["sw_version"] = device.sw_version
             if self._entity_registry:
-                entity_ids = [
+                eids = [
                     entry.entity_id
                     for entry in self._entity_registry.entities.values()
                     if entry.device_id == device.id and not entry.disabled
                 ]
-                if entity_ids:
-                    device_data["entity_ids"] = entity_ids
-
-            devices.append(device_data)
-
+                if eids:
+                    dd["entity_ids"] = eids
+            devices.append(dd)
         return devices
 
 
@@ -525,65 +343,98 @@ async def websocket_export_metadata(
     connection.send_result(msg["id"], metadata)
 
 
-async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
-    """Set up the ESPHome Display integration from YAML."""
-    if DOMAIN not in hass.data:
-        hass.data[DOMAIN] = {"devices": {}, "http_registered": False}
+# ── complete_item service ──────────────────────────────────────────
 
-    # Register HTTP views and panel (only once)
-    if not hass.data[DOMAIN].get("http_registered"):
-        # Register websocket command
-        websocket_api.async_register_command(hass, websocket_export_metadata)
+COMPLETE_ITEM_SCHEMA = vol.Schema(
+    {
+        vol.Required("item"): cv.string,
+        vol.Optional("status", default="completed"): vol.In(
+            ["completed", "needs_action"]
+        ),
+    }
+)
 
-        # Register panel
-        await async_register_panel(hass)
 
-        hass.data[DOMAIN]["http_registered"] = True
-        _LOGGER.debug("Registered metadata export websocket command and panel")
+async def _handle_complete_item(service: cv.ServiceCall) -> None:
+    """Mark a to-do item as complete on the source todo list.
 
-    if DOMAIN not in config:
-        return True
+    The target entity must be a :class:`TodoBridgeSensor` (exposes the
+    ``entity_id`` attribute pointing at the real todo list entity).
+    """
+    hass = service.hass
+    entity_id = service.data.get("entity_id")
+    item = service.data.get("item")
+    status = service.data.get("status", "completed")
 
-    # Load devices from YAML configuration
-    conf = config[DOMAIN]
-    for device in conf.get(CONF_DEVICES, []):
-        device_name = device[CONF_NAME]
-        hass.data[DOMAIN]["devices"][device_name] = device
+    if not entity_id:
+        _LOGGER.error("complete_item: no target entity_id provided")
+        return
 
-    _LOGGER.info(
-        f"ESPHome Display: Loaded {len(hass.data[DOMAIN]['devices'])} device(s) from YAML"
+    state = hass.states.get(entity_id)
+    if state is None:
+        _LOGGER.error("complete_item: entity %s not found", entity_id)
+        return
+
+    todo_entity = state.attributes.get("entity_id")
+    if not todo_entity:
+        _LOGGER.error(
+            "complete_item: entity %s has no 'entity_id' attribute — "
+            "not a TodoBridgeSensor",
+            entity_id,
+        )
+        return
+
+    await hass.services.async_call(
+        "todo",
+        "update_item",
+        {
+            "entity_id": todo_entity,
+            "item": item,
+            "status": status,
+        },
+        blocking=True,
     )
 
-    # Auto-create notification overlay helper entities
-    await async_ensure_notification_entities(hass)
+    _LOGGER.info(
+        "complete_item: marked '%s' as %s on %s", item, status, todo_entity
+    )
 
-    return True
+
+def _register_services(hass: HomeAssistant) -> None:
+    """Register integration services (idempotent)."""
+    if hass.services.has_service(DOMAIN, "complete_item"):
+        return
+    hass.services.async_register(
+        DOMAIN, "complete_item", _handle_complete_item, schema=COMPLETE_ITEM_SCHEMA,
+    )
+
+
+def _unregister_services(hass: HomeAssistant) -> None:
+    """Remove integration services."""
+    for name in ("complete_item",):
+        if hass.services.has_service(DOMAIN, name):
+            hass.services.async_remove(DOMAIN, name)
+
+
+# ── setup / teardown ───────────────────────────────────────────────
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up from a config entry."""
     if DOMAIN not in hass.data:
-        hass.data[DOMAIN] = {"devices": {}, "http_registered": False}
+        hass.data[DOMAIN] = {"http_registered": False}
 
-    # Register HTTP views and panel (only once)
+    # One-time infrastructure: websocket + panel
     if not hass.data[DOMAIN].get("http_registered"):
-        # Register websocket command
         websocket_api.async_register_command(hass, websocket_export_metadata)
-
+        await async_register_panel(hass)
         hass.data[DOMAIN]["http_registered"] = True
-        _LOGGER.debug("Registered metadata export websocket command")
 
-    # Load devices from config entry
-    devices = entry.data.get(CONF_DEVICES, {})
-    for device_name, device_config in devices.items():
-        hass.data[DOMAIN]["devices"][device_name] = device_config
+    _register_services(hass)
 
-    _LOGGER.info(f"ESPHome Display: Loaded {len(devices)} device(s) from config entry")
+    if entry.data.get(CONF_NOTIFICATIONS, True):
+        await async_ensure_notification_entities(hass)
 
-    # Auto-create notification overlay helper entities
-    await async_ensure_notification_entities(hass)
-
-    # Setup sensor platform for to-do bridge
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
@@ -592,8 +443,39 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-
-    # Remove panel
     async_unregister_panel(hass)
+    _unregister_services(hass)
+    return True
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrate config entry from version 1 (devices dict) to version 2 (flat)."""
+    if entry.version == 1:
+        devices = entry.data.get(CONF_DEVICES, {})
+
+        todo_entities: list[str] = []
+        for device_config in devices.values():
+            for eid in device_config.get("todo_entities", []):
+                if eid not in todo_entities:
+                    todo_entities.append(eid)
+            single = device_config.get("todo_entity")
+            if single and single not in todo_entities:
+                todo_entities.append(single)
+
+        first_device = next(iter(devices.values()), {})
+        default_severity = first_device.get("default_severity", "info")
+
+        hass.config_entries.async_update_entry(
+            entry,
+            data={
+                "notifications": True,
+                "default_severity": default_severity,
+                "todo_entities": todo_entities,
+            },
+            version=2,
+        )
+        _LOGGER.info(
+            "Migrated config entry to v2 (todo_entities=%s)", todo_entities
+        )
 
     return True

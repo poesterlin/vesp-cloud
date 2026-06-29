@@ -1,4 +1,4 @@
-"""To-Do Bridge Sensor - Translates HA To-Do API to PSV format for ESP32 display."""
+"""TodoBridgeSensor — converts HA todo lists to PSV format for ESPHome displays."""
 
 import logging
 from datetime import datetime
@@ -20,79 +20,29 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up To-Do bridge sensors from a config entry."""
-    if DOMAIN not in hass.data:
+    """Set up TodoBridgeSensors from a config entry."""
+    todo_entities: list[str] = entry.data.get("todo_entities", [])
+    if not todo_entities:
         return
 
     entities = []
-    # In config flow, devices are stored in entry.data["devices"]
-    devices = entry.data.get("devices", {})
+    for eid in todo_entities:
+        name = _sensor_name(hass, eid)
+        uid = f"esphome_display_todo_{eid.replace('.', '_')}"
+        entities.append(TodoBridgeSensor(hass, name, uid, eid))
 
-    for device_name, device_config in devices.items():
-        todo_entities = _get_todo_entities(device_config)
-        for i, todo_entity in enumerate(todo_entities):
-            entities.append(_create_sensor(
-                hass, device_name, todo_entity,
-                is_multi=len(todo_entities) > 1,
-                index=i,
-            ))
-
-    if entities:
-        async_add_entities(entities)
+    async_add_entities(entities)
 
 
-async def async_setup_platform(
-    hass: HomeAssistant,
-    config: dict,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info: dict = None,
-) -> None:
-    """Set up To-Do bridge sensors from YAML."""
-    if DOMAIN not in hass.data:
-        return
-
-    entities = []
-    for device_name, device_config in hass.data[DOMAIN].get("devices", {}).items():
-        todo_entities = _get_todo_entities(device_config)
-        for i, todo_entity in enumerate(todo_entities):
-            entities.append(_create_sensor(
-                hass, device_name, todo_entity,
-                is_multi=len(todo_entities) > 1,
-                index=i,
-            ))
-
-    if entities:
-        async_add_entities(entities)
-
-
-def _get_todo_entities(device_config: dict) -> list[str]:
-    """Extract todo entities from device config with backward compat."""
-    todo_list = list(device_config.get("todo_entities", []))
-    single = device_config.get("todo_entity")
-    if single and single not in todo_list:
-        todo_list.append(single)
-    return [e for e in todo_list if e]
-
-
-def _create_sensor(
-    hass: HomeAssistant,
-    device_name: str,
-    todo_entity: str,
-    is_multi: bool = False,
-    index: int = 0,
-) -> "TodoBridgeSensor":
-    """Create a TodoBridgeSensor with appropriate unique ID and name."""
-    if is_multi:
-        unique_id = f"esphome_display_todo_{device_name}_{index}"
-        name = f"{device_name} To-Do Items ({index + 1})"
-    else:
-        unique_id = f"esphome_display_todo_{device_name}"
-        name = f"{device_name} To-Do Items"
-    return TodoBridgeSensor(hass, name, unique_id, todo_entity)
+def _sensor_name(hass: HomeAssistant, entity_id: str) -> str:
+    """Derive a human-readable sensor name from the todo entity."""
+    state = hass.states.get(entity_id)
+    friendly = state.attributes.get("friendly_name") if state else None
+    return f"To-Do: {friendly}" if friendly else f"To-Do Bridge: {entity_id}"
 
 
 class TodoBridgeSensor(SensorEntity):
-    """Sensor that bridges Home Assistant To-Do to ESPHome display."""
+    """Sensor that bridges Home Assistant To-Do lists to ESPHome."""
 
     def __init__(
         self,
@@ -103,21 +53,18 @@ class TodoBridgeSensor(SensorEntity):
     ):
         """Initialize the sensor."""
         self.hass = hass
-        self._device_name = name
         self._todo_entity_id = todo_entity_id
 
-        # Entity metadata
         self._attr_name = name
         self._attr_unique_id = unique_id
         self._attr_icon = "mdi:clipboard-list"
 
-        # State
         self._items_formatted = ""
         self._count = 0
-        self._last_update = None
+        self._last_update: datetime | None = None
 
     async def async_added_to_hass(self) -> None:
-        """Set up listeners when added to Home Assistant."""
+        """Subscribe to source todo entity changes."""
         self.async_on_remove(
             async_track_state_change_event(
                 self.hass,
@@ -129,18 +76,16 @@ class TodoBridgeSensor(SensorEntity):
 
     @callback
     async def _on_todo_changed(self, event) -> None:
-        """Handle to-do entity state change event."""
+        """Handle todo entity state change."""
         await self._update_items()
 
     async def _update_items(self) -> None:
-        """Fetch to-do items from service and format as PSV."""
+        """Fetch pending items and format as PSV."""
         try:
             response = await self.hass.services.async_call(
                 "todo",
                 "get_items",
-                {
-                    "status": ["needs_action"],
-                },
+                {"status": ["needs_action"]},
                 target={"entity_id": self._todo_entity_id},
                 blocking=True,
                 return_response=True,
@@ -162,7 +107,9 @@ class TodoBridgeSensor(SensorEntity):
                             hour=0, minute=0, second=0, microsecond=0
                         )
                         if (
-                            due_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                            due_date.replace(
+                                hour=0, minute=0, second=0, microsecond=0
+                            )
                             < today
                         ):
                             status = "overdue"
@@ -180,7 +127,7 @@ class TodoBridgeSensor(SensorEntity):
 
         except Exception as err:
             _LOGGER.error(
-                f"Error fetching to-do items from {self._todo_entity_id}: {err}"
+                "Error fetching items from %s: %s", self._todo_entity_id, err
             )
             self._items_formatted = ""
             self._count = 0
@@ -188,15 +135,17 @@ class TodoBridgeSensor(SensorEntity):
 
     @property
     def state(self) -> str | None:
-        """Return the state (number of pending items)."""
+        """Return count of pending items."""
         return str(self._count) if self._count is not None else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return sensor attributes."""
+        """Extra attributes consumed by ESPHome text sensors."""
         return {
             "all_items": self._items_formatted,
             "count": self._count,
             "entity_id": self._todo_entity_id,
-            "last_update": self._last_update.isoformat() if self._last_update else None,
+            "last_update": (
+                self._last_update.isoformat() if self._last_update else None
+            ),
         }

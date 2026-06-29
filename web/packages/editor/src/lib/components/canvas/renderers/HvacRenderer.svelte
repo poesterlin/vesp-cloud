@@ -19,9 +19,6 @@
   const textWhite = "rgb(230, 240, 250)";
   const cornerSize = 6;
 
-  const width = $derived(component.size?.width ?? 150);
-  const height = $derived(component.size?.height ?? 105);
-
   function clippedPolygonPoints(w: number, h: number, c: number): string {
     return `${c},0 ${w - c},0 ${w},${c} ${w},${h - c} ${w - c},${h} ${c},${h} 0,${h - c} 0,${c}`;
   }

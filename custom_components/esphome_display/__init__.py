@@ -347,7 +347,8 @@ async def websocket_export_metadata(
 
 COMPLETE_ITEM_SCHEMA = vol.Schema(
     {
-        vol.Required("item"): cv.string,
+        vol.Required("entity_id"): cv.entity_id,
+        vol.Required("index"): vol.All(vol.Coerce(int), vol.Range(min=0)),
         vol.Optional("status", default="completed"): vol.In(
             ["completed", "needs_action"]
         ),
@@ -360,18 +361,20 @@ async def _handle_complete_item(service: cv.ServiceCall) -> None:
 
     The target entity must be a :class:`TodoBridgeSensor` (exposes the
     ``entity_id`` attribute pointing at the real todo list entity).
+    The item is identified by its 0-based index in the bridge sensor's
+    pending-items list (same order as ``all_items`` attribute lines).
     """
     hass = service.hass
     entity_id = service.data.get("entity_id")
-    # When services.yaml declares a target.entity, HA may strip entity_id
-    # from data and put it in the service target instead.
-    if not entity_id and service.target:
-        entity_id = service.target.get("entity_id")
-    item = service.data.get("item")
+    index = service.data.get("index")
     status = service.data.get("status", "completed")
 
     if not entity_id:
         _LOGGER.error("complete_item: no target entity_id provided")
+        return
+
+    if index is None:
+        _LOGGER.error("complete_item: no index provided")
         return
 
     state = hass.states.get(entity_id)
@@ -388,19 +391,43 @@ async def _handle_complete_item(service: cv.ServiceCall) -> None:
         )
         return
 
+    # Fetch the pending items so we can resolve the index to the
+    # actual item summary that todo.update_item needs.
+    try:
+        response = await hass.services.async_call(
+            "todo",
+            "get_items",
+            {"status": ["needs_action"]},
+            target={"entity_id": todo_entity},
+            blocking=True,
+            return_response=True,
+        )
+        items = response.get(todo_entity, {}).get("items", [])
+    except Exception:
+        _LOGGER.exception("complete_item: failed to fetch items from %s", todo_entity)
+        return
+
+    if index < 0 or index >= len(items):
+        _LOGGER.error(
+            "complete_item: index %d out of range (%d items)", index, len(items)
+        )
+        return
+
+    summary = items[index].get("summary", "")
     await hass.services.async_call(
         "todo",
         "update_item",
         {
             "entity_id": todo_entity,
-            "item": item,
+            "item": summary,
             "status": status,
         },
         blocking=True,
     )
 
     _LOGGER.info(
-        "complete_item: marked '%s' as %s on %s", item, status, todo_entity
+        "complete_item: marked '%s' (index %d) as %s on %s",
+        summary, index, status, todo_entity,
     )
 
 

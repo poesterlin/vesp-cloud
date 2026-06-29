@@ -1,17 +1,24 @@
 complete_item:
   name: Complete To-Do Item
   description: Mark a to-do item as complete on the source todo list.
-  target:
-    entity:
-      domain: sensor
   fields:
-    item:
-      name: Item Summary
-      description: The summary text of the item to complete (exact match).
+    entity_id:
+      name: Bridge Sensor
+      description: The TodoBridgeSensor entity to route the completion through.
       required: true
-      example: "Buy milk"
+      example: sensor.esphome_display_todo_shopping
       selector:
-        text: {}
+        entity:
+          domain: sensor
+    index:
+      name: Item Index
+      description: The 0-based index of the item in the bridge sensor's list.
+      required: true
+      example: 0
+      selector:
+        number:
+          min: 0
+          mode: box
     status:
       name: Status
       description: Target status for the item.

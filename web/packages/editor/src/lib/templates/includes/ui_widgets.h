@@ -1030,9 +1030,9 @@ class TodoPreviewWidget : public Widget {
       row.loading_start = now;
       mark_dirty();
       if (!row.completed) {
-        push_complete_to_ha(row.summary);
+        push_complete_to_ha(idx);
       } else {
-        push_needs_action_to_ha(row.summary);
+        push_needs_action_to_ha(idx);
       }
       return true;
     }
@@ -1286,7 +1286,10 @@ class TodoPreviewWidget : public Widget {
     }
   }
 
-  void push_todo_status(const std::string &summary, const char *status) {
+  void push_todo_status(int index, const char *status) {
+    if (index < 0 || index >= static_cast<int>(rows_.size())) return;
+    const std::string &summary = rows_[index].summary;
+
     auto *api = esphome::api::global_api_server;
     if (api == nullptr || !api->is_connected()) return;
 
@@ -1299,7 +1302,9 @@ class TodoPreviewWidget : public Widget {
       const bool non_default = (status != nullptr && strcmp(status, "completed") != 0);
       call.init_data(non_default ? 3 : 2);
       call.add_data("entity_id", bridge_entity_);
-      call.add_data("item", summary);
+      char idx_buf[12];
+      snprintf(idx_buf, sizeof(idx_buf), "%d", index);
+      call.add_data("index", idx_buf);
       if (non_default) {
         call.add_data("status", status);
       }
@@ -1317,12 +1322,12 @@ class TodoPreviewWidget : public Widget {
     call.play();
   }
 
-  void push_complete_to_ha(const std::string &summary) {
-    push_todo_status(summary, "completed");
+  void push_complete_to_ha(int index) {
+    push_todo_status(index, "completed");
   }
 
-  void push_needs_action_to_ha(const std::string &summary) {
-    push_todo_status(summary, "needs_action");
+  void push_needs_action_to_ha(int index) {
+    push_todo_status(index, "needs_action");
   }
 
   UiRect rect_;

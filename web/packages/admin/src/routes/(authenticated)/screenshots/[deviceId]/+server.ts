@@ -6,7 +6,6 @@ import { getScreenshotBuffer } from "$lib/server/s3";
 const SCREENSHOT_DEBUG_ENABLED =
   env.SCREENSHOT_DEBUG_ENABLED === "1" || env.SCREENSHOT_DEBUG_ENABLED === "true";
 
-// ---- PNG encoder -------------------------------------------------------------
 const CRC_TABLE: number[] = (() => {
   const t = new Array<number>(256);
   for (let n = 0; n < 256; n++) {
@@ -63,7 +62,7 @@ function rgb565ToRgb888(raw: Buffer, width: number, height: number): Buffer {
   const out = Buffer.alloc(width * height * 3);
   const len = Math.min(raw.length, width * height * 2);
   for (let i = 0, j = 0; i + 1 < len; i += 2, j += 3) {
-    const px = raw.readUInt16BE(i);   // ST7701S framebuffer uses big-endian RGB565
+    const px = raw.readUInt16BE(i);
     const r = (px >> 11) & 0x1f;
     const g = (px >> 5) & 0x3f;
     const b = px & 0x1f;
@@ -74,32 +73,19 @@ function rgb565ToRgb888(raw: Buffer, width: number, height: number): Buffer {
   return out;
 }
 
-// ---- Handler -----------------------------------------------------------------
-
-export const GET: RequestHandler = async ({ params, locals, url }) => {
+export const GET: RequestHandler = async ({ params, locals }) => {
   if (!locals.user) error(401);
   if (!SCREENSHOT_DEBUG_ENABLED) error(404);
 
-  const deviceId = params.deviceId;
-  if (!deviceId || !/^[a-z0-9_-]+$/i.test(deviceId)) error(400, "Invalid deviceId");
+  const name = params.deviceId;
+  if (!name || !/^[\w.-]+$/.test(name)) error(400, "Invalid filename");
 
-  const tsParam = url.searchParams.get("ts");
-  const timestamp = tsParam ? Number.parseInt(tsParam, 10) : undefined;
+  const rawBuf = await getScreenshotBuffer(name);
+  if (rawBuf == null) error(404);
 
-  const rawBuf = await getScreenshotBuffer(deviceId, Number.isFinite(timestamp as number) ? timestamp : undefined);
-  if (rawBuf == null) error(404, "No screenshot for this device");
-
-  const expectedBytes = 480 * 480 * 2;
-  if (rawBuf.length !== expectedBytes) {
-    error(409, `Screenshot size ${rawBuf.length} != expected ${expectedBytes}`);
-  }
   const rgb = rgb565ToRgb888(rawBuf, 480, 480);
   const png = await encodePng(rgb, 480, 480);
-
   return new Response(png as unknown as BodyInit, {
-    headers: {
-      "Content-Type": "image/png",
-      "Cache-Control": "no-store",
-    },
+    headers: { "Content-Type": "image/png", "Cache-Control": "no-store" },
   });
 };

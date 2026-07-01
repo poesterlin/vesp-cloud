@@ -13,7 +13,8 @@
   "dependencies": {
     "@esphome-designer/db": "workspace:*",
     "drizzle-orm": "^0.45.2",
-    "jose": "6.2.3"
+    "jose": "6.2.3",
+    "jszip": "3.10.1"
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^7.0.1",

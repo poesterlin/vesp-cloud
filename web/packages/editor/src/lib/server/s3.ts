@@ -145,75 +145,44 @@ export async function streamFirmware(jobId: string, headers: Record<string, stri
 }
 
 // ---- Screenshot debug storage -----------------------------------------------
-const SCREENSHOT_PREFIX = "screenshots";
+// Flat folder: screencaps/<name>.bin  +  screencaps/_list.txt (one name per line)
 
-function screenshotKey(deviceId: string, timestamp: number): string {
-  return `${SCREENSHOT_PREFIX}/${deviceId}/${timestamp}.bin`;
+const SCREENCAP_PREFIX = "screencaps";
+const SCREENCAP_LIST = `${SCREENCAP_PREFIX}/_list.txt`;
+
+function randomName(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.bin`;
 }
 
-function screenshotIndexKey(): string {
-  return `${SCREENSHOT_PREFIX}/_index.json`;
-}
-
-export async function uploadScreenshot(deviceId: string, data: Buffer): Promise<number> {
+export async function uploadScreenshot(data: Buffer): Promise<string> {
   const client = ensureS3();
-  const ts = Date.now();
-  await client.write(screenshotKey(deviceId, ts), data, { type: "application/octet-stream" });
-
-  try {
-    const indexFile = client.file(screenshotIndexKey());
-    let index: Record<string, Array<{ ts: number; size: number }>> = {};
-    try {
-      const buf = Buffer.from(await indexFile.arrayBuffer());
-      index = JSON.parse(buf.toString());
-    } catch {}
-    const entries = index[deviceId] ?? [];
-    entries.unshift({ ts, size: data.length });
-    index[deviceId] = entries;
-    await client.write(screenshotIndexKey(), JSON.stringify(index), { type: "application/json" });
-  } catch (e) {
-    console.error("Failed to update screenshot index:", e);
-  }
-  return ts;
+  const name = randomName();
+  const key = `${SCREENCAP_PREFIX}/${name}`;
+  await client.write(key, data, { type: "application/octet-stream" });
+  const list = (await readList()).concat(name);
+  await client.write(SCREENCAP_LIST, list.join("\n"), { type: "text/plain" });
+  return name;
 }
 
-export async function getScreenshotBuffer(deviceId: string, timestamp?: number): Promise<Buffer | null> {
-  const client = ensureS3();
-  let ts = timestamp;
-  if (ts == null) {
-    const indexFile = client.file(screenshotIndexKey());
-    try {
-      if (await indexFile.exists()) {
-        const buf = Buffer.from(await indexFile.arrayBuffer());
-        const index = JSON.parse(buf.toString()) as Record<string, Array<{ ts: number; size: number }>>;
-        const entries = index[deviceId];
-        if (entries && entries.length > 0) ts = entries[0].ts;
-      }
-    } catch {}
-  }
-  if (ts == null) return null;
-  const file = client.file(screenshotKey(deviceId, ts));
-  if (!(await file.exists())) return null;
-  return Buffer.from(await file.arrayBuffer());
-}
-
-export async function listScreenshotDevices(): Promise<
-  Array<{ deviceId: string; ts: number; size: number }>
-> {
+async function readList(): Promise<string[]> {
   const client = ensureS3();
   try {
-    const indexFile = client.file(screenshotIndexKey());
-    if (!(await indexFile.exists())) return [];
-    const buf = Buffer.from(await indexFile.arrayBuffer());
-    const index = JSON.parse(buf.toString()) as Record<string, Array<{ ts: number; size: number }>>;
-    const result: Array<{ deviceId: string; ts: number; size: number }> = [];
-    for (const [deviceId, entries] of Object.entries(index)) {
-      for (const e of entries) {
-        result.push({ deviceId, ts: e.ts, size: e.size });
-      }
-    }
-    return result;
+    const file = client.file(SCREENCAP_LIST);
+    if (!(await file.exists())) return [];
+    const text = Buffer.from(await file.arrayBuffer()).toString("utf-8").trim();
+    return text ? text.split("\n") : [];
   } catch {
     return [];
   }
+}
+
+export async function listScreenshots(): Promise<string[]> {
+  return (await readList()).reverse();
+}
+
+export async function getScreenshotBuffer(name: string): Promise<Buffer | null> {
+  const client = ensureS3();
+  const file = client.file(`${SCREENCAP_PREFIX}/${name}`);
+  if (!(await file.exists())) return null;
+  return Buffer.from(await file.arrayBuffer());
 }

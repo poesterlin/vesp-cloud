@@ -1,15 +1,12 @@
+import { error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import { error, json } from "@sveltejs/kit";
-import { isScreenshotDebugEnabled } from "$lib/codegen/screenshot-feature";
-import { uploadScreenshot, getScreenshotBuffer } from "$lib/server/s3";
+import { env } from "$env/dynamic/private";
+import { listScreenshots, getScreenshotBuffer } from "$lib/server/s3";
+import JSZip from "jszip";
 
-function safeDeviceId(raw: string | undefined): string {
-  if (!raw) error(400, "Missing deviceId");
-  if (!/^[a-z0-9_-]+$/i.test(raw)) error(400, "Invalid deviceId");
-  return raw;
-}
+const SCREENSHOT_DEBUG_ENABLED =
+  env.SCREENSHOT_DEBUG_ENABLED === "1" || env.SCREENSHOT_DEBUG_ENABLED === "true";
 
-// ---- PNG encoder -----------------------------------------------------------
 const CRC_TABLE: number[] = (() => {
   const t = new Array<number>(256);
   for (let n = 0; n < 256; n++) {
@@ -77,29 +74,29 @@ function rgb565ToRgb888(raw: Buffer, width: number, height: number): Buffer {
   return out;
 }
 
-export const POST: RequestHandler = async ({ params, request }) => {
-  if (!isScreenshotDebugEnabled()) error(404);
-  safeDeviceId(params.deviceId);
+export const GET: RequestHandler = async ({ locals }) => {
+  if (!locals.user) error(401);
+  if (!SCREENSHOT_DEBUG_ENABLED) error(404);
 
-  const body = Buffer.from(await request.arrayBuffer());
-  await uploadScreenshot(body);
-  return json({ ok: true, bytes: body.length });
-};
+  const names = await listScreenshots();
+  const zip = new JSZip();
 
-export const GET: RequestHandler = async ({ params }) => {
-  if (!isScreenshotDebugEnabled()) error(404);
-  safeDeviceId(params.deviceId);
+  for (const name of names) {
+    const raw = await getScreenshotBuffer(name);
+    if (raw == null || raw.length !== 480 * 480 * 2) continue;
+    const rgb = rgb565ToRgb888(raw, 480, 480);
+    const png = await encodePng(rgb, 480, 480);
+    zip.file(name.replace(/\.bin$/, ".png"), png);
+  }
 
-  const name = params.deviceId;
-  const rawBuf = await getScreenshotBuffer(name);
-  if (rawBuf == null) error(404, "No screenshot at this key");
+  if (Object.keys(zip.files).length === 0) error(404, "No screenshots");
 
-  const expected = 480 * 480 * 2;
-  if (rawBuf.length !== expected) error(409, `Size ${rawBuf.length} != ${expected}`);
-
-  const rgb = rgb565ToRgb888(rawBuf, 480, 480);
-  const png = await encodePng(rgb, 480, 480);
-  return new Response(png as unknown as BodyInit, {
-    headers: { "Content-Type": "image/png", "Cache-Control": "no-store" },
+  const buf = Buffer.from(await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+  return new Response(buf as unknown as BodyInit, {
+    headers: {
+      "Content-Type": "application/zip",
+      "Content-Disposition": "attachment; filename=screenshots.zip",
+      "Cache-Control": "no-store",
+    },
   });
 };

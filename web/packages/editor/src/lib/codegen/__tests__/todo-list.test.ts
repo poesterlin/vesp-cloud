@@ -76,6 +76,9 @@ describe("todo_list codegen", () => {
     const out = generateUIScreensHeader(project);
     expect(out).toContain(", 5, 28, true, true");
     expect(out).toContain('"todo.todo"');
+    // With todoEntityId set, the items var is derived from the todo entity,
+    // and bridgeEntity is empty (no longer using bind_ha_string_attr bridge).
+    expect(out).toContain("state.todo_todo_items.ptr()");
   });
 
   test("emits onTap callback for non-checkable todo list", () => {
@@ -188,5 +191,87 @@ describe("todo_list codegen", () => {
     const out = generateESPHomeYAML(project);
     expect(out).toContain("auto bind_ha_string_attr");
     expect(out).toContain('bind_ha_string_attr("sensor.esphome_todo_bridge", "all_items", &g_ui_app.state().sensor_esphome_todo_bridge_all_items);');
+  });
+
+  test("generates todo.get_items interval when todoEntityId is set", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "todos",
+              type: "todo_list",
+              position: { x: 0, y: 0 },
+              size: { width: 220, height: 140 },
+              todoEntityId: "todo.shopping_list",
+            },
+          ],
+        },
+      ],
+    });
+
+    const out = generateESPHomeYAML(project);
+    expect(out).toContain("todo.get_items");
+    expect(out).toContain('entity_id: "todo.shopping_list"');
+    expect(out).toContain("status: needs_action");
+    expect(out).toContain("todo_shopping_list_items");
+    // Should NOT contain the old bind_ha_string_attr pattern
+    expect(out).not.toContain("bind_ha_string_attr(");
+  });
+
+  test("adds todo items state var derived from todoEntityId", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "todos",
+              type: "todo_list",
+              position: { x: 0, y: 0 },
+              size: { width: 220, height: 140 },
+              todoEntityId: "todo.shopping_list",
+            },
+          ],
+        },
+      ],
+    });
+
+    const state = generateUIStateHeader(project);
+    expect(state).toContain("Observable<std::string> todo_shopping_list_items");
+    expect(state).toContain('{"LIST EMPTY"}');
+    // Should NOT contain the old bridge-sensor var name
+    expect(state).not.toContain("sensor_esphome_todo_bridge");
+  });
+
+  test("supports custom status filter via itemsBinding.attribute", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "todos",
+              type: "todo_list",
+              position: { x: 0, y: 0 },
+              size: { width: 220, height: 140 },
+              todoEntityId: "todo.chores",
+              itemsBinding: {
+                entityId: "todo.chores",
+                attribute: "completed",
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    const out = generateESPHomeYAML(project);
+    expect(out).toContain('entity_id: "todo.chores"');
+    expect(out).toContain("status: completed");
   });
 });

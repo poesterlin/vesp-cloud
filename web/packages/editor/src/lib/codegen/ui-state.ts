@@ -1,5 +1,5 @@
 import type { Project, LightStateComponent, Component, TodoListComponent, TextComponent, HvacComponent, WeatherComponent } from "@esphome-designer/schema";
-import { toCppIdentifier, firstScreenId, cppDefaultValue, cppTypeFor, stateVarFromEntity, collectAllComponents, todoItemsVarFromBinding, textBindingVar } from "./utils";
+import { toCppIdentifier, firstScreenId, cppDefaultValue, cppTypeFor, stateVarFromEntity, collectAllComponents, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar } from "./utils";
 import { collectConditionEntities } from "./condition-expr";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
 
@@ -27,7 +27,11 @@ function collectTodoItemsVars(project: Project): string[] {
   for (const c of allComponents) {
     if (c.type !== "todo_list") continue;
     const tc = c as TodoListComponent;
-    vars.add(todoItemsVarFromBinding(tc.itemsBinding, tc.id));
+    if (tc.todoEntityId) {
+      vars.add(todoItemsVarFromTodoEntity(tc.todoEntityId));
+    } else {
+      vars.add(todoItemsVarFromBinding(tc.itemsBinding, tc.id));
+    }
   }
   return [...vars];
 }

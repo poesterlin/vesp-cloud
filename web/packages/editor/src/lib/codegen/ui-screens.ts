@@ -21,6 +21,7 @@ import {
   escapeCString,
   stateVarFromEntity,
   todoItemsVarFromBinding,
+  todoItemsVarFromTodoEntity,
   textBindingVar,
   imageIdFromComponentId,
   imageFallbackIdFromComponentId,
@@ -388,7 +389,7 @@ function generateTodoListWidget(
   const incompleteIcon = getMdiUtf8CEscape("checkbox-blank-outline") ?? "";
   const completeIcon = getMdiUtf8CEscape("checkbox-marked") ?? "";
   const todoEntity = c.todoEntityId ?? "";
-  const bridgeEntity = c.itemsBinding?.entityId ?? "";
+  const bridgeEntity = c.todoEntityId ? "" : (c.itemsBinding?.entityId ?? "");
   const idSafe = safeCppIdentifier(c.id, 'component');
   let out = `${indent}auto *todo_${idSafe} = ${factory('TodoPreviewWidget', `${rect(x, y, w, h)}, state.${itemsVar}.ptr(), ${maxItems}, ${rowHeight}, ${scrollable}, ${checkable}, ${onTap || '[](){}'}, "${incompleteIcon}", "${completeIcon}", "${escapeCString(todoEntity)}", "${escapeCString(bridgeEntity)}"`)};\n`;
   if (visibilityExpr) {
@@ -541,8 +542,9 @@ function generateComponentSetup(
       return generateWeatherWidget(c as WeatherComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     }
     case 'todo_list': {
-      const itemsVar = todoItemsVarFromBinding(c.itemsBinding, c.id);
-      return generateTodoListWidget(c, itemsVar, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
+      const tc = c as TodoListComponent;
+      const itemsVar = tc.todoEntityId ? todoItemsVarFromTodoEntity(tc.todoEntityId) : todoItemsVarFromBinding(tc.itemsBinding, c.id);
+      return generateTodoListWidget(tc, itemsVar, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     }
     case 'tab_container':
       return generateTabContainerWidget(c, screenVar, indent, visibilityExpr, offsetX, offsetY, dirtyBoundsExpr);
@@ -834,8 +836,9 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
       return generateWeatherWidget(c as WeatherComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     }
     case 'todo_list': {
-      const itemsVar = todoItemsVarFromBinding(c.itemsBinding, c.id);
-      return generateTodoListWidget(c, itemsVar, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
+      const tc = c as TodoListComponent;
+      const itemsVar = tc.todoEntityId ? todoItemsVarFromTodoEntity(tc.todoEntityId) : todoItemsVarFromBinding(tc.itemsBinding, c.id);
+      return generateTodoListWidget(tc, itemsVar, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     }
     case 'conditional_area':
       return generateConditionalAreaNested(c, containerVar, tabIndex, indent, visibilityExpr, offsetX, offsetY, tabBgVar);

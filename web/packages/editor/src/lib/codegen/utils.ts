@@ -89,6 +89,10 @@ export function todoItemsVarFromBinding(binding: EntityBinding | undefined, fall
   return `${stateVarFromEntity(binding.entityId)}_${safeAttr}`;
 }
 
+export function todoItemsVarFromTodoEntity(entityId: string): string {
+  return `${stateVarFromEntity(entityId)}_items`;
+}
+
 export function textBindingVar(binding: EntityBinding): string {
   let name = stateVarFromEntity(binding.entityId);
   if (binding.attribute) {

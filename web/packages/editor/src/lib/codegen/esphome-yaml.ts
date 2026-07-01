@@ -1,5 +1,5 @@
 import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent, HvacComponent, WeatherComponent } from "@esphome-designer/schema";
-import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted } from "./utils";
+import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted } from "./utils";
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
 import { ICON_FONT_ID, WEATHER_ICON_FONT_ID, getIconGlyphs, projectHasWeather } from "./mdi-icons";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
@@ -262,6 +262,9 @@ function generateBindings(project: Project): string {
   for (const c of allComponents) {
     if (c.type !== "todo_list") continue;
     const tc = c as TodoListComponent;
+    // Direct todo.get_items service calls take over when todoEntityId is set;
+    // only generate bind_ha_string_attr for legacy bridge-sensor components.
+    if (tc.todoEntityId) continue;
     const entityId = tc.itemsBinding?.entityId;
     if (!entityId) continue;
     const stateVar = todoItemsVarFromBinding(tc.itemsBinding, tc.id);
@@ -513,6 +516,60 @@ function generateWeatherForecastIntervals(project: Project): string {
   return entries.join('\n\n');
 }
 
+function generateTodoItemsIntervals(project: Project): string {
+  const allComponents = collectProjectComponents(project);
+  const todoComponents = allComponents.filter(c => c.type === 'todo_list') as TodoListComponent[];
+  if (todoComponents.length === 0) return '';
+
+  const seen = new Set<string>();
+  const entries: string[] = [];
+
+  for (const tc of todoComponents) {
+    const entityId = tc.todoEntityId;
+    if (!entityId) continue;
+    if (seen.has(entityId)) continue;
+    seen.add(entityId);
+
+    const escapedId = escapeCString(entityId);
+    const itemsVar = todoItemsVarFromTodoEntity(entityId);
+    // itemsBinding.attribute doubles as the status filter, default to needs_action
+    const statusFilter = tc.itemsBinding?.attribute ?? 'needs_action';
+
+    entries.push(`  - interval: 10min
+    startup_delay: 7s
+    then:
+      - homeassistant.service:
+          service: todo.get_items
+          data:
+            entity_id: "${escapedId}"
+            status: ${statusFilter}
+          capture_response: true
+          on_success:
+            then:
+              - lambda: |-
+                  auto resp_wrapper = response["response"];
+                  if (!resp_wrapper.is<JsonObjectConst>()) return;
+                  auto entity_obj = resp_wrapper["${escapedId}"];
+                  if (!entity_obj.is<JsonObjectConst>()) return;
+                  auto items = entity_obj["items"];
+                  if (!items.is<JsonArrayConst>()) return;
+                  std::string formatted;
+                  for (auto item : items) {
+                    std::string summary;
+                    std::string status;
+                    if (item["summary"].is<std::string>()) summary = item["summary"].as<std::string>();
+                    if (item["status"].is<std::string>()) status = item["status"].as<std::string>();
+                    if (!formatted.empty()) formatted += "\\n";
+                    formatted += summary + "||" + status;
+                  }
+                  if (formatted.empty()) formatted = "LIST EMPTY";
+                  g_ui_app.state().${itemsVar}.set(formatted);
+                  UiRedraw::trigger_display_update();`);
+  }
+
+  return entries.join('\n\n');
+}
+
 export function generateESPHomeYAML(project: Project, firmwareVersion?: string): string {
   const deviceName = sanitizeDeviceName(project.name);
   const friendlyName = escapeYAMLDoubleQuoted(project.name);
@@ -528,6 +585,7 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   const httpRequestEnabled = onlineImagesEnabled || httpOtaEnabled || screenshotDebugEnabled;
   const bindings = generateBindings(project);
   const weatherIntervals = generateWeatherForecastIntervals(project);
+  const todoIntervals = generateTodoItemsIntervals(project);
   const notificationSubs = generateNotificationSubscriptions(project);
   const notificationBindings = notificationSubs ? `\n${notificationSubs}` : '';
   const iconGlyphs = getIconGlyphs(collectProjectIconNames(project));
@@ -921,7 +979,7 @@ ${screenshotDebugEnabled ? '          screenshot_task_notify();' : ''}
           // state. If nothing actually changed, render_basic_ui() returns
           // early at the needs_redraw() check.
           id(main_display).update();
-${weatherIntervals ? '\n' + weatherIntervals + '\n' : ''}
+${weatherIntervals ? '\n' + weatherIntervals + '\n' : ''}${todoIntervals ? '\n' + todoIntervals + '\n' : ''}
 # Dummy: forces ESPHome to compile api::HomeAssistantServiceCallAction
 # so the generic C++ lambda in on_boot can use it for dynamic service calls.
 script:

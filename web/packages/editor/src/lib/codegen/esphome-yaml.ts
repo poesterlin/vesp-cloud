@@ -382,8 +382,12 @@ function generateWeatherForecastIntervals(project: Project): string {
 
     if (mode === 'forecast') {
       entries.push(`  - interval: 10min
+    startup_delay: 5s
     then:
-      - logger.log: "weather: calling weather.get_forecasts for ${escapedId}"
+      - logger.log:
+          level: WARN
+          tag: weather
+          format: "calling weather.get_forecasts for ${escapedId}"
       - homeassistant.service:
           service: weather.get_forecasts
           data:
@@ -394,15 +398,33 @@ function generateWeatherForecastIntervals(project: Project): string {
             then:
               - lambda: |-
                   ESP_LOGW("weather", "on_response fired for %s", "${escapedId}");
-                  auto entity_resp = response["${escapedId}"];
-                  if (!entity_resp.is<JsonObject>()) {
-                    ESP_LOGW("weather", "entity key not found (is_null=%d)", entity_resp.isNull());
-                    return;
-                  }
-                  ESP_LOGD("weather", "entity_resp keys=%u", entity_resp.size());
-                  auto fc = entity_resp["forecast"];
+                  char response_buf[768];
+                  serializeJson(response, response_buf, sizeof(response_buf));
+                  ESP_LOGW("weather", "response json=%s", response_buf);
+                  auto fc = response["forecast"];
                   if (!fc.is<JsonArray>()) {
-                    ESP_LOGD("weather", "forecast is not array (is_null=%d)", fc.isNull());
+                    auto entity_resp = response["${escapedId}"];
+                    if (!entity_resp.is<JsonObject>()) {
+                      auto wrapped = response["response"];
+                      if (wrapped.is<JsonObject>()) entity_resp = wrapped["${escapedId}"];
+                    }
+                    if (!entity_resp.is<JsonObject>()) {
+                      auto wrapped = response["service_response"];
+                      if (wrapped.is<JsonObject>()) entity_resp = wrapped["${escapedId}"];
+                    }
+                    if (!entity_resp.is<JsonObject>()) {
+                      for (JsonPairConst kv : response) {
+                        if (kv.value().is<JsonObject>() && kv.value()["forecast"].is<JsonArray>()) {
+                          ESP_LOGW("weather", "using forecast from response key %s", kv.key().c_str());
+                          entity_resp = kv.value();
+                          break;
+                        }
+                      }
+                    }
+                    if (entity_resp.is<JsonObject>()) fc = entity_resp["forecast"];
+                  }
+                  if (!fc.is<JsonArray>()) {
+                    ESP_LOGW("weather", "forecast is not array (is_null=%d)", fc.isNull());
                     return;
                   }
                   ESP_LOGD("weather", "forecast array size=%u", fc.size());
@@ -425,10 +447,15 @@ function generateWeatherForecastIntervals(project: Project): string {
                     if (d3["wind_speed"].is<float>())    { auto v = d3["wind_speed"].as<float>(); ESP_LOGD("weather", "day3 wind_speed=%.1f", v); g_ui_app.state().${base}_day3_wind_speed.set(v); }
                     if (d3["precipitation"].is<float>()) { auto v = d3["precipitation"].as<float>(); ESP_LOGD("weather", "day3 precipitation=%.1f", v); g_ui_app.state().${base}_day3_precipitation.set(v); } }
                   ESP_LOGD("weather", "forecast parse complete");
-                  UiRedraw::trigger_display_update();`);    } else {
+                  UiRedraw::trigger_display_update();`);
+    } else {
       entries.push(`  - interval: 10min
+    startup_delay: 5s
     then:
-      - logger.log: "weather: calling weather.get_forecasts for ${escapedId}"
+      - logger.log:
+          level: WARN
+          tag: weather
+          format: "calling weather.get_forecasts for ${escapedId}"
       - homeassistant.service:
           service: weather.get_forecasts
           data:
@@ -439,15 +466,33 @@ function generateWeatherForecastIntervals(project: Project): string {
             then:
               - lambda: |-
                   ESP_LOGW("weather", "on_response fired for %s", "${escapedId}");
-                  auto entity_resp = response["${escapedId}"];
-                  if (!entity_resp.is<JsonObject>()) {
-                    ESP_LOGW("weather", "entity key not found (is_null=%d)", entity_resp.isNull());
-                    return;
-                  }
-                  ESP_LOGD("weather", "entity_resp keys=%u", entity_resp.size());
-                  auto fc = entity_resp["forecast"];
+                  char response_buf[768];
+                  serializeJson(response, response_buf, sizeof(response_buf));
+                  ESP_LOGW("weather", "response json=%s", response_buf);
+                  auto fc = response["forecast"];
                   if (!fc.is<JsonArray>()) {
-                    ESP_LOGD("weather", "forecast is not array (is_null=%d)", fc.isNull());
+                    auto entity_resp = response["${escapedId}"];
+                    if (!entity_resp.is<JsonObject>()) {
+                      auto wrapped = response["response"];
+                      if (wrapped.is<JsonObject>()) entity_resp = wrapped["${escapedId}"];
+                    }
+                    if (!entity_resp.is<JsonObject>()) {
+                      auto wrapped = response["service_response"];
+                      if (wrapped.is<JsonObject>()) entity_resp = wrapped["${escapedId}"];
+                    }
+                    if (!entity_resp.is<JsonObject>()) {
+                      for (JsonPairConst kv : response) {
+                        if (kv.value().is<JsonObject>() && kv.value()["forecast"].is<JsonArray>()) {
+                          ESP_LOGW("weather", "using forecast from response key %s", kv.key().c_str());
+                          entity_resp = kv.value();
+                          break;
+                        }
+                      }
+                    }
+                    if (entity_resp.is<JsonObject>()) fc = entity_resp["forecast"];
+                  }
+                  if (!fc.is<JsonArray>()) {
+                    ESP_LOGW("weather", "forecast is not array (is_null=%d)", fc.isNull());
                     return;
                   }
                   ESP_LOGD("weather", "forecast array size=%u", fc.size());

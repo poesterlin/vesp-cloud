@@ -19,6 +19,10 @@ function envTrue(value: string | undefined): boolean {
 }
 
 export function isScreenshotDebugEnabled(): boolean {
+  if (typeof process === 'undefined') {
+    return false;
+  }
+
   return envTrue(process.env.SCREENSHOT_DEBUG_ENABLED);
 }
 

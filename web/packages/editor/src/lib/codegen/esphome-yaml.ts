@@ -1,4 +1,4 @@
-import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent, HvacComponent, WeatherComponent } from "@esphome-designer/schema";
+import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent, HvacComponent, WeatherComponent, CalendarComponent } from "@esphome-designer/schema";
 import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted } from "./utils";
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
 import { ICON_FONT_ID, WEATHER_ICON_FONT_ID, getIconGlyphs, projectHasWeather } from "./mdi-icons";
@@ -570,6 +570,102 @@ function generateTodoItemsIntervals(project: Project): string {
   return entries.join('\n\n');
 }
 
+function generateCalendarIntervals(project: Project): string {
+  const allComponents = collectProjectComponents(project);
+  const calendarComponents = allComponents.filter(c => c.type === 'calendar') as CalendarComponent[];
+  if (calendarComponents.length === 0) return '';
+
+  const selectedByEntity = new Map<string, CalendarComponent>();
+  for (const cc of calendarComponents) {
+    const entityId = cc.entityBinding?.entityId;
+    if (!entityId) continue;
+    const current = selectedByEntity.get(entityId);
+    if (!current) {
+      selectedByEntity.set(entityId, cc);
+      continue;
+    }
+    const currDays = Math.max(0, Math.floor(current.durationDays ?? 125));
+    const nextDays = Math.max(0, Math.floor(cc.durationDays ?? 125));
+    if (nextDays > currDays) {
+      selectedByEntity.set(entityId, cc);
+    }
+  }
+
+  const entries: string[] = [];
+  for (const [entityId, cc] of selectedByEntity.entries()) {
+    const escapedId = escapeCString(entityId);
+    const base = stateVarFromEntity(entityId);
+    const durationDays = Math.max(0, Math.floor(cc.durationDays ?? 125));
+    const durationHours = durationDays * 24;
+    const durationString = `${durationHours}:00:00`;
+
+    entries.push(`  - interval: 10min
+    startup_delay: 6s
+    then:
+      - logger.log:
+          level: WARN
+          tag: calendar
+          format: "calling calendar.get_events for ${escapedId}"
+      - homeassistant.service:
+          service: calendar.get_events
+          data:
+            entity_id: "${escapedId}"
+            duration: "${durationString}"
+          capture_response: true
+          on_success:
+            then:
+              - lambda: |-
+                  auto resp_wrapper = response["response"];
+                  if (!resp_wrapper.is<JsonObjectConst>()) {
+                    ESP_LOGW("calendar", "response.response is not object");
+                    return;
+                  }
+                  auto entity_obj = resp_wrapper["${escapedId}"];
+                  if (!entity_obj.is<JsonObjectConst>()) {
+                    ESP_LOGW("calendar", "entity key not found: %s", "${escapedId}");
+                    return;
+                  }
+                  auto events_var = entity_obj["events"];
+                  if (!events_var.is<JsonArrayConst>()) {
+                    ESP_LOGW("calendar", "events is not array");
+                    g_ui_app.state().${base}_events_raw.set("NO EVENTS");
+                    UiRedraw::trigger_display_update();
+                    return;
+                  }
+                  JsonArrayConst events = events_var.as<JsonArrayConst>();
+
+                  auto sanitize = [](std::string s) {
+                    for (char &ch : s) {
+                      if (ch == '|' || ch == '\\n' || ch == '\\r' || ch == '\\t') ch = ' ';
+                    }
+                    return s;
+                  };
+
+                  std::string formatted;
+                  int count = 0;
+                  for (JsonVariantConst item : events) {
+                    if (count >= 32) break;
+                    std::string start;
+                    std::string end_time;
+                    std::string summary;
+                    std::string location;
+                    if (item["start"].is<std::string>()) start = sanitize(item["start"].as<std::string>());
+                    if (item["end"].is<std::string>()) end_time = sanitize(item["end"].as<std::string>());
+                    if (item["summary"].is<std::string>()) summary = sanitize(item["summary"].as<std::string>());
+                    if (item["location"].is<std::string>()) location = sanitize(item["location"].as<std::string>());
+                    if (summary.empty()) continue;
+                    if (!formatted.empty()) formatted += "\\n";
+                    formatted += start + "|" + end_time + "|" + summary + "|" + location;
+                    count++;
+                  }
+                  if (formatted.empty()) formatted = "NO EVENTS";
+                  g_ui_app.state().${base}_events_raw.set(formatted);
+                  UiRedraw::trigger_display_update();`);
+  }
+
+  return entries.join('\n\n');
+}
+
 export function generateESPHomeYAML(project: Project, firmwareVersion?: string): string {
   const deviceName = sanitizeDeviceName(project.name);
   const friendlyName = escapeYAMLDoubleQuoted(project.name);
@@ -586,6 +682,7 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   const bindings = generateBindings(project);
   const weatherIntervals = generateWeatherForecastIntervals(project);
   const todoIntervals = generateTodoItemsIntervals(project);
+  const calendarIntervals = generateCalendarIntervals(project);
   const notificationSubs = generateNotificationSubscriptions(project);
   const notificationBindings = notificationSubs ? `\n${notificationSubs}` : '';
   const iconGlyphs = getIconGlyphs(collectProjectIconNames(project));
@@ -979,7 +1076,7 @@ ${screenshotDebugEnabled ? '          screenshot_task_notify();' : ''}
           // state. If nothing actually changed, render_basic_ui() returns
           // early at the needs_redraw() check.
           id(main_display).update();
-${weatherIntervals ? '\n' + weatherIntervals + '\n' : ''}${todoIntervals ? '\n' + todoIntervals + '\n' : ''}
+${weatherIntervals ? '\n' + weatherIntervals + '\n' : ''}${todoIntervals ? '\n' + todoIntervals + '\n' : ''}${calendarIntervals ? '\n' + calendarIntervals + '\n' : ''}
 # Dummy: forces ESPHome to compile api::HomeAssistantServiceCallAction
 # so the generic C++ lambda in on_boot can use it for dynamic service calls.
 script:

@@ -47,6 +47,10 @@
     "weather",
   ];
 
+  const CALENDAR_ALLOWED_DOMAINS = [
+    "calendar",
+  ];
+
   function getNavIcon(action: NavigationAction): string | undefined {
     return NAV_ICONS[action.type];
   }
@@ -696,6 +700,52 @@
       </div>
     {/if}
 
+    {#if selectedComponent.type === "calendar"}
+      <div class="property-section">
+        <label class="section-label">Calendar</label>
+        <div class="field">
+          <span class="field-label">Label</span>
+          <input
+            type="text"
+            value={selectedComponent.label ?? ""}
+            oninput={(e) => updateProperty("label", e.currentTarget.value)}
+          />
+        </div>
+        <div class="field">
+          <span class="field-label">Rows</span>
+          <input
+            type="number"
+            min="1"
+            max="10"
+            value={selectedComponent.maxItems ?? 4}
+            oninput={(e) =>
+              updateProperty(
+                "maxItems",
+                Math.max(1, Math.min(10, parseInt(e.currentTarget.value) || 4)),
+              )}
+          />
+        </div>
+        <div class="field">
+          <span class="field-label">Scrollable</span>
+          <input
+            type="checkbox"
+            checked={selectedComponent.scrollable === true}
+            onchange={(e) => updateProperty("scrollable", e.currentTarget.checked)}
+          />
+        </div>
+        <div class="field">
+          <span class="field-label">Duration Days</span>
+          <input
+            type="number"
+            min="0"
+            value={selectedComponent.durationDays ?? 125}
+            oninput={(e) =>
+              updateProperty("durationDays", Math.max(0, parseInt(e.currentTarget.value) || 0))}
+          />
+        </div>
+      </div>
+    {/if}
+
     {#if selectedComponent.type === "conditional_area"}
       <div class="property-section">
         <label class="section-label">Variants</label>
@@ -855,7 +905,7 @@
     {/if}
 
     <!-- Entity Binding (only for components that display entity values) -->
-    {#if selectedComponent.type === "todo_list" || selectedComponent.type === "light_state" || selectedComponent.type === "hvac" || selectedComponent.type === "weather"}
+    {#if selectedComponent.type === "todo_list" || selectedComponent.type === "light_state" || selectedComponent.type === "hvac" || selectedComponent.type === "weather" || selectedComponent.type === "calendar"}
       <div class="property-section">
         <label class="section-label">Entity Binding</label>
         <EntityPicker
@@ -865,26 +915,26 @@
               ? "climate"
               : selectedComponent.type === "weather"
                 ? "weather"
+                : selectedComponent.type === "calendar"
+                  ? "calendar"
                 : "light"}
           allowedDomains={selectedComponent.type === "todo_list"
             ? ["sensor"]
             : selectedComponent.type === "light_state"
               ? LIGHT_STATE_ALLOWED_DOMAINS
-              : selectedComponent.type === "hvac"
+            : selectedComponent.type === "hvac"
                 ? CLIMATE_ALLOWED_DOMAINS
                 : selectedComponent.type === "weather"
                   ? WEATHER_ALLOWED_DOMAINS
+                  : selectedComponent.type === "calendar"
+                    ? CALENDAR_ALLOWED_DOMAINS
                   : undefined}
-          requiredAttribute={selectedComponent.type === "todo_list"
-            ? "all_items"
-            : undefined}
-          autoAttribute={selectedComponent.type === "todo_list"
-            ? "all_items"
-            : undefined}
           component={selectedComponent}
           onUpdate={(binding) => {
             if (selectedComponent.type === "todo_list") {
               updateProperty("itemsBinding", binding);
+            } else if (selectedComponent.type === "calendar") {
+              updateProperty("entityBinding", binding);
             } else {
               updateProperty("stateBinding", binding);
             }

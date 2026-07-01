@@ -11,6 +11,7 @@
     mdiSourceBranch,
     mdiThermometer,
     mdiWeatherPartlyCloudy,
+    mdiCalendarMonth,
   } from '@mdi/js';
 
   interface ComponentTemplate {
@@ -62,6 +63,12 @@
       label: "Weather",
       icon: mdiWeatherPartlyCloudy,
       description: "Read-only weather entity card with condition, temperature, and more",
+    },
+    {
+      type: "calendar",
+      label: "Calendar",
+      icon: mdiCalendarMonth,
+      description: "Upcoming calendar events with configurable rows and scrolling",
     },
     {
       type: "image",

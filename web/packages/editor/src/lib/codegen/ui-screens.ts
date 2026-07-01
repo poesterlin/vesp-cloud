@@ -13,6 +13,7 @@ import type {
   TodoListComponent,
   HvacComponent,
   WeatherComponent,
+  CalendarComponent,
   Color,
   OnTapAction,
 } from "@esphome-designer/schema";
@@ -367,6 +368,38 @@ function generateWeatherWidget(c: WeatherComponent,
   return out;
 }
 
+function generateCalendarWidget(
+    c: CalendarComponent,
+    factory: WidgetFactory,
+    indent: string,
+    offX = 0,
+    offY = 0,
+    visibilityExpr?: string,
+    dirtyBoundsExpr?: string,
+): string {
+  const x = c.position.x + offX;
+  const y = c.position.y + offY;
+  const w = c.size?.width ?? 225;
+  const h = c.size?.height ?? 180;
+  const label = c.label ?? 'Calendar';
+  const entityId = c.entityBinding?.entityId ?? c.id;
+  const base = stateVarFromEntity(entityId);
+  const idSafe = safeCppIdentifier(c.id, 'component');
+  const maxItems = Math.max(1, Math.min(10, c.maxItems ?? 4));
+  const rowHeight = 40;
+  const scrollable = c.scrollable === true ? 'true' : 'false';
+  const callback = emitTapAction(c.onTap) || '[](){}';
+
+  let out = `${indent}auto *calendar_${idSafe} = ${factory('CalendarListWidget', `${rect(x, y, w, h)}, state.${base}_events_raw.ptr(), "${escapeCString(label)}", "${escapeCString(entityId)}", ${maxItems}, ${rowHeight}, ${scrollable}, ${callback}`)};\n`;
+  if (visibilityExpr) {
+    out += `${indent}calendar_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
+  }
+  if (dirtyBoundsExpr) {
+    out += `${indent}calendar_${idSafe}->set_dirty_bounds(${dirtyBoundsExpr});\n`;
+  }
+  return out;
+}
+
 function generateTodoListWidget(
     c: TodoListComponent,
     itemsVar: string,
@@ -540,6 +573,9 @@ function generateComponentSetup(
     }
     case 'weather': {
       return generateWeatherWidget(c as WeatherComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
+    }
+    case 'calendar': {
+      return generateCalendarWidget(c as CalendarComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     }
     case 'todo_list': {
       const tc = c as TodoListComponent;
@@ -834,6 +870,9 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
     }
     case 'weather': {
       return generateWeatherWidget(c as WeatherComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
+    }
+    case 'calendar': {
+      return generateCalendarWidget(c as CalendarComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     }
     case 'todo_list': {
       const tc = c as TodoListComponent;

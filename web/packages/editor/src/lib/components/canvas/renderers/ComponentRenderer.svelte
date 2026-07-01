@@ -14,8 +14,9 @@
   import TodoListRenderer from "./TodoListRenderer.svelte";
   import AutoLayoutListRenderer from "./AutoLayoutListRenderer.svelte";
   import LightStateRenderer from "./LightStateRenderer.svelte";
-  import HvacRenderer from "./HvacRenderer.svelte";
-  import WeatherRenderer from "./WeatherRenderer.svelte";
+import HvacRenderer from "./HvacRenderer.svelte";
+import WeatherRenderer from "./WeatherRenderer.svelte";
+import CalendarRenderer from "./CalendarRenderer.svelte";
 
   interface Props {
     component: Component;
@@ -53,6 +54,8 @@
   <HvacRenderer {component} />
 {:else if component.type === "weather"}
   <WeatherRenderer {component} />
+{:else if component.type === "calendar"}
+  <CalendarRenderer {component} />
 {:else if component.type === "conditional_area"}
   <ConditionalAreaRenderer {component} {parentOffset} />
 {:else if component.type === "tab_container"}

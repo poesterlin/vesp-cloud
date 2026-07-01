@@ -136,6 +136,17 @@ export function createComponent(type: string, x: number, y: number): Component {
         size: { width: 225, height: 200 },
       } as Component;
 
+    case "calendar":
+      return {
+        ...base,
+        type: "calendar",
+        label: "Calendar",
+        size: { width: 225, height: 180 },
+        maxItems: 4,
+        scrollable: false,
+        durationDays: 125,
+      } as Component;
+
     case "auto_layout_list":
       return {
         ...base,

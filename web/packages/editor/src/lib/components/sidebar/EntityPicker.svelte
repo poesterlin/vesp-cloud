@@ -7,6 +7,7 @@
     mdiAccountOutline,
     mdiArrowLeft,
     mdiCameraOutline,
+    mdiCalendarMonth,
     mdiCheckCircleOutline,
     mdiChevronDown,
     mdiChevronUp,
@@ -43,6 +44,7 @@
         textBinding?: EntityBinding;
         valueBinding?: EntityBinding;
         stateBinding?: EntityBinding;
+        entityBinding?: EntityBinding;
         itemsBinding?: EntityBinding;
         imageBinding?: EntityBinding;
         targetDevice?: { deviceId?: string; deviceName?: string };
@@ -90,6 +92,9 @@
       component.type === "weather"
     ) {
       return component.stateBinding;
+    }
+    if (component.type === "calendar") {
+      return component.entityBinding;
     }
     if (component.type === "todo_list") {
       return component.itemsBinding;
@@ -156,6 +161,7 @@
     input_select: "Selections",
     person: "People",
     weather: "Weather",
+    calendar: "Calendar",
     sun: "Sun",
     automation: "Automations",
     script: "Scripts",
@@ -184,6 +190,7 @@
     input_select: mdiFormatListBulleted,
     person: mdiAccountOutline,
     weather: mdiWeatherPartlyCloudy,
+    calendar: mdiCalendarMonth,
     sun: mdiWhiteBalanceSunny,
     automation: mdiRobot,
     script: mdiScriptTextOutline,

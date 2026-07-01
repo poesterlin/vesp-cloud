@@ -602,12 +602,6 @@
               "maximum": 10,
               "default": 4
             },
-            "rowHeight": {
-              "type": "integer",
-              "minimum": 20,
-              "maximum": 80,
-              "default": 30
-            },
             "scrollable": {
               "type": "boolean",
               "default": false
@@ -701,6 +695,39 @@
         }
       ]
     },
+    "CalendarComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "calendar" },
+            "label": { "type": "string" },
+            "entityBinding": {
+              "$ref": "#/definitions/EntityBinding",
+              "description": "Home Assistant calendar entity (calendar.xxx). Events are loaded via calendar.get_events service calls."
+            },
+            "maxItems": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10,
+              "default": 4
+            },
+            "scrollable": {
+              "type": "boolean",
+              "default": false
+            },
+            "durationDays": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 125,
+              "description": "Calendar event fetch window in days. Converted to hours for Home Assistant service call."
+            }
+          },
+          "required": ["type", "size"]
+        }
+      ]
+    },
     "Component": {
       "oneOf": [
         { "$ref": "#/definitions/TextComponent" },
@@ -716,6 +743,7 @@
         { "$ref": "#/definitions/LightStateComponent" },
         { "$ref": "#/definitions/HvacComponent" },
         { "$ref": "#/definitions/WeatherComponent" },
+        { "$ref": "#/definitions/CalendarComponent" },
         { "$ref": "#/definitions/AutoLayoutListComponent" },
         { "$ref": "#/definitions/ConditionalAreaComponent" },
         { "$ref": "#/definitions/TabContainerComponent" }

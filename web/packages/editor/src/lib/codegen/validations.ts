@@ -13,6 +13,7 @@ import type {
   TextComponent,
   HvacComponent,
   WeatherComponent,
+  CalendarComponent,
   EntityBinding,
   Condition,
   EntityCondition,
@@ -54,6 +55,7 @@ function componentLabel(c: Component): string {
     light_state: "Light State",
     hvac: "HVAC Control",
     weather: "Weather",
+    calendar: "Calendar",
     todo_list: "To-Do List",
     slider: "Slider",
     gauge: "Gauge",
@@ -76,6 +78,7 @@ const RULES: ValidationRule[] = [
   validateImageHaBinding,
   validateHvacBinding,
   validateWeatherBinding,
+  validateCalendarBinding,
 ];
 
 export function validateProject(project: Project): ValidationError[] {
@@ -222,6 +225,19 @@ function validateCodegenSafeStrings(project: Project): ValidationError[] {
       errors.push(...validateBinding((c as HvacComponent).stateBinding, c, 'stateBinding'));
     } else if (c.type === 'weather') {
       errors.push(...validateBinding((c as WeatherComponent).stateBinding, c, 'stateBinding'));
+    } else if (c.type === 'calendar') {
+      const calendar = c as CalendarComponent;
+      errors.push(...validateBinding(calendar.entityBinding, c, 'entityBinding'));
+      const days = calendar.durationDays;
+      if (days != null && (!Number.isInteger(days) || days < 0)) {
+        errors.push({
+          type: 'error' as const,
+          message: 'Duration days must be a non-negative integer',
+          componentId: c.id,
+          componentLabel: componentLabel(c),
+          field: 'durationDays',
+        });
+      }
     } else if (c.type === 'todo_list') {
       const todo = c as TodoListComponent;
       errors.push(...validateBinding(todo.itemsBinding, c, 'itemsBinding'));
@@ -422,6 +438,26 @@ function validateWeatherBinding(project: Project): ValidationError[] {
       errors.push({
         type: "error" as const,
         message: `Needs a weather entity binding to display conditions`,
+        componentId: c.id,
+        componentLabel: componentLabel(c),
+      });
+    }
+  }
+
+  return errors;
+}
+
+function validateCalendarBinding(project: Project): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const components = collectAllComponents(project);
+
+  for (const c of components) {
+    if (c.type !== "calendar") continue;
+    const calendar = c as CalendarComponent;
+    if (!calendar.entityBinding?.entityId) {
+      errors.push({
+        type: "error" as const,
+        message: `Needs a calendar entity binding to display events`,
         componentId: c.id,
         componentLabel: componentLabel(c),
       });

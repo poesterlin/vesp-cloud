@@ -19,6 +19,7 @@ export type Component =
   | LightStateComponent
   | HvacComponent
   | WeatherComponent
+  | CalendarComponent
   | AutoLayoutListComponent
   | ConditionalAreaComponent
   | TabContainerComponent;
@@ -131,7 +132,6 @@ export type TodoListComponent = BaseComponent & {
    */
   todoEntityId?: string;
   maxItems?: number;
-  rowHeight?: number;
   scrollable?: boolean;
   checkable?: boolean;
 };
@@ -173,6 +173,17 @@ export type WeatherComponent = BaseComponent & {
    */
   mode?: "today" | "forecast";
   stateBinding?: EntityBinding4;
+};
+export type CalendarComponent = BaseComponent & {
+  type: "calendar";
+  label?: string;
+  entityBinding?: EntityBinding5;
+  maxItems?: number;
+  scrollable?: boolean;
+  /**
+   * Calendar event fetch window in days. Converted to hours for Home Assistant service call.
+   */
+  durationDays?: number;
 };
 export type AutoLayoutListComponent = BaseComponent & {
   type: "auto_layout_list";
@@ -402,6 +413,13 @@ export interface EntityBinding3 {
  * Home Assistant weather entity (weather.xxx). The state string is the condition (sunny, cloudy, rainy, ...); the 8 numeric attributes (temperature, dew_point, humidity, cloud_coverage, uv_index, pressure, wind_bearing, wind_speed) are read-only.
  */
 export interface EntityBinding4 {
+  entityId: string;
+  attribute?: string | null;
+}
+/**
+ * Home Assistant calendar entity (calendar.xxx). Events are loaded via calendar.get_events service calls.
+ */
+export interface EntityBinding5 {
   entityId: string;
   attribute?: string | null;
 }

@@ -29,6 +29,26 @@ void ui_fast_filled_rectangle(display::Display &it, int x, int y, int w, int h, 
 constexpr int UI_TRUNC_DOT_SIZE = 2;
 constexpr int UI_TRUNC_DOTS_W = 8;
 
+// Shared spacing scale. Every "magic" padding/inset in widget code should
+// pull from this scale so per-widget tweaks stay in lockstep across the
+// dashboard. Values are in display pixels (480x480 target).
+namespace ui_spacing {
+constexpr int xs = 4;   // tight inner offsets (borders, hit-test slop)
+constexpr int sm = 6;   // inter-element gap (button rows, icon-to-label)
+constexpr int md = 8;   // widget inner top/bottom padding
+constexpr int lg = 9;   // widget outer padding (HVAC/Weather/Todo containers)
+constexpr int xl = 12;  // generous outer padding (modal panels, hero cards)
+}  // namespace ui_spacing
+
+// Corner radius scales with widget height so small controls don't look
+// pillow-y and large cards still read as rounded. Centralised here so
+// the visual rule is documented in one place.
+inline int ui_corner_radius_for_height(int h) {
+  if (h < 40) return 4;
+  if (h < 80) return 6;
+  return 9;
+}
+
 // Truncate `text` so that, together with the painted truncation indicator
 // (UI_TRUNC_DOTS_W pixels), it fits within `max_w` pixels when rendered
 // with `font`. Returns the largest prefix that fits, WITHOUT any "..."
@@ -757,7 +777,7 @@ class ButtonWidget : public Widget {
     auto tc = style_->text_color;
 
     const UiRect r = screen_rect(rect_);
-    int c = (r.h < 40) ? 4 : 6;
+    const int c = ui_corner_radius_for_height(r.h);
     draw_clipped_box(it, r.x, r.y, r.w, r.h,
                      c, bc, RetroColors::DIM, true);
 
@@ -779,8 +799,8 @@ class ButtonWidget : public Widget {
       // button is tall enough that stacking reads better anyway.
       int ix, iy, iw, ih;
       it.get_text_bounds(0, 0, icon_glyph_, icon_style_->font, TextAlign::TOP_LEFT, &ix, &iy, &iw, &ih);
-      const int gap = 6;
-      const int side_pad = 8;
+      const int gap = ui_spacing::sm;
+      const int side_pad = ui_spacing::md;
       const int horiz_budget = r.w - 2 * side_pad - iw - gap;
       // Minimum label budget to bother going horizontal: room for at
       // least ~3 chars + ellipsis. Below that, vertical is more legible.
@@ -908,28 +928,34 @@ class ImageToggleWidget : public Widget {
     Color icon_color = is_on ? on_color_ : off_color_;
 
     const UiRect r = screen_rect(rect_);
-    int c = 6;
+    const int c = ui_corner_radius_for_height(r.h);
     draw_clipped_box(it, r.x, r.y, r.w, r.h,
                      c, icon_color, RetroColors::DIM, true);
 
+    // Single source of truth for icon/label geometry. The icon sits on
+    // the left at kIconCenterOffset, the label starts at kLabelStartOffset,
+    // and the label is allowed to consume everything from there to the
+    // right edge minus a small right padding.
+    const int kIconCenterOffset = 28;
+    const int kLabelStartOffset = 52;
+    const int icon_x = r.x + kIconCenterOffset;
+    const int icon_y = r.y + r.h / 2;
+    const int label_x = r.x + kLabelStartOffset;
+    const int label_max_w = r.w - kLabelStartOffset - ui_spacing::sm;
+
     if (loading_) {
       float angle = (millis() % 1000) * 2.0f * 3.14159265f / 1000.0f;
-      int cx = r.x + 28;
-      int cy = r.y + r.h / 2;
       const int radius = 10;
-      it.line(cx, cy, cx + (int)(cosf(angle) * radius),
-              cy + (int)(sinf(angle) * radius), icon_color);
+      it.line(icon_x, icon_y, icon_x + (int)(cosf(angle) * radius),
+              icon_y + (int)(sinf(angle) * radius), icon_color);
       if (label_ != nullptr && g_theme.label.font != nullptr) {
-        const int max_w = r.x + r.w - (r.x + 52) - 6;
-        ui_print_truncated(it, r.x + 52, r.y + r.h / 2,
+        ui_print_truncated(it, label_x, icon_y,
                            g_theme.label.font, icon_color,
-                           TextAlign::CENTER_LEFT, label_, max_w);
+                           TextAlign::CENTER_LEFT, label_, label_max_w);
       }
       return;
     }
 
-    int icon_x = r.x + 28;
-    int icon_y = r.y + r.h / 2;
     const bool has_mdi_icon =
         icon_glyph_ != nullptr && icon_glyph_[0] != '\0' &&
         g_theme.icon.font != nullptr;
@@ -950,10 +976,9 @@ class ImageToggleWidget : public Widget {
     }
 
     if (label_ != nullptr && g_theme.label.font != nullptr) {
-      const int max_w = r.x + r.w - (r.x + 52) - 6;
-      ui_print_truncated(it, r.x + 52, r.y + r.h / 2,
+      ui_print_truncated(it, label_x, icon_y,
                          g_theme.label.font, Color(255, 255, 255),
-                         TextAlign::CENTER_LEFT, label_, max_w);
+                         TextAlign::CENTER_LEFT, label_, label_max_w);
     }
 
     last_on_state_ = is_on;
@@ -1125,7 +1150,7 @@ class TodoPreviewWidget : public Widget {
 
     // Clipped-corner container
     draw_clipped_box(it, r.x, r.y, r.w, r.h,
-                     8, border, bg, false);
+                     ui_corner_radius_for_height(r.h), border, bg, false);
     // Inner double-line
     draw_clipped_border(it, r.x + 2, r.y + 2, r.w - 4, r.h - 4,
                         6, 6, 6, 6, RetroColors::AMBER_DIM);
@@ -1154,7 +1179,7 @@ class TodoPreviewWidget : public Widget {
       return;
     }
 
-    const int top_padding = 8;
+    const int top_padding = kTopPadding;
     const int available_h = content_height();
     const int content_h = static_cast<int>(rows_.size()) * row_height_;
     const int max_scroll = content_h > available_h ? (content_h - available_h) : 0;
@@ -1267,6 +1292,12 @@ class TodoPreviewWidget : public Widget {
     static constexpr uint32_t loading_timeout_ms = 5000;
   };
 
+  // Inner top padding used to leave room for the clipped-box border + the
+  // inner double-line, in pixels. Referenced from draw (row positioning,
+  // max-row-by-height calc), content_height (clamped height), and row_at
+  // (touch hit-test) so all three stay in lockstep.
+  static constexpr int kTopPadding = ui_spacing::md;
+
   static void trim_inplace(std::string &value) {
     std::size_t f = value.find_first_not_of(" \t\r\n");
     if (f == std::string::npos) {
@@ -1278,14 +1309,13 @@ class TodoPreviewWidget : public Widget {
   }
 
   int content_height() const {
-    const int top_padding = 8;
-    int h = rect_.h - top_padding - 2;
+    int h = rect_.h - kTopPadding - 2;
     return h > 0 ? h : 0;
   }
 
   int row_at(int tx, int ty) const {
     (void)tx;
-    const int top = screen_rect(rect_).y + 8;
+    const int top = screen_rect(rect_).y + kTopPadding;
     const int local_y = ty - top + (scrollable_ ? scroll_offset_ : 0);
     if (local_y < 0) return -1;
     const int idx = local_y / row_height_;
@@ -1692,53 +1722,19 @@ class HvacWidget : public Widget {
       return false;
     }
 
-    const UiRect r = screen_rect(rect_);
-    const int w = r.w;
-    const int h = r.h;
-
-    const int pad = 9;
-    const int btn_h = 39;
-    const int btns_y = r.y + h - btn_h - pad;
-
-    // Two temp buttons (compact) + power button
-    const int btn_gap = 6;
-    const int total_w = w - pad * 2 - btn_gap * 2;
-    const int temp_btn_w = total_w / 5;
-    const int power_btn_w = total_w - temp_btn_w * 2;
-
-    // Temp down button
-    {
-      const int bx = r.x + pad;
-      const int by = btns_y;
-      if (event.x >= bx && event.x <= bx + temp_btn_w &&
-          event.y >= by && event.y <= by + btn_h) {
-        temp_down(now);
-        return true;
-      }
+    const HvacButtonLayout bl = compute_button_layout_(screen_rect(rect_));
+    if (bl.contains(BtnTempDown, event.x, event.y)) {
+      temp_down(now);
+      return true;
     }
-
-    // Temp up button
-    {
-      const int bx = r.x + pad + temp_btn_w + btn_gap;
-      const int by = btns_y;
-      if (event.x >= bx && event.x <= bx + temp_btn_w &&
-          event.y >= by && event.y <= by + btn_h) {
-        temp_up(now);
-        return true;
-      }
+    if (bl.contains(BtnTempUp, event.x, event.y)) {
+      temp_up(now);
+      return true;
     }
-
-    // Power button
-    {
-      const int bx = r.x + pad + (temp_btn_w + btn_gap) * 2;
-      const int by = btns_y;
-      if (event.x >= bx && event.x <= bx + power_btn_w &&
-          event.y >= by && event.y <= by + btn_h) {
-        toggle_power(now);
-        return true;
-      }
+    if (bl.contains(BtnPower, event.x, event.y)) {
+      toggle_power(now);
+      return true;
     }
-
     return false;
   }
 
@@ -1753,7 +1749,7 @@ class HvacWidget : public Widget {
     const Color accent = is_on ? on_color_ : off_color_;
     const Color dim = RetroColors::STEEL;
     const Color text = RetroColors::WHITE;
-    const int pad = 9;
+    const int pad = ui_spacing::lg;
     const int top_y = r.y + pad + 3;
     const int top_row_h = 22;  // header font cap height
 
@@ -1762,7 +1758,7 @@ class HvacWidget : public Widget {
     // border, CRT scanline overlay and decorative corner ticks. The accent
     // colour mirrors the modern path: amber when on, dim grey when off.
     const Color bg = RetroColors::VOID;
-    draw_clipped_box(it, r.x, r.y, w, h, 9, accent, bg, true);
+    draw_clipped_box(it, r.x, r.y, w, h, ui_corner_radius_for_height(h), accent, bg, true);
     draw_clipped_border(it, r.x + 2, r.y + 2, w - 4, h - 4,
                         7, 7, 7, 7,
                         is_on ? RetroColors::AMBER_DIM : RetroColors::DIMMER);
@@ -1776,7 +1772,7 @@ class HvacWidget : public Widget {
                           RetroColors::CYAN_DIM);
 #else
     const Color bg(10, 14, 22);
-    draw_clipped_box(it, r.x, r.y, w, h, 9, accent, bg, false);
+    draw_clipped_box(it, r.x, r.y, w, h, ui_corner_radius_for_height(h), accent, bg, false);
 #endif
 
     // ---- Top row: label (left) + mode (right) ----
@@ -1807,15 +1803,20 @@ class HvacWidget : public Widget {
     }
 #endif
 
+    // ---- Shared button-row layout ----
+    // Computed once and reused by both the center stack (to find the
+    // content's bottom edge) and the button draw block below. Keeping
+    // this in a single value means touch hit-test (in handle_touch) and
+    // the painted visuals can never disagree.
+    const HvacButtonLayout bl = compute_button_layout_(r);
+
     // ---- Center: current temp (optional) + target temp + "Target" label ----
     // Stack drawn with TOP_CENTER so y tracks the top of each line; the
     // whole stack is centered in the content area between the top row and
     // the button row.
     {
-      const int btn_h = 39;
-      const int btns_y = r.y + h - btn_h - pad;
       const int content_top = top_y + top_row_h + 6;
-      const int content_bottom = btns_y - pad;
+      const int content_bottom = bl.btns_y - bl.pad;
       const int center_y = content_top + (content_bottom - content_top) / 2;
 
       const int target_h = 22;   // header font cap height
@@ -1869,23 +1870,19 @@ class HvacWidget : public Widget {
     }
 
     // ---- Bottom buttons ----
-    const int btn_h = 39;
-    const int btns_y = r.y + h - btn_h - pad;
+    // One layout struct drives both the hit-test in handle_touch() and the
+    // draws below; keeping both paths in sync prevents touch targets from
+    // drifting away from the painted buttons.
     {
-      const int btn_gap = 6;
-      const int total_w = w - pad * 2 - btn_gap * 2;
-      const int temp_btn_w = total_w / 5;
-      const int power_btn_w = total_w - temp_btn_w * 2;
-
       auto draw_icon_btn = [&](int bx, int bw, int bh, const char *glyph,
                                 Color bc, Color tc) {
         const int mc = 5;
-        draw_clipped_box(it, bx, btns_y, bw, bh, mc, bc, RetroColors::DIM, true);
+        draw_clipped_box(it, bx, bl.btns_y, bw, bh, mc, bc, RetroColors::DIM, true);
         if (glyph && glyph[0] && g_theme.icon.font != nullptr) {
-          it.printf(bx + bw / 2, btns_y + bh / 2 - 1, g_theme.icon.font, tc,
+          it.printf(bx + bw / 2, bl.btns_y + bh / 2 - 1, g_theme.icon.font, tc,
                     TextAlign::CENTER, "%s", glyph);
         } else if (g_theme.label.font != nullptr) {
-          it.printf(bx + bw / 2, btns_y + bh / 2 - 1, g_theme.label.font, tc,
+          it.printf(bx + bw / 2, bl.btns_y + bh / 2 - 1, g_theme.label.font, tc,
                     TextAlign::CENTER, "%s", glyph && glyph[0] ? glyph : "?");
         }
       };
@@ -1904,25 +1901,22 @@ class HvacWidget : public Widget {
       const Color temp_accent(255, 180, 0);
 #endif
 
-      // Temp down
-      {
-        const int bx = r.x + pad;
-        Color bc = temp_down_active ? temp_accent : temp_dim;
-        draw_icon_btn(bx, temp_btn_w, btn_h, icon_down_, bc, text);
-      }
-
-      // Temp up
-      {
-        const int bx = r.x + pad + temp_btn_w + btn_gap;
-        Color bc = temp_up_active ? temp_accent : temp_dim;
-        draw_icon_btn(bx, temp_btn_w, btn_h, icon_up_, bc, text);
-      }
-
-      // Power
-      {
-        const int bx = r.x + pad + (temp_btn_w + btn_gap) * 2;
-        Color bc = power_active ? on_color_ : off_color_;
-        draw_icon_btn(bx, power_btn_w, btn_h, icon_power_, bc, text);
+      struct Spec {
+        HvacButtonId id;
+        const char *glyph;
+        bool active;
+        Color idle_color;
+        Color active_color;
+      };
+      const Spec specs[3] = {
+          {BtnTempDown, icon_down_,  temp_down_active, temp_dim,   temp_accent},
+          {BtnTempUp,   icon_up_,    temp_up_active,   temp_dim,   temp_accent},
+          {BtnPower,    icon_power_, power_active,     off_color_, on_color_  },
+      };
+      for (const Spec &s : specs) {
+        const HvacButtonRect br = bl.rect(s.id);
+        const Color bc = s.active ? s.active_color : s.idle_color;
+        draw_icon_btn(br.x, br.w, bl.btn_h, s.glyph, bc, text);
       }
     }
 
@@ -1934,6 +1928,48 @@ class HvacWidget : public Widget {
   }
 
  private:
+  // ---- Shared button-row layout for HVAC bottom controls ----
+  // The temp +/- and power buttons all sit on a single row at the bottom
+  // of the card. Computing this once per draw/touch means touch hit-test
+  // and painted visuals can never drift apart.
+  enum HvacButtonId { BtnTempDown = 0, BtnTempUp = 1, BtnPower = 2 };
+  struct HvacButtonRect {
+    int x, w;  // absolute screen x / width
+  };
+  struct HvacButtonLayout {
+    int btn_h;
+    int btns_y;       // absolute screen y of button row
+    int left_x;       // absolute screen x of the first button's left edge
+    int temp_btn_w;
+    int power_btn_w;
+    int btn_gap;
+    int pad;
+    HvacButtonRect rect(HvacButtonId id) const {
+      const int slot = (int)id;
+      HvacButtonRect r;
+      r.x = left_x + slot * (temp_btn_w + btn_gap);
+      r.w = (id == BtnPower) ? power_btn_w : temp_btn_w;
+      return r;
+    }
+    bool contains(HvacButtonId id, int tx, int ty) const {
+      const HvacButtonRect r = rect(id);
+      return tx >= r.x && tx <= r.x + r.w &&
+             ty >= btns_y && ty <= btns_y + btn_h;
+    }
+  };
+  HvacButtonLayout compute_button_layout_(const UiRect &r) const {
+    HvacButtonLayout bl;
+    bl.pad = ui_spacing::lg;
+    bl.btn_h = 39;
+    bl.btns_y = r.y + r.h - bl.btn_h - bl.pad;
+    bl.left_x = r.x + bl.pad;
+    bl.btn_gap = ui_spacing::sm;
+    const int total_w = r.w - bl.pad * 2 - bl.btn_gap * 2;
+    bl.temp_btn_w = total_w / 5;
+    bl.power_btn_w = total_w - bl.temp_btn_w * 2;
+    return bl;
+  }
+
   void send_ha_service(const std::string &service,
                        const std::vector<std::pair<std::string, std::string>> &data) {
     auto *api = esphome::api::global_api_server;
@@ -2116,17 +2152,51 @@ class WeatherWidget : public Widget {
   }
 
  private:
+  // ---- Shared layout geometry for both compact + forecast modes ----
+  // Both views share the same outer padding, header offset, and the
+  // "content top" baseline (top of body, below the header). Only the
+  // content_bottom and per-element offsets differ; those are configured
+  // per-call below.
+  struct WeatherLayout {
+    int pad;            // outer widget padding (left/right/top)
+    int top_y;          // y of header label (r.y + pad + 3)
+    int header_row_h;   // height reserved for the header label band
+    int content_top;    // y where body content starts (top_y + header_row_h)
+    int content_bottom; // y where body content ends (mode-specific)
+    int icon_y_offset;  // y of icon relative to content_top
+    int temp_y_offset;  // y of temperature relative to content_top
+  };
+  WeatherLayout make_weather_layout_(const UiRect &r, bool with_pill_row) const {
+    WeatherLayout l;
+    l.pad = ui_spacing::lg;
+    l.top_y = r.y + l.pad + 3;
+    l.header_row_h = 20;
+    l.content_top = l.top_y + l.header_row_h;
+    if (with_pill_row) {
+      // Compact: leave room for the bottom 3-pill row (48px from bottom).
+      l.content_bottom = r.y + r.h - l.pad - 46;
+      l.icon_y_offset = 2;
+      l.temp_y_offset = 16;
+    } else {
+      // Forecast: bottom margin is small, stack is centered in the rest.
+      l.content_bottom = r.y + r.h - l.pad - 10;
+      l.icon_y_offset = 0;
+      l.temp_y_offset = 0;
+    }
+    return l;
+  }
+
   // ---- Today layout ----
   void draw_compact(display::Display &it, const UiRect &r) {
     const int w = r.w;
     const int h = r.h;
-    const int pad = 9;
+    const WeatherLayout l = make_weather_layout_(r, /*with_pill_row=*/true);
     const auto &dp = days_[0];
     const Color accent = condition_color(dp.condition ? dp.condition->c_str() : "");
 
 #if UI_THEME_RETRO
     const Color bg = RetroColors::VOID;
-    draw_clipped_box(it, r.x, r.y, w, h, 9, accent, bg, true);
+    draw_clipped_box(it, r.x, r.y, w, h, ui_corner_radius_for_height(h), accent, bg, true);
     draw_clipped_border(it, r.x + 2, r.y + 2, w - 4, h - 4,
                         7, 7, 7, 7,
                         RetroColors::DIMMER);
@@ -2139,36 +2209,33 @@ class WeatherWidget : public Widget {
                           RetroColors::CYAN_DIM);
 #else
     const Color bg(10, 14, 22);
-    draw_clipped_box(it, r.x, r.y, w, h, 9, accent, bg, false);
+    draw_clipped_box(it, r.x, r.y, w, h, ui_corner_radius_for_height(h), accent, bg, false);
 #endif
 
-    const int top_y = r.y + pad + 3;
-
     if (label_ && label_[0] && g_theme.header.font != nullptr) {
-      const int max_label_w = w - pad * 2;
-      ui_print_truncated(it, r.x + pad, top_y,
+      const int max_label_w = w - l.pad * 2;
+      ui_print_truncated(it, r.x + l.pad, l.top_y,
                          g_theme.header.font, dim_color_,
                          TextAlign::TOP_LEFT, label_, max_label_w);
     }
 
     {
-      const int content_top = top_y + 20;
-      const int content_bottom = r.y + h - pad - 46;
-      const int cy = (content_top + content_bottom) / 2;
+      const int cy = (l.content_top + l.content_bottom) / 2;
 
       if (dp.condition && !dp.condition->empty() && g_theme.icon.font != nullptr) {
         const char *glyph = condition_icon(dp.condition->c_str());
-        const int icon_y = content_top + 2;
-        draw_weather_icon(it, r.x + w / 2, icon_y, accent, glyph);
+        draw_weather_icon(it, r.x + w / 2, l.content_top + l.icon_y_offset,
+                          accent, glyph);
       }
 
+      const int temp_y = cy + l.temp_y_offset;
       if (valid_value(dp.temperature)) {
         char buf[16];
         snprintf(buf, sizeof(buf), "%.1f°", *dp.temperature);
-        it.printf(r.x + w / 2, cy + 16, g_theme.header.font, text_color_,
+        it.printf(r.x + w / 2, temp_y, g_theme.header.font, text_color_,
                   TextAlign::TOP_CENTER, "%s", buf);
       } else {
-        it.printf(r.x + w / 2, cy + 16, g_theme.header.font, dim_color_,
+        it.printf(r.x + w / 2, temp_y, g_theme.header.font, dim_color_,
                   TextAlign::TOP_CENTER, "—°");
       }
     }
@@ -2177,13 +2244,13 @@ class WeatherWidget : public Widget {
       const int pill_top = r.y + h - 48;
       const int pill_h = 42;
       const int pill_pad = 5;
-      const int pill_w = (w - pad * 2 - pill_pad * 2) / 3;
+      const int pill_w = (w - l.pad * 2 - pill_pad * 2) / 3;
 
-      draw_pill(it, r.x + pad, pill_top, pill_w, pill_h, "HUM",
+      draw_pill(it, r.x + l.pad, pill_top, pill_w, pill_h, "HUM",
                 dp.humidity, "%");
-      draw_pill(it, r.x + pad + pill_w + pill_pad, pill_top, pill_w, pill_h,
+      draw_pill(it, r.x + l.pad + pill_w + pill_pad, pill_top, pill_w, pill_h,
                 "RAIN", dp.precipitation, " mm");
-      draw_pill(it, r.x + pad + (pill_w + pill_pad) * 2, pill_top, pill_w,
+      draw_pill(it, r.x + l.pad + (pill_w + pill_pad) * 2, pill_top, pill_w,
                 pill_h, "WIND", dp.wind_speed, " m/s");
     }
   }
@@ -2192,34 +2259,30 @@ class WeatherWidget : public Widget {
   void draw_forecast(display::Display &it, const UiRect &r) {
     const int w = r.w;
     const int h = r.h;
-    const int pad = 9;
+    const WeatherLayout l = make_weather_layout_(r, /*with_pill_row=*/false);
 
     const Color accent = condition_color(days_[0].condition ? days_[0].condition->c_str() : "");
     const Color bg(10, 14, 22);
-    draw_clipped_box(it, r.x, r.y, w, h, 9, accent, bg, false);
-
-    const int top_y = r.y + pad + 3;
+    draw_clipped_box(it, r.x, r.y, w, h, ui_corner_radius_for_height(h), accent, bg, false);
 
     if (label_ && label_[0] && g_theme.header.font != nullptr) {
-      const int max_label_w = w - pad * 2;
-      ui_print_truncated(it, r.x + pad, top_y,
+      const int max_label_w = w - l.pad * 2;
+      ui_print_truncated(it, r.x + l.pad, l.top_y,
                          g_theme.header.font, dim_color_,
                          TextAlign::TOP_LEFT, label_, max_label_w);
     }
 
-    const int col_gap = 6;
+    const int col_gap = ui_spacing::sm;
     const int col_count = 3;
-    const int col_w = (w - pad * 2 - col_gap * 2) / col_count;
-    const int content_top = top_y + 20;
-    const int content_bottom = r.y + h - pad - 10;
-    const int content_h = content_bottom - content_top;
+    const int col_w = (w - l.pad * 2 - col_gap * 2) / col_count;
+    const int content_h = l.content_bottom - l.content_top;
     const int day_to_icon_gap = 24;
     const int icon_to_temp_gap = 54;
     const int temp_to_rain_gap = 26;
     const int rain_to_value_gap = 14;
     const int value_h = 16;
     const int stack_h = day_to_icon_gap + icon_to_temp_gap + temp_to_rain_gap + rain_to_value_gap + value_h;
-    const int centered_top = content_top + (content_h - stack_h) / 2 + 2;
+    const int centered_top = l.content_top + (content_h - stack_h) / 2 + 2;
 
     const char *day_labels[3] = {"---", "---", "---"};
     {
@@ -2234,7 +2297,7 @@ class WeatherWidget : public Widget {
     }
 
     for (int d = 0; d < col_count; d++) {
-      const int cx = r.x + pad + d * (col_w + col_gap);
+      const int cx = r.x + l.pad + d * (col_w + col_gap);
       const int mid = cx + col_w / 2;
       const auto &dp = days_[d];
       const Color col_accent = condition_color(dp.condition ? dp.condition->c_str() : "");

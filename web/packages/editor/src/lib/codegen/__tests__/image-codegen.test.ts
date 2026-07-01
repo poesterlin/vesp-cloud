@@ -233,4 +233,18 @@ describe("image component codegen", () => {
     expect(yaml).toContain('firmware_update_url: "https://example.com/api/firmware/token/"');
     expect(yaml).toContain('firmware_manifest_url: "https://example.com/api/firmware/token/manifest"');
   });
+
+  test("can omit OTA secrets for downloadable exports", () => {
+    const project = makeProject({
+      secrets: {
+        firmwareUpdateUrl: "https://example.com/api/firmware/token/",
+        homeAssistantBaseUrl: "http://homeassistant.local:8123",
+      },
+    });
+
+    const yaml = generateSecretsYAML(project, { includeOtaSecrets: false });
+    expect(yaml).not.toContain("firmware_update_url:");
+    expect(yaml).not.toContain("firmware_manifest_url:");
+    expect(yaml).toContain('home_assistant_base_url: "http://homeassistant.local:8123"');
+  });
 });

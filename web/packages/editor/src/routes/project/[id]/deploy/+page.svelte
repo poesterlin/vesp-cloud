@@ -5,8 +5,10 @@
     generateFontsYAML,
     generateUIScreensHeader,
     generateUIStateHeader,
+    generateUIThemeHeader,
     generateUITypesHeader,
   } from "$lib/codegen/esphome";
+  import { generateSecretsYAML } from "$lib/codegen/secrets";
   import { validateProject } from "$lib/codegen/validations";
   import BuildHistory from "$lib/components/BuildHistory.svelte";
   import ConfirmCompileModal from "$lib/components/ConfirmCompileModal.svelte";
@@ -16,8 +18,8 @@
   import JSZip from "jszip";
   import { onMount } from "svelte";
 
-  const TEMPLATE_PREFIX = "../templates/";
-  const staticTemplates = import.meta.glob("../templates/**/*", {
+  const TEMPLATE_PREFIX = "../../../../lib/templates/";
+  const staticTemplates = import.meta.glob("../../../../lib/templates/**/*", {
     query: "?raw",
     import: "default",
     eager: true,
@@ -89,6 +91,7 @@
       }
 
       zip.file("fonts.yaml", generateFontsYAML(project, baseFontsYaml));
+      zip.file("secrets.yaml", generateSecretsYAML(project, { includeOtaSecrets: false }));
 
       const validationErrors = validateProject(project);
       if (validationErrors.length > 0) {
@@ -102,6 +105,7 @@
       zip.file("includes/ui_types.h", generateUITypesHeader(project));
       zip.file("includes/ui_state.h", generateUIStateHeader(project));
       zip.file("includes/ui_screens.h", generateUIScreensHeader(project));
+      zip.file("includes/ui_theme.h", generateUIThemeHeader(project));
       zip.file(`${fileName}.yaml`, generateESPHomeYAML(project));
 
       const content = await zip.generateAsync({ type: "blob" });

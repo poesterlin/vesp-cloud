@@ -8,13 +8,18 @@ import type { Project } from "@esphome-designer/schema";
 import { escapeYAMLDoubleQuoted } from "./utils";
 import { isScreenshotDebugEnabled, screenshotUploadUrl } from "./screenshot-feature";
 
+interface GenerateSecretsOptions {
+  includeOtaSecrets?: boolean;
+}
+
 function manifestUrlFor(firmwareUrl: string): string {
   return `${firmwareUrl.replace(/\/$/, "")}/manifest`;
 }
 
-export function generateSecretsYAML(project: Project): string {
+export function generateSecretsYAML(project: Project, options: GenerateSecretsOptions = {}): string {
   const lines: string[] = [];
   const firmwareUpdateUrl = project.secrets?.firmwareUpdateUrl ?? "http://YOUR_SERVER/api/firmware/YOUR_TOKEN";
+  const includeOtaSecrets = options.includeOtaSecrets ?? true;
 
   lines.push(`# ============================================`);
   lines.push(`# ESPHome Secrets`);
@@ -22,10 +27,12 @@ export function generateSecretsYAML(project: Project): string {
   lines.push(`# ============================================`);
   lines.push(``);
 
-  // Firmware update URL (for OTA via HTTP)
-  lines.push(`# Firmware Update URL (auto-populated when project is published)`);
-  lines.push(`firmware_update_url: "${escapeYAMLDoubleQuoted(firmwareUpdateUrl)}"`);
-  lines.push(`firmware_manifest_url: "${escapeYAMLDoubleQuoted(manifestUrlFor(firmwareUpdateUrl))}"`);
+  if (includeOtaSecrets) {
+    // Firmware update URL (for OTA via HTTP)
+    lines.push(`# Firmware Update URL (auto-populated when project is published)`);
+    lines.push(`firmware_update_url: "${escapeYAMLDoubleQuoted(firmwareUpdateUrl)}"`);
+    lines.push(`firmware_manifest_url: "${escapeYAMLDoubleQuoted(manifestUrlFor(firmwareUpdateUrl))}"`);
+  }
 
   if (project.secrets?.homeAssistantBaseUrl) {
     lines.push(``);
@@ -41,4 +48,3 @@ export function generateSecretsYAML(project: Project): string {
 
   return lines.join("\n");
 }
-

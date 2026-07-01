@@ -1,4 +1,4 @@
-"""ESPHome Display Integration — notification helpers & todo list bridging."""
+"""ESPHome Display Integration — notification helpers and metadata export."""
 
 import json
 import logging
@@ -24,10 +24,9 @@ _LOGGER = logging.getLogger(__name__)
 
 CONF_NOTIFICATIONS = "notifications"
 CONF_DEFAULT_SEVERITY = "default_severity"
-CONF_TODO_ENTITIES = "todo_entities"
 CONF_DEVICES = "devices"  # old v1 format
 
-PLATFORMS = ["sensor"]
+PLATFORMS: list[str] = []
 
 _METADATA_VERSION = "1.0.0"
 
@@ -343,110 +342,6 @@ async def websocket_export_metadata(
     connection.send_result(msg["id"], metadata)
 
 
-# ── complete_item service ──────────────────────────────────────────
-
-COMPLETE_ITEM_SCHEMA = vol.Schema(
-    {
-        vol.Required("entity_id"): cv.entity_id,
-        vol.Required("index"): vol.All(vol.Coerce(int), vol.Range(min=0)),
-        vol.Optional("status", default="completed"): vol.In(
-            ["completed", "needs_action"]
-        ),
-    }
-)
-
-
-async def _handle_complete_item(service: cv.ServiceCall) -> None:
-    """Mark a to-do item as complete on the source todo list.
-
-    The target entity must be a :class:`TodoBridgeSensor` (exposes the
-    ``entity_id`` attribute pointing at the real todo list entity).
-    The item is identified by its 0-based index in the bridge sensor's
-    pending-items list (same order as ``all_items`` attribute lines).
-    """
-    hass = service.hass
-    entity_id = service.data.get("entity_id")
-    index = service.data.get("index")
-    status = service.data.get("status", "completed")
-
-    if not entity_id:
-        _LOGGER.error("complete_item: no target entity_id provided")
-        return
-
-    if index is None:
-        _LOGGER.error("complete_item: no index provided")
-        return
-
-    state = hass.states.get(entity_id)
-    if state is None:
-        _LOGGER.error("complete_item: entity %s not found", entity_id)
-        return
-
-    todo_entity = state.attributes.get("entity_id")
-    if not todo_entity:
-        _LOGGER.error(
-            "complete_item: entity %s has no 'entity_id' attribute — "
-            "not a TodoBridgeSensor",
-            entity_id,
-        )
-        return
-
-    # Fetch the pending items so we can resolve the index to the
-    # actual item summary that todo.update_item needs.
-    try:
-        response = await hass.services.async_call(
-            "todo",
-            "get_items",
-            {"status": ["needs_action"]},
-            target={"entity_id": todo_entity},
-            blocking=True,
-            return_response=True,
-        )
-        items = response.get(todo_entity, {}).get("items", [])
-    except Exception:
-        _LOGGER.exception("complete_item: failed to fetch items from %s", todo_entity)
-        return
-
-    if index < 0 or index >= len(items):
-        _LOGGER.error(
-            "complete_item: index %d out of range (%d items)", index, len(items)
-        )
-        return
-
-    summary = items[index].get("summary", "")
-    await hass.services.async_call(
-        "todo",
-        "update_item",
-        {
-            "entity_id": todo_entity,
-            "item": summary,
-            "status": status,
-        },
-        blocking=True,
-    )
-
-    _LOGGER.info(
-        "complete_item: marked '%s' (index %d) as %s on %s",
-        summary, index, status, todo_entity,
-    )
-
-
-def _register_services(hass: HomeAssistant) -> None:
-    """Register integration services (idempotent)."""
-    if hass.services.has_service(DOMAIN, "complete_item"):
-        return
-    hass.services.async_register(
-        DOMAIN, "complete_item", _handle_complete_item, schema=COMPLETE_ITEM_SCHEMA,
-    )
-
-
-def _unregister_services(hass: HomeAssistant) -> None:
-    """Remove integration services."""
-    for name in ("complete_item",):
-        if hass.services.has_service(DOMAIN, name):
-            hass.services.async_remove(DOMAIN, name)
-
-
 # ── setup / teardown ───────────────────────────────────────────────
 
 
@@ -455,13 +350,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {"http_registered": False}
 
-    # Core functionality first — must work even if panel fails
-    _register_services(hass)
-
     if entry.data.get(CONF_NOTIFICATIONS, True):
         await async_ensure_notification_entities(hass)
 
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    if PLATFORMS:
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Infrastructure last (best-effort) — websocket + panel
     if not hass.data[DOMAIN].get("http_registered"):
@@ -474,9 +367,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if PLATFORMS:
+        await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     async_unregister_panel(hass)
-    _unregister_services(hass)
     return True
 
 
@@ -484,15 +377,6 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Migrate config entry from version 1 (devices dict) to version 2 (flat)."""
     if entry.version == 1:
         devices = entry.data.get(CONF_DEVICES, {})
-
-        todo_entities: list[str] = []
-        for device_config in devices.values():
-            for eid in device_config.get("todo_entities", []):
-                if eid not in todo_entities:
-                    todo_entities.append(eid)
-            single = device_config.get("todo_entity")
-            if single and single not in todo_entities:
-                todo_entities.append(single)
 
         first_device = next(iter(devices.values()), {})
         default_severity = first_device.get("default_severity", "info")
@@ -502,12 +386,9 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             data={
                 "notifications": True,
                 "default_severity": default_severity,
-                "todo_entities": todo_entities,
             },
             version=2,
         )
-        _LOGGER.info(
-            "Migrated config entry to v2 (todo_entities=%s)", todo_entities
-        )
+        _LOGGER.info("Migrated config entry to v2")
 
     return True

@@ -3,16 +3,14 @@
     "step": {
       "user": {
         "title": "ESPHome Display Helpers",
-        "description": "This integration creates helper entities so your ESPHome display can show notifications and to-do lists.\n\nPick what you want to enable below — everything is optional.",
+        "description": "This integration creates helper entities so your ESPHome display can show notifications.\n\nPick what you want to enable below — everything is optional.",
         "data": {
           "notifications": "Enable notification helpers",
-          "default_severity": "Default notification severity",
-          "todo_entities": "Todo lists to bridge"
+          "default_severity": "Default notification severity"
         },
         "data_description": {
           "notifications": "Creates input_text.notification_title / notification_body and input_select.notification_severity so you can push notifications to your display",
-          "default_severity": "Alert level used when no severity is specified",
-          "todo_entities": "Each selected list gets a sensor that reformats items for ESPHome to read"
+          "default_severity": "Alert level used when no severity is specified"
         }
       }
     }
@@ -28,13 +26,6 @@
         "data_description": {
           "default_timeout": "How long notifications display by default before auto-closing (0 = manual dismiss only)"
         }
-      }
-    }
-  },
-  "entity": {
-    "sensor": {
-      "to_do_items": {
-        "name": "To-Do Items"
       }
     }
   }

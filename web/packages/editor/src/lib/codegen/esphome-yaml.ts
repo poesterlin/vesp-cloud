@@ -553,14 +553,25 @@ function generateTodoItemsIntervals(project: Project): string {
                   if (!entity_obj.is<JsonObjectConst>()) return;
                   auto items = entity_obj["items"];
                   if (!items.is<JsonArrayConst>()) return;
+                  auto sanitize = [](std::string s) {
+                    for (char &ch : s) {
+                      if (ch == '|' || ch == '\\n' || ch == '\\r' || ch == '\\t') ch = ' ';
+                    }
+                    return s;
+                  };
                   std::string formatted;
                   for (auto item : items) {
                     std::string summary;
+                    std::string due;
                     std::string status;
-                    if (item["summary"].is<std::string>()) summary = item["summary"].as<std::string>();
-                    if (item["status"].is<std::string>()) status = item["status"].as<std::string>();
+                    std::string uid;
+                    if (item["summary"].is<std::string>()) summary = sanitize(item["summary"].as<std::string>());
+                    if (item["due"].is<std::string>()) due = sanitize(item["due"].as<std::string>());
+                    if (item["status"].is<std::string>()) status = sanitize(item["status"].as<std::string>());
+                    if (item["uid"].is<std::string>()) uid = sanitize(item["uid"].as<std::string>());
+                    else if (item["id"].is<std::string>()) uid = sanitize(item["id"].as<std::string>());
                     if (!formatted.empty()) formatted += "\\n";
-                    formatted += summary + "||" + status;
+                    formatted += summary + "|" + due + "|" + status + "|" + uid;
                   }
                   if (formatted.empty()) formatted = "LIST EMPTY";
                   g_ui_app.state().${itemsVar}.set(formatted);

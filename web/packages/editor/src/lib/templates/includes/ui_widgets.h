@@ -372,12 +372,12 @@ class Widget {
   // Mark this widget's bounds dirty so it (and only it) is redrawn on the
   // next render pass. Use this from state-change handlers / update() polls.
   void mark_dirty() {
-    const UiRect b = has_custom_dirty_bounds_ ? dirty_bounds_ : bounds();
+    const UiRect b = has_custom_dirty_bounds_ ? screen_rect(dirty_bounds_) : bounds();
     UiInvalidation::request_rect(UiDirtyRect{b.x, b.y, b.w, b.h}, widget_label());
   }
 
   void mark_dirty_tagged(const char *tag) {
-    const UiRect b = has_custom_dirty_bounds_ ? dirty_bounds_ : bounds();
+    const UiRect b = has_custom_dirty_bounds_ ? screen_rect(dirty_bounds_) : bounds();
     UiInvalidation::request_rect(UiDirtyRect{b.x, b.y, b.w, b.h}, tag);
   }
 
@@ -1216,16 +1216,19 @@ class TodoPreviewWidget : public Widget {
     if (items_ == nullptr) return;
     if (!baseline_set_ || *items_ != last_items_) {
       // Preserve loading state across parse_rows by matching on summary
-      // text.  Indices can shift when items leave the pending list.
+      // text (and UUID when present). Indices can shift when items leave
+      // the pending list.
       struct Saved { uint32_t start; bool sent; };
       std::map<std::string, Saved> saved;
       for (auto &row : rows_) {
-        if (row.loading)
-          saved[row.summary] = {row.loading_start, row.ha_sent};
+        if (!row.loading) continue;
+        const std::string key = row.uid.empty() ? row.summary : row.uid;
+        saved[key] = {row.loading_start, row.ha_sent};
       }
       parse_rows(*items_);
       for (auto &row : rows_) {
-        auto it = saved.find(row.summary);
+        const std::string key = row.uid.empty() ? row.summary : row.uid;
+        auto it = saved.find(key);
         if (it != saved.end()) {
           row.loading = true;
           row.loading_start = it->second.start;
@@ -1408,6 +1411,7 @@ class TodoPreviewWidget : public Widget {
   struct TodoRow {
     std::string summary;
     std::string due;
+    std::string uid;
     bool overdue = false;
     bool completed = false;
     bool loading = false;
@@ -1473,10 +1477,16 @@ class TodoPreviewWidget : public Widget {
           row.summary = line.substr(0, p1);
           std::string rest = line.substr(p1 + 1);
           std::size_t p2 = rest.find('|');
+          std::size_t p3 = (p2 == std::string::npos) ? std::string::npos : rest.find('|', p2 + 1);
           std::string status;
           if (p2 != std::string::npos) {
             row.due = rest.substr(0, p2);
-            status = rest.substr(p2 + 1);
+            if (p3 != std::string::npos) {
+              status = rest.substr(p2 + 1, p3 - p2 - 1);
+              row.uid = rest.substr(p3 + 1);
+            } else {
+              status = rest.substr(p2 + 1);
+            }
           } else {
             row.due = rest;
           }
@@ -1486,6 +1496,7 @@ class TodoPreviewWidget : public Widget {
         }
         trim_inplace(row.summary);
         trim_inplace(row.due);
+        trim_inplace(row.uid);
         if (row.due == "none" || row.due == "no-date") {
           row.due.clear();
         }
@@ -1501,6 +1512,7 @@ class TodoPreviewWidget : public Widget {
   void push_todo_status(int index, const char *status) {
     if (index < 0 || index >= static_cast<int>(rows_.size())) return;
     const std::string &summary = rows_[index].summary;
+    const std::string &uid = rows_[index].uid;
 
     auto *api = esphome::api::global_api_server;
     if (api == nullptr || !api->is_connected()) return;
@@ -1529,7 +1541,7 @@ class TodoPreviewWidget : public Widget {
     call.set_service("todo.update_item");
     call.init_data(3);
     call.add_data("entity_id", todo_entity_);
-    call.add_data("item", summary);
+    call.add_data("item", uid.empty() ? summary : uid);
     call.add_data("status", status);
     call.play();
   }
@@ -1629,11 +1641,12 @@ class CalendarListWidget : public Widget {
 
   void update(uint32_t now) override {
     (void)now;
-    if (events_raw_ == nullptr) return;
-    if (!baseline_set_ || *events_raw_ != last_events_raw_) {
-      parse_rows(*events_raw_);
-      if (!scrollable_) scroll_offset_ = 0;
-      mark_dirty();
+    if (events_raw_ != nullptr) {
+      if (!baseline_set_ || *events_raw_ != last_events_raw_) {
+        parse_rows(*events_raw_);
+        if (!scrollable_) scroll_offset_ = 0;
+        mark_dirty();
+      }
     }
     Widget::update(now);
   }

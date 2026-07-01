@@ -11,8 +11,6 @@ from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.selector import (
     BooleanSelector,
-    EntitySelector,
-    EntitySelectorConfig,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -39,7 +37,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 data={
                     "notifications": user_input.get("notifications", True),
                     "default_severity": user_input.get("default_severity", "info"),
-                    "todo_entities": user_input.get("todo_entities", []),
                 },
             )
 
@@ -58,9 +55,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             ],
                             mode=SelectSelectorMode.DROPDOWN,
                         )
-                    ),
-                    vol.Optional("todo_entities"): EntitySelector(
-                        EntitySelectorConfig(domain=["todo"], multiple=True)
                     ),
                 }
             ),

@@ -217,6 +217,8 @@ describe("todo_list codegen", () => {
     expect(out).toContain('entity_id: "todo.shopping_list"');
     expect(out).toContain("status: needs_action");
     expect(out).toContain("todo_shopping_list_items");
+    expect(out).toContain('if (item["uid"].is<std::string>()) uid = sanitize(item["uid"].as<std::string>());');
+    expect(out).toContain('formatted += summary + "|" + due + "|" + status + "|" + uid;');
     // Should NOT contain the old bind_ha_string_attr pattern
     expect(out).not.toContain("bind_ha_string_attr(");
   });

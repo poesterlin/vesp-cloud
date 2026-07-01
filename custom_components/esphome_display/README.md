@@ -1,11 +1,10 @@
 # ESPHome Display
 
-Home Assistant integration that bridges notifications and to-do lists to ESPHome-powered displays. Uses standard helper entities — no custom services needed.
+Home Assistant integration that bridges notifications to ESPHome-powered displays. Uses standard helper entities and includes metadata export tooling for the editor.
 
 ## Features
 
 - **Entity-based notifications** — `input_text` and `input_select` helpers auto-created on setup, read reactively by the display
-- **To-Do list bridge** — one sensor per to-do list per device, auto-formatted for ESP32 consumption
 - **Metadata export** — WebSocket API that exposes all HA entities, services, devices, and areas for the web editor
 - **Custom panel** — built-in dashboard panel at `/esphome-display`
 - **Multi-device** — configure as many displays as you want via UI or YAML
@@ -45,7 +44,6 @@ Created on integration setup if they don't already exist. Appear under **Setting
 | Display Name | Friendly name (e.g. "Kitchen Display") |
 | ESPHome Device Name | Device name from your ESPHome YAML |
 | Default Severity | `info` / `warn` / `alert` / `question` |
-| To-Do Lists | Comma-separated entity IDs (e.g. `todo.shopping,todo.chores`) |
 
 ### YAML
 
@@ -55,9 +53,6 @@ esphome_display:
     - name: kitchen_display
       esphome_device: kitchen_screen
       default_severity: info
-      todo_entities:
-        - todo.shopping
-        - todo.chores
 ```
 
 ## Sending notifications
@@ -85,16 +80,6 @@ data:
 ```
 
 All three can be called in one automation action sequence.
-
-## To-Do bridge sensors
-
-For each to-do list linked to a device, a sensor entity is created:
-
-- **Entity**: `sensor.kitchen_display_to_do_items` (or `...to_do_items_1`, `...to_do_items_2` for multiples)
-- **State**: count of pending items
-- **Attributes**: `all_items` (pipe-separated format: `summary|due_date|status`)
-
-The ESP32 display can read these via `ha_sensor` bindings to show task lists.
 
 ## Metadata export
 

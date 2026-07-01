@@ -2044,17 +2044,20 @@ struct WeatherDayPointers {
 class WeatherWidget : public Widget {
  public:
   const char *widget_label() const override { return "Weather"; }
+  using Callback = std::function<void()>;
   WeatherWidget(UiRect rect, const char *label,
                 const char *entity_id,
                 bool forecast_mode = false,
                 WeatherDayPointers day1 = WeatherDayPointers{},
                 WeatherDayPointers day2 = WeatherDayPointers{},
                 WeatherDayPointers day3 = WeatherDayPointers{},
+                Callback on_tap = nullptr,
                 Color text_color = Color(255, 255, 255),
                 Color dim_color  = Color(80, 80, 80))
       : rect_(rect), label_(label),
         entity_id_(entity_id),
         forecast_mode_(forecast_mode),
+        on_tap_(std::move(on_tap)),
         text_color_(text_color), dim_color_(dim_color) {
     days_[0] = day1;
     days_[1] = day2;
@@ -2064,8 +2067,12 @@ class WeatherWidget : public Widget {
   UiRect bounds() const override { return screen_rect(rect_); }
 
   bool handle_touch(const TouchEvent &event, uint32_t now) override {
-    (void)event; (void)now;
-    return false;
+    (void)now;
+    if (event.type != TouchType::Tap) return false;
+    const UiRect r = screen_rect(rect_);
+    if (event.x < r.x || event.y < r.y || event.x >= r.x + r.w || event.y >= r.y + r.h) return false;
+    if (on_tap_) on_tap_();
+    return on_tap_ != nullptr;
   }
 
   void update(uint32_t now) override {
@@ -2406,6 +2413,7 @@ class WeatherWidget : public Widget {
   const char *label_;
   std::string entity_id_;
   bool forecast_mode_ = false;
+  Callback on_tap_;
   WeatherDayPointers days_[3];
   Color text_color_;
   Color dim_color_;

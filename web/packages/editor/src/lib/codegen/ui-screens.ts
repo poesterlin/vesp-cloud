@@ -339,12 +339,13 @@ function generateWeatherWidget(c: WeatherComponent,
   const base = stateVarFromEntity(entityId);
   const idSafe = safeCppIdentifier(c.id, 'component');
   const mode = c.mode ?? 'today';
+  const callback = emitTapAction(c.onTap) || '[](){}';
 
   if (mode === 'forecast') {
     const dayPtrs = (day: string) =>
       `WeatherDayPointers{state.${base}_${day}_condition.ptr(), state.${base}_${day}_temperature.ptr(), state.${base}_${day}_humidity.ptr(), state.${base}_${day}_wind_speed.ptr(), state.${base}_${day}_precipitation.ptr()}`;
 
-    let out = `${indent}auto *weather_${idSafe} = ${factory('WeatherWidget', `${rect(x, y, w, h)}, "${escapeCString(label)}", "${escapeCString(entityId)}", true, ${dayPtrs('day1')}, ${dayPtrs('day2')}, ${dayPtrs('day3')}`)};\n`;
+    let out = `${indent}auto *weather_${idSafe} = ${factory('WeatherWidget', `${rect(x, y, w, h)}, "${escapeCString(label)}", "${escapeCString(entityId)}", true, ${dayPtrs('day1')}, ${dayPtrs('day2')}, ${dayPtrs('day3')}, ${callback}`)};\n`;
     if (visibilityExpr) {
       out += `${indent}weather_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
     }
@@ -355,7 +356,7 @@ function generateWeatherWidget(c: WeatherComponent,
   }
 
   const todayPtrs = `WeatherDayPointers{state.${base}_condition.ptr(), state.${base}_temperature.ptr(), state.${base}_humidity.ptr(), state.${base}_wind_speed.ptr(), state.${base}_precipitation.ptr()}`;
-  let out = `${indent}auto *weather_${idSafe} = ${factory('WeatherWidget', `${rect(x, y, w, h)}, "${escapeCString(label)}", "${escapeCString(entityId)}", false, ${todayPtrs}`)};\n`;
+  let out = `${indent}auto *weather_${idSafe} = ${factory('WeatherWidget', `${rect(x, y, w, h)}, "${escapeCString(label)}", "${escapeCString(entityId)}", false, ${todayPtrs}, WeatherDayPointers{}, WeatherDayPointers{}, ${callback}`)};\n`;
   if (visibilityExpr) {
     out += `${indent}weather_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
   }

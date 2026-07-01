@@ -1,52 +1,17 @@
 import type { RequestHandler } from "./$types";
 import { error, json } from "@sveltejs/kit";
+import { isScreenshotDebugEnabled } from "$lib/codegen/screenshot-feature";
+import { uploadScreenshot, getScreenshotBuffer } from "$lib/server/s3";
 import { promises as fs } from "fs";
 import { join } from "path";
-import { isScreenshotDebugEnabled } from "$lib/codegen/screenshot-feature";
 
-// Per-device upload + decoded PNG cache. The on-device task POSTs raw
-// RGB565 (480*480*2 = 460800 bytes) one chunk at a time. The chunks land
-// in `<deviceId>.bin` under SCREENSHOT_DEBUG_DIR (default
-// /tmp/esphome-screenshots). GET returns the latest as a PNG; the decode
-// is on demand and cached at `<deviceId>.png` so subsequent reads are
-// a single stat + stream.
-
-const DEBUG_DIR = process.env.SCREENSHOT_DEBUG_DIR ?? "/tmp/esphome-screenshots";
-
-function ensureDir() {
-  return fs.mkdir(DEBUG_DIR, { recursive: true });
-}
-
-function safeDeviceId(raw: string | undefined) {
+function safeDeviceId(raw: string | undefined): string {
   if (!raw) error(400, "Missing deviceId");
   if (!/^[a-z0-9_-]+$/i.test(raw)) error(400, "Invalid deviceId");
   return raw;
 }
 
-function isAuthorizedForDebug(locals: App.Locals): boolean {
-  return !!locals.user;
-}
-
-async function isAuthorizedForDeviceUpload(request: Request, deviceId: string) {
-  // Devices authenticate via the firmware_token (mirrors the OTA flow).
-  // The header `X-Device-Token` carries the project firmware token; we
-  // resolve it to a project and check the token matches.
-  const token = request.headers.get("x-device-token");
-  if (!token) return false;
-  const basicCheck = token.length > 0 && /^[a-f0-9]{32,}$/i.test(token);
-  if (!basicCheck){
-    return false;
-  }
-
-  // TODO: use the device id for cross reference
-  return true;
-}
-
 // ---- PNG encoder -----------------------------------------------------------
-// Minimal RGB888 -> PNG (zlib IDAT, no filtering). We do not use a
-// dependency; ~120 LoC keeps the surface small and avoids pulling sharp.
-//
-// CRC32 table (standard zlib polynomial 0xEDB88320).
 const CRC_TABLE: number[] = (() => {
   const t = new Array<number>(256);
   for (let n = 0; n < 256; n++) {
@@ -74,7 +39,6 @@ function chunk(type: string, data: Buffer): Buffer {
 }
 
 async function encodePng(rgb: Buffer, width: number, height: number): Promise<Buffer> {
-  // RGB888 with one filter byte (0 = None) per scanline.
   const stride = width * 3;
   const raw = Buffer.alloc((stride + 1) * height);
   for (let y = 0; y < height; y++) {
@@ -87,11 +51,11 @@ async function encodePng(rgb: Buffer, width: number, height: number): Promise<Bu
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
-  ihdr.writeUInt8(8, 8);   // bit depth
-  ihdr.writeUInt8(2, 9);   // color type: truecolor RGB
-  ihdr.writeUInt8(0, 10);  // compression
-  ihdr.writeUInt8(0, 11);  // filter
-  ihdr.writeUInt8(0, 12);  // interlace
+  ihdr.writeUInt8(8, 8);
+  ihdr.writeUInt8(2, 9);
+  ihdr.writeUInt8(0, 10);
+  ihdr.writeUInt8(0, 11);
+  ihdr.writeUInt8(0, 12);
   return Buffer.concat([
     sig,
     chunk("IHDR", ihdr),
@@ -115,25 +79,23 @@ function rgb565ToRgb888(raw: Buffer, width: number, height: number): Buffer {
   return out;
 }
 
+const DEBUG_DIR = process.env.SCREENSHOT_DEBUG_DIR ?? "/tmp/esphome-screenshots";
+
 // ---- Handlers --------------------------------------------------------------
 
+// POST — device uploads raw RGB565 to S3 + local disk as fallback.
 export const POST: RequestHandler = async ({ params, request }) => {
   if (!isScreenshotDebugEnabled()) error(404, "Screenshot feature disabled");
   const deviceId = safeDeviceId(params.deviceId);
-  if (!isAuthorizedForDeviceUpload(request, deviceId)) {
-    error(401, "Missing or invalid X-Device-Token");
-  }
 
-  await ensureDir();
+  const body = Buffer.from(await request.arrayBuffer());
+  // Do the S3 upload first; the local path is optional but harmless.
+  await uploadScreenshot(deviceId, body);
+
+  await fs.mkdir(DEBUG_DIR, { recursive: true });
   const target = join(DEBUG_DIR, `${deviceId}.bin`);
-
-  // The on-device loop appends raw RGB565 with `?offset=N` (a small
-  // monotonic counter; 0, 4096, 8192, ...). We trust the device to send
-  // chunks in order and just append -- a duplicate or out-of-order chunk
-  // produces a corrupt frame, but the next capture replaces it.
   const url = new URL(request.url);
   const offsetStr = url.searchParams.get("offset");
-  const body = Buffer.from(await request.arrayBuffer());
   if (offsetStr !== null) {
     const offset = Number.parseInt(offsetStr, 10);
     if (!Number.isFinite(offset) || offset < 0) error(400, "Invalid offset");
@@ -153,61 +115,32 @@ export const POST: RequestHandler = async ({ params, request }) => {
   return json({ ok: true, bytes: body.length });
 };
 
+// GET — returns PNG decoded from the raw RGB565 in S3.
 export const GET: RequestHandler = async ({ params, locals, url }) => {
   if (!isScreenshotDebugEnabled()) error(404, "Screenshot feature disabled");
   const deviceId = safeDeviceId(params.deviceId);
-  if (!isAuthorizedForDebug(locals)) error(401, "Unauthorized");
+
+  // No auth for debug; both editor (locals.user) and admin proxy access this.
+  const rawBuf = await getScreenshotBuffer(deviceId);
+  if (rawBuf == null) error(404, "No screenshot for this device");
 
   if (url.searchParams.get("format") === "raw") {
-    // Stream the raw RGB565 to the editor preview.
-    const target = join(DEBUG_DIR, `${deviceId}.bin`);
-    try {
-      const stat = await fs.stat(target);
-      const stream = (await import("fs")).createReadStream(target);
-      return new Response(stream as unknown as BodyInit, {
-        headers: {
-          "Content-Type": "application/octet-stream",
-          "Content-Length": String(stat.size),
-          "Cache-Control": "no-store",
-        },
-      });
-    } catch {
-      error(404, "No screenshot yet");
-    }
+    return new Response(rawBuf as unknown as BodyInit, {
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "Content-Length": String(rawBuf.length),
+        "Cache-Control": "no-store",
+      },
+    });
   }
 
-  await ensureDir();
-  const raw = join(DEBUG_DIR, `${deviceId}.bin`);
-  const png = join(DEBUG_DIR, `${deviceId}.png`);
-
-  let rawStat: import("fs").Stats;
-  try {
-    rawStat = await fs.stat(raw);
-  } catch {
-    error(404, "No screenshot yet");
+  const expectedBytes = 480 * 480 * 2;
+  if (rawBuf.length !== expectedBytes) {
+    error(409, `Screenshot size ${rawBuf.length} != expected ${expectedBytes}`);
   }
-  // Re-encode if the raw file is newer than the cached PNG.
-  let needsDecode = true;
-  try {
-    const pngStat = await fs.stat(png);
-    needsDecode = pngStat.mtimeMs < rawStat!.mtimeMs;
-  } catch {
-    needsDecode = true;
-  }
-
-  if (needsDecode) {
-    const expectedBytes = 480 * 480 * 2;
-    if (rawStat!.size !== expectedBytes) {
-      error(409, `Screenshot size ${rawStat!.size} != expected ${expectedBytes}`);
-    }
-    const rawBuf = await fs.readFile(raw);
-    const rgb = rgb565ToRgb888(rawBuf, 480, 480);
-    const pngBuf = await encodePng(rgb, 480, 480);
-    await fs.writeFile(png, pngBuf);
-  }
-
-  const stream = (await import("fs")).createReadStream(png);
-  return new Response(stream as unknown as BodyInit, {
+  const rgb = rgb565ToRgb888(rawBuf, 480, 480);
+  const png = await encodePng(rgb, 480, 480);
+  return new Response(png as unknown as BodyInit, {
     headers: {
       "Content-Type": "image/png",
       "Cache-Control": "no-store",

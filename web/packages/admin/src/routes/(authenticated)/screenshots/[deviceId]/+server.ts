@@ -1,14 +1,12 @@
 import { error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { env } from "$env/dynamic/private";
-import { promises as fs } from "fs";
-import { join } from "path";
+import { getScreenshotBuffer } from "$lib/server/s3";
 
 const SCREENSHOT_DEBUG_ENABLED =
   env.SCREENSHOT_DEBUG_ENABLED === "1" || env.SCREENSHOT_DEBUG_ENABLED === "true";
-const DEBUG_DIR = env.SCREENSHOT_DEBUG_DIR ?? "/tmp/esphome-screenshots";
 
-// --- PNG encoder -------------------------------------------------------------
+// ---- PNG encoder -------------------------------------------------------------
 const CRC_TABLE: number[] = (() => {
   const t = new Array<number>(256);
   for (let n = 0; n < 256; n++) {
@@ -76,7 +74,7 @@ function rgb565ToRgb888(raw: Buffer, width: number, height: number): Buffer {
   return out;
 }
 
-// --- Handler -----------------------------------------------------------------
+// ---- Handler -----------------------------------------------------------------
 
 export const GET: RequestHandler = async ({ params, locals }) => {
   if (!locals.user) error(401);
@@ -85,37 +83,17 @@ export const GET: RequestHandler = async ({ params, locals }) => {
   const deviceId = params.deviceId;
   if (!deviceId || !/^[a-z0-9_-]+$/i.test(deviceId)) error(400, "Invalid deviceId");
 
-  const raw = join(DEBUG_DIR, `${deviceId}.bin`);
-  const png = join(DEBUG_DIR, `${deviceId}.png`);
+  const rawBuf = await getScreenshotBuffer(deviceId);
+  if (rawBuf == null) error(404, "No screenshot for this device");
 
-  let rawStat: import("fs").Stats;
-  try {
-    rawStat = await fs.stat(raw);
-  } catch {
-    error(404, "No screenshot for this device");
+  const expectedBytes = 480 * 480 * 2;
+  if (rawBuf.length !== expectedBytes) {
+    error(409, `Screenshot size ${rawBuf.length} != expected ${expectedBytes}`);
   }
+  const rgb = rgb565ToRgb888(rawBuf, 480, 480);
+  const png = await encodePng(rgb, 480, 480);
 
-  let needsDecode = true;
-  try {
-    const pngStat = await fs.stat(png);
-    needsDecode = pngStat.mtimeMs < rawStat.mtimeMs;
-  } catch {
-    needsDecode = true;
-  }
-
-  if (needsDecode) {
-    const expectedBytes = 480 * 480 * 2;
-    if (rawStat.size !== expectedBytes) {
-      error(409, `Screenshot size ${rawStat.size} != expected ${expectedBytes}`);
-    }
-    const rawBuf = await fs.readFile(raw);
-    const rgb = rgb565ToRgb888(rawBuf, 480, 480);
-    const pngBuf = await encodePng(rgb, 480, 480);
-    await fs.writeFile(png, pngBuf);
-  }
-
-  const stream = (await import("fs")).createReadStream(png);
-  return new Response(stream as unknown as BodyInit, {
+  return new Response(png as unknown as BodyInit, {
     headers: {
       "Content-Type": "image/png",
       "Cache-Control": "no-store",

@@ -1,7 +1,7 @@
 """TodoBridgeSensor — converts HA todo lists to PSV format for ESPHome displays."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
@@ -39,6 +39,38 @@ def _sensor_name(hass: HomeAssistant, entity_id: str) -> str:
     state = hass.states.get(entity_id)
     friendly = state.attributes.get("friendly_name") if state else None
     return f"To-Do: {friendly}" if friendly else f"To-Do Bridge: {entity_id}"
+
+
+def _format_due_date(due_str: str) -> str:
+    """Convert an ISO date string to a relative display format."""
+    try:
+        due_date = datetime.fromisoformat(due_str)
+    except (ValueError, TypeError):
+        return due_str
+
+    now = datetime.now()
+    due_day = due_date.date()
+    today = now.date()
+    tomorrow = today + timedelta(days=1)
+    yesterday = today - timedelta(days=1)
+
+    time_str = due_date.strftime("%H:%M")
+
+    if due_day == today:
+        return f"today {time_str}"
+    if due_day == tomorrow:
+        return f"tomorrow {time_str}"
+    if due_day == yesterday:
+        return f"yesterday {time_str}"
+
+    diff = (due_day - today).days
+    if diff < 0:
+        if diff >= -6:
+            return f"{-diff}d ago"
+        return due_date.strftime("%d %b")
+    if diff <= 6:
+        return f"in {diff}d"
+    return due_date.strftime("%d %b")
 
 
 class TodoBridgeSensor(SensorEntity):
@@ -101,6 +133,7 @@ class TodoBridgeSensor(SensorEntity):
 
                 status = "ok"
                 if due:
+                    due_display = _format_due_date(due)
                     try:
                         due_date = datetime.fromisoformat(due)
                         today = datetime.now().replace(
@@ -113,11 +146,10 @@ class TodoBridgeSensor(SensorEntity):
                             < today
                         ):
                             status = "overdue"
-                        due_display = due
                     except (ValueError, TypeError):
-                        due_display = due
+                        pass
                 else:
-                    due_display = "no-date"
+                    due_display = ""
 
                 lines.append(f"{summary}|{due_display}|{status}")
 

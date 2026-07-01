@@ -4,6 +4,7 @@ import type { PageServerLoad } from './$types';
 import { env } from '$env/dynamic/private';
 
 const IS_CLOUD = env.APP_EDITION === 'cloud';
+const SCREENSHOT_DEBUG_ENABLED = env.SCREENSHOT_DEBUG_ENABLED === '1' || env.SCREENSHOT_DEBUG_ENABLED === 'true';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	if (!locals.user) error(401);
@@ -12,6 +13,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 	return {
 		isCloud: IS_CLOUD,
+		screenshotDebugEnabled: SCREENSHOT_DEBUG_ENABLED,
 		project: {
 			id: row.id,
 			name: row.name,

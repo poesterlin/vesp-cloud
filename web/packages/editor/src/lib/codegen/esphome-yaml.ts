@@ -3,6 +3,7 @@ import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectPr
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
 import { ICON_FONT_ID, getIconGlyphs } from "./mdi-icons";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
+import { isScreenshotDebugEnabled, screenshotUploadUrl } from "./screenshot-feature";
 
 /**
  * Collect every EntityBinding referenced by a text component. The source
@@ -505,7 +506,8 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   const onlineImageCount = countOnlineImages(project);
   const homeAssistantBaseUrlEnabled = onlineImagesEnabled && !!project.secrets?.homeAssistantBaseUrl;
   const httpOtaEnabled = !!(project.secrets?.firmwareUpdateUrl);
-  const httpRequestEnabled = onlineImagesEnabled || httpOtaEnabled;
+  const screenshotDebugEnabled = isScreenshotDebugEnabled();
+  const httpRequestEnabled = onlineImagesEnabled || httpOtaEnabled || screenshotDebugEnabled;
   const bindings = generateBindings(project);
   const weatherIntervals = generateWeatherForecastIntervals(project);
   const notificationSubs = generateNotificationSubscriptions(project);
@@ -519,6 +521,27 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   const httpRequestYaml = httpRequestEnabled
     ? `\nhttp_request:\n  verify_ssl: false\n  timeout: 10s\n`
     : '';
+  const screenshotUploadBaseUrl = screenshotDebugEnabled ? screenshotUploadUrl() : undefined;
+  const screenshotSubstitutions = screenshotDebugEnabled && screenshotUploadBaseUrl
+    ? `\n  screenshot_upload_url: "${escapeYAMLDoubleQuoted(screenshotUploadBaseUrl + "/api/screenshot/" + deviceName)}"`
+    : '';
+  const screenshotCompileDefine = screenshotDebugEnabled
+    ? `\n  platformio_options:\n    build_flags:\n      - "-DSCREENSHOT_DEBUG_ENABLED"`
+    : '';
+  const screenshotIncludeLine = screenshotDebugEnabled ? `    - includes/ui_screenshot.h\n` : '';
+  const screenshotExternalComponents = screenshotDebugEnabled
+    ? `\nexternal_components:
+  - source:
+      type: local
+      path: components/st7701s
+    refresh: 0s
+`
+    : '';
+  const screenshotSubscribeBlock = '';
+  const screenshotSetupLine = screenshotDebugEnabled
+    ? `\n          screenshot_setup();`
+    : '';
+  const screenshotIdForwardDecl = '';
   const httpOtaYaml = httpOtaEnabled
     ? `
 ota:
@@ -606,16 +629,16 @@ ${relativeImageHandling}
   return `substitutions:
   device_name: ${deviceName}
   friendly_name: "${friendlyName}"
-  timezone: "${timezone}"${homeAssistantBaseUrlSubstitution}
+  timezone: "${timezone}"${homeAssistantBaseUrlSubstitution}${screenshotSubstitutions}
 
 packages:
   base: !include base.yaml
   fonts: !include fonts.yaml
   hardware: !include hardware.yaml
 ${imageYaml}${onlineImageYaml}${httpRequestYaml}${httpOtaYaml}${httpUpdateYaml}
-
+${screenshotExternalComponents}
 esphome:
-${projectVersionYaml}
+${projectVersionYaml}${screenshotCompileDefine}
   on_boot:
     priority: -100
     then:
@@ -642,7 +665,7 @@ ${vacuumFallbackEntityLine}
             }
             call.play();
           };
-          UiRedraw::set_display_updater([]() { id(main_display).update(); });
+          UiRedraw::set_display_updater([]() { id(main_display).update(); });${screenshotSetupLine}
           g_ui_app.state().online_images_expected = ${onlineImageCount};
           g_ui_app.state().online_images_completed = 0;
           g_ui_app.state().online_images_failed = 0;
@@ -760,6 +783,7 @@ ${imageBindingHelper}
                   UiRedraw::trigger_display_update();
                 });
           };
+${screenshotSubscribeBlock}
 ${bindings ? bindings + '\n' : ''}${notificationBindings ? notificationBindings + '\n' : ''}  includes:
     - includes/ui_theme.h
     - includes/ui_types.h
@@ -776,6 +800,7 @@ ${bindings ? bindings + '\n' : ''}${notificationBindings ? notificationBindings 
     - includes/ui_retro.h
     - includes/ui_tab_container.h
     - includes/ui_scrollable_detail.h
+${screenshotIncludeLine}
 
 globals:
   - id: touch_last_x
@@ -786,6 +811,7 @@ globals:
     type: int
     restore_value: no
     initial_value: "0"
+${screenshotIdForwardDecl}
 
 touchscreen:
   platform: gt911
@@ -857,6 +883,7 @@ interval:
           if (!connected) {
             id(main_display).update();
           }
+${screenshotDebugEnabled ? '          screenshot_task_notify();' : ''}
   - interval: 10s
     then:
       - lambda: |-
@@ -893,5 +920,13 @@ binary_sensor:
     entity_id: sun.sun
     id: _ha_state_flag
     internal: true
-`;
+${screenshotDebugEnabled ? `
+button:
+  - platform: template
+    name: "Take Screenshot"
+    on_press:
+      then:
+        - lambda: |-
+            request_screenshot();
+` : ''}`;
 }

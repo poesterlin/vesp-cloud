@@ -13,6 +13,8 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
       - PUBLIC_BASE_URL=https://${DOMAIN}
+      - SCREENSHOT_UPLOAD_BASE_URL=https://${DOMAIN}
+      - SCREENSHOT_DEBUG_ENABLED=true
       - LOG_LEVEL=debug
       - ADDRESS_HEADER=CF-Connecting-IP
     networks:
@@ -37,6 +39,7 @@ services:
       - TSIDP_CLIENT_ID=${TSIDP_CLIENT_ID}
       - TSIDP_CLIENT_SECRET=${TSIDP_CLIENT_SECRET}
       - URL=https://${ADMIN_DOMAIN}
+      - SCREENSHOT_DEBUG_ENABLED=true
     networks:
       - traefik_web
     labels:

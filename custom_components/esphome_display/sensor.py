@@ -57,11 +57,11 @@ def _format_due_date(due_str: str) -> str:
     time_str = due_date.strftime("%H:%M")
 
     if due_day == today:
-        return f"today {time_str}"
+        return time_str
     if due_day == tomorrow:
-        return f"tomorrow {time_str}"
+        return "tomorrow"
     if due_day == yesterday:
-        return f"yesterday {time_str}"
+        return "yesterday"
 
     diff = (due_day - today).days
     if diff < 0:
@@ -149,7 +149,7 @@ class TodoBridgeSensor(SensorEntity):
                     except (ValueError, TypeError):
                         pass
                 else:
-                    due_display = ""
+                    due_display = "no-date"
 
                 lines.append(f"{summary}|{due_display}|{status}")
 

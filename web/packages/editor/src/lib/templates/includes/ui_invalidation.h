@@ -13,7 +13,11 @@ class UiInvalidation {
  public:
   static constexpr int MAX_DIRTY_RECTS = 16;
 
-  static void request_full() {
+  static uint32_t frame() { return frame_count_; }
+  static void inc_frame() { frame_count_++; }
+
+  static void request_full(const char *why = nullptr) {
+    ESP_LOGD("inval", "[f=%u] request_full   why=%s", frame_count_, why ? why : "?");
     full_dirty_ = true;
     dirty_count_ = 0;
     needs_redraw_ = true;
@@ -21,21 +25,24 @@ class UiInvalidation {
 
   static void request_partial() {
     if (!full_dirty_) {
+      ESP_LOGD("inval", "[f=%u] request_partial (legacy)", frame_count_);
       needs_redraw_ = true;
     }
   }
 
-  static void request_rect(const UiDirtyRect &rect) {
+  static void request_rect(const UiDirtyRect &rect, const char *who = nullptr) {
     if (full_dirty_) {
       needs_redraw_ = true;
       return;
     }
 
     if (dirty_count_ >= MAX_DIRTY_RECTS) {
-      request_full();
+      ESP_LOGD("inval", "[f=%u] request_rect   x=%d y=%d w=%d h=%d  who=%s -> ESCALATED TO FULL", frame_count_, rect.x, rect.y, rect.w, rect.h, who ? who : "?");
+      request_full("rect overflow");
       return;
     }
 
+    ESP_LOGD("inval", "[f=%u] request_rect   x=%d y=%d w=%d h=%d  who=%s", frame_count_, rect.x, rect.y, rect.w, rect.h, who ? who : "?");
     dirty_rects_[dirty_count_++] = rect;
     needs_redraw_ = true;
   }
@@ -88,6 +95,7 @@ class UiInvalidation {
   }
 
  private:
+  inline static uint32_t frame_count_ = 0;
   inline static bool needs_redraw_ = true;
   inline static bool full_dirty_ = true;
   inline static bool render_continue_ = false;

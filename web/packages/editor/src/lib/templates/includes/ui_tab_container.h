@@ -4,6 +4,7 @@
 
 class TabContainerWidget : public Widget {
  public:
+  const char *widget_label() const override { return "TabContainer"; }
   TabContainerWidget(UiRect rect, Color bg_color,
                      const Theme::ButtonStyle &tab_style,
                      bool clip_content = false)

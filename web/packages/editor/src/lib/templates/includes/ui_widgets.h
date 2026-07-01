@@ -229,11 +229,19 @@ class Widget {
     has_custom_dirty_bounds_ = true;
   }
 
+  // Name used in debug logging to identify which widget type called mark_dirty.
+  virtual const char *widget_label() const { return "Widget"; }
+
   // Mark this widget's bounds dirty so it (and only it) is redrawn on the
   // next render pass. Use this from state-change handlers / update() polls.
   void mark_dirty() {
     const UiRect b = has_custom_dirty_bounds_ ? dirty_bounds_ : bounds();
-    UiInvalidation::request_rect(UiDirtyRect{b.x, b.y, b.w, b.h});
+    UiInvalidation::request_rect(UiDirtyRect{b.x, b.y, b.w, b.h}, widget_label());
+  }
+
+  void mark_dirty_tagged(const char *tag) {
+    const UiRect b = has_custom_dirty_bounds_ ? dirty_bounds_ : bounds();
+    UiInvalidation::request_rect(UiDirtyRect{b.x, b.y, b.w, b.h}, tag);
   }
 
   // Should this widget actually be drawn this frame? Combines visibility
@@ -293,6 +301,7 @@ class Widget {
 
 class RectWidget : public Widget {
  public:
+  const char *widget_label() const override { return "Rect"; }
   RectWidget(UiRect rect, Color color) : rect_(rect), color_(color) {}
   bool is_background_widget() const override { return true; }
 
@@ -311,6 +320,7 @@ class RectWidget : public Widget {
 
 class ImageWidget : public Widget {
  public:
+  const char *widget_label() const override { return "Image"; }
   using Callback = std::function<void()>;
 
   static constexpr int TILE_ROWS = 32;
@@ -463,6 +473,7 @@ class ImageWidget : public Widget {
 
 class LabelWidget : public Widget {
  public:
+  const char *widget_label() const override { return "Label"; }
   LabelWidget(UiRect rect, const char *text, const Theme::TextStyle &style)
       : rect_(rect), text_(text), style_(&style) {}
 
@@ -646,6 +657,7 @@ class LabelWidget : public Widget {
 
 class IconWidget : public Widget {
  public:
+  const char *widget_label() const override { return "Icon"; }
   IconWidget(UiRect rect, const char *glyph, const Theme::TextStyle &style)
       : rect_(rect), glyph_(glyph), style_(&style) {}
 
@@ -679,6 +691,7 @@ class IconWidget : public Widget {
 
 class ButtonWidget : public Widget {
  public:
+  const char *widget_label() const override { return "Button"; }
   using Callback = std::function<void()>;
 
   ButtonWidget(UiRect rect, const char *label, Callback callback, const Theme::ButtonStyle &style)
@@ -830,6 +843,7 @@ class ButtonWidget : public Widget {
 
 class ImageToggleWidget : public Widget {
  public:
+  const char *widget_label() const override { return "ImgToggle"; }
   using Callback = std::function<void()>;
 
   ImageToggleWidget(UiRect rect, const char *label, const bool *on_state,
@@ -966,6 +980,7 @@ class ImageToggleWidget : public Widget {
 
 class TodoPreviewWidget : public Widget {
  public:
+  const char *widget_label() const override { return "Todo"; }
   using Callback = std::function<void()>;
 
   TodoPreviewWidget(UiRect rect, const std::string *items,
@@ -1383,6 +1398,7 @@ class TodoPreviewWidget : public Widget {
 
 class NotificationOverlayWidget : public Widget {
  public:
+  const char *widget_label() const override { return "NotifyOverlay"; }
   NotificationOverlayWidget(const std::string *title, const std::string *body,
                             const std::string *severity,
                             const std::string *dismissed,
@@ -1422,7 +1438,7 @@ class NotificationOverlayWidget : public Widget {
       changed = true;
     }
     if (was_visible_ != visible_now) {
-      UiInvalidation::request_full();
+      UiInvalidation::request_full(visible_now ? "NotifyOverlay appeared" : "NotifyOverlay dismissed");
       was_visible_ = visible_now;
     } else if (changed && visible_now) {
       mark_dirty();
@@ -1628,6 +1644,7 @@ class NotificationOverlayWidget : public Widget {
 
 class HvacWidget : public Widget {
  public:
+  const char *widget_label() const override { return "Hvac"; }
   using Callback = std::function<void()>;
 
   HvacWidget(UiRect rect, const char *label,
@@ -2026,6 +2043,7 @@ struct WeatherDayPointers {
 
 class WeatherWidget : public Widget {
  public:
+  const char *widget_label() const override { return "Weather"; }
   WeatherWidget(UiRect rect, const char *label,
                 const char *entity_id,
                 bool forecast_mode = false,
@@ -2400,24 +2418,25 @@ class WeatherWidget : public Widget {
 
 // ---- WeatherWidget static icon glyph definitions ----
 
-const char WeatherWidget::icon_weather_cloudy[]           = "\xF3\xA0\x96\x90";
-const char WeatherWidget::icon_weather_fog[]              = "\xF3\xA0\x96\x91";
-const char WeatherWidget::icon_weather_hail[]             = "\xF3\xA0\x96\x92";
-const char WeatherWidget::icon_weather_lightning[]        = "\xF3\xA0\x96\x93";
-const char WeatherWidget::icon_weather_lightning_rainy[]  = "\xF3\xA0\x99\xBE";
-const char WeatherWidget::icon_weather_night[]            = "\xF3\xA0\x96\x94";
-const char WeatherWidget::icon_weather_partly_cloudy[]    = "\xF3\xA0\x96\x95";
-const char WeatherWidget::icon_weather_pouring[]          = "\xF3\xA0\x96\x96";
-const char WeatherWidget::icon_weather_rainy[]            = "\xF3\xA0\x96\x97";
-const char WeatherWidget::icon_weather_snowy[]            = "\xF3\xA0\x96\x98";
-const char WeatherWidget::icon_weather_snowy_rainy[]      = "\xF3\xA0\x99\xBF";
-const char WeatherWidget::icon_weather_sunny[]            = "\xF3\xA0\x96\x99";
-const char WeatherWidget::icon_weather_tornado[]          = "\xF3\xA0\xBC\xB8";
-const char WeatherWidget::icon_weather_windy[]            = "\xF3\xA0\x96\x9D";
-const char WeatherWidget::icon_weather_windy_variant[]    = "\xF3\xA0\x96\x9E";
+const char WeatherWidget::icon_weather_cloudy[]           = "\xF3\xB0\x96\x90";
+const char WeatherWidget::icon_weather_fog[]              = "\xF3\xB0\x96\x91";
+const char WeatherWidget::icon_weather_hail[]             = "\xF3\xB0\x96\x92";
+const char WeatherWidget::icon_weather_lightning[]        = "\xF3\xB0\x96\x93";
+const char WeatherWidget::icon_weather_lightning_rainy[]  = "\xF3\xB0\x99\xBE";
+const char WeatherWidget::icon_weather_night[]            = "\xF3\xB0\x96\x94";
+const char WeatherWidget::icon_weather_partly_cloudy[]    = "\xF3\xB0\x96\x95";
+const char WeatherWidget::icon_weather_pouring[]          = "\xF3\xB0\x96\x96";
+const char WeatherWidget::icon_weather_rainy[]            = "\xF3\xB0\x96\x97";
+const char WeatherWidget::icon_weather_snowy[]            = "\xF3\xB0\x96\x98";
+const char WeatherWidget::icon_weather_snowy_rainy[]      = "\xF3\xB0\x99\xBF";
+const char WeatherWidget::icon_weather_sunny[]            = "\xF3\xB0\x96\x99";
+const char WeatherWidget::icon_weather_tornado[]          = "\xF3\xB0\xBC\xB8";
+const char WeatherWidget::icon_weather_windy[]            = "\xF3\xB0\x96\x9D";
+const char WeatherWidget::icon_weather_windy_variant[]    = "\xF3\xB0\x96\x9E";
 
 class LoadingWidget : public Widget {
  public:
+  const char *widget_label() const override { return "Loading"; }
   UiRect bounds() const override { return UiRect{0, 0, 480, 480}; }
 
   bool is_visible(const UiState &state) const override {

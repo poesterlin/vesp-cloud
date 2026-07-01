@@ -30,7 +30,7 @@ class UiApp {
     }, [this]() {
       if (this->dismiss_notification) this->dismiss_notification();
     });
-    UiRedraw::request_full();
+    UiInvalidation::request_full("UiApp::init");
   }
 
   void on_touch_event(const TouchEvent &event) {

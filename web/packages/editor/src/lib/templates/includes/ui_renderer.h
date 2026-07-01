@@ -152,21 +152,24 @@ inline void ui_profile_log(uint32_t total_us) {
 #endif
 
 inline void render_basic_ui(display::Display &it) {
-  // OTA splash takes priority over the normal UI path. We do NOT call
-  // g_ui_app.update() here -- during OTA the ESP32 is busy erasing/writing
-  // flash and polling widgets / firing HA callbacks would just waste CPU
-  // and twitch state mid-update.
   if (g_ota_in_progress) {
     render_ota_splash(it);
     return;
   }
 
   const uint32_t now = millis();
+  UiInvalidation::inc_frame();
   g_ui_app.update(now);
 
   if (!UiInvalidation::needs_redraw()) {
     return;
   }
+
+  ESP_LOGD("render", "[f=%u] draw  full=%d  dirty_rects=%d  continue=%d",
+           UiInvalidation::frame(),
+           UiInvalidation::is_full_dirty() ? 1 : 0,
+           UiInvalidation::dirty_count(),
+           UiInvalidation::should_continue() ? 1 : 0);
 
   UiRedraw::begin_draw();
 #if UI_PROFILE
@@ -180,6 +183,7 @@ inline void render_basic_ui(display::Display &it) {
   const bool more_pending = UiInvalidation::should_continue();
   UiRedraw::end_draw();
   if (more_pending) {
+    ESP_LOGD("render", "[f=%u] requesting continue", UiInvalidation::frame());
     UiRedraw::trigger_display_update();
   }
 }

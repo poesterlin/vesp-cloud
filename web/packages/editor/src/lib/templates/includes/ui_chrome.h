@@ -19,6 +19,7 @@ inline void draw_retro_box(display::Display& it, int x, int y, int w, int h,
 
 class PageIndicatorWidget : public Widget {
  public:
+  const char *widget_label() const override { return "PageIndicator"; }
   PageIndicatorWidget(int y, int dot_spacing = 28, int radius_active = 7, int radius_inactive = 5)
       : y_(y), dot_spacing_(dot_spacing), radius_active_(radius_active), radius_inactive_(radius_inactive) {}
 
@@ -84,6 +85,7 @@ class PageIndicatorWidget : public Widget {
 
 class HeaderWidget : public Widget {
  public:
+  const char *widget_label() const override { return "Header"; }
   HeaderWidget(esphome::font::Font* time_font, esphome::font::Font* detail_font,
                const bool* timer_active, const int* timer_remaining)
       : time_font_(time_font), detail_font_(detail_font),
@@ -209,6 +211,7 @@ class HeaderWidget : public Widget {
 
 class DetailHeaderWidget : public Widget {
  public:
+  const char *widget_label() const override { return "DetailHeader"; }
   DetailHeaderWidget(esphome::font::Font* title_font, esphome::font::Font* btn_font,
                      const char* title, std::function<void()> back_callback)
       : title_font_(title_font), btn_font_(btn_font), title_(title), back_callback_(back_callback) {}

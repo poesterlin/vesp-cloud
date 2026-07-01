@@ -1,7 +1,7 @@
 import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent, HvacComponent, WeatherComponent } from "@esphome-designer/schema";
 import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted } from "./utils";
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
-import { ICON_FONT_ID, getIconGlyphs } from "./mdi-icons";
+import { ICON_FONT_ID, WEATHER_ICON_FONT_ID, getIconGlyphs, projectHasWeather } from "./mdi-icons";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
 import { isScreenshotDebugEnabled, screenshotUploadUrl } from "./screenshot-feature";
 
@@ -516,6 +516,9 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   const iconFontAssignment = iconGlyphs.size > 0
     ? `\n          g_theme.icon.font = id(${ICON_FONT_ID});`
     : '';
+  const weatherIconFontAssignment = projectHasWeather(project)
+    ? `\n          g_theme.weather_icon.font = id(${WEATHER_ICON_FONT_ID});`
+    : '';
   const imageYaml = generateStaticImagesYAML(project);
   const onlineImageYaml = generateOnlineImagesYAML(project);
   const httpRequestYaml = httpRequestEnabled
@@ -638,7 +641,7 @@ ${projectVersionYaml}${screenshotCompileDefine}
           g_theme.primary.font = id(font_small);
           g_theme.accent.font = id(font_small);
           g_theme.neutral.font = id(font_small);
-          g_theme.success.font = id(font_small);${iconFontAssignment}
+          g_theme.success.font = id(font_small);${iconFontAssignment}${weatherIconFontAssignment}
           g_ui_app.on_action = [](const std::string& entity_id, const std::string& service) {
             auto *api = esphome::api::global_api_server;
             if (api == nullptr || !api->is_connected()) return;

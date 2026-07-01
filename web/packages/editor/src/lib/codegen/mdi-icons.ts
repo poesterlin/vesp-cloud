@@ -22,6 +22,12 @@ export const ICON_FONT_SIZE = 24;
 /** Generated ESPHome font id for the default MDI icon font. */
 export const ICON_FONT_ID = `mdi_icons_${ICON_FONT_SIZE}`;
 
+/** Pixel size of the weather icon font (larger, for prominent display). */
+export const WEATHER_ICON_FONT_SIZE = 48;
+
+/** Generated ESPHome font id for the weather MDI icon font. */
+export const WEATHER_ICON_FONT_ID = `mdi_weather_icons_${WEATHER_ICON_FONT_SIZE}`;
+
 /**
  * Full icon name -> codepoint map sourced from
  * `@mdi/font`'s `scss/_variables.scss` (version 7.4.47, ~7400 icons).
@@ -111,13 +117,15 @@ export function getMdiUtf8CEscape(iconName: string): string | null {
 export function generateIconFontYAML(
   iconNames: Set<string>,
   fontSize: number = ICON_FONT_SIZE,
+  fontId?: string,
 ): string[] {
   const lines: string[] = [];
   const glyphs = getIconGlyphs(iconNames);
   if (glyphs.size === 0) return lines;
 
+  const id = fontId ?? `mdi_icons_${fontSize}`;
   lines.push(`  - file: "https://github.com/Templarian/MaterialDesign-Webfont/raw/master/fonts/materialdesignicons-webfont.ttf"`);
-  lines.push(`    id: mdi_icons_${fontSize}`);
+  lines.push(`    id: ${id}`);
   lines.push(`    size: ${fontSize}`);
   lines.push(`    glyphs:`);
   for (const [name, codepoint] of glyphs) {
@@ -126,10 +134,45 @@ export function generateIconFontYAML(
   return lines;
 }
 
+/** Weather icon names needed by the WeatherWidget. */
+export const WEATHER_ICON_NAMES = new Set([
+  "weather-sunny",
+  "weather-night",
+  "weather-cloudy",
+  "weather-partly-cloudy",
+  "weather-rainy",
+  "weather-pouring",
+  "weather-snowy",
+  "weather-snowy-rainy",
+  "weather-windy",
+  "weather-windy-variant",
+  "weather-fog",
+  "weather-hail",
+  "weather-lightning",
+  "weather-lightning-rainy",
+  "weather-tornado",
+]);
+
+/** Check whether a project uses any weather component. */
+export function projectHasWeather(project: Project): boolean {
+  for (const page of project.dashboardPages ?? []) {
+    for (const c of page.components ?? []) {
+      if (c.type === "weather") return true;
+    }
+  }
+  for (const view of project.detailViews ?? []) {
+    for (const c of view.components ?? []) {
+      if (c.type === "weather") return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Combine an existing base fonts.yaml content with a per-project MDI icon
- * font block. Returns the original content unchanged when the project
- * does not reference any known icons.
+ * font block (24px) and — when the project contains weather components — a
+ * second, larger weather-icon font (48px). Returns the original content
+ * unchanged when the project does not reference any known icons.
  */
 export function generateFontsYAML(project: Project, baseFontsYaml: string): string {
   const preferredFont = project.theme?.id === "retro"
@@ -144,6 +187,14 @@ export function generateFontsYAML(project: Project, baseFontsYaml: string): stri
   const iconLines = generateIconFontYAML(icons);
   if (iconLines.length === 0) return themedBaseFonts;
 
-  const base = themedBaseFonts.replace(/\s+$/, "");
-  return `${base}\n\n${iconLines.join("\n")}\n`;
+  let result = `${themedBaseFonts.replace(/\s+$/, "")}\n\n${iconLines.join("\n")}\n`;
+
+  if (projectHasWeather(project)) {
+    const weatherIconLines = generateIconFontYAML(WEATHER_ICON_NAMES, WEATHER_ICON_FONT_SIZE, WEATHER_ICON_FONT_ID);
+    if (weatherIconLines.length > 0) {
+      result += `\n${weatherIconLines.join("\n")}\n`;
+    }
+  }
+
+  return result;
 }

@@ -170,10 +170,11 @@ struct Theme {
     esphome::font::Font *font = nullptr;
   };
 
-  TextStyle header   = {nullptr, RetroColors::CYAN, TextAlign::TOP_LEFT};
-  TextStyle label    = {nullptr, RetroColors::LIGHT, TextAlign::TOP_LEFT};
-  TextStyle icon     = {nullptr, RetroColors::WHITE, TextAlign::CENTER};
-  Color     info_bg  = RetroColors::VOID;
+  TextStyle header       = {nullptr, RetroColors::CYAN, TextAlign::TOP_LEFT};
+  TextStyle label        = {nullptr, RetroColors::LIGHT, TextAlign::TOP_LEFT};
+  TextStyle icon         = {nullptr, RetroColors::WHITE, TextAlign::CENTER};
+  TextStyle weather_icon = {nullptr, RetroColors::WHITE, TextAlign::CENTER};
+  Color     info_bg      = RetroColors::VOID;
 
   ButtonStyle primary = {RetroColors::CYAN, RetroColors::WHITE, nullptr};
   ButtonStyle accent  = {RetroColors::AMBER, RetroColors::WHITE, nullptr};
@@ -2164,10 +2165,10 @@ class WeatherWidget : public Widget {
       if (valid_value(dp.temperature)) {
         char buf[16];
         snprintf(buf, sizeof(buf), "%.1f°", *dp.temperature);
-        it.printf(r.x + w / 2, cy + 12, g_theme.header.font, text_color_,
+        it.printf(r.x + w / 2, cy + 16, g_theme.header.font, text_color_,
                   TextAlign::TOP_CENTER, "%s", buf);
       } else {
-        it.printf(r.x + w / 2, cy + 12, g_theme.header.font, dim_color_,
+        it.printf(r.x + w / 2, cy + 16, g_theme.header.font, dim_color_,
                   TextAlign::TOP_CENTER, "—°");
       }
     }
@@ -2212,8 +2213,8 @@ class WeatherWidget : public Widget {
     const int content_top = top_y + 20;
     const int content_bottom = r.y + h - pad - 10;
     const int content_h = content_bottom - content_top;
-    const int day_to_icon_gap = 20;
-    const int icon_to_temp_gap = 34;
+    const int day_to_icon_gap = 24;
+    const int icon_to_temp_gap = 54;
     const int temp_to_rain_gap = 26;
     const int rain_to_value_gap = 14;
     const int value_h = 16;
@@ -2391,11 +2392,20 @@ class WeatherWidget : public Widget {
   static const char icon_weather_windy_variant[];
 
   void draw_weather_icon(display::Display &it, int x, int y, Color color, const char *glyph) {
-    if (g_theme.icon.font == nullptr || glyph == nullptr || glyph[0] == '\0') return;
-    // Pseudo-scale by rendering centered passes with slight horizontal spread.
-    it.printf(x - 1, y, g_theme.icon.font, color, TextAlign::TOP_CENTER, "%s", glyph);
-    it.printf(x + 1, y, g_theme.icon.font, color, TextAlign::TOP_CENTER, "%s", glyph);
-    it.printf(x, y, g_theme.icon.font, color, TextAlign::TOP_CENTER, "%s", glyph);
+    auto *icon_font = g_theme.weather_icon.font ? g_theme.weather_icon.font : g_theme.icon.font;
+    if (icon_font == nullptr || glyph == nullptr || glyph[0] == '\0') return;
+    // When using the dedicated large weather font the glyph is already the
+    // right size. Apply only a 1px stamp for weight/anti-aliasing. When
+    // falling back to the small icon font (24px), use a wider stamp to
+    // compensate for the smaller glyph.
+    const bool using_large_font = g_theme.weather_icon.font != nullptr;
+    const int spread = using_large_font ? 1 : 4;
+    for (int dy = -spread; dy <= spread; dy++) {
+      for (int dx = -spread; dx <= spread; dx++) {
+        if (dx * dx + dy * dy > spread * spread) continue;
+        it.printf(x + dx, y + dy, icon_font, color, TextAlign::TOP_CENTER, "%s", glyph);
+      }
+    }
   }
 
   void draw_pill(display::Display &it, int x, int y, int w, int h,

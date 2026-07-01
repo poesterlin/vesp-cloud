@@ -16,11 +16,12 @@
   const isScrollable = $derived(component.scrollable === true);
 
   const previewRows = $derived([
-    { start: "2026-10-03", summary: "German Unity Day", location: "Germany, BW" },
-    { start: "2026-11-01", summary: "All Saints' Day", location: "Germany, BW" },
-    { start: "2026-12-24", summary: "Christmas Eve", location: "Home" },
-    { start: "2026-12-31", summary: "New Year's Eve", location: "City Center" },
-    { start: "2027-01-01", summary: "New Year", location: "Germany" },
+    { start: "2026-07-03", summary: "Trash Collection", location: "Front Curb" },
+    { start: "2026-07-04", summary: "Family BBQ", location: "Backyard" },
+    { start: "2026-07-06", summary: "HVAC Service Window", location: "Home" },
+    { start: "2026-07-09", summary: "Parent-Teacher Meeting", location: "Rosenweg School" },
+    { start: "2026-07-12", summary: "Grocery Restock", location: "Market Hall" },
+    { start: "2026-07-15", summary: "Package Delivery", location: "Apartment Lobby" },
   ]);
 
   const rows = $derived.by(() => {

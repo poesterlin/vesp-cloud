@@ -921,5 +921,7 @@ button:
       then:
         - lambda: |-
             request_screenshot();
+  - platform: restart
+    name: "Reboot Device"
 ` : ''}`;
 }

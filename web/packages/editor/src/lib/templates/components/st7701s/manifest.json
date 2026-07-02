@@ -1,0 +1,6 @@
+{
+  "name": "st7701s",
+  "version": "1.0.0",
+  "description": "Patched ST7701S display component exposing get_frame_buffer() for the screenshot debug feature.",
+  "dependencies": []
+}

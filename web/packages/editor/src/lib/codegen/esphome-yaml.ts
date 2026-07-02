@@ -710,14 +710,24 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
     ? `\nhttp_request:\n  verify_ssl: false\n  timeout: 10s\n`
     : '';
   const screenshotUploadBaseUrl = screenshotDebugEnabled ? screenshotUploadUrl() : undefined;
-  const screenshotSubstitutions = '';
+  const screenshotSubstitutions = screenshotDebugEnabled && screenshotUploadBaseUrl
+    ? `\n  screenshot_upload_url: "${escapeYAMLDoubleQuoted(screenshotUploadBaseUrl + "/api/screenshot/" + deviceName)}"`
+    : '';
   const screenshotCompileDefine = screenshotDebugEnabled
     ? `\n  platformio_options:\n    build_flags:\n      - "-DSCREENSHOT_DEBUG_ENABLED"`
     : '';
-  const screenshotIncludeLine = screenshotDebugEnabled ? `    - includes/ui_screenshot.h\n    - includes/st7701s_framebuffer.h\n` : '';
+  const screenshotIncludeLine = screenshotDebugEnabled ? `    - includes/ui_screenshot.h\n` : '';
+  const screenshotExternalComponents = screenshotDebugEnabled
+    ? `\nexternal_components:
+  - source:
+      type: local
+      path: components/st7701s
+    refresh: 0s
+`
+    : '';
   const screenshotSubscribeBlock = '';
   const screenshotSetupLine = screenshotDebugEnabled
-    ? `\n          screenshot_set_upload_url("${escapeCString(screenshotUploadBaseUrl + "/api/screenshot/" + deviceName)}");\n          screenshot_setup();`
+    ? `\n          screenshot_setup();`
     : '';
   const screenshotIdForwardDecl = '';
   const httpOtaYaml = httpOtaEnabled
@@ -818,7 +828,7 @@ packages:
   fonts: !include fonts.yaml
   hardware: !include hardware.yaml
 ${imageYaml}${onlineImageYaml}${httpRequestYaml}${httpOtaYaml}${httpUpdateYaml}
-
+${screenshotExternalComponents}
 esphome:
 ${projectVersionYaml}${screenshotCompileDefine}
   on_boot:

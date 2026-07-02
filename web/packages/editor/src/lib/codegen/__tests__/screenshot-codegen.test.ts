@@ -44,8 +44,8 @@ describe("screenshot debug feature", () => {
     expect(yaml).toContain("screenshot_task_notify");
     expect(yaml).toContain("name: \"Take Screenshot\"");
     expect(yaml).toContain("request_screenshot();");
-    expect(yaml).toContain("st7701s_framebuffer.h");
-    expect(yaml).toContain("screenshot_set_upload_url(\"https://designer.example.com/api/screenshot/test-display\")");
+    expect(yaml).toContain("external_components:");
+    expect(yaml).toContain("screenshot_upload_url: \"https://designer.example.com/api/screenshot/test-display\"");
     const secrets = generateSecretsYAML(makeProject());
     expect(secrets).toContain("screenshot_upload_url:");
     expect(secrets).toContain("https://designer.example.com");

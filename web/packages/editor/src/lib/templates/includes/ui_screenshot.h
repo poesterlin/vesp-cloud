@@ -22,7 +22,7 @@
 #include "esphome.h"
 #include "esphome/components/st7701s/st7701s.h"
 
-#ifdef SCREENSHOT_DEBUG_ENABLED
+#if defined(SCREENSHOT_DEBUG_ENABLED) && __has_include("st7701s_framebuffer.h")
 #include "st7701s_framebuffer.h"
 #define SCREENSHOT_FRAMEBUFFER_AVAILABLE 1
 #else
@@ -49,10 +49,9 @@ inline constexpr size_t kHeight = 480;
 inline constexpr size_t kBytesPerPixel = 2;
 inline constexpr size_t kFramebufferBytes = kWidth * kHeight * kBytesPerPixel;
 
-inline std::string g_upload_url = "http://127.0.0.1/";
-
 inline const std::string &upload_url() {
-  return g_upload_url;
+  static const std::string url = std::string("${screenshot_upload_url}");
+  return url;
 }
 
 inline bool post_screenshot(const uint8_t *data, size_t len) {
@@ -117,7 +116,7 @@ inline void screenshot_task(void * /*arg*/) {
     panel = static_cast<esphome::st7701s::ST7701SWithFrameBuffer *>(
         static_cast<esphome::st7701s::ST7701S *>(&id(main_display)));
     void *fb = nullptr;
-    if (panel == nullptr || panel->get_frame_buffer(&fb) != ESP_OK) {
+    if (panel == nullptr || panel->get_frame_buffer(&fb) != esphome::display::DISPLAY_OK) {
       ESP_LOGW("screenshot", "could not obtain frame buffer pointer");
       g_requested = false;
       continue;
@@ -163,10 +162,6 @@ inline void screenshot_task_notify() {
   if (!screenshot_internal::g_task_running.load()) return;
   uint32_t payload = 1;
   xQueueSend(screenshot_internal::g_notify_queue, &payload, 0);
-}
-
-inline void screenshot_set_upload_url(const std::string &url) {
-  screenshot_internal::g_upload_url = url;
 }
 
 inline void request_screenshot() {

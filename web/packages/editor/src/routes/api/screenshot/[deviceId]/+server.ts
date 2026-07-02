@@ -2,6 +2,8 @@ import type { RequestHandler } from "./$types";
 import { error, json } from "@sveltejs/kit";
 import { isScreenshotDebugEnabled } from "$lib/codegen/screenshot-feature";
 import { uploadScreenshot, getScreenshotBuffer } from "$lib/server/s3";
+import { promises as fs } from "fs";
+import { join } from "path";
 
 function safeDeviceId(raw: string | undefined): string {
   if (!raw) error(400, "Missing deviceId");
@@ -66,7 +68,7 @@ function rgb565ToRgb888(raw: Buffer, width: number, height: number): Buffer {
   const out = Buffer.alloc(width * height * 3);
   const len = Math.min(raw.length, width * height * 2);
   for (let i = 0, j = 0; i + 1 < len; i += 2, j += 3) {
-    const px = raw.readUInt16BE(i);
+    const px = raw.readUInt16BE(i);   // ST7701S framebuffer uses big-endian RGB565
     const r = (px >> 11) & 0x1f;
     const g = (px >> 5) & 0x3f;
     const b = px & 0x1f;
@@ -77,29 +79,72 @@ function rgb565ToRgb888(raw: Buffer, width: number, height: number): Buffer {
   return out;
 }
 
+const DEBUG_DIR = process.env.SCREENSHOT_DEBUG_DIR ?? "/tmp/esphome-screenshots";
+
+// ---- Handlers --------------------------------------------------------------
+
+// POST — device uploads raw RGB565 to S3 + local disk as fallback.
 export const POST: RequestHandler = async ({ params, request }) => {
-  if (!isScreenshotDebugEnabled()) error(404);
-  safeDeviceId(params.deviceId);
+  if (!isScreenshotDebugEnabled()) error(404, "Screenshot feature disabled");
+  const deviceId = safeDeviceId(params.deviceId);
 
   const body = Buffer.from(await request.arrayBuffer());
-  await uploadScreenshot(body);
+  // Do the S3 upload first; the local path is optional but harmless.
+  await uploadScreenshot(deviceId, body);
+
+  await fs.mkdir(DEBUG_DIR, { recursive: true });
+  const target = join(DEBUG_DIR, `${deviceId}.bin`);
+  const url = new URL(request.url);
+  const offsetStr = url.searchParams.get("offset");
+  if (offsetStr !== null) {
+    const offset = Number.parseInt(offsetStr, 10);
+    if (!Number.isFinite(offset) || offset < 0) error(400, "Invalid offset");
+    const handle = await fs.open(target, "r+").catch(async () => {
+      await fs.writeFile(target, Buffer.alloc(0));
+      return fs.open(target, "r+");
+    });
+    try {
+      await handle.write(body, 0, body.length, offset);
+    } finally {
+      await handle.close();
+    }
+  } else {
+    await fs.writeFile(target, body);
+  }
+
   return json({ ok: true, bytes: body.length });
 };
 
-export const GET: RequestHandler = async ({ params }) => {
-  if (!isScreenshotDebugEnabled()) error(404);
-  safeDeviceId(params.deviceId);
+// GET — returns PNG decoded from the raw RGB565 in S3.
+export const GET: RequestHandler = async ({ params, locals, url }) => {
+  if (!isScreenshotDebugEnabled()) error(404, "Screenshot feature disabled");
+  const deviceId = safeDeviceId(params.deviceId);
+  const tsParam = url.searchParams.get("ts");
+  const timestamp = tsParam ? Number.parseInt(tsParam, 10) : undefined;
 
-  const name = params.deviceId;
-  const rawBuf = await getScreenshotBuffer(name);
-  if (rawBuf == null) error(404, "No screenshot at this key");
+  const rawBuf = await getScreenshotBuffer(deviceId, Number.isFinite(timestamp as number) ? timestamp : undefined);
+  if (rawBuf == null) error(404, "No screenshot for this device");
 
-  const expected = 480 * 480 * 2;
-  if (rawBuf.length !== expected) error(409, `Size ${rawBuf.length} != ${expected}`);
+  if (url.searchParams.get("format") === "raw") {
+    return new Response(rawBuf as unknown as BodyInit, {
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "Content-Length": String(rawBuf.length),
+        "Cache-Control": "no-store",
+      },
+    });
+  }
 
+  const expectedBytes = 480 * 480 * 2;
+  if (rawBuf.length !== expectedBytes) {
+    error(409, `Screenshot size ${rawBuf.length} != expected ${expectedBytes}`);
+  }
   const rgb = rgb565ToRgb888(rawBuf, 480, 480);
   const png = await encodePng(rgb, 480, 480);
   return new Response(png as unknown as BodyInit, {
-    headers: { "Content-Type": "image/png", "Cache-Control": "no-store" },
+    headers: {
+      "Content-Type": "image/png",
+      "Cache-Control": "no-store",
+    },
   });
 };

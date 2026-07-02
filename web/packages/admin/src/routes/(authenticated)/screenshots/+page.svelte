@@ -1,33 +1,46 @@
 <script lang="ts">
+  interface DeviceScreenshot {
+    deviceId: string;
+    size: number;
+    ts: number;
+  }
+
   let { data } = $props();
-  const names = $derived(data.names as string[]);
+  const devices = $derived(data.devices as DeviceScreenshot[]);
+
+  function formatSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    return `${(bytes / 1024).toFixed(1)} KiB`;
+  }
+
+  function formatTime(ms: number): string {
+    return new Date(ms).toLocaleTimeString();
+  }
 </script>
 
-<h1>Screenshots</h1>
+<h1>Device Screenshots</h1>
 
-{#if names.length > 0}
-  <div class="toolbar">
-    <span>{names.length} screenshot{names.length !== 1 ? "s" : ""}</span>
-    <a href="/screenshots/download" class="dl-all">Download All</a>
-  </div>
-{/if}
-
-{#if names.length === 0}
+{#if devices.length === 0}
   <p class="empty">No screenshots captured yet.</p>
+  <p class="hint">
+    Set <code>SCREENSHOT_DEBUG_ENABLED=1</code> on the editor server,
+    then press <code>"Take Screenshot"</code> in Home Assistant.
+  </p>
 {:else}
   <div class="screenshots-grid">
-    {#each names as name}
+    {#each devices as device}
       <div class="screenshot-card">
         <div class="screenshot-preview">
           <img
-            src="/screenshots/{name}"
-            alt={name}
+            src="/screenshots/{device.deviceId}?ts={device.ts}"
+            alt="Screenshot from {device.deviceId}"
             loading="lazy"
           />
         </div>
-        <div class="screenshot-footer">
-          <span class="fname">{name}</span>
-          <a class="dl" href="/screenshots/{name}" download>Download</a>
+        <div class="screenshot-info">
+          <h3>{device.deviceId}</h3>
+          <span class="size">{formatSize(device.size)}</span>
+          <span class="age">{formatTime(device.ts)}</span>
         </div>
       </div>
     {/each}
@@ -35,33 +48,32 @@
 {/if}
 
 <style>
-  h1 { font-size: 24px; margin-bottom: 16px; }
+  h1 {
+    font-size: 24px;
+    margin-bottom: 24px;
+  }
 
-  .toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    font-size: 13px;
+  .empty {
     color: var(--text-secondary);
+    font-size: 14px;
   }
 
-  .dl-all {
+  .hint {
+    color: var(--text-secondary);
     font-size: 13px;
-    color: var(--accent);
-    text-decoration: none;
-    padding: 4px 14px;
-    border: 1px solid var(--accent);
-    border-radius: 6px;
+    margin-top: 8px;
   }
-  .dl-all:hover { background: var(--accent); color: #fff; }
-
-  .empty { color: var(--text-secondary); font-size: 14px; }
+  .hint code {
+    background: var(--bg-tertiary);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: monospace;
+  }
 
   .screenshots-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 24px;
   }
 
   .screenshot-card {
@@ -76,36 +88,38 @@
     align-items: center;
     justify-content: center;
     background: #000;
-    min-height: 280px;
+    min-height: 320px;
   }
 
   .screenshot-preview img {
     display: block;
     max-width: 100%;
-    max-height: 50vh;
+    max-height: 60vh;
     image-rendering: pixelated;
   }
 
-  .screenshot-footer {
-    padding: 6px 12px;
+  .screenshot-info {
+    padding: 12px 16px;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
   }
 
-  .fname {
+  .screenshot-info h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
     font-family: monospace;
-    font-size: 11px;
-    color: var(--text-secondary);
   }
 
-  .dl {
-    font-size: 11px;
-    color: var(--accent);
-    text-decoration: none;
-    padding: 2px 8px;
-    border: 1px solid var(--accent);
-    border-radius: 4px;
+  .size {
+    color: var(--text-secondary);
+    font-size: 12px;
   }
-  .dl:hover { background: var(--accent); color: #fff; }
+
+  .age {
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin-left: auto;
+  }
 </style>

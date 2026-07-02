@@ -19,6 +19,7 @@ import { addCredits } from '$lib/credits/credits';
 import { CREDIT_COSTS } from '$lib/credits/costs';
 import { createLogger } from '$lib/server/logger';
 import { assert } from '$lib/utils';
+import { stripANSI } from "bun";
 
 interface ActiveJob {
   job: CompilationJob;
@@ -550,11 +551,13 @@ export class CompilationQueue extends EventEmitter {
           logger.info(
             `phase timings: templateCopy=${CompilationQueue.formatDurationMs(timings.templateCopyMs)} configPrep=${CompilationQueue.formatDurationMs(timings.configPrepMs)} compile=${CompilationQueue.formatDurationMs(timings.compileMs)} total=${CompilationQueue.formatDurationMs(Date.now() - timings.startedAt)}`,
           );
+
+
           await this.handleJobResult(job.id, {
             error: CompilationQueue.buildFailureError(
               signal ? reason : USER_VISIBLE_COMPILE_ERROR,
-              stderr,
-              stdout,
+              stripANSI(stderr),
+              stripANSI(stdout),
             ),
           });
         }
@@ -571,7 +574,7 @@ export class CompilationQueue extends EventEmitter {
           `phase timings: templateCopy=${CompilationQueue.formatDurationMs(timings.templateCopyMs)} configPrep=${CompilationQueue.formatDurationMs(timings.configPrepMs)} compile=${CompilationQueue.formatDurationMs(timings.compileMs)} total=${CompilationQueue.formatDurationMs(Date.now() - timings.startedAt)}`,
         );
         await this.handleJobResult(job.id, {
-          error: CompilationQueue.buildFailureError(`Worker process error: ${error.message}`, stderr, stdout),
+          error: CompilationQueue.buildFailureError(`Worker process error: ${error.message}`, stripANSI(stderr), stripANSI(stdout)),
         });
         this.processQueue();
       });

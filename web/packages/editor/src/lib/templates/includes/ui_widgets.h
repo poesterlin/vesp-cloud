@@ -244,6 +244,7 @@ struct Theme {
 
   TextStyle header       = {nullptr, RetroColors::CYAN, TextAlign::TOP_LEFT};
   TextStyle label        = {nullptr, RetroColors::LIGHT, TextAlign::TOP_LEFT};
+  TextStyle weather_tiny = {nullptr, RetroColors::LIGHT, TextAlign::TOP_LEFT};
   TextStyle icon         = {nullptr, RetroColors::WHITE, TextAlign::CENTER};
   TextStyle weather_icon = {nullptr, RetroColors::WHITE, TextAlign::CENTER};
   Color     info_bg      = RetroColors::VOID;
@@ -285,14 +286,20 @@ inline void ui_draw_data_pill(display::Display &it, int x, int y, int w, int h,
                               Color value_color = Color(255, 255, 255),
                               Color pill_bg = Color(18, 22, 32),
                               Color pill_border = Color(35, 40, 55),
-                              int value_decimals = 0) {
+                              int value_decimals = 0,
+                              esphome::font::Font *value_font = nullptr) {
   it.filled_rectangle(x, y, w, h, pill_bg);
   it.rectangle(x, y, w, h, pill_border);
   it.horizontal_line(x + 1, y + h - 1, w - 1, pill_border);
 
-  if (g_theme.label.font == nullptr) return;
+  auto *caption_font = g_theme.weather_tiny.font ? g_theme.weather_tiny.font : g_theme.label.font;
+  auto *resolved_value_font = value_font != nullptr
+    ? value_font
+    : (g_theme.weather_tiny.font ? g_theme.weather_tiny.font : g_theme.header.font);
 
-  it.printf(x + w / 2, y + 4, g_theme.label.font, label_color,
+  if (caption_font == nullptr || resolved_value_font == nullptr) return;
+
+  it.printf(x + w / 2, y + 4, caption_font, label_color,
             TextAlign::TOP_CENTER, "%s", label ? label : "");
 
   auto valid_value = [](const float *p) {
@@ -312,10 +319,10 @@ inline void ui_draw_data_pill(display::Display &it, int x, int y, int w, int h,
     } else {
       snprintf(buf, sizeof(buf), "%.0f%s", *value, unit ? unit : "");
     }
-    it.printf(x + w / 2, y + 19, g_theme.header.font, value_color,
+    it.printf(x + w / 2, y + 19, resolved_value_font, value_color,
               TextAlign::TOP_CENTER, "%s", buf);
   } else {
-    it.printf(x + w / 2, y + 19, g_theme.header.font, label_color,
+    it.printf(x + w / 2, y + 19, resolved_value_font, label_color,
               TextAlign::TOP_CENTER, "—");
   }
 }
@@ -1771,7 +1778,7 @@ class CalendarListWidget : public Widget {
   };
 
   static constexpr int kPad = ui_spacing::md;
-  static constexpr int kHeaderH = 28;
+  static constexpr int kHeaderH = 32;
 
   int content_height() const {
     const int h = rect_.h - kHeaderH - 4;
@@ -2236,8 +2243,6 @@ class HvacWidget : public Widget {
     draw_clipped_border(it, r.x + 2, r.y + 2, w - 4, h - 4,
                         7, 7, 7, 7,
                         is_on ? RetroColors::AMBER_DIM : RetroColors::DIMMER);
-    draw_scanline_overlay(it, r.x + 1, r.y + 1, w - 2, h - 2, 4,
-                          RetroColors::SCANLINE);
     // Tiny corner accents (L-shapes) in cyan dim to echo the screen frame
     draw_corner_accent_tl(it, r.x + 4, r.y + 4, 5, RetroColors::CYAN_DIM);
     draw_corner_accent_tr(it, r.x + w - 5, r.y + 4, 5, RetroColors::CYAN_DIM);
@@ -2333,12 +2338,13 @@ class HvacWidget : public Widget {
                            g_theme.header.font, TextAlign::TOP_CENTER,
                            &tx, &ty, &tw, &th);
         const int arm = 4;
-        const int off = 3;
+        const int offX = 7;
+        const int offY = 3;
         const Color bc = is_on ? accent : RetroColors::CYAN_DIM;
-        draw_corner_accent_tl(it, tx - off, ty - off, arm, bc);
-        draw_corner_accent_tr(it, tx + tw + off, ty - off, arm, bc);
-        draw_corner_accent_bl(it, tx - off, ty + th + off, arm, bc);
-        draw_corner_accent_br(it, tx + tw + off, ty + th + off, arm, bc);
+        draw_corner_accent_tl(it, tx - offX, ty - offY, arm, bc);
+        draw_corner_accent_tr(it, tx + tw + offX, ty - offY, arm, bc);
+        draw_corner_accent_bl(it, tx - offX, ty + th + offY, arm, bc);
+        draw_corner_accent_br(it, tx + tw + offX, ty + th + offY, arm, bc);
 #endif
       }
 
@@ -2656,7 +2662,7 @@ class WeatherWidget : public Widget {
       // Compact: leave room for the bottom 3-pill row (48px from bottom).
       l.content_bottom = r.y + r.h - l.pad - 46;
       l.icon_y_offset = 2;
-      l.temp_y_offset = 16;
+      l.temp_y_offset = 8;
     } else {
       // Forecast: bottom margin is small, stack is centered in the rest.
       l.content_bottom = r.y + r.h - l.pad - 10;
@@ -2760,8 +2766,8 @@ class WeatherWidget : public Widget {
     const int content_h = l.content_bottom - l.content_top;
     const int day_to_icon_gap = 24;
     const int icon_to_temp_gap = 54;
-    const int temp_to_rain_gap = 26;
-    const int rain_to_value_gap = 14;
+    const int temp_to_rain_gap = 30;
+    const int rain_to_value_gap = 18;
     const int value_h = 16;
     const int stack_h = day_to_icon_gap + icon_to_temp_gap + temp_to_rain_gap + rain_to_value_gap + value_h;
     const int centered_top = l.content_top + (content_h - stack_h) / 2 + 2;

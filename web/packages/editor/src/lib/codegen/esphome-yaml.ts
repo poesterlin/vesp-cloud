@@ -1091,5 +1091,9 @@ binary_sensor:
     entity_id: sun.sun
     id: _ha_state_flag
     internal: true
+
+button:
+  - platform: restart
+    name: "Reboot Device"
 `;
 }

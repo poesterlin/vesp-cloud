@@ -247,6 +247,8 @@ describe("todo_list codegen", () => {
     expect(out).toContain('if (resp_wrapper.is<JsonObjectConst>()) root = resp_wrapper;');
     expect(out).toContain('JsonVariantConst items = entity_obj["items"];');
     expect(out).toContain('items = root["items"];');
+    expect(out).toContain("JsonArrayConst items_arr = items.as<JsonArrayConst>();");
+    expect(out).toContain("for (JsonVariantConst item : items_arr) {");
     expect(out).toContain('ESP_LOGW("todo", "todo.get_items response missing items for %s", "todo.shopping_list");');
   });
 
@@ -302,5 +304,43 @@ describe("todo_list codegen", () => {
     const out = generateESPHomeYAML(project);
     expect(out).toContain('entity_id: "todo.chores"');
     expect(out).toContain('status: "completed"');
+  });
+
+  test("treats todo-domain itemsBinding as todo entity when todoEntityId is unset", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "todos",
+              type: "todo_list",
+              position: { x: 0, y: 0 },
+              size: { width: 220, height: 140 },
+              itemsBinding: {
+                entityId: "todo.shopping_2",
+                attribute: "needs_action",
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    const state = generateUIStateHeader(project);
+    expect(state).toContain("Observable<std::string> todo_shopping_2_items");
+    expect(state).not.toContain("todo_shopping_2_needs_action");
+
+    const screens = generateUIScreensHeader(project);
+    expect(screens).toContain("state.todo_shopping_2_items.ptr()");
+    expect(screens).toContain('"todo.shopping_2"');
+    expect(screens).toContain('", ""');
+
+    const yaml = generateESPHomeYAML(project);
+    expect(yaml).toContain("todo.get_items");
+    expect(yaml).toContain('entity_id: "todo.shopping_2"');
+    expect(yaml).toContain('status: "needs_action"');
+    expect(yaml).not.toContain('bind_ha_string_attr("todo.shopping_2"');
   });
 });

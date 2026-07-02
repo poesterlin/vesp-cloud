@@ -1,5 +1,5 @@
 import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent, HvacComponent, WeatherComponent, CalendarComponent } from "@esphome-designer/schema";
-import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted, calendarEventsVarFromEntity } from "./utils";
+import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted, calendarEventsVarFromEntity, todoEntityIdFromComponent } from "./utils";
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
 import { ICON_FONT_ID, WEATHER_ICON_FONT_ID, getIconGlyphs, projectHasWeather } from "./mdi-icons";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
@@ -261,9 +261,10 @@ function generateBindings(project: Project): string {
   for (const c of allComponents) {
     if (c.type !== "todo_list") continue;
     const tc = c as TodoListComponent;
+    const todoEntityId = todoEntityIdFromComponent(tc);
     // Direct todo.get_items service calls take over when todoEntityId is set;
     // only generate bind_ha_string_attr for legacy bridge-sensor components.
-    if (tc.todoEntityId) continue;
+    if (todoEntityId) continue;
     const entityId = tc.itemsBinding?.entityId;
     if (!entityId) continue;
     const stateVar = todoItemsVarFromBinding(tc.itemsBinding, tc.id);
@@ -524,7 +525,7 @@ function generateTodoItemsIntervals(project: Project): string {
   const entries: string[] = [];
 
   for (const tc of todoComponents) {
-    const entityId = tc.todoEntityId;
+    const entityId = todoEntityIdFromComponent(tc);
     if (!entityId) continue;
     if (seen.has(entityId)) continue;
     seen.add(entityId);
@@ -538,6 +539,10 @@ function generateTodoItemsIntervals(project: Project): string {
     entries.push(`  - interval: 2min
     startup_delay: 7s
     then:
+      - logger.log:
+          level: WARN
+          tag: todo
+          format: "calling todo.get_items for ${escapedId}"
       - homeassistant.service:
           service: todo.get_items
           data:
@@ -561,6 +566,7 @@ function generateTodoItemsIntervals(project: Project): string {
                     ESP_LOGW("todo", "todo.get_items response missing items for %s", "${escapedId}");
                     return;
                   }
+                  JsonArrayConst items_arr = items.as<JsonArrayConst>();
                   auto sanitize = [](std::string s) {
                     for (char &ch : s) {
                       if (ch == '|' || ch == '\\n' || ch == '\\r' || ch == '\\t') ch = ' ';
@@ -568,7 +574,7 @@ function generateTodoItemsIntervals(project: Project): string {
                     return s;
                   };
                   std::string formatted;
-                  for (auto item : items) {
+                  for (JsonVariantConst item : items_arr) {
                     std::string summary;
                     std::string due;
                     std::string status;

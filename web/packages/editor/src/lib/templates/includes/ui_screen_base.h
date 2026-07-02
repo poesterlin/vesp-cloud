@@ -70,9 +70,12 @@ class GenericScreen : public Screen {
   }
 
   void update(uint32_t now, const UiState &state) override {
+    const bool show_loading = state.should_show_loading();
     for (auto &w : widgets_) {
       const bool visible = w->poll_visibility(state);
       if (!visible) continue;
+      if (show_loading && !w->is_loading_widget()) continue;
+      if (!show_loading && w->is_loading_widget()) continue;
       w->update(now);
     }
   }

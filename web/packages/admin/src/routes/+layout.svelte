@@ -9,9 +9,6 @@
   function isActivePrefix(prefix: string) {
     return $page.url.pathname.startsWith(prefix);
   }
-  const screenshotDebugEnabled = $derived(
-    ($page.data as { screenshotDebugEnabled?: boolean } | undefined)?.screenshotDebugEnabled === true,
-  );
 </script>
 
 <div class="layout">
@@ -21,9 +18,6 @@
     <a href="/users" class:active={isActivePrefix('/users')}>Users</a>
     <a href="/jobs" class:active={isActivePrefix('/jobs')}>Jobs</a>
     <a href="/withdrawals" class:active={isActivePrefix('/withdrawals')}>Withdrawals</a>
-    {#if screenshotDebugEnabled}
-      <a href="/screenshots" class:active={isActivePrefix('/screenshots')}>Screenshots</a>
-    {/if}
   </nav>
   <main class="content">
     {@render children()}

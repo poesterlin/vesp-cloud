@@ -6,7 +6,6 @@
 
 import type { Project } from "@esphome-designer/schema";
 import { escapeYAMLDoubleQuoted } from "./utils";
-import { isScreenshotDebugEnabled, screenshotUploadUrl } from "./screenshot-feature";
 
 interface GenerateSecretsOptions {
   includeOtaSecrets?: boolean;
@@ -38,12 +37,6 @@ export function generateSecretsYAML(project: Project, options: GenerateSecretsOp
     lines.push(``);
     lines.push(`# Home Assistant base URL for resolving relative entity_picture paths`);
     lines.push(`home_assistant_base_url: "${escapeYAMLDoubleQuoted(project.secrets.homeAssistantBaseUrl)}"`);
-  }
-
-  if (isScreenshotDebugEnabled() && screenshotUploadUrl()) {
-    lines.push(``);
-    lines.push(`# Screenshot upload URL (debug feature, gated by SCREENSHOT_DEBUG_ENABLED env)`);
-    lines.push(`screenshot_upload_url: "${escapeYAMLDoubleQuoted(screenshotUploadUrl()!)}"`);
   }
 
   return lines.join("\n");

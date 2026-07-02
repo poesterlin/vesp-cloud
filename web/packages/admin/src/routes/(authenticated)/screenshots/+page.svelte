@@ -27,7 +27,8 @@
   <p class="empty">No screenshots captured yet.</p>
   <p class="hint">
     Set <code>SCREENSHOT_DEBUG_ENABLED=1</code> on the editor server,
-    then press <code>"Take Screenshot"</code> in Home Assistant.
+    then trigger a capture via <code>button.&lt;device&gt;_screenshot</code>
+    in Home Assistant.
   </p>
 {:else}
   <div class="screenshots-grid">
@@ -35,7 +36,7 @@
       <div class="screenshot-card">
         <div class="screenshot-preview">
           <img
-            src="/screenshots/{device.deviceId}?_={device.mtime}"
+            src="/screenshots/{device.deviceId}/latest.png?_={device.mtime}"
             alt="Screenshot from {device.deviceId}"
             loading="lazy"
           />

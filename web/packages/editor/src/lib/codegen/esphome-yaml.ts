@@ -533,6 +533,7 @@ function generateTodoItemsIntervals(project: Project): string {
     const itemsVar = todoItemsVarFromTodoEntity(entityId);
     // itemsBinding.attribute doubles as the status filter, default to needs_action
     const statusFilter = tc.itemsBinding?.attribute ?? 'needs_action';
+    const escapedStatusFilter = escapeYAMLDoubleQuoted(statusFilter);
 
     entries.push(`  - interval: 2min
     startup_delay: 7s
@@ -541,17 +542,25 @@ function generateTodoItemsIntervals(project: Project): string {
           service: todo.get_items
           data:
             entity_id: "${escapedId}"
-            status: ${statusFilter}
+            status: "${escapedStatusFilter}"
           capture_response: true
           on_success:
             then:
               - lambda: |-
+                  JsonVariantConst root = response;
                   auto resp_wrapper = response["response"];
-                  if (!resp_wrapper.is<JsonObjectConst>()) return;
-                  auto entity_obj = resp_wrapper["${escapedId}"];
-                  if (!entity_obj.is<JsonObjectConst>()) return;
-                  auto items = entity_obj["items"];
-                  if (!items.is<JsonArrayConst>()) return;
+                  if (resp_wrapper.is<JsonObjectConst>()) root = resp_wrapper;
+                  auto entity_obj = root["${escapedId}"];
+                  JsonVariantConst items = entity_obj["items"];
+                  if (!items.is<JsonArrayConst>()) {
+                    // Some integrations return {"items": [...]} directly
+                    // without entity-id nesting.
+                    items = root["items"];
+                  }
+                  if (!items.is<JsonArrayConst>()) {
+                    ESP_LOGW("todo", "todo.get_items response missing items for %s", "${escapedId}");
+                    return;
+                  }
                   auto sanitize = [](std::string s) {
                     for (char &ch : s) {
                       if (ch == '|' || ch == '\\n' || ch == '\\r' || ch == '\\t') ch = ' ';

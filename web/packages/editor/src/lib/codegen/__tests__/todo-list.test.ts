@@ -215,12 +215,39 @@ describe("todo_list codegen", () => {
     const out = generateESPHomeYAML(project);
     expect(out).toContain("todo.get_items");
     expect(out).toContain('entity_id: "todo.shopping_list"');
-    expect(out).toContain("status: needs_action");
+    expect(out).toContain('status: "needs_action"');
     expect(out).toContain("todo_shopping_list_items");
     expect(out).toContain('if (item["uid"].is<std::string>()) uid = sanitize(item["uid"].as<std::string>());');
     expect(out).toContain('formatted += summary + "|" + due + "|" + status + "|" + uid;');
     // Should NOT contain the old bind_ha_string_attr pattern
     expect(out).not.toContain("bind_ha_string_attr(");
+  });
+
+  test("parses todo.get_items response with both wrapped and direct items payloads", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "todos",
+              type: "todo_list",
+              position: { x: 0, y: 0 },
+              size: { width: 220, height: 140 },
+              todoEntityId: "todo.shopping_list",
+            },
+          ],
+        },
+      ],
+    });
+
+    const out = generateESPHomeYAML(project);
+    expect(out).toContain("JsonVariantConst root = response;");
+    expect(out).toContain('if (resp_wrapper.is<JsonObjectConst>()) root = resp_wrapper;');
+    expect(out).toContain('JsonVariantConst items = entity_obj["items"];');
+    expect(out).toContain('items = root["items"];');
+    expect(out).toContain('ESP_LOGW("todo", "todo.get_items response missing items for %s", "todo.shopping_list");');
   });
 
   test("adds todo items state var derived from todoEntityId", () => {
@@ -274,6 +301,6 @@ describe("todo_list codegen", () => {
 
     const out = generateESPHomeYAML(project);
     expect(out).toContain('entity_id: "todo.chores"');
-    expect(out).toContain("status: completed");
+    expect(out).toContain('status: "completed"');
   });
 });

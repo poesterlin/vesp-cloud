@@ -28,3 +28,4 @@ web/packages/admin/.svelte-kit/
 web/packages/admin/.env
 
 web/packages/admin/build/
+.env

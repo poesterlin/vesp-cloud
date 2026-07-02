@@ -4,7 +4,7 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { cpus } from 'os';
 import { getDb, schema } from '@esphome-designer/db';
-import { eq, desc, inArray, and } from 'drizzle-orm';
+import { eq, desc, inArray, and, asc } from 'drizzle-orm';
 import type { CompilationJob, NewCompilationJob } from '@esphome-designer/db/schema';
 
 import type { Project } from '@esphome-designer/schema';
@@ -15,7 +15,8 @@ import { sanitizeDeviceName } from '$lib/codegen/utils';
 import { copyStaticTemplates } from '$lib/server/esphome-templates';
 import { validateProjectSchema } from '$lib/server/project-schema';
 import { uploadOtaBinary, uploadFactoryBinary, deleteBinaries } from '$lib/server/s3';
-import { addCredits, CREDIT_COSTS } from '$lib/credits';
+import { addCredits } from '$lib/credits/credits';
+import { CREDIT_COSTS } from '$lib/credits/costs';
 import { createLogger } from '$lib/server/logger';
 import { assert } from '$lib/utils';
 
@@ -27,6 +28,7 @@ interface ActiveJob {
 
 const USER_VISIBLE_COMPILE_ERROR = 'Compilation failed. Please check your project configuration and try again.';
 const USER_VISIBLE_UPLOAD_ERROR = 'Compilation succeeded but the firmware binary could not be packaged.';
+const MAX_PERSISTED_ERROR_LOG_CHARS = 120_000;
 
 export class CompilationQueue extends EventEmitter {
   private activeJobs: Map<string, ActiveJob> = new Map();
@@ -45,6 +47,27 @@ export class CompilationQueue extends EventEmitter {
 
   private static formatDurationMs(ms: number): string {
     return `${(ms / 1000).toFixed(2)}s`;
+  }
+
+  private static truncateErrorLogForDb(log: string): string {
+    if (log.length <= MAX_PERSISTED_ERROR_LOG_CHARS) {
+      return log;
+    }
+
+    return [
+      `[log truncated: showing last ${MAX_PERSISTED_ERROR_LOG_CHARS} chars of ${log.length}]`,
+      log.slice(-MAX_PERSISTED_ERROR_LOG_CHARS),
+    ].join('\n');
+  }
+
+  private static buildFailureError(reason: string, stderr: string, stdout: string): string {
+    const sections = [
+      `reason: ${reason}`,
+      stderr.trim() ? `stderr:\n${stderr.trim()}` : '',
+      stdout.trim() ? `stdout:\n${stdout.trim()}` : '',
+    ].filter(Boolean);
+
+    return CompilationQueue.truncateErrorLogForDb(sections.join('\n\n'));
   }
 
   private static buildCompileEnv(options: {
@@ -105,7 +128,8 @@ export class CompilationQueue extends EventEmitter {
     console.log(`   ${cpuCount} CPUs → ${this.coresPerSlot} cores per slot (${this.maxWorkers} slots)`);
 
     await this.resolvePythonSitePackages();
-    await this.failInProgressJobs();
+    await this.reconcileJobsOnStartup();
+    await this.loadPendingJobsFromDb();
     this.processQueue();
   }
 
@@ -176,28 +200,44 @@ export class CompilationQueue extends EventEmitter {
     this.jobs.clear();
   }
 
-  private async failInProgressJobs(): Promise<void> {
+  private async reconcileJobsOnStartup(): Promise<void> {
     const db = getDb();
-    const inProgress = await db
+    const interruptedRunning = await db
       .select()
       .from(schema.compilationJobs)
-      .where(inArray(schema.compilationJobs.status, ['running', 'pending', 'queued']));
+      .where(eq(schema.compilationJobs.status, 'running'));
 
-    if (inProgress.length === 0) return;
+    if (interruptedRunning.length > 0) {
+      await db
+        .update(schema.compilationJobs)
+        .set({
+          status: 'failed',
+          error: 'Worker restarted during build',
+          completedAt: new Date(),
+        })
+        .where(eq(schema.compilationJobs.status, 'running'));
 
-    await db
-      .update(schema.compilationJobs)
-      .set({
-        status: 'failed',
-        error: 'Server restarted during build',
-        completedAt: new Date(),
-      })
-      .where(inArray(schema.compilationJobs.status, ['running', 'pending', 'queued']));
+      console.log(`🧹 Marked ${interruptedRunning.length} running builds as failed`);
+    }
 
-    console.log(`🧹 Marked ${inProgress.length} in-progress builds as failed`);
+    const queuedJobs = await db
+      .select({ id: schema.compilationJobs.id })
+      .from(schema.compilationJobs)
+      .where(eq(schema.compilationJobs.status, 'queued'));
+
+    if (queuedJobs.length > 0) {
+      await db
+        .update(schema.compilationJobs)
+        .set({
+          status: 'pending',
+          startedAt: null,
+        })
+        .where(eq(schema.compilationJobs.status, 'queued'));
+      console.log(`🧹 Reset ${queuedJobs.length} queued builds to pending`);
+    }
 
     if (process.env.APP_EDITION === 'cloud') {
-      for (const job of inProgress) {
+      for (const job of interruptedRunning) {
         if (job.userId) {
           try {
             await addCredits({
@@ -214,13 +254,27 @@ export class CompilationQueue extends EventEmitter {
     }
   }
 
-  async hasUserActiveJob(userId: string): Promise<boolean> {
-    for (const job of this.jobs.values()) {
-      if (job.userId === userId && ['pending', 'running', 'queued'].includes(job.status)) {
-        return true;
+  private async loadPendingJobsFromDb(): Promise<void> {
+    const db = getDb();
+    const pendingJobs = await db
+      .select()
+      .from(schema.compilationJobs)
+      .where(eq(schema.compilationJobs.status, 'pending'))
+      .orderBy(asc(schema.compilationJobs.createdAt));
+
+    if (pendingJobs.length === 0) return;
+
+    for (const job of pendingJobs) {
+      this.jobs.set(job.id, job);
+      if (!this.queue.find((q) => q.id === job.id)) {
+        this.queue.push(job);
       }
     }
 
+    console.log(`📥 Loaded ${pendingJobs.length} pending build(s) from DB`);
+  }
+
+  async hasUserActiveJob(userId: string): Promise<boolean> {
     const db = getDb();
     const dbJobs = await db
       .select()
@@ -255,10 +309,6 @@ export class CompilationQueue extends EventEmitter {
       }
     }
 
-    const fullJob = job as CompilationJob;
-    this.jobs.set(fullJob.id, fullJob);
-    this.queue.push(fullJob);
-
     const db = getDb();
     await db.insert(schema.compilationJobs).values({
       id: job.id,
@@ -271,6 +321,10 @@ export class CompilationQueue extends EventEmitter {
       status: job.status,
       createdAt: job.createdAt,
     });
+
+    const fullJob = job as CompilationJob;
+    this.jobs.set(fullJob.id, fullJob);
+    this.queue.push(fullJob);
 
     this.processQueue();
   }
@@ -465,7 +519,11 @@ export class CompilationQueue extends EventEmitter {
           if (!otaUploaded) {
             const files = await fs.readdir(pioDir).catch(() => []);
             await this.handleJobResult(job.id, {
-              error: USER_VISIBLE_UPLOAD_ERROR,
+              error: CompilationQueue.buildFailureError(
+                USER_VISIBLE_UPLOAD_ERROR,
+                uploadError,
+                `Files in ${pioDir}: ${files.join(', ')}`,
+              ),
             });
             logger.warn(`No OTA firmware binary found in ${pioDir}. Files: ${files.join(', ')}. Error: ${uploadError}`);
             logger.info(
@@ -493,7 +551,11 @@ export class CompilationQueue extends EventEmitter {
             `phase timings: templateCopy=${CompilationQueue.formatDurationMs(timings.templateCopyMs)} configPrep=${CompilationQueue.formatDurationMs(timings.configPrepMs)} compile=${CompilationQueue.formatDurationMs(timings.compileMs)} total=${CompilationQueue.formatDurationMs(Date.now() - timings.startedAt)}`,
           );
           await this.handleJobResult(job.id, {
-            error: signal ? reason : USER_VISIBLE_COMPILE_ERROR,
+            error: CompilationQueue.buildFailureError(
+              signal ? reason : USER_VISIBLE_COMPILE_ERROR,
+              stderr,
+              stdout,
+            ),
           });
         }
 
@@ -508,7 +570,9 @@ export class CompilationQueue extends EventEmitter {
         logger.info(
           `phase timings: templateCopy=${CompilationQueue.formatDurationMs(timings.templateCopyMs)} configPrep=${CompilationQueue.formatDurationMs(timings.configPrepMs)} compile=${CompilationQueue.formatDurationMs(timings.compileMs)} total=${CompilationQueue.formatDurationMs(Date.now() - timings.startedAt)}`,
         );
-        await this.handleJobResult(job.id, { error: error.message });
+        await this.handleJobResult(job.id, {
+          error: CompilationQueue.buildFailureError(`Worker process error: ${error.message}`, stderr, stdout),
+        });
         this.processQueue();
       });
     } catch (error) {
@@ -529,8 +593,18 @@ export class CompilationQueue extends EventEmitter {
     jobId: string,
     result: { output?: string | null; error?: string },
   ): Promise<void> {
-    const job = this.jobs.get(jobId);
-    if (!job) return;
+    const db = getDb();
+    let job = this.jobs.get(jobId);
+    if (!job) {
+      const dbJobs = await db
+        .select()
+        .from(schema.compilationJobs)
+        .where(eq(schema.compilationJobs.id, jobId))
+        .limit(1);
+      job = dbJobs[0];
+      if (!job) return;
+      this.jobs.set(job.id, job);
+    }
 
     if (result.error) {
       job.status = 'failed';
@@ -566,7 +640,6 @@ export class CompilationQueue extends EventEmitter {
     }
     job.completedAt = new Date();
 
-    const db = getDb();
     await db
       .update(schema.compilationJobs)
       .set({

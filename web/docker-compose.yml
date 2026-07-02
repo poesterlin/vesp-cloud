@@ -2,9 +2,19 @@ services:
   app:
     build:
       dockerfile: packages/editor/Dockerfile
+    cpus: "6.0"
+    mem_limit: 20g
+    mem_reservation: 2g
+    pids_limit: 4096
+    ulimits:
+      nproc: 4096
+      nofile:
+        soft: 65536
+        hard: 65536
     environment:
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/esphome
+      - DATABASE_URL=postgresql://postgres:password@homelab:5432/esphome
       - CONCURRENT_JOBS=4
+      - COMPILER_MODE=${COMPILER_MODE:-embedded}
       - APP_EDITION=cloud
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
@@ -23,6 +33,37 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.esphome.rule=Host(`${DOMAIN}`)"
       - "traefik.http.services.esphome.loadbalancer.server.port=3000"
+    tmpfs:
+      - /tmp/esphome-builds:size=12g
+    volumes:
+      - platformio_data:/data/platformio
+      - pio_cache:/data/pio-build-cache
+      - ccache_data:/data/ccache
+
+  worker:
+    profiles: ["worker"]
+    build:
+      dockerfile: packages/editor/Dockerfile.worker
+    cpus: "6.0"
+    mem_limit: 8g
+    mem_reservation: 2g
+    pids_limit: 4096
+    ulimits:
+      nproc: 4096
+      nofile:
+        soft: 65536
+        hard: 65536
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@homelab:5432/esphome
+      - CONCURRENT_JOBS=4
+      - COMPILER_MODE=external
+      - APP_EDITION=cloud
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_BUCKET=${MINIO_BUCKET}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - PUBLIC_BASE_URL=https://${DOMAIN}
+      - LOG_LEVEL=debug
     tmpfs:
       - /tmp/esphome-builds:size=12g
     volumes:

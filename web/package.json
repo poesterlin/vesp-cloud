@@ -6,6 +6,7 @@
   ],
   "scripts": {
     "dev": "bun run --filter @esphome-designer/editor dev",
+    "worker": "bun run --filter @esphome-designer/editor worker",
     "dev:admin": "bun run --filter @esphome-designer/admin dev",
     "build": "bun run generate:types && bun run --filter @esphome-designer/editor build",
     "build:admin": "bun run --filter @esphome-designer/admin build",

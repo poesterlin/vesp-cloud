@@ -6,6 +6,9 @@ import * as auth from "$lib/server/auth";
 import { env } from "$env/dynamic/private";
 
 let workerStarted = false;
+const configuredCompilerMode = (env.COMPILER_MODE ?? "embedded").toLowerCase();
+const compilerMode = configuredCompilerMode === "external" ? "external" : "embedded";
+const runEmbeddedWorker = compilerMode === "embedded";
 
 // Initialize database and start worker on server startup
 if (!workerStarted) {
@@ -15,9 +18,14 @@ if (!workerStarted) {
       getDb(env.DATABASE_URL);
       console.log("Database ready");
 
-      startWorker(parseInt(env.CONCURRENT_JOBS || "2"));
+      if (runEmbeddedWorker) {
+        startWorker(parseInt(env.CONCURRENT_JOBS || "2"));
+        console.log("Worker started (embedded mode)");
+      } else {
+        console.log(`Worker startup skipped (COMPILER_MODE=${compilerMode})`);
+      }
+
       workerStarted = true;
-      console.log("Worker started");
     } catch (error) {
       console.error("Failed to initialize:", error);
       process.exit(1);

@@ -1010,7 +1010,9 @@ export function generateUIScreensHeader(project: Project): string {
     const screenVar = cppName.toLowerCase();
     const headerHeight = 50;
     const visibleContentHeight = Math.max(0, dh - headerHeight);
-    const contentHeight = Math.round(detailContentHeight(view));
+    // Detail view `height` is treated as full page height (including header),
+    // while set_scroll_area expects scrollable content height below header.
+    const contentHeight = Math.max(0, Math.round(detailContentHeight(view) - headerHeight));
     setupBody += `  auto *${screenVar} = screens.get_screen(UiScreenId::${cppName});\n`;
     setupBody += `  ${screenVar}->set_scroll_area(${headerHeight}, ${visibleContentHeight}, ${contentHeight});\n`;
     setupBody += `  auto *${screenVar}_header = ${screenVar}->emplace_widget<DetailHeaderWidget>(g_theme.header.font, g_theme.label.font, "${escapeCString(view.title)}",\n`;

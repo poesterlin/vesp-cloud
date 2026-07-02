@@ -135,7 +135,7 @@ describe("todo_list codegen", () => {
     });
 
     const out = generateUIScreensHeader(project);
-    expect(out).toContain("detaildetail1->set_scroll_area(50, 430, 580);");
+    expect(out).toContain("detaildetail1->set_scroll_area(50, 430, 530);");
     expect(out).toContain("detaildetail1_header->set_scroll_exempt(true);");
   });
 

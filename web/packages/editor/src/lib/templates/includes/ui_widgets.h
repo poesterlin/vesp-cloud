@@ -1734,10 +1734,11 @@ class CalendarListWidget : public Widget {
       ui_fast_filled_rectangle(it, row_x, row_y, row_w, row_h, Color(18, 22, 32));
       it.rectangle(row_x, row_y, row_w, row_h, Color(35, 40, 55));
 
-      const int date_w = 78;
+      const std::string date_text = row.start.empty() ? "--" : format_start_(row.start);
+      const bool date_includes_day = date_text.find(' ') != std::string::npos;
+      const int date_w = date_includes_day ? 110 : 78;
       const int date_x = row_x + 6;
       const int date_mid_y = row_y + row_h / 2;
-      const std::string date_text = row.start.empty() ? "--" : format_start_(row.start);
       if (g_theme.label.font != nullptr) {
         ui_print_truncated(it, date_x, date_mid_y, g_theme.label.font,
                            dim_color_, TextAlign::CENTER_LEFT,

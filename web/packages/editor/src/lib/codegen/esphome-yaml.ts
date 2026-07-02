@@ -534,7 +534,7 @@ function generateTodoItemsIntervals(project: Project): string {
     // itemsBinding.attribute doubles as the status filter, default to needs_action
     const statusFilter = tc.itemsBinding?.attribute ?? 'needs_action';
 
-    entries.push(`  - interval: 10min
+    entries.push(`  - interval: 2min
     startup_delay: 7s
     then:
       - homeassistant.service:
@@ -611,7 +611,7 @@ function generateCalendarIntervals(project: Project): string {
     const durationString = `${durationHours}:00:00`;
     const eventsVar = calendarEventsVarFromEntity(entityId, durationDays);
 
-    entries.push(`  - interval: 10min
+    entries.push(`  - interval: 2min
     startup_delay: 6s
     then:
       - logger.log:

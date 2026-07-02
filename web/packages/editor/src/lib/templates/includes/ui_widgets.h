@@ -428,6 +428,8 @@ class Widget {
     if (!visibility_check_) return true;
     const bool current = visibility_check_();
     if (!visibility_baseline_set_ || current != last_visibility_) {
+      ESP_LOGW("vis", "[f=%u t=%u] %s -> %s", UiInvalidation::frame(), millis(),
+               widget_label(), current ? "VISIBLE" : "hidden");
       mark_dirty();
       last_visibility_ = current;
       visibility_baseline_set_ = true;

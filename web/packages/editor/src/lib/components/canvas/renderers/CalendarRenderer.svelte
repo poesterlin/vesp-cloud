@@ -12,7 +12,7 @@
 
   const label = $derived(component.label?.trim() || "Calendar");
   const maxItems = $derived(Math.max(1, Math.min(10, component.maxItems ?? 4)));
-  const rowHeight = 40;
+  const rowHeight = 46;
   const isScrollable = $derived(component.scrollable === true);
 
   const previewRows = $derived([

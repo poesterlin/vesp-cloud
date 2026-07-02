@@ -6,7 +6,7 @@ font:
 
   - file: "gfonts://Turret Road"
     id: font_weather_tiny
-    size: 10
+    size: 11
     glyphs: "'°!\"%()+*-.,/:;<=>?@[\\]^€—_`{|}~ 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÄÖÜäöüß"
 
   - file: "gfonts://Turret Road"

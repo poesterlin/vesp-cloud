@@ -387,7 +387,7 @@ function generateCalendarWidget(
   const base = stateVarFromEntity(entityId);
   const idSafe = safeCppIdentifier(c.id, 'component');
   const maxItems = Math.max(1, Math.min(10, c.maxItems ?? 4));
-  const rowHeight = 40;
+  const rowHeight = 46;
   const scrollable = c.scrollable === true ? 'true' : 'false';
   const callback = emitTapAction(c.onTap) || '[](){}';
 

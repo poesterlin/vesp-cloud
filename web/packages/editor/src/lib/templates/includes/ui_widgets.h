@@ -1747,12 +1747,13 @@ class CalendarListWidget : public Widget {
       const int text_w = row_x + row_w - text_x - 6;
       const int summary_y = row_y + 6;
       const int location_y = row_y + row_h - 6;
+      auto *location_font = g_theme.weather_tiny.font ? g_theme.weather_tiny.font : g_theme.label.font;
       if (g_theme.label.font != nullptr) {
         ui_print_truncated(it, text_x, summary_y, g_theme.label.font,
                            text_color_, TextAlign::TOP_LEFT,
                            row.summary.c_str(), text_w);
-        if (!row.location.empty()) {
-          ui_print_truncated(it, text_x, location_y, g_theme.label.font,
+        if (!row.location.empty() && location_font != nullptr) {
+          ui_print_truncated(it, text_x, location_y, location_font,
                              dim_color_, TextAlign::BOTTOM_LEFT,
                              row.location.c_str(), text_w);
         }
@@ -1778,7 +1779,7 @@ class CalendarListWidget : public Widget {
   };
 
   static constexpr int kPad = ui_spacing::md;
-  static constexpr int kHeaderH = 32;
+  static constexpr int kHeaderH = 28;
 
   int content_height() const {
     const int h = rect_.h - kHeaderH - 4;
@@ -2271,14 +2272,11 @@ class HvacWidget : public Widget {
     }
 
 #if UI_THEME_RETRO
-    // Dashed divider between the header and the temperature readout, plus a
-    // small hatch pattern on the left edge as a "category" greeble.
+    // Dashed divider between the header and the temperature readout
     {
       const int div_y = top_y + top_row_h + 2;
       draw_dashed_hline(it, r.x + pad, r.x + w - pad, div_y,
                         RetroColors::DIMMER, 3, 3);
-      draw_hatch_pattern(it, r.x + pad, div_y - 4, div_y + 4,
-                         3, 3, RetroColors::AMBER_DIM);
     }
 #endif
 
@@ -2655,14 +2653,14 @@ class WeatherWidget : public Widget {
   WeatherLayout make_weather_layout_(const UiRect &r, bool with_pill_row) const {
     WeatherLayout l;
     l.pad = ui_spacing::lg;
-    l.top_y = r.y + l.pad + 3;
+    l.top_y = r.y + l.pad + 8;
     l.header_row_h = 20;
     l.content_top = l.top_y + l.header_row_h;
     if (with_pill_row) {
       // Compact: leave room for the bottom 3-pill row (48px from bottom).
       l.content_bottom = r.y + r.h - l.pad - 46;
-      l.icon_y_offset = 2;
-      l.temp_y_offset = 8;
+      l.icon_y_offset = 10;
+      l.temp_y_offset = 6;
     } else {
       // Forecast: bottom margin is small, stack is centered in the rest.
       l.content_bottom = r.y + r.h - l.pad - 10;
@@ -2728,7 +2726,7 @@ class WeatherWidget : public Widget {
 
     {
       const int pill_top = r.y + h - 48;
-      const int pill_h = 42;
+      const int pill_h = 40;
       const int pill_pad = 5;
       const int pill_w = (w - l.pad * 2 - pill_pad * 2) / 3;
 

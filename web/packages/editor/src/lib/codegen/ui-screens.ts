@@ -21,6 +21,7 @@ import {
   toCppIdentifier,
   escapeCString,
   stateVarFromEntity,
+  calendarEventsVarFromEntity,
   todoItemsVarFromBinding,
   todoItemsVarFromTodoEntity,
   textBindingVar,
@@ -384,14 +385,14 @@ function generateCalendarWidget(
   const h = c.size?.height ?? 180;
   const label = c.label ?? 'Calendar';
   const entityId = c.entityBinding?.entityId ?? c.id;
-  const base = stateVarFromEntity(entityId);
+  const eventsVar = calendarEventsVarFromEntity(entityId, c.durationDays);
   const idSafe = safeCppIdentifier(c.id, 'component');
   const maxItems = Math.max(1, Math.min(10, c.maxItems ?? 4));
   const rowHeight = 46;
   const scrollable = c.scrollable === true ? 'true' : 'false';
   const callback = emitTapAction(c.onTap) || '[](){}';
 
-  let out = `${indent}auto *calendar_${idSafe} = ${factory('CalendarListWidget', `${rect(x, y, w, h)}, state.${base}_events_raw.ptr(), "${escapeCString(label)}", "${escapeCString(entityId)}", ${maxItems}, ${rowHeight}, ${scrollable}, ${callback}`)};\n`;
+  let out = `${indent}auto *calendar_${idSafe} = ${factory('CalendarListWidget', `${rect(x, y, w, h)}, state.${eventsVar}.ptr(), "${escapeCString(label)}", "${escapeCString(entityId)}", ${maxItems}, ${rowHeight}, ${scrollable}, ${callback}`)};\n`;
   if (visibilityExpr) {
     out += `${indent}calendar_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
   }

@@ -1,5 +1,5 @@
 import type { Project, LightStateComponent, Component, TodoListComponent, TextComponent, HvacComponent, WeatherComponent, CalendarComponent } from "@esphome-designer/schema";
-import { toCppIdentifier, firstScreenId, cppDefaultValue, cppTypeFor, stateVarFromEntity, collectAllComponents, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar } from "./utils";
+import { toCppIdentifier, firstScreenId, cppDefaultValue, cppTypeFor, stateVarFromEntity, collectAllComponents, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, calendarEventsVarFromEntity } from "./utils";
 import { collectConditionEntities } from "./condition-expr";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
 
@@ -112,7 +112,7 @@ function collectCalendarStateVars(project: Project): { varName: string; cppType:
     if (c.type !== 'calendar') continue;
     const cc = c as CalendarComponent;
     const entityId = cc.entityBinding?.entityId ?? cc.id;
-    const varName = `${stateVarFromEntity(entityId)}_events_raw`;
+    const varName = calendarEventsVarFromEntity(entityId, cc.durationDays);
     if (seen.has(varName)) continue;
     seen.add(varName);
     result.push({ varName, cppType: 'std::string', initValue: '"NO EVENTS"' });

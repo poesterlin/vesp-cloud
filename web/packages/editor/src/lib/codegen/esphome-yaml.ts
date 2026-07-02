@@ -1,5 +1,5 @@
 import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent, HvacComponent, WeatherComponent, CalendarComponent } from "@esphome-designer/schema";
-import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted } from "./utils";
+import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted, calendarEventsVarFromEntity } from "./utils";
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
 import { ICON_FONT_ID, WEATHER_ICON_FONT_ID, getIconGlyphs, projectHasWeather } from "./mdi-icons";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
@@ -585,29 +585,31 @@ function generateCalendarIntervals(project: Project): string {
   const calendarComponents = allComponents.filter(c => c.type === 'calendar') as CalendarComponent[];
   if (calendarComponents.length === 0) return '';
 
-  const selectedByEntity = new Map<string, CalendarComponent>();
+  const selectedByEntityWindow = new Map<string, CalendarComponent>();
   for (const cc of calendarComponents) {
     const entityId = cc.entityBinding?.entityId;
     if (!entityId) continue;
-    const current = selectedByEntity.get(entityId);
+    const durationDays = Math.max(0, Math.floor(cc.durationDays ?? 125));
+    const key = `${entityId}::${durationDays}`;
+    const current = selectedByEntityWindow.get(key);
     if (!current) {
-      selectedByEntity.set(entityId, cc);
+      selectedByEntityWindow.set(key, cc);
       continue;
     }
-    const currDays = Math.max(0, Math.floor(current.durationDays ?? 125));
-    const nextDays = Math.max(0, Math.floor(cc.durationDays ?? 125));
-    if (nextDays > currDays) {
-      selectedByEntity.set(entityId, cc);
-    }
+    const currentMaxItems = Math.max(1, Math.min(10, current.maxItems ?? 4));
+    const nextMaxItems = Math.max(1, Math.min(10, cc.maxItems ?? 4));
+    if (nextMaxItems > currentMaxItems) selectedByEntityWindow.set(key, cc);
   }
 
   const entries: string[] = [];
-  for (const [entityId, cc] of selectedByEntity.entries()) {
+  for (const cc of selectedByEntityWindow.values()) {
+    const entityId = cc.entityBinding?.entityId;
+    if (!entityId) continue;
     const escapedId = escapeCString(entityId);
-    const base = stateVarFromEntity(entityId);
     const durationDays = Math.max(0, Math.floor(cc.durationDays ?? 125));
     const durationHours = durationDays * 24;
     const durationString = `${durationHours}:00:00`;
+    const eventsVar = calendarEventsVarFromEntity(entityId, durationDays);
 
     entries.push(`  - interval: 10min
     startup_delay: 6s
@@ -638,7 +640,7 @@ function generateCalendarIntervals(project: Project): string {
                   auto events_var = entity_obj["events"];
                   if (!events_var.is<JsonArrayConst>()) {
                     ESP_LOGW("calendar", "events is not array");
-                    g_ui_app.state().${base}_events_raw.set("NO EVENTS");
+                    g_ui_app.state().${eventsVar}.set("NO EVENTS");
                     UiRedraw::trigger_display_update();
                     return;
                   }
@@ -669,7 +671,7 @@ function generateCalendarIntervals(project: Project): string {
                     count++;
                   }
                   if (formatted.empty()) formatted = "NO EVENTS";
-                  g_ui_app.state().${base}_events_raw.set(formatted);
+                  g_ui_app.state().${eventsVar}.set(formatted);
                   UiRedraw::trigger_display_update();`);
   }
 

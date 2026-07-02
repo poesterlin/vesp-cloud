@@ -93,6 +93,11 @@ export function todoItemsVarFromTodoEntity(entityId: string): string {
   return `${stateVarFromEntity(entityId)}_items`;
 }
 
+export function calendarEventsVarFromEntity(entityId: string, durationDays?: number): string {
+  const normalizedDays = Math.max(0, Math.floor(durationDays ?? 125));
+  return `${stateVarFromEntity(entityId)}_events_${normalizedDays}d_raw`;
+}
+
 export function textBindingVar(binding: EntityBinding): string {
   let name = stateVarFromEntity(binding.entityId);
   if (binding.attribute) {

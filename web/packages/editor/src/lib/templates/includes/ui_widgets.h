@@ -1797,9 +1797,20 @@ class CalendarListWidget : public Widget {
   }
 
   static std::string format_start_(const std::string &start) {
+    bool is_today = false;
+    if (start.size() >= 10 && start[4] == '-' && start[7] == '-' && sntp_time != nullptr) {
+      auto now = sntp_time->now();
+      if (now.is_valid()) {
+        char today[11];
+        snprintf(today, sizeof(today), "%04d-%02d-%02d", now.year, now.month, now.day_of_month);
+        is_today = (start.compare(0, 10, today) == 0);
+      }
+    }
+
     if (start.size() >= 16) {
       // yyyy-mm-ddThh:mm[:ss]
       if (start[4] == '-' && start[7] == '-' && (start[10] == 'T' || start[10] == ' ')) {
+        if (is_today) return start.substr(11, 5);
         return start.substr(5, 5) + " " + start.substr(11, 5);
       }
     }

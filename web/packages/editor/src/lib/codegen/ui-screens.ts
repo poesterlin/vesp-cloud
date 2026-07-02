@@ -24,6 +24,7 @@ import {
   calendarEventsVarFromEntity,
   todoItemsVarFromBinding,
   todoItemsVarFromTodoEntity,
+  todoEntityIdFromComponent,
   textBindingVar,
   imageIdFromComponentId,
   imageFallbackIdFromComponentId,
@@ -581,7 +582,8 @@ function generateComponentSetup(
     }
     case 'todo_list': {
       const tc = c as TodoListComponent;
-      const itemsVar = tc.todoEntityId ? todoItemsVarFromTodoEntity(tc.todoEntityId) : todoItemsVarFromBinding(tc.itemsBinding, c.id);
+      const todoEntityId = todoEntityIdFromComponent(tc);
+      const itemsVar = todoEntityId ? todoItemsVarFromTodoEntity(todoEntityId) : todoItemsVarFromBinding(tc.itemsBinding, c.id);
       return generateTodoListWidget(tc, itemsVar, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     }
     case 'tab_container':
@@ -878,7 +880,8 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
     }
     case 'todo_list': {
       const tc = c as TodoListComponent;
-      const itemsVar = tc.todoEntityId ? todoItemsVarFromTodoEntity(tc.todoEntityId) : todoItemsVarFromBinding(tc.itemsBinding, c.id);
+      const todoEntityId = todoEntityIdFromComponent(tc);
+      const itemsVar = todoEntityId ? todoItemsVarFromTodoEntity(todoEntityId) : todoItemsVarFromBinding(tc.itemsBinding, c.id);
       return generateTodoListWidget(tc, itemsVar, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     }
     case 'conditional_area':

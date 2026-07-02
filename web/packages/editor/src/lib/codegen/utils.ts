@@ -93,6 +93,13 @@ export function todoItemsVarFromTodoEntity(entityId: string): string {
   return `${stateVarFromEntity(entityId)}_items`;
 }
 
+export function todoEntityIdFromComponent(todo: Pick<TodoListComponent, 'todoEntityId' | 'itemsBinding'>): string | undefined {
+  if (todo.todoEntityId) return todo.todoEntityId;
+  const bindingEntityId = todo.itemsBinding?.entityId;
+  if (bindingEntityId?.startsWith('todo.')) return bindingEntityId;
+  return undefined;
+}
+
 export function calendarEventsVarFromEntity(entityId: string, durationDays?: number): string {
   const normalizedDays = Math.max(0, Math.floor(durationDays ?? 125));
   return `${stateVarFromEntity(entityId)}_events_${normalizedDays}d_raw`;

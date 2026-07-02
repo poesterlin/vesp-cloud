@@ -4,7 +4,8 @@ import { fileURLToPath } from 'url';
 
 const templates = import.meta.glob('../templates/**/*', {
   eager: true,
-  as: 'raw',
+  query: '?raw',
+  import: 'default',
 }) as Record<string, string>;
 
 const PREFIX = '../templates/';

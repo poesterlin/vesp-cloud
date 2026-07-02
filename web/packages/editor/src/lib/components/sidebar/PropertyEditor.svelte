@@ -910,7 +910,7 @@
         <label class="section-label">Entity Binding</label>
         <EntityPicker
           preselectedDomain={selectedComponent.type === "todo_list"
-            ? "sensor"
+            ? "todo"
             : selectedComponent.type === "hvac"
               ? "climate"
               : selectedComponent.type === "weather"
@@ -919,7 +919,7 @@
                   ? "calendar"
                 : "light"}
           allowedDomains={selectedComponent.type === "todo_list"
-            ? ["sensor"]
+            ? ["todo"]
             : selectedComponent.type === "light_state"
               ? LIGHT_STATE_ALLOWED_DOMAINS
             : selectedComponent.type === "hvac"

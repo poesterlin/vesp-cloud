@@ -7,6 +7,7 @@
 #include "esphome/components/image/image.h"
 #include <algorithm>
 #include <cmath>
+#include <ctime>
 #include <initializer_list>
 #include <map>
 #include <memory>
@@ -1797,25 +1798,54 @@ class CalendarListWidget : public Widget {
   }
 
   static std::string format_start_(const std::string &start) {
-    bool is_today = false;
-    if (start.size() >= 10 && start[4] == '-' && start[7] == '-' && sntp_time != nullptr) {
+    if (start.size() >= 16 && start[4] == '-' && start[7] == '-' && (start[10] == 'T' || start[10] == ' ')) {
+      const std::string fallback = start.substr(8, 2) + "/" + start.substr(5, 2) + " " + start.substr(11, 5);
+      if (sntp_time == nullptr) return fallback;
+
       auto now = sntp_time->now();
-      if (now.is_valid()) {
-        char today[11];
-        snprintf(today, sizeof(today), "%04d-%02d-%02d", now.year, now.month, now.day_of_month);
-        is_today = (start.compare(0, 10, today) == 0);
+      if (!now.is_valid()) return fallback;
+
+      int year = 0;
+      int month = 0;
+      int day = 0;
+      int hour = 0;
+      int minute = 0;
+      const int parsed =
+          sscanf(start.c_str(), "%4d-%2d-%2d%*[T ]%2d:%2d", &year, &month, &day, &hour, &minute);
+      if (parsed != 5) return fallback;
+
+      std::tm event_tm = {};
+      event_tm.tm_year = year - 1900;
+      event_tm.tm_mon = month - 1;
+      event_tm.tm_mday = day;
+      event_tm.tm_hour = hour;
+      event_tm.tm_min = minute;
+      event_tm.tm_sec = 0;
+      event_tm.tm_isdst = -1;
+      const std::time_t event_ts = std::mktime(&event_tm);
+      if (event_ts == static_cast<std::time_t>(-1)) return fallback;
+
+      constexpr double kDaySeconds = 24.0 * 60.0 * 60.0;
+      const double delta_sec = std::difftime(event_ts, static_cast<std::time_t>(now.timestamp));
+      if (delta_sec >= 0.0 && delta_sec < kDaySeconds) {
+        return start.substr(11, 5);
       }
+      return fallback;
     }
 
-    if (start.size() >= 16) {
-      // yyyy-mm-ddThh:mm[:ss]
-      if (start[4] == '-' && start[7] == '-' && (start[10] == 'T' || start[10] == ' ')) {
-        if (is_today) return start.substr(11, 5);
-        return start.substr(5, 5) + " " + start.substr(11, 5);
-      }
-    }
     if (start.size() >= 10 && start[4] == '-' && start[7] == '-') {
-      return start.substr(5, 5);
+      return start.substr(8, 2) + "/" + start.substr(5, 2);
+    }
+    if (start.size() >= 10 && start[4] == '/' && start[7] == '/') {
+      return start.substr(8, 2) + "/" + start.substr(5, 2);
+    }
+    if (start.size() >= 5 &&
+        std::isdigit(static_cast<unsigned char>(start[0])) &&
+        std::isdigit(static_cast<unsigned char>(start[1])) &&
+        std::isdigit(static_cast<unsigned char>(start[2])) &&
+        std::isdigit(static_cast<unsigned char>(start[3])) &&
+        (start[4] == '-' || start[4] == '/')) {
+      return start.substr(5);
     }
     return start;
   }
@@ -2670,8 +2700,8 @@ class WeatherWidget : public Widget {
     if (with_pill_row) {
       // Compact: leave room for the bottom 3-pill row (48px from bottom).
       l.content_bottom = r.y + r.h - l.pad - 46;
-      l.icon_y_offset = 10;
-      l.temp_y_offset = 6;
+      l.icon_y_offset = 14;
+      l.temp_y_offset = 10;
     } else {
       // Forecast: bottom margin is small, stack is centered in the rest.
       l.content_bottom = r.y + r.h - l.pad - 10;

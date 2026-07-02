@@ -132,6 +132,7 @@ export type TodoListComponent = BaseComponent & {
    */
   todoEntityId?: string;
   maxItems?: number;
+  rowHeight?: number;
   scrollable?: boolean;
   checkable?: boolean;
 };

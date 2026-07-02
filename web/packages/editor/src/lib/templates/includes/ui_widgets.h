@@ -1746,14 +1746,15 @@ class CalendarListWidget : public Widget {
 
       const int text_x = date_x + date_w + 6;
       const int text_w = row_x + row_w - text_x - 6;
-      const int summary_y = row_y + 6;
+      const bool has_location = !row.location.empty();
+      const int summary_y = has_location ? (row_y + 6) : (row_y + row_h / 2);
       const int location_y = row_y + row_h - 6;
       auto *location_font = g_theme.weather_tiny.font ? g_theme.weather_tiny.font : g_theme.label.font;
       if (g_theme.label.font != nullptr) {
         ui_print_truncated(it, text_x, summary_y, g_theme.label.font,
-                           text_color_, TextAlign::TOP_LEFT,
+                           text_color_, has_location ? TextAlign::TOP_LEFT : TextAlign::CENTER_LEFT,
                            row.summary.c_str(), text_w);
-        if (!row.location.empty() && location_font != nullptr) {
+        if (has_location && location_font != nullptr) {
           ui_print_truncated(it, text_x, location_y, location_font,
                              dim_color_, TextAlign::BOTTOM_LEFT,
                              row.location.c_str(), text_w);

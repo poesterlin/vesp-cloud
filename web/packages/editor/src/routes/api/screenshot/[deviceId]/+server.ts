@@ -68,7 +68,7 @@ function rgb565ToRgb888(raw: Buffer, width: number, height: number): Buffer {
   const out = Buffer.alloc(width * height * 3);
   const len = Math.min(raw.length, width * height * 2);
   for (let i = 0, j = 0; i + 1 < len; i += 2, j += 3) {
-    const px = raw.readUInt16BE(i);   // ST7701S framebuffer uses big-endian RGB565
+    const px = raw.readUInt16LE(i);
     const r = (px >> 11) & 0x1f;
     const g = (px >> 5) & 0x3f;
     const b = px & 0x1f;
@@ -119,10 +119,9 @@ export const POST: RequestHandler = async ({ params, request }) => {
 export const GET: RequestHandler = async ({ params, locals, url }) => {
   if (!isScreenshotDebugEnabled()) error(404, "Screenshot feature disabled");
   const deviceId = safeDeviceId(params.deviceId);
-  const tsParam = url.searchParams.get("ts");
-  const timestamp = tsParam ? Number.parseInt(tsParam, 10) : undefined;
 
-  const rawBuf = await getScreenshotBuffer(deviceId, Number.isFinite(timestamp as number) ? timestamp : undefined);
+  // No auth for debug; both editor (locals.user) and admin proxy access this.
+  const rawBuf = await getScreenshotBuffer(deviceId);
   if (rawBuf == null) error(404, "No screenshot for this device");
 
   if (url.searchParams.get("format") === "raw") {

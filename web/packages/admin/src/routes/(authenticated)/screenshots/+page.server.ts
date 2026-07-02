@@ -11,7 +11,7 @@ export const load: PageServerLoad = async ({ locals }) => {
   if (!SCREENSHOT_DEBUG_ENABLED) error(404);
 
   const devices = await listScreenshotDevices();
-  devices.sort((a, b) => b.ts - a.ts);
+  devices.sort((a, b) => b.mtime - a.mtime);
 
   return { devices, screenshotDebugEnabled: true };
 };

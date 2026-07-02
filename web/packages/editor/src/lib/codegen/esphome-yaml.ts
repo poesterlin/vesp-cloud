@@ -848,10 +848,11 @@ ${haBaseUrlLocal}
             if (api == nullptr) return;
             api->subscribe_home_assistant_state(
                 entity_id, esphome::optional<std::string>(),
-                [target](esphome::StringRef state) {
+                [target, entity_id](esphome::StringRef state) {
                   bool on = (state.size() == 2 && state.c_str()[0] == 'o'
                              && state.c_str()[1] == 'n');
                   target->set(on);
+                  ESP_LOGW("bind", "[t=%u] %s = %s", millis(), entity_id.c_str(), on ? "on" : "off");
                   UiRedraw::trigger_display_update();
                 });
           };
@@ -909,13 +910,14 @@ ${imageBindingHelper}
             if (api == nullptr) return;
             api->subscribe_home_assistant_state(
                 entity_id, esphome::optional<std::string>(),
-                [target](esphome::StringRef state) {
+                [target, entity_id](esphome::StringRef state) {
                   std::string s(state.c_str(), state.size());
                   if (s.empty()) return;
                   char *end = nullptr;
                   float v = strtof(s.c_str(), &end);
                   if (end == s.c_str()) return;
                   target->set(v);
+                  ESP_LOGW("bind", "[t=%u] %s = %.2f", millis(), entity_id.c_str(), v);
                   UiRedraw::trigger_display_update();
                 });
           };

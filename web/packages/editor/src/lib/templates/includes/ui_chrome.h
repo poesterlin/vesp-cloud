@@ -91,7 +91,7 @@ class HeaderWidget : public Widget {
       : time_font_(time_font), detail_font_(detail_font),
         timer_active_(timer_active), timer_remaining_(timer_remaining) {}
 
-  UiRect bounds() const override { return UiRect{0, 0, 480, 50}; }
+  UiRect bounds() const override { return UiRect{0, 0, 480, 49}; }
   bool is_top_widget() const override { return true; }
 
   void update(uint32_t now) override {

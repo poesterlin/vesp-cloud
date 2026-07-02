@@ -165,7 +165,7 @@ class GenericScreen : public Screen {
           clip_to_scroll_area = true;
         }
         if (!full && !legacy_partial) {
-          const auto b = w->bounds();
+          const auto b = w->redraw_gate_bounds();
           if (!scroll_partial) {
             if (!UiInvalidation::needs_redraw_in(b.x, b.y, b.w, b.h)) continue;
           }

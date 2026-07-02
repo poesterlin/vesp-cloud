@@ -1,7 +1,7 @@
 <script lang="ts">
   import { projectStore } from "../../stores/project.svelte";
 
-  const headerHeight = $derived(projectStore.pageHeader?.height ?? 50);
+  const headerHeight = $derived(projectStore.pageHeader?.height ?? 49);
 
   const timeColor = "rgb(0, 240, 255)";
   const colonColor = "rgb(230, 240, 250)";

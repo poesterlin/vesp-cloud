@@ -381,11 +381,18 @@ class Widget {
     UiInvalidation::request_rect(UiDirtyRect{b.x, b.y, b.w, b.h}, tag);
   }
 
+  // Region used by the GenericScreen redraw gate. Keep this in sync with
+  // mark_dirty() so container-linked widgets (set_dirty_bounds) are either
+  // skipped or redrawn atomically with their container eraser.
+  UiRect redraw_gate_bounds() const {
+    return has_custom_dirty_bounds_ ? screen_rect(dirty_bounds_) : bounds();
+  }
+
   // Should this widget actually be drawn this frame? Combines visibility
   // and dirty-rect intersection.
   bool needs_draw(const UiState &state) const {
     if (!is_visible(state)) return false;
-    const auto b = bounds();
+    const auto b = redraw_gate_bounds();
     return UiInvalidation::needs_redraw_in(b.x, b.y, b.w, b.h);
   }
 

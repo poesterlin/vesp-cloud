@@ -17,6 +17,7 @@ const LATEST_VERSION = "1.0.0";
 const PROJECTS_INDEX_KEY = "esphome-designer-projects-index";
 const PROJECT_PREFIX = "esphome-designer-project-";
 const TAB_HEADER_HEIGHT = 36;
+const HEADER_RENDER_HEIGHT = 49;
 
 const SAVE_DEBOUNCE_MS = 1500;
 
@@ -96,6 +97,9 @@ function createProjectStore() {
   const activeComponents = $derived(
     viewMode === "dashboard" ? (currentDashboardPage?.components ?? []) : (currentDetailView?.components ?? [])
   );
+
+  const effectiveHeaderHeight = (height?: number) =>
+    Math.max(height ?? 0, HEADER_RENDER_HEIGHT);
 
   return {
     // Getters
@@ -274,8 +278,9 @@ function createProjectStore() {
     },
 
     // Page Header management
-    enablePageHeader(height: number = 40) {
+    enablePageHeader(height: number = HEADER_RENDER_HEIGHT) {
       if (!project) return;
+      const safeHeight = effectiveHeaderHeight(height);
       const defaultTimeComponent: Component = {
         id: `text-header-${Date.now()}`,
         type: "text",
@@ -283,10 +288,10 @@ function createProjectStore() {
         fontSize: "large",
         align: "center",
         position: { x: 0, y: 4 },
-        size: { width: project.display.width, height: height - 8 },
+        size: { width: project.display.width, height: safeHeight - 8 },
       } as Component;
       project.pageHeader = {
-        height,
+        height: safeHeight,
         components: [defaultTimeComponent],
       };
       scheduleSave();
@@ -294,7 +299,11 @@ function createProjectStore() {
 
     updatePageHeader(updates: Partial<PageHeader>) {
       if (!project?.pageHeader) return;
-      Object.assign(project.pageHeader, updates);
+      const next: Partial<PageHeader> = { ...updates };
+      if (typeof next.height === "number") {
+        next.height = effectiveHeaderHeight(next.height);
+      }
+      Object.assign(project.pageHeader, next);
       scheduleSave();
     },
 
@@ -641,7 +650,10 @@ function createProjectStore() {
         visit(project.pageHeader.components, { x: 0, y: 0 }, []);
       }
 
-      const contentY = viewMode === "dashboard" ? (project.pageHeader?.height ?? 0) : 0;
+      const contentY =
+        viewMode === "dashboard"
+          ? (project.pageHeader ? effectiveHeaderHeight(project.pageHeader.height) : 0)
+          : 0;
       visit(activeComponents, { x: 0, y: contentY }, []);
 
       return bounds;
@@ -655,7 +667,10 @@ function createProjectStore() {
       if (!project) return undefined;
 
       const displayWidth = project.display.width;
-      const contentY = viewMode === "dashboard" ? (project.pageHeader?.height ?? 0) : 0;
+      const contentY =
+        viewMode === "dashboard"
+          ? (project.pageHeader ? effectiveHeaderHeight(project.pageHeader.height) : 0)
+          : 0;
       const contentHeight =
         viewMode === "dashboard"
           ? project.display.height - contentY
@@ -715,7 +730,7 @@ function createProjectStore() {
           x: 0,
           y: 0,
           width: displayWidth,
-          height: project.pageHeader.height,
+          height: effectiveHeaderHeight(project.pageHeader.height),
         };
         const found = search(project.pageHeader.components, headerSurface);
         if (found) return found;

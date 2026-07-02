@@ -2737,10 +2737,10 @@ class WeatherWidget : public Widget {
     draw_clipped_box(it, r.x, r.y, w, h, ui_corner_radius_for_height(h), accent, bg, false);
 #endif
 
-    if (label_ && label_[0] && g_theme.header.font != nullptr) {
-      const int max_label_w = w - l.pad * 2;
-      ui_print_truncated(it, r.x + l.pad, l.top_y,
-                         g_theme.header.font, dim_color_,
+    if (label_ && label_[0] && g_theme.label.font != nullptr) {
+      const int max_label_w = w - ui_spacing::md * 2;
+      ui_print_truncated(it, r.x + ui_spacing::md, r.y + 6,
+                         g_theme.label.font, dim_color_,
                          TextAlign::TOP_LEFT, label_, max_label_w);
     }
 
@@ -2792,10 +2792,10 @@ class WeatherWidget : public Widget {
     const Color bg(10, 14, 22);
     draw_clipped_box(it, r.x, r.y, w, h, ui_corner_radius_for_height(h), accent, bg, false);
 
-    if (label_ && label_[0] && g_theme.header.font != nullptr) {
-      const int max_label_w = w - l.pad * 2;
-      ui_print_truncated(it, r.x + l.pad, l.top_y,
-                         g_theme.header.font, dim_color_,
+    if (label_ && label_[0] && g_theme.label.font != nullptr) {
+      const int max_label_w = w - ui_spacing::md * 2;
+      ui_print_truncated(it, r.x + ui_spacing::md, r.y + 6,
+                         g_theme.label.font, dim_color_,
                          TextAlign::TOP_LEFT, label_, max_label_w);
     }
 

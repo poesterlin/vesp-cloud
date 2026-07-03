@@ -1419,19 +1419,15 @@ class TodoPreviewWidget : public Widget {
           int cx = r.x + kTodoIconCX;
           int cy = row_cy;
           it.line(cx, cy, cx + (int)(cosf(angle) * 8), cy + (int)(sinf(angle) * 8), border);
-        } else {
-          const Color check_color = completed ? Color(0, 220, 120) : border;
-          if (g_theme.icon.font != nullptr &&
+        }
+
+        const Color check_color = completed ? Color(0, 220, 120) : border;
+        if (g_theme.icon.font != nullptr &&
               incomplete_icon_ != nullptr && complete_icon_ != nullptr &&
               incomplete_icon_[0] != '\0' && complete_icon_[0] != '\0') {
-            it.printf(r.x + kTodoIconCX, row_cy, g_theme.icon.font,
-                      check_color, TextAlign::CENTER,
-                      "%s", completed ? complete_icon_ : incomplete_icon_);
-          } else {
-            it.printf(r.x + kTodoCheckTextX, row_cy, g_theme.label.font,
-                      check_color, TextAlign::CENTER_LEFT,
-                      "%s", completed ? "[x]" : "[ ]");
-          }
+          it.printf(r.x + kTodoIconCX, row_cy, g_theme.icon.font,
+                    check_color, TextAlign::CENTER,
+                    "%s", completed ? complete_icon_ : incomplete_icon_);
         }
       }
 
@@ -1505,7 +1501,7 @@ class TodoPreviewWidget : public Widget {
   // a comfortable gap between icon and text without eating into the
   // scrolling due-date column.
   static constexpr int kTodoCheckTextX = 10;  // fallback "[ ]" / "[x]" X
-  static constexpr int kTodoIconCX = 16;     // MDI icon centre X
+  static constexpr int kTodoIconCX = 22;     // MDI icon centre X
   static constexpr int kTodoTextX = 40;      // main text + due-date X
   static constexpr int kTodoDueMaxW = 92;    // width reserved for due date column
 

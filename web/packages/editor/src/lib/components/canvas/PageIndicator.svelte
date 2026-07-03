@@ -17,9 +17,11 @@
     {#each Array(count) as _, i}
       <div
         class="dot"
-        style:background-color={i === currentIndex 
-          ? colorToRgb(theme.colors.accent || {r:0,g:255,b:255}) 
-          : colorToRgb(theme.colors.foregroundMuted || {r:128,g:128,b:128})}
+        style:border-color={i === currentIndex
+          ? colorToRgb(theme.colors.accent || { r: 0, g: 255, b: 255 })
+          : colorToRgb(
+              theme.colors.foregroundMuted || { r: 128, g: 128, b: 128 },
+            )}
       ></div>
     {/each}
   </div>
@@ -28,7 +30,7 @@
 <style>
   .indicator-container {
     position: absolute;
-    bottom: 10px;
+    bottom: 14px;
     left: 0;
     right: 0;
     display: flex;
@@ -45,9 +47,11 @@
   }
 
   .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
+    border-radius: 0;
+    width: 12px;
+    height: 12px;
+    border: 2px solid;
     transition: background-color 0.2s;
+    transform: rotate(45deg);
   }
 </style>

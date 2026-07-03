@@ -1884,9 +1884,15 @@ class CalendarListWidget : public Widget {
       const std::time_t event_ts = std::mktime(&event_tm);
       if (event_ts == static_cast<std::time_t>(-1)) return fallback;
 
-      constexpr double kDaySeconds = 24.0 * 60.0 * 60.0;
-      const double delta_sec = std::difftime(event_ts, static_cast<std::time_t>(now.timestamp));
-      if (delta_sec >= 0.0 && delta_sec < kDaySeconds) {
+      constexpr std::time_t kDaySeconds = 24 * 60 * 60;
+      std::time_t now_ts = static_cast<std::time_t>(now.timestamp);
+      std::tm today_tm = *std::localtime(&now_ts);
+      today_tm.tm_hour = 0;
+      today_tm.tm_min = 0;
+      today_tm.tm_sec = 0;
+      const std::time_t today_midnight_ts = std::mktime(&today_tm);
+      if (today_midnight_ts != static_cast<std::time_t>(-1) &&
+          event_ts >= today_midnight_ts && event_ts < (today_midnight_ts + kDaySeconds)) {
         return start.substr(11, 5);
       }
       return fallback;

@@ -14,7 +14,9 @@
   const bgColor = $derived(colorToCss(component.backgroundColor, "transparent"));
   const accentColor = $derived(colorToCss(theme.colors.accent));
   const foregroundColor = $derived(colorToCss(theme.colors.foreground));
-  const cornerSize = $derived(theme.values.cornerSize ?? 10);
+  const width = $derived(component.size?.width ?? 0);
+  const height = $derived(component.size?.height ?? 0);
+  const cornerSize = $derived(theme.values?.cornerSize ?? 10);
 </script>
 
 <Draggable {component}>
@@ -27,30 +29,30 @@
     <svg
       width="100%"
       height="100%"
-      viewBox="0 0 {component.size.width} {component.size.height}"
+      viewBox="0 0 {width} {height}"
       preserveAspectRatio="none"
     >
       <!-- Background -->
-      <rect x="0" y="0" width={component.size.width} height={component.size.height} fill={bgColor} />
+      <rect x="0" y="0" width={width} height={height} fill={bgColor} />
 
       <!-- Retro Corners -->
-      {#if theme.style.containerCorners}
+      {#if theme.style?.containerCorners}
         <g stroke={accentColor} stroke-width="1.5" fill="none">
           <!-- Top Left -->
           <path d="M 0 {cornerSize} L 0 0 L {cornerSize} 0" />
           <path d="M 3 {cornerSize} L 3 3 L {cornerSize} 3" />
           
           <!-- Top Right -->
-          <path d="M {component.size.width - cornerSize} 0 L {component.size.width} 0 L {component.size.width} {cornerSize}" />
-          <path d="M {component.size.width - cornerSize} 3 L {component.size.width - 3} 3 L {component.size.width - 3} {cornerSize}" />
+          <path d="M {width - cornerSize} 0 L {width} 0 L {width} {cornerSize}" />
+          <path d="M {width - cornerSize} 3 L {width - 3} 3 L {width - 3} {cornerSize}" />
           
           <!-- Bottom Left -->
-          <path d="M 0 {component.size.height - cornerSize} L 0 {component.size.height} L {cornerSize} {component.size.height}" />
-          <path d="M 3 {component.size.height - cornerSize} L 3 {component.size.height - 3} L {cornerSize} {component.size.height - 3}" />
+          <path d="M 0 {height - cornerSize} L 0 {height} L {cornerSize} {height}" />
+          <path d="M 3 {height - cornerSize} L 3 {height - 3} L {cornerSize} {height - 3}" />
           
           <!-- Bottom Right -->
-          <path d="M {component.size.width - cornerSize} {component.size.height} L {component.size.width} {component.size.height} L {component.size.width} {component.size.height - cornerSize}" />
-          <path d="M {component.size.width - cornerSize} {component.size.height - 3} L {component.size.width - 3} {component.size.height - 3} L {component.size.width - 3} {component.size.height - cornerSize}" />
+          <path d="M {width - cornerSize} {height} L {width} {height} L {width} {height - cornerSize}" />
+          <path d="M {width - cornerSize} {height - 3} L {width - 3} {height - 3} L {width - 3} {height - cornerSize}" />
         </g>
       {/if}
 

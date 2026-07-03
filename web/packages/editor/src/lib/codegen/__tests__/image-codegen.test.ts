@@ -57,6 +57,7 @@ describe("image component codegen", () => {
               variants: [
                 {
                   id: "default",
+                  name: "Default",
                   components: [
                     {
                       id: "icon",

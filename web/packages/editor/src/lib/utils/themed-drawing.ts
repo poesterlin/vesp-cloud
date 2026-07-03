@@ -13,13 +13,13 @@ export function generateThemedBox(
   label?: string
 ) {
   const { colors, style, values } = theme;
-  const cornerSize = values.cornerSize;
+  const cornerSize = values?.cornerSize ?? 10;
   const stroke = colorToRgb(colors.foreground);
   const fill = colorToRgb(colors.background);
 
   let paths = [];
 
-  if (style.containerCorners) {
+  if (style?.containerCorners) {
     // Double lines corner decoration
     // Top-left
     paths.push(`M ${x} ${y + cornerSize} L ${x} ${y} L ${x + cornerSize} ${y}`);
@@ -58,15 +58,15 @@ export function generateThemedButton(
   pressed: boolean = false
 ) {
   const { colors, style, values } = theme;
-  const offset = pressed ? 0 : values.shadowOffset;
+  const offset = pressed ? 0 : (values?.shadowOffset ?? 3);
   const stroke = colorToRgb(colors.foreground);
-  const shadow = colorToRgb(colors.backgroundSecondary);
-  const accent = colorToRgb(colors.foreground); // White corner highlights
+  const shadow = colorToRgb(colors.backgroundSecondary ?? colors.background);
+  const accent = colorToRgb(colors.accent ?? colors.foreground);
 
   return {
     rect: { x, y, width, height },
-    shadowRect: style.buttonShadow ? { x: x + offset, y: y + offset, width, height } : null,
-    cornerAccents: style.buttonCornerAccents ? [
+    shadowRect: style?.buttonShadow ? { x: x + offset, y: y + offset, width, height } : null,
+    cornerAccents: style?.buttonCornerAccents ? [
       { x1: x + 2, y1: y + 2, x2: x + 12, y2: y + 2 }, // Top-left horizontal
       { x1: x + 2, y1: y + 2, x2: x + 2, y2: y + 12 },  // Top-left vertical
       { x1: x + width - 12, y1: y + height - 2, x2: x + width - 2, y2: y + height - 2 }, // Bottom-right horizontal

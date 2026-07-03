@@ -65,25 +65,6 @@
     return getWeatherConditionIcon(cond);
   });
 
-  function renderDayColumn(
-    w: number, h: number,
-    dayLabel: string,
-    condName: string,
-    temp: string,
-    hum: string,
-    rain: string,
-    wind: string,
-    colX: number, colW: number,
-  ) {
-    const condCss = conditionColorToCss(getWeatherConditionColor(condName));
-    const path = iconPath(getWeatherConditionIcon(condName));
-    const labelY = topY + 22 + 6;
-    const mid = colX + colW / 2;
-
-    return {
-      // Using HTML for the column
-    };
-  }
 </script>
 
 <Draggable {component} widthOnly>

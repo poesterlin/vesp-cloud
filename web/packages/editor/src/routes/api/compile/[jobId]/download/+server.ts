@@ -74,12 +74,13 @@ export const GET: RequestHandler = async ({ locals, params }) => {
     zip.file('includes/ui_screens.h', generateUIScreensHeader(sanitizedProject));
     zip.file(`${fileName}.yaml`, generateESPHomeYAML(sanitizedProject));
 
-    const content = await zip.generateAsync({ type: 'nodebuffer' });
+    const content = await zip.generateAsync({ type: 'arraybuffer' });
+    const byteLength = content.byteLength;
 
     return new Response(content, {
       headers: {
         'Content-Type': 'application/zip',
-        'Content-Length': String(content.length),
+        'Content-Length': String(byteLength),
         'Cache-Control': 'no-store',
         'Content-Disposition': `attachment; filename="${fileName}.zip"`,
       },

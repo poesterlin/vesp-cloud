@@ -4,7 +4,12 @@
 #include "ui_invalidation.h"
 #include "ui_types.h"
 #include "ui_retro.h"
+#if __has_include("esphome/components/image/image.h")
 #include "esphome/components/image/image.h"
+#define UI_HAS_ESPHOME_IMAGE_COMPONENT 1
+#else
+#define UI_HAS_ESPHOME_IMAGE_COMPONENT 0
+#endif
 #include <algorithm>
 #include <cmath>
 #include <ctime>
@@ -472,6 +477,7 @@ class RectWidget : public Widget {
   Color color_;
 };
 
+#if UI_HAS_ESPHOME_IMAGE_COMPONENT
 class ImageWidget : public Widget {
  public:
   const char *widget_label() const override { return "Image"; }
@@ -625,6 +631,7 @@ class ImageWidget : public Widget {
   bool deferred_ = false;
   int tile_row_ = 0;
 };
+#endif  // UI_HAS_ESPHOME_IMAGE_COMPONENT
 
 class LabelWidget : public Widget {
  public:

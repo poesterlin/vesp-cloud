@@ -16,7 +16,6 @@
     return () => clearTimeout(id);
   });
 
-
   const currency = Intl.NumberFormat("us", {
     style: "currency",
     currency: "EUR",
@@ -34,7 +33,8 @@
 
   async function buyPack(pack: { priceId: string; priceKey: string }) {
     if (!consentChecked) {
-      error = "Please accept immediate delivery of digital credits before purchasing.";
+      error =
+        "Please accept immediate delivery of digital credits before purchasing.";
       return;
     }
 
@@ -45,7 +45,10 @@
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId: pack.priceId, immediatePerformanceConsent: true }),
+        body: JSON.stringify({
+          priceId: pack.priceId,
+          immediatePerformanceConsent: true,
+        }),
       });
 
       const json = await res.json();
@@ -87,13 +90,9 @@
             ? "Payment successful! Credits have been added to your balance."
             : "Payment successful! Credits will appear shortly."}
           <span class="toast-detail">
-            {#if data.orderId}
-              Order ID: <code>{data.orderId}</code> — save this if you need to
-              <a href="/withdrawal">withdraw from your purchase</a>.
-            {:else}
-              Your order confirmation was sent by Stripe. Use the order ID from that email if you need to
-              <a href="/withdrawal">withdraw from your purchase</a>.
-            {/if}
+            Your order confirmation was sent to your email. Use the order ID from that
+            email if you need to
+            <a href="/withdrawal">withdraw from your purchase</a>.
           </span>
         </div>
       </div>
@@ -124,16 +123,19 @@
         Top up your account and keep your firmware build workflow moving.
       </p>
       <p class="legal-note">
-        By purchasing credits, you agree to our <a href="/terms">Terms of Service</a>. Credits are
-        non-refundable except where required by law. EU consumers may
+        By purchasing credits, you agree to our <a href="/terms"
+          >Terms of Service</a
+        >. Credits are non-refundable except where required by law. EU consumers
+        may
         <a href="/withdrawal">withdraw from their purchase</a> within 14 days.
       </p>
 
       <label class="consent">
         <input type="checkbox" bind:checked={consentChecked} />
         <span>
-          I agree to immediate delivery of digital build credits and acknowledge that I may lose my right
-          of withdrawal once I use credits to run a build.
+          I agree to immediate delivery of digital build credits and acknowledge
+          that I may lose my right of withdrawal once I use credits to run a
+          build.
         </span>
       </label>
 

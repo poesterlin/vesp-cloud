@@ -649,6 +649,10 @@ class LabelWidget : public Widget {
   }
 
   void set_bg_color(Color c) { bg_color_ = c; }
+  void set_color(Color c) {
+    color_override_ = c;
+    has_color_override_ = true;
+  }
   void set_align(TextAlign a) {
     align_ = a;
     has_align_override_ = true;
@@ -725,7 +729,7 @@ class LabelWidget : public Widget {
     if (style_ == nullptr || style_->font == nullptr) return;
 
     auto *f = style_->font;
-    auto cl = style_->color;
+    auto cl = has_color_override_ ? color_override_ : style_->color;
     auto a = text_align();
     const UiRect r = screen_rect(rect_);
     const int x = text_anchor_x(r, a);
@@ -813,6 +817,8 @@ class LabelWidget : public Widget {
   Color bg_color_{RetroColors::VOID};
   TextAlign align_ = TextAlign::TOP_LEFT;
   bool has_align_override_ = false;
+  Color color_override_{0, 0, 0};
+  bool has_color_override_ = false;
   bool last_bool_ = false;
   bool bool_baseline_set_ = false;
 };

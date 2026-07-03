@@ -254,8 +254,14 @@ class DetailHeaderWidget : public Widget {
     it.line(cx - 4, cy, cx + 6, cy + 7, RetroColors::CYAN);
 
     if (title_ && title_font_) {
-      // Section label in brackets for retro terminal feel
+      // Keep retro terminal brackets only in retro theme.
+#if UI_THEME_RETRO
       it.printf(240, 20, title_font_, RetroColors::CYAN, TextAlign::CENTER, "[ %s ]", title_);
+#else
+      // Faux-bold in modern theme: draw a second pass 1px to the right.
+      it.printf(240, 20, title_font_, RetroColors::CYAN, TextAlign::CENTER, "%s", title_);
+      it.printf(241, 20, title_font_, RetroColors::CYAN, TextAlign::CENTER, "%s", title_);
+#endif
     }
 
     // Hatch pattern decoration top-right

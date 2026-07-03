@@ -74,6 +74,8 @@ psram:
 wifi:
   ap: {}
 
+captive_portal:
+
 logger:
   hardware_uart: UART0
   baud_rate: 115200

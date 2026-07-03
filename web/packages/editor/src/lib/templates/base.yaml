@@ -72,9 +72,7 @@ psram:
   speed: 80MHz
 
 wifi:
-  ap:
-    ssid: "${device_name} Fallback"
-    password: "password"
+  ap: {}
 
 logger:
   hardware_uart: UART0

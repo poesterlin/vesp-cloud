@@ -5,9 +5,11 @@
   import {
     mdiAccessPointOff,
     mdiAccountOutline,
+    mdiAlertCircle,
     mdiArrowLeft,
     mdiCameraOutline,
     mdiCalendarMonth,
+    mdiCheckCircle,
     mdiCheckCircleOutline,
     mdiChevronDown,
     mdiChevronUp,
@@ -35,6 +37,7 @@
     mdiWhiteBalanceSunny,
     mdiWindowShutter,
     mdiChartBoxOutline,
+    mdiUpload,
   } from "@mdi/js";
 
   type PickerComponent =
@@ -118,6 +121,10 @@
   let manualEntityId = $state("");
   let manualAttribute = $state("");
   let showManualInputs = $state(false);
+  let haDumpInput = $state<HTMLInputElement | null>(null);
+  let isDropActive = $state(false);
+  let uploadError = $state<string | null>(null);
+  let uploadSuccess = $state(false);
 
   $effect(() => {
     if (isModalOpen && inputEl) {
@@ -214,13 +221,20 @@
 
   const uiIcons = {
     empty: mdiAccessPointOff,
+    error: mdiAlertCircle,
+    success: mdiCheckCircle,
     search: mdiMagnify,
     location: mdiMapMarker,
     emptyBrowse: mdiArrowLeft,
     close: mdiClose,
     chevronUp: mdiChevronUp,
     chevronDown: mdiChevronDown,
+    upload: mdiUpload,
   };
+
+  const hasManualBinding = $derived.by(
+    () => !!currentBinding?.entityId && selectedEntity === null,
+  );
 
   function normalizeName(name: string): string {
     return name
@@ -474,6 +488,75 @@
     selectedEntity = homeAssistantStore.getEntity(entityId) ?? null;
   }
 
+  function confirmManualBinding() {
+    applyManualBinding();
+    isModalOpen = false;
+    resetFilters();
+  }
+
+  async function importDumpFile(file: File): Promise<void> {
+    uploadError = null;
+    uploadSuccess = false;
+
+    try {
+      const text = await file.text();
+      const success = homeAssistantStore.importFromJson(text);
+      if (!success) {
+        uploadError = "Invalid Home Assistant dump format";
+        return;
+      }
+      uploadSuccess = true;
+      showManualInputs = false;
+      setTimeout(() => {
+        uploadSuccess = false;
+      }, 3000);
+      if (manualEntityId.trim()) {
+        selectedEntity = homeAssistantStore.getEntity(manualEntityId.trim()) ?? null;
+      }
+    } catch {
+      uploadError = "Failed to read file";
+    }
+  }
+
+  async function handleDumpFileSelect(event: Event): Promise<void> {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    await importDumpFile(file);
+    input.value = "";
+  }
+
+  function handleDropZoneDragOver(event: DragEvent) {
+    event.preventDefault();
+    isDropActive = true;
+  }
+
+  function handleDropZoneDragLeave(event: DragEvent) {
+    event.preventDefault();
+    isDropActive = false;
+  }
+
+  async function handleDropZoneDrop(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    isDropActive = false;
+
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".json")) {
+      uploadError = "Please drop a .json dump file";
+      uploadSuccess = false;
+      return;
+    }
+
+    await importDumpFile(file);
+  }
+
+  function handleDropZoneKeydown(event: KeyboardEvent) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    haDumpInput?.click();
+  }
+
   function openModal() {
     isModalOpen = true;
     searchQuery = "";
@@ -501,20 +584,7 @@
 </script>
 
 <div class="entity-picker">
-  {#if !homeAssistantStore.isLoaded}
-    <div class="empty-state">
-      <div class="empty-copy">
-        <svg class="icon empty-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d={uiIcons.empty}></path>
-        </svg>
-        <span class="empty-text">No Home Assistant data loaded</span>
-        <span class="empty-hint"
-          >Import your Home Assistant export to browse entities, or add one manually in the picker</span
-        >
-      </div>
-      <button class="change-btn" onclick={openModal}>Open entity picker</button>
-    </div>
-  {:else}
+  {#if selectedEntity || hasManualBinding}
     <!-- Entity Mode -->
     {#if selectedEntity}
       <div class="selected-entity">
@@ -616,13 +686,61 @@
         <button class="change-btn" onclick={openModal}> Change entity </button>
       </div>
     {:else}
-      <button class="select-btn" onclick={openModal}>
-        <svg class="icon select-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d={uiIcons.search}></path>
-        </svg>
-        <span>Select an entity...</span>
-      </button>
+      <div class="selected-entity manual-selected">
+        <div class="selected-header">
+          <div class="selected-info">
+            <svg
+              class="icon selected-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d={uiIcons.search}></path>
+            </svg>
+            <div class="selected-details">
+              <span class="selected-name">{currentBinding?.entityId}</span>
+              <span class="selected-meta">
+                <span class="selected-area">
+                  Manual entity ID
+                  {#if currentBinding?.attribute}
+                    ({currentBinding.attribute})
+                  {/if}
+                </span>
+              </span>
+            </div>
+          </div>
+          <button class="clear-btn" onclick={clearSelection} title="Remove">
+            <svg
+              class="icon button-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d={uiIcons.close}></path>
+            </svg>
+          </button>
+        </div>
+        <button class="change-btn" onclick={openModal}> Change entity </button>
+      </div>
     {/if}
+  {:else if !homeAssistantStore.isLoaded}
+    <div class="empty-state">
+      <div class="empty-copy">
+        <svg class="icon empty-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d={uiIcons.empty}></path>
+        </svg>
+        <span class="empty-text">No Home Assistant data loaded</span>
+        <span class="empty-hint"
+          >Import your Home Assistant export to browse entities, or add one manually in the picker</span
+        >
+      </div>
+      <button class="change-btn" onclick={openModal}>Open entity picker</button>
+    </div>
+  {:else}
+    <button class="select-btn" onclick={openModal}>
+      <svg class="icon select-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d={uiIcons.search}></path>
+      </svg>
+      <span>Select an entity...</span>
+    </button>
   {/if}
 </div>
 
@@ -633,13 +751,14 @@
     class="modal-backdrop"
     role="dialog"
     aria-modal="true"
+    tabindex="-1"
     onclick={closeModal}
     onkeydown={handleKeydown}
   >
-    <div class="modal" onclick={(e) => e.stopPropagation()}>
+    <div class="modal">
       <div class="modal-header">
         <h2>Select Entity</h2>
-        <button class="modal-close" onclick={closeModal}>
+        <button class="modal-close" onclick={closeModal} aria-label="Close entity picker">
           <svg class="icon button-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d={uiIcons.close}></path>
           </svg>
@@ -654,12 +773,12 @@
           type="text"
           placeholder="Search entities..."
           bind:value={searchQuery}
-          autofocus
           bind:this={inputEl}
         />
         {#if searchQuery}
           <button
             class="search-clear"
+            aria-label="Clear search"
             onclick={() => {
               searchQuery = "";
             }}
@@ -705,7 +824,6 @@
                 placeholder="Entity ID (e.g. light.living_room)"
                 oninput={(e) => {
                   manualEntityId = e.currentTarget.value;
-                  applyManualBinding();
                 }}
               />
               <input
@@ -714,9 +832,18 @@
                 placeholder="Attribute path if needed (e.g. brightness)"
                 oninput={(e) => {
                   manualAttribute = e.currentTarget.value;
-                  applyManualBinding();
                 }}
               />
+            </div>
+            <div class="manual-actions">
+              <button
+                type="button"
+                class="manual-confirm"
+                disabled={!manualEntityId.trim()}
+                onclick={confirmManualBinding}
+              >
+                Use manual entity ID
+              </button>
             </div>
           {/if}
           {#if homeAssistantStore.isLoaded && !showManualInputs}
@@ -888,17 +1015,53 @@
             </div>
           {/if}
         {:else}
-          <div class="browse-empty">
-            <svg
-              class="icon browse-empty-icon"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
+          <div class="no-dump-panel">
+            <div
+              class="dump-dropzone {isDropActive ? 'is-active' : ''}"
+              role="button"
+              tabindex="0"
+              aria-label="Drop Home Assistant dump JSON"
+              ondragover={handleDropZoneDragOver}
+              ondragleave={handleDropZoneDragLeave}
+              ondrop={handleDropZoneDrop}
+              onkeydown={handleDropZoneKeydown}
             >
-              <path d={uiIcons.empty}></path>
-            </svg>
-            <span class="browse-empty-text"
-              >No dump loaded. Manual entry is available above.</span
-            >
+              <svg class="icon browse-empty-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d={uiIcons.upload}></path>
+              </svg>
+              <span class="browse-empty-text">Drop Home Assistant dump JSON here</span>
+              <button
+                type="button"
+                class="manual-toggle"
+                onclick={() => haDumpInput?.click()}
+              >
+                Choose JSON file
+              </button>
+              <input
+                type="file"
+                accept=".json"
+                bind:this={haDumpInput}
+                onchange={handleDumpFileSelect}
+                style="display: none"
+              />
+            </div>
+
+            {#if uploadError}
+              <div class="upload-message error">
+                <svg class="icon inline-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d={uiIcons.error}></path>
+                </svg>
+                <span>{uploadError}</span>
+              </div>
+            {/if}
+            {#if uploadSuccess}
+              <div class="upload-message success">
+                <svg class="icon inline-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d={uiIcons.success}></path>
+                </svg>
+                <span>Home Assistant dump imported</span>
+              </div>
+            {/if}
           </div>
         {/if}
       </div>
@@ -1041,6 +1204,30 @@
 
   .manual-entry-grid input:focus {
     border-color: var(--color-primary, #0066cc);
+  }
+
+  .manual-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .manual-confirm {
+    border: 1px solid var(--color-primary, #0066cc);
+    background: color-mix(in srgb, var(--color-primary, #0066cc) 22%, transparent);
+    color: var(--color-text-primary);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .manual-confirm:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .manual-confirm:not(:disabled):hover {
+    background: color-mix(in srgb, var(--color-primary, #0066cc) 30%, transparent);
   }
 
   @media (max-width: 700px) {
@@ -1474,6 +1661,57 @@
     font-size: 13px;
   }
 
+  .manual-selected {
+    border-style: dashed;
+  }
+
+  .no-dump-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px;
+  }
+
+  .dump-dropzone {
+    border: 1px dashed var(--color-border);
+    border-radius: 10px;
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: color-mix(in srgb, var(--color-bg-primary) 80%, transparent);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .dump-dropzone.is-active {
+    border-color: var(--color-primary, #0066cc);
+    background: color-mix(in srgb, var(--color-primary, #0066cc) 10%, var(--color-bg-primary));
+  }
+
+  .upload-message {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: center;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+  }
+
+  .upload-message.error {
+    color: #ff9393;
+    border-color: color-mix(in srgb, #ff9393 50%, var(--color-border));
+  }
+
+  .upload-message.success {
+    color: #7ee0a8;
+    border-color: color-mix(in srgb, #7ee0a8 50%, var(--color-border));
+  }
+
   /* Results Panel */
   .results-panel {
     flex: 1;
@@ -1561,11 +1799,6 @@
   .entity-card:hover {
     border-color: var(--color-primary, #0066cc);
     background: var(--color-hover);
-  }
-
-  .entity-count {
-    color: var(--color-primary, #0066cc);
-    font-weight: 500;
   }
 
   .primary-entity {

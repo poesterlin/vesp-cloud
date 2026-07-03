@@ -140,6 +140,12 @@
           </svg>
           Profile
         </a>
+        <a href="/feedback" class="user-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" class="icon">
+            <path d={mdiIcons.mdiMessageText} />
+          </svg>
+          Feedback
+        </a>
         <form action="/logout" method="post" class="logout-form">
           <button type="submit" class="user-link logout-link">Logout</button>
         </form>

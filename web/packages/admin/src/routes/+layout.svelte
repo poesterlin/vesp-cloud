@@ -18,6 +18,7 @@
     <a href="/users" class:active={isActivePrefix('/users')}>Users</a>
     <a href="/jobs" class:active={isActivePrefix('/jobs')}>Jobs</a>
     <a href="/withdrawals" class:active={isActivePrefix('/withdrawals')}>Withdrawals</a>
+    <a href="/feedback" class:active={isActivePrefix('/feedback')}>Feedback</a>
   </nav>
   <main class="content">
     {@render children()}

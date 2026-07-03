@@ -173,3 +173,19 @@ export const withdrawalRequests = pgTable(
 
 export type WithdrawalRequest = typeof withdrawalRequests.$inferSelect;
 export type NewWithdrawalRequest = typeof withdrawalRequests.$inferInsert;
+
+// ── Feedback ────────────────────────────────────────────────────────────────
+export const feedbackEntries = pgTable('feedback_entry', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => usersTable.id, fullCascade),
+  message: text('message').notNull(),
+  adminReply: text('admin_reply'),
+  repliedAt: timestamp('replied_at', { withTimezone: true, mode: 'date' }),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+});
+
+export type FeedbackEntry = typeof feedbackEntries.$inferSelect;
+export type NewFeedbackEntry = typeof feedbackEntries.$inferInsert;

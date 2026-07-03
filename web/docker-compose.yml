@@ -1,5 +1,5 @@
 services:
-  app:
+  esphome:
     build:
       dockerfile: packages/editor/Dockerfile
     cpus: "6.0"

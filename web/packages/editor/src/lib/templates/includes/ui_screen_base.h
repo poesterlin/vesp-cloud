@@ -169,6 +169,14 @@ class GenericScreen : public Screen {
         }
         if (!full && !legacy_partial) {
           const auto b = w->redraw_gate_bounds();
+          if (background_only && !scroll_partial) {
+            // A background widget (e.g. RectWidget) typically repaints its
+            // whole bounds. If we let it draw on mere intersection with a
+            // tiny dirty rect, it can erase foreground widgets that won't be
+            // redrawn this frame. Only redraw backgrounds on partial frames
+            // when a dirty rect fully covers their bounds.
+            if (!rect_fully_covered(b.x, b.y, b.w, b.h)) continue;
+          }
           if (!scroll_partial) {
             if (!UiInvalidation::needs_redraw_in(b.x, b.y, b.w, b.h)) continue;
           }
@@ -193,6 +201,17 @@ class GenericScreen : public Screen {
     draw_pass(false, false);
     draw_pass(false, true);
     scroll_dirty_ = false;
+  }
+
+  static bool rect_fully_covered(int x, int y, int w, int h) {
+    for (int i = 0; i < UiInvalidation::dirty_count(); i++) {
+      const auto &r = UiInvalidation::dirty_rect(i);
+      if (r.x <= x && r.x + r.w >= x + w &&
+          r.y <= y && r.y + r.h >= y + h) {
+        return true;
+      }
+    }
+    return false;
   }
 
  private:

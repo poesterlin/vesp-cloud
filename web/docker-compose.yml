@@ -28,8 +28,8 @@ services:
       - traefik_web
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.esphome.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.services.esphome.loadbalancer.server.port=3000"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-web}-esphome.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME:-web}-esphome.loadbalancer.server.port=3000"
     tmpfs:
       - /tmp/esphome-builds:size=12g
     volumes:
@@ -81,8 +81,8 @@ services:
       - traefik_web
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.esphome-admin.rule=Host(`${ADMIN_DOMAIN}`)"
-      - "traefik.http.services.esphome-admin.loadbalancer.server.port=3000"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-web}-esphome-admin.rule=Host(`${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME:-web}-esphome-admin.loadbalancer.server.port=3000"
 
 volumes:
   platformio_data:

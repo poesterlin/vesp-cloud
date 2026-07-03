@@ -167,16 +167,44 @@ class GenericScreen : public Screen {
           if (!intersects) continue;
           clip_to_scroll_area = true;
         }
+        if (!full && !legacy_partial && background_only && !scroll_partial) {
+          // Background widgets repaint large areas. On partial redraws we must
+          // confine them to dirty intersections, otherwise they can overpaint
+          // foreground widgets that are outside the current dirty rect.
+          const auto b = w->redraw_gate_bounds();
+          bool drew_partial_bg = false;
+          for (int i = 0; i < UiInvalidation::dirty_count(); i++) {
+            const auto &dr = UiInvalidation::dirty_rect(i);
+            const int ix = std::max(b.x, dr.x);
+            const int iy = std::max(b.y, dr.y);
+            const int ir = std::min(b.x + b.w, dr.x + dr.w);
+            const int ib = std::min(b.y + b.h, dr.y + dr.h);
+            if (ir <= ix || ib <= iy) continue;
+            int clip_l = ix;
+            int clip_t = iy;
+            int clip_r = ir;
+            int clip_b = ib;
+            if (clip_to_scroll_area) {
+              const int sx = scroll_area_x_;
+              const int sy = scroll_area_y_;
+              const int sr = scroll_area_x_ + scroll_area_w_;
+              const int sb = scroll_area_y_ + scroll_area_h_;
+              clip_l = std::max(clip_l, sx);
+              clip_t = std::max(clip_t, sy);
+              clip_r = std::min(clip_r, sr);
+              clip_b = std::min(clip_b, sb);
+              if (clip_r <= clip_l || clip_b <= clip_t) continue;
+            }
+            it.start_clipping(clip_l, clip_t, clip_r, clip_b);
+            w->draw(it, state);
+            it.end_clipping();
+            drew_partial_bg = true;
+          }
+          if (!drew_partial_bg) continue;
+          continue;
+        }
         if (!full && !legacy_partial) {
           const auto b = w->redraw_gate_bounds();
-          if (background_only && !scroll_partial) {
-            // A background widget (e.g. RectWidget) typically repaints its
-            // whole bounds. If we let it draw on mere intersection with a
-            // tiny dirty rect, it can erase foreground widgets that won't be
-            // redrawn this frame. Only redraw backgrounds on partial frames
-            // when a dirty rect fully covers their bounds.
-            if (!rect_fully_covered(b.x, b.y, b.w, b.h)) continue;
-          }
           if (!scroll_partial) {
             if (!UiInvalidation::needs_redraw_in(b.x, b.y, b.w, b.h)) continue;
           }
@@ -201,17 +229,6 @@ class GenericScreen : public Screen {
     draw_pass(false, false);
     draw_pass(false, true);
     scroll_dirty_ = false;
-  }
-
-  static bool rect_fully_covered(int x, int y, int w, int h) {
-    for (int i = 0; i < UiInvalidation::dirty_count(); i++) {
-      const auto &r = UiInvalidation::dirty_rect(i);
-      if (r.x <= x && r.x + r.w >= x + w &&
-          r.y <= y && r.y + r.h >= y + h) {
-        return true;
-      }
-    }
-    return false;
   }
 
  private:

@@ -72,12 +72,12 @@
         </div>
 
         {#if !canAfford}
-          <div class="warning">
+          <a href="/credits" class="warning">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M12 9V13M12 17H12.01M10.29 3.86L1.82 18C1.64 18.3 1.55 18.65 1.55 19C1.55 20.1 2.45 21 3.55 21H20.45C21.55 21 22.45 20.1 22.45 19C22.45 18.65 22.36 18.3 22.18 18L13.71 3.86C13.32 3.18 12.69 2.81 12 2.81C11.31 2.81 10.68 3.18 10.29 3.86Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <span>Insufficient credits. Add credits before compiling.</span>
-          </div>
+          </a>
         {/if}
       {/if}
     </div>

@@ -144,7 +144,7 @@ class HeaderWidget : public Widget {
       it.line(cx, cy, cx, cy - 6, tc);
       it.line(cx, cy, cx + 5, cy, tc);
 
-      it.printf(60, 12, time_font_, tc, TextAlign::TOP_LEFT, "%02d:%02d", minutes, seconds);
+      it.printf(60, 14, time_font_, tc, TextAlign::TOP_LEFT, "%02d:%02d", minutes, seconds);
       it.printf(460, 14, detail_font_, tc, TextAlign::TOP_RIGHT, "TIMER RUNNING");
     } else {
       auto time_now = sntp_time->now();

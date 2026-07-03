@@ -68,7 +68,7 @@
   .time-block {
     position: absolute;
     left: 13px;
-    top: 3px;
+    top: 10px;
     display: flex;
     gap: 0;
     line-height: 1;
@@ -91,7 +91,7 @@
   .date-block {
     position: absolute;
     right: 18px;
-    top: 9px;
+    top: 14px;
     font-size: var(--display-text-small, 18px);
     font-weight: 400;
     letter-spacing: 0.5px;

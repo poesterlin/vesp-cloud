@@ -24,7 +24,6 @@ services:
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
       - PUBLIC_BASE_URL=https://${DOMAIN}
       - LOG_LEVEL=debug
-      - ADDRESS_HEADER=CF-Connecting-IP
     networks:
       - traefik_web
     labels:

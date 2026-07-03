@@ -195,6 +195,18 @@ inline int ui_get_baseline(display::Display &it, int x, int y,
   return ty + th;
 }
 
+inline bool ui_value_changed_quantized(float current, float last,
+                                       float step = 0.1f) {
+  const bool current_finite = std::isfinite(current);
+  const bool last_finite = std::isfinite(last);
+  if (current_finite != last_finite) return true;
+  if (!current_finite) return false;
+  if (step <= 0.0f) return current != last;
+  const int current_q = static_cast<int>(std::lround(current / step));
+  const int last_q = static_cast<int>(std::lround(last / step));
+  return current_q != last_q;
+}
+
 // One-call helper: truncate `text` to `max_w` and draw it at (x, y)
 // with `align`, painting the indicator dots after it iff truncated.
 inline void ui_print_truncated(display::Display &it, int x, int y,
@@ -767,8 +779,16 @@ class LabelWidget : public Widget {
       last_bool_ = *bound_bool_;
       bool_baseline_set_ = true;
     } else if (text_fn_) {
-      ui_fast_filled_rectangle(it, r.x, r.y, r.w, r.h, bg_color_);
+      const UiRect current_bounds = text_draw_bounds(it, f, a, x, y, last_text_, max_text_w);
+      UiRect clear_bounds = current_bounds;
+      if (draw_bounds_set_) {
+        clear_bounds = union_rects(clear_bounds, last_draw_bounds_);
+      }
+      ui_fast_filled_rectangle(it, clear_bounds.x, clear_bounds.y,
+                               clear_bounds.w, clear_bounds.h, bg_color_);
       ui_print_truncated(it, x, y, f, cl, a, last_text_, max_text_w);
+      last_draw_bounds_ = current_bounds;
+      draw_bounds_set_ = true;
     } else if (printer_) {
       ui_fast_filled_rectangle(it, r.x, r.y, r.w, r.h, bg_color_);
       // printer_ wraps a templated bound value; we can't easily intercept
@@ -788,10 +808,32 @@ class LabelWidget : public Widget {
         int baseline_y = ui_get_baseline(it, draw_x, y, f, a);
         ui_draw_truncation_dots(it, tx + tw, baseline_y, cl);
       }
+      last_draw_bounds_ = UiRect{tx - 2, ty, tw + 4 + dot_pad, th};
+      draw_bounds_set_ = true;
     }
   }
 
  private:
+  UiRect union_rects(const UiRect &a, const UiRect &b) const {
+    const int left = std::min(a.x, b.x);
+    const int top = std::min(a.y, b.y);
+    const int right = std::max(a.x + a.w, b.x + b.w);
+    const int bottom = std::max(a.y + a.h, b.y + b.h);
+    return UiRect{left, top, right - left, bottom - top};
+  }
+
+  UiRect text_draw_bounds(display::Display &it, esphome::font::Font *f,
+                          TextAlign a, int x, int y,
+                          const std::string &text, int max_text_w) const {
+    bool truncated = false;
+    std::string disp = ui_truncate_to_width(it, f, text, max_text_w, &truncated);
+    const int draw_x = ui_anchor_x_for_truncation(x, a, truncated);
+    int tx, ty, tw, th;
+    it.get_text_bounds(draw_x, y, disp.c_str(), f, a, &tx, &ty, &tw, &th);
+    const int dots_pad = truncated ? (UI_TRUNC_DOTS_W + 2) : 0;
+    return UiRect{tx - 2, ty, tw + 4 + dots_pad, th};
+  }
+
   TextAlign text_align() const {
     return ui_text_align_vertical_center(has_align_override_ ? align_ : style_->align);
   }
@@ -817,6 +859,8 @@ class LabelWidget : public Widget {
   Color bg_color_{RetroColors::VOID};
   TextAlign align_ = TextAlign::TOP_LEFT;
   bool has_align_override_ = false;
+  UiRect last_draw_bounds_{0, 0, 0, 0};
+  bool draw_bounds_set_ = false;
   Color color_override_{0, 0, 0};
   bool has_color_override_ = false;
   bool last_bool_ = false;
@@ -2245,8 +2289,14 @@ class HvacWidget : public Widget {
     }
     bool changed = false;
     if (hvac_mode_ptr_ && *hvac_mode_ptr_ != last_hvac_mode_) { changed = true; }
-    if (current_temp_ptr_ && *current_temp_ptr_ != last_current_temp_) { changed = true; }
-    if (target_temp_ptr_ && *target_temp_ptr_ != last_target_temp_) { changed = true; }
+    if (current_temp_ptr_ &&
+        ui_value_changed_quantized(*current_temp_ptr_, last_current_temp_)) {
+      changed = true;
+    }
+    if (target_temp_ptr_ &&
+        ui_value_changed_quantized(*target_temp_ptr_, last_target_temp_)) {
+      changed = true;
+    }
     if (action_ptr_ && *action_ptr_ != last_action_) { changed = true; }
     if (changed) mark_dirty();
     Widget::update(now);
@@ -2898,10 +2948,7 @@ class WeatherWidget : public Widget {
 
   static bool changed_value(const float *p, float last) {
     if (p == nullptr) return false;
-    if (!std::isfinite(*p) && !std::isfinite(last)) return false;
-    if (std::isnan(*p) != std::isnan(last)) return true;
-    if (*p != last) return true;
-    return false;
+    return ui_value_changed_quantized(*p, last);
   }
 
   static void copy_value(const float *p, float &dest) {

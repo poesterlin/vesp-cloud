@@ -139,8 +139,6 @@ class GenericScreen : public Screen {
     }
     const bool full = UiInvalidation::is_full_dirty();
     const bool scroll_partial = scroll_enabled_ && scroll_dirty_ && !full;
-    const bool legacy_partial =
-        !full && !scroll_partial && UiInvalidation::dirty_count() == 0 && UiInvalidation::needs_redraw();
     apply_scroll_offsets();
     if (scroll_partial) {
       ui_fast_filled_rectangle(it, scroll_area_x_, scroll_area_y_, scroll_area_w_, scroll_area_h_,
@@ -167,7 +165,7 @@ class GenericScreen : public Screen {
           if (!intersects) continue;
           clip_to_scroll_area = true;
         }
-        if (!full && !legacy_partial && background_only && !scroll_partial) {
+        if (!full && background_only && !scroll_partial) {
           // Background widgets repaint large areas. On partial redraws we must
           // confine them to dirty intersections, otherwise they can overpaint
           // foreground widgets that are outside the current dirty rect.
@@ -203,7 +201,7 @@ class GenericScreen : public Screen {
           if (!drew_partial_bg) continue;
           continue;
         }
-        if (!full && !legacy_partial) {
+        if (!full) {
           const auto b = w->redraw_gate_bounds();
           if (!scroll_partial) {
             if (!UiInvalidation::needs_redraw_in(b.x, b.y, b.w, b.h)) continue;

@@ -50,6 +50,7 @@ function componentLabel(c: Component): string {
   const typeLabels: Record<string, string> = {
     button: "Button",
     text: "Text",
+    digital_clock: "Digital Clock",
     icon: "Icon",
     image: "Image",
     light_state: "Light State",

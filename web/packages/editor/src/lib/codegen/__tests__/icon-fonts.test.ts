@@ -355,6 +355,63 @@ describe("generateUIScreensHeader icon emission", () => {
     expect(out).not.toContain("// TODO: component type 'icon'");
   });
 
+  test("emits DigitalClockWidget and optional color override", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Page",
+          components: [
+            {
+              id: "clock1",
+              type: "digital_clock",
+              position: { x: 10, y: 20 },
+              size: { width: 220, height: 80 },
+              color: { r: 255, g: 64, b: 32 },
+              onTap: {
+                type: "SERVICE_CALL",
+                service: "script.toggle_clock",
+                target: { entityId: "script.toggle_clock" },
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const out = generateUIScreensHeader(project);
+    expect(out).toContain("emplace_widget<DigitalClockWidget>");
+    expect(out).toContain("clock1->set_color(Color(255, 64, 32));");
+    expect(out).toContain('make_ha_callback("script.toggle_clock", "script.toggle_clock")');
+  });
+
+  test("suppresses page header time on pages with digital clocks", () => {
+    const project = makeProject({
+      pageHeader: { height: 49, components: [] },
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Page 1",
+          components: [],
+        },
+        {
+          id: "p2",
+          name: "Page 2",
+          components: [
+            {
+              id: "clock2",
+              type: "digital_clock",
+              position: { x: 10, y: 10 },
+              size: { width: 220, height: 80 },
+            },
+          ],
+        },
+      ],
+    });
+    const out = generateUIScreensHeader(project);
+    expect(out).toContain("home_header->set_suppress_time_condition");
+    expect(out).toContain("state.home_page_index == 1");
+  });
+
   test("emits set_icon for button components with icons", () => {
     const project = makeProject({
       dashboardPages: [

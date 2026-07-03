@@ -23,3 +23,8 @@ font:
     id: font_large
     size: 32
     glyphs: "'°!\"%()+*-.,/:;<=>?@[\\]^€—_`{|}~ 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÄÖÜäöüß"
+
+  - file: "gfonts://Turret Road"
+    id: font_giant
+    size: 64
+    glyphs: "-:0123456789"

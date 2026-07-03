@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     mdiFormatText,
+    mdiClockOutline,
     mdiGestureTap,
     mdiStarOutline,
     mdiRectangleOutline,
@@ -27,6 +28,12 @@
       label: "Text",
       icon: mdiFormatText,
       description: "Display static text or Home Assistant entity values",
+    },
+    {
+      type: "digital_clock",
+      label: "Digital Clock",
+      icon: mdiClockOutline,
+      description: "Large bold clock, replaces the header",
     },
     {
       type: "button",

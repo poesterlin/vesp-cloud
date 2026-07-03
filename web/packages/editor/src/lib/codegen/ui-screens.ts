@@ -6,6 +6,7 @@ import type {
   ConditionalAreaComponent,
   ConditionalVariant,
   TextComponent,
+  DigitalClockComponent,
   ButtonComponent,
   IconComponent,
   ImageComponent,
@@ -156,6 +157,18 @@ function emitColor(c: Color): string {
 function emitButtonBorderColor(c: ButtonComponent, idSafe: string, indent: string): string {
   if (!c.borderColor) return '';
   return `${indent}${idSafe}->set_border_color(${emitColor(c.borderColor)});\n`;
+}
+
+function hasDigitalClockInComponents(components: Component[]): boolean {
+  for (const c of components) {
+    if (c.type === 'digital_clock') return true;
+    if (c.type === 'tab_container') {
+      if (c.tabs.some(tab => hasDigitalClockInComponents(tab.components))) return true;
+    } else if (c.type === 'conditional_area') {
+      if (c.variants.some(variant => hasDigitalClockInComponents(variant.components))) return true;
+    }
+  }
+  return false;
 }
 
 const TAB_BAR_HEIGHT = 36;
@@ -552,6 +565,9 @@ function generateComponentSetup(
       out += emitLabelBindings(tc, idSafe, indent);
       return out;
     }
+    case 'digital_clock': {
+      return generateDigitalClockWidget(c as DigitalClockComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
+    }
     case 'button': {
       const label = c.label ?? '';
       const callback = emitTapAction(c.onTap ?? c.pressAction);
@@ -618,6 +634,34 @@ function generateIconWidget(
   }
   const bounds = rect(c.position.x + offsetX, c.position.y + offsetY, c.size?.width ?? 32, c.size?.height ?? 32);
   let out = `${indent}auto *${idSafe} = ${factory('IconWidget', `${bounds}, "${glyph}", g_theme.icon`)};\n`;
+  if (c.color) {
+    out += `${indent}${idSafe}->set_color(${emitColor(c.color)});\n`;
+  }
+  if (visibilityExpr) {
+    out += `${indent}${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
+  }
+  if (dirtyBoundsExpr) {
+    out += `${indent}${idSafe}->set_dirty_bounds(${dirtyBoundsExpr});\n`;
+  }
+  return out;
+}
+
+function generateDigitalClockWidget(
+    c: DigitalClockComponent,
+    factory: WidgetFactory,
+    indent: string,
+    offsetX = 0,
+    offsetY = 0,
+    visibilityExpr?: string,
+    dirtyBoundsExpr?: string,
+): string {
+  const x = c.position.x + offsetX;
+  const y = c.position.y + offsetY;
+  const w = c.size?.width ?? 210;
+  const h = c.size?.height ?? 92;
+  const idSafe = c.id.replace(/[^a-zA-Z0-9_]/g, '_');
+  const callback = emitTapAction(c.onTap);
+  let out = `${indent}auto *${idSafe} = ${factory('DigitalClockWidget', `${rect(x, y, w, h)}, ${callback || '[](){}'}`)};\n`;
   if (c.color) {
     out += `${indent}${idSafe}->set_color(${emitColor(c.color)});\n`;
   }
@@ -832,6 +876,9 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
       }
       return out;
     }
+    case 'digital_clock': {
+      return generateDigitalClockWidget(c as DigitalClockComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
+    }
     case 'button': {
       const label = c.label ?? '';
       const callback = emitTapAction(c.onTap ?? c.pressAction);
@@ -998,15 +1045,27 @@ export function generateUIScreensHeader(project: Project): string {
       : 0;
     setupBody += `  auto *home = screens.get_screen(UiScreenId::Home);\n`;
     if (project.pageHeader) {
-      setupBody += `  home->emplace_widget<HeaderWidget>(g_theme.header.font, g_theme.label.font, nullptr, nullptr);\n`;
+      setupBody += `  auto *home_header = home->emplace_widget<HeaderWidget>(g_theme.header.font, g_theme.label.font, nullptr, nullptr);\n`;
+      const pagesWithClock = project.dashboardPages
+        .map((page, index) => hasDigitalClockInComponents(page.components) ? index : -1)
+        .filter((index) => index >= 0);
+      if (pagesWithClock.length > 0) {
+        const clockPageExpression = pagesWithClock
+          .map((index) => `state.home_page_index == ${index}`)
+          .join(' || ');
+        setupBody += `  home_header->set_visibility_condition([&state]() { return !(${clockPageExpression}); });\n`;
+      }
     }
     for (const [index, page] of project.dashboardPages.entries()) {
       setupBody += `  {\n`;
       setupBody += `    auto p${index} = [&state]() { return state.home_page_index == ${index}; };\n`;
       setupBody += `    // Page: ${cppLineCommentText(page.name)}\n`;
       const orderedComponents = sortComponentsForWidgetLayering(page.components);
+      const pageOffsetY = project.pageHeader && !hasDigitalClockInComponents(page.components)
+        ? dashboardOffsetY
+        : 0;
       for (const c of orderedComponents) {
-        setupBody += generateComponentSetup(c, 'home', '    ', `p${index}`, 0, dashboardOffsetY);
+        setupBody += generateComponentSetup(c, 'home', '    ', `p${index}`, 0, pageOffsetY);
         setupBody += '\n';
       }
       setupBody += `  }\n\n`;

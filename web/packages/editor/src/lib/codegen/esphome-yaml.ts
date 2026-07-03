@@ -830,6 +830,7 @@ ${projectVersionYaml}
     then:
       - lambda: |-
           g_theme.header.font = id(font_medium);
+          g_theme.header_large.font = id(font_giant);
           g_theme.label.font = id(font_small);
           g_theme.weather_tiny.font = id(font_weather_tiny);
           g_theme.primary.font = id(font_small);

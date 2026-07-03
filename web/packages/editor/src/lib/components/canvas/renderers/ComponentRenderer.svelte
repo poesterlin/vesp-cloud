@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Component } from "@esphome-designer/schema";
   import TextRenderer from "./TextRenderer.svelte";
+  import DigitalClockRenderer from "./DigitalClockRenderer.svelte";
   import ButtonRenderer from "./ButtonRenderer.svelte";
   import SliderRenderer from "./SliderRenderer.svelte";
   import GaugeRenderer from "./GaugeRenderer.svelte";
@@ -14,9 +15,9 @@
   import TodoListRenderer from "./TodoListRenderer.svelte";
   import AutoLayoutListRenderer from "./AutoLayoutListRenderer.svelte";
   import LightStateRenderer from "./LightStateRenderer.svelte";
-import HvacRenderer from "./HvacRenderer.svelte";
-import WeatherRenderer from "./WeatherRenderer.svelte";
-import CalendarRenderer from "./CalendarRenderer.svelte";
+  import HvacRenderer from "./HvacRenderer.svelte";
+  import WeatherRenderer from "./WeatherRenderer.svelte";
+  import CalendarRenderer from "./CalendarRenderer.svelte";
 
   interface Props {
     component: Component;
@@ -28,6 +29,8 @@ import CalendarRenderer from "./CalendarRenderer.svelte";
 
 {#if component.type === "text"}
   <TextRenderer {component} />
+{:else if component.type === "digital_clock"}
+  <DigitalClockRenderer {component} />
 {:else if (component as any).type === "auto_layout_list"}
   <AutoLayoutListRenderer {component} />
 {:else if component.type === "button"}

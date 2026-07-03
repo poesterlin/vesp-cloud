@@ -7,6 +7,7 @@
 
 export type Component =
   | TextComponent
+  | DigitalClockComponent
   | ButtonComponent
   | SliderComponent
   | GaugeComponent
@@ -35,6 +36,10 @@ export type TextComponent = BaseComponent & {
   align?: "left" | "center" | "right";
 };
 export type OnTapAction = ServiceAction | NavigationAction;
+export type DigitalClockComponent = BaseComponent & {
+  type: "digital_clock";
+  color?: Color;
+};
 export type ButtonComponent = BaseComponent & {
   type: "button";
   label?: string;

@@ -42,8 +42,28 @@
     projectStore.viewMode === "dashboard" && !!projectStore.pageHeader,
   );
 
+  function hasDigitalClockInComponents(components: Component[]): boolean {
+    for (const component of components) {
+      if (component.type === "digital_clock") return true;
+      if (component.type === "conditional_area") {
+        if (component.variants.some((variant) => hasDigitalClockInComponents(variant.components))) {
+          return true;
+        }
+      } else if (component.type === "tab_container") {
+        if (component.tabs.some((tab) => hasDigitalClockInComponents(tab.components))) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  const hideHeaderForCurrentPage = $derived(
+    projectStore.viewMode === "dashboard" && hasDigitalClockInComponents(projectStore.activeComponents),
+  );
+
   const headerHeight = $derived(
-    hasHeader ? projectStore.pageHeader!.height : 0,
+    hasHeader && !hideHeaderForCurrentPage ? projectStore.pageHeader!.height : 0,
   );
 
   const contentHeight = $derived(
@@ -468,7 +488,7 @@
     />
   {/if}
 
-  {#if hasHeader}
+  {#if hasHeader && !hideHeaderForCurrentPage}
     <DashboardHeader />
   {/if}
 

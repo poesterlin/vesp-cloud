@@ -91,6 +91,10 @@ class HeaderWidget : public Widget {
       : time_font_(time_font), detail_font_(detail_font),
         timer_active_(timer_active), timer_remaining_(timer_remaining) {}
 
+  void set_suppress_time_condition(std::function<bool()> check) {
+    suppress_time_check_ = std::move(check);
+  }
+
   UiRect bounds() const override { return UiRect{0, 0, 480, 49}; }
   bool is_top_widget() const override { return true; }
 
@@ -99,11 +103,16 @@ class HeaderWidget : public Widget {
 
     const bool t_active = timer_active_ ? *timer_active_ : false;
     const int t_rem = timer_remaining_ ? *timer_remaining_ : 0;
+    const bool suppress_time = suppress_time_check_ ? suppress_time_check_() : false;
     if (t_active != last_timer_active_ || t_rem != last_timer_remaining_) {
       changed = true;
     }
 
-    if (!t_active) {
+    if (suppress_time != last_suppress_time_) {
+      changed = true;
+    }
+
+    if (!t_active && !suppress_time) {
       auto time_now = sntp_time->now();
       if (time_now.is_valid()) {
         if (time_now.hour != last_hour_ ||
@@ -133,6 +142,7 @@ class HeaderWidget : public Widget {
 
     const bool t_active = timer_active_ ? *timer_active_ : false;
     const int t_rem = timer_remaining_ ? *timer_remaining_ : 0;
+    const bool suppress_time = suppress_time_check_ ? suppress_time_check_() : false;
 
     if (t_active) {
       int minutes = t_rem / 60;
@@ -149,15 +159,17 @@ class HeaderWidget : public Widget {
     } else {
       auto time_now = sntp_time->now();
       if (time_now.is_valid()) {
+        if (!suppress_time) {
 #if UI_THEME_RETRO
-        // Time display with cyan accent
-        it.printf(18, 8, time_font_, RetroColors::CYAN, TextAlign::TOP_LEFT, "%02d", time_now.hour);
-        it.printf(18 + 32, 8, time_font_, RetroColors::WHITE, TextAlign::TOP_LEFT, ":");
-        it.printf(18 + 44, 8, time_font_, RetroColors::CYAN, TextAlign::TOP_LEFT, "%02d", time_now.minute);
+          // Time display with cyan accent
+          it.printf(18, 8, time_font_, RetroColors::CYAN, TextAlign::TOP_LEFT, "%02d", time_now.hour);
+          it.printf(18 + 32, 8, time_font_, RetroColors::WHITE, TextAlign::TOP_LEFT, ":");
+          it.printf(18 + 44, 8, time_font_, RetroColors::CYAN, TextAlign::TOP_LEFT, "%02d", time_now.minute);
 #else
-        // Time display as a single string (avoiding hardcoded character offsets)
-        it.printf(18, 8, time_font_, RetroColors::CYAN, TextAlign::TOP_LEFT, "%02d:%02d", time_now.hour, time_now.minute);
+          // Time display as a single string (avoiding hardcoded character offsets)
+          it.printf(18, 8, time_font_, RetroColors::CYAN, TextAlign::TOP_LEFT, "%02d:%02d", time_now.hour, time_now.minute);
 #endif
+        }
 
         const char* days[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
         const char* months[] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN",
@@ -193,6 +205,7 @@ class HeaderWidget : public Widget {
 
     last_timer_active_ = t_active;
     last_timer_remaining_ = t_rem;
+    last_suppress_time_ = suppress_time;
     baseline_set_ = true;
   }
 
@@ -206,7 +219,9 @@ class HeaderWidget : public Widget {
   int last_hour_ = -1;
   int last_minute_ = -1;
   int last_day_ = -1;
+  bool last_suppress_time_ = false;
   bool baseline_set_ = false;
+  std::function<bool()> suppress_time_check_;
 };
 
 class DetailHeaderWidget : public Widget {

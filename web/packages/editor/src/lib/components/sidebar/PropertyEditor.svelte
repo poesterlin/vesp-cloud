@@ -373,6 +373,17 @@
       </div>
     {/if}
 
+    {#if selectedComponent.type === "digital_clock"}
+      <div class="property-section">
+        <label class="section-label">Digital Clock</label>
+        <ColorPicker
+          label="Clock Color"
+          value={selectedComponent.color}
+          onUpdate={(color) => updateProperty("color", color)}
+        />
+      </div>
+    {/if}
+
     {#if selectedComponent.type === "button"}
       <div class="property-section">
         <label class="section-label">Button</label>

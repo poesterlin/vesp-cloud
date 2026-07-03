@@ -406,6 +406,19 @@
         }
       ]
     },
+    "DigitalClockComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "digital_clock" },
+            "color": { "$ref": "#/definitions/Color" }
+          },
+          "required": ["type", "size"]
+        }
+      ]
+    },
     "ButtonComponent": {
       "allOf": [
         { "$ref": "#/definitions/BaseComponent" },
@@ -737,6 +750,7 @@
     "Component": {
       "oneOf": [
         { "$ref": "#/definitions/TextComponent" },
+        { "$ref": "#/definitions/DigitalClockComponent" },
         { "$ref": "#/definitions/ButtonComponent" },
         { "$ref": "#/definitions/SliderComponent" },
         { "$ref": "#/definitions/GaugeComponent" },

@@ -1,6 +1,7 @@
 import { registerRenderer } from './renderer-registry';
 
 import TextRenderer from './TextRenderer.svelte';
+import DigitalClockRenderer from './DigitalClockRenderer.svelte';
 import AutoLayoutListRenderer from './AutoLayoutListRenderer.svelte';
 import ButtonRenderer from './ButtonRenderer.svelte';
 import SliderRenderer from './SliderRenderer.svelte';
@@ -18,6 +19,7 @@ import TabContainerRenderer from './TabContainerRenderer.svelte';
 import ComponentRenderer from './ComponentRenderer.svelte';
 
 registerRenderer('text', TextRenderer);
+registerRenderer('digital_clock', DigitalClockRenderer);
 registerRenderer('auto_layout_list', AutoLayoutListRenderer);
 registerRenderer('button', ButtonRenderer);
 registerRenderer('slider', SliderRenderer);

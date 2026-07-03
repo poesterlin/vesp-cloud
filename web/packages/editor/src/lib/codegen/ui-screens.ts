@@ -144,6 +144,11 @@ function emitLabelAlign(c: TextComponent, idSafe: string, indent: string): strin
   return `${indent}${idSafe}->set_align(${textAlignMap[align]});\n`;
 }
 
+function emitLabelColor(c: TextComponent, idSafe: string, indent: string): string {
+  if (!c.color) return '';
+  return `${indent}${idSafe}->set_color(${emitColor(c.color)});\n`;
+}
+
 function emitColor(c: Color): string {
   return `Color(${c.r}, ${c.g}, ${c.b})`;
 }
@@ -543,6 +548,7 @@ function generateComponentSetup(
       const staticText = labelStaticText(tc);
       let out = `${indent}auto *${idSafe} = ${factory('LabelWidget', `${rect(c.position.x + offsetX, c.position.y + offsetY, c.size?.width ?? 100, c.size?.height ?? 40)}, "${escapeCString(staticText)}", ${fontMap[fontSize]}`)};${visLine}${dirtyLine}\n`;
       out += emitLabelAlign(tc, idSafe, indent);
+      out += emitLabelColor(tc, idSafe, indent);
       out += emitLabelBindings(tc, idSafe, indent);
       return out;
     }
@@ -818,6 +824,7 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
       }
 
       out += alignLine;
+      out += emitLabelColor(c, idSafe, bodyIndent);
       out += bindLines;
 
       if (tabBgVar) {

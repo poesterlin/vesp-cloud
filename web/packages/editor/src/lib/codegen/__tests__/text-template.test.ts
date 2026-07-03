@@ -76,6 +76,66 @@ describe("text component template codegen", () => {
     expect(out).not.toContain("left_lbl->set_align");
   });
 
+  test("text color emits set_color for dashboard labels", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "colored_lbl",
+              type: "text",
+              position: { x: 10, y: 10 },
+              text: "Color",
+              color: { r: 155, g: 34, b: 38 },
+            },
+          ],
+        },
+      ],
+    });
+
+    const out = generateUIScreensHeader(project);
+    expect(out).toContain("colored_lbl->set_color(Color(155, 34, 38));");
+  });
+
+  test("text color emits set_color for nested tab labels", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "tabs",
+              type: "tab_container",
+              position: { x: 0, y: 0 },
+              size: { width: 200, height: 160 },
+              tabs: [
+                {
+                  id: "t1",
+                  name: "Tab 1",
+                  components: [
+                    {
+                      id: "nested_lbl",
+                      type: "text",
+                      position: { x: 8, y: 8 },
+                      text: "Nested",
+                      color: { r: 148, g: 210, b: 189 },
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const out = generateUIScreensHeader(project);
+    expect(out).toContain("nested_lbl->set_color(Color(148, 210, 189));");
+  });
+
   test("template with single binding emits empty static text + bind_text_fn lambda", () => {
     const project = makeProject({
       dashboardPages: [

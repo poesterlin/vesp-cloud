@@ -1,15 +1,15 @@
 import * as auth from '$lib/server/auth';
 import { ensureBalanceExists } from '$lib/credits';
-import { getDb } from '@esphome-designer/db';
-import * as table from '@esphome-designer/db/schema';
+import { getDb } from '@vesp-cloud/db';
+import * as table from '@vesp-cloud/db/schema';
 import { generateId, getSafeRedirectPath, normalizeEmail } from '$lib/server/util';
 import { hash } from '@node-rs/argon2';
 import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { validateForm } from '$lib/server/form';
 import { sendEmail } from '$lib/server/email';
-import { Renderer, toPlainText } from '@esphome-designer/email';
-import AddressValidationEmail from '@esphome-designer/email/address-validation.svelte';
+import { Renderer, toPlainText } from '@vesp-cloud/email';
+import AddressValidationEmail from '@vesp-cloud/email/address-validation.svelte';
 import type { Actions, PageServerLoad } from './$types';
 
 const renderer = new Renderer();
@@ -70,7 +70,7 @@ export const actions: Actions = {
           const recipient = normalizeEmail(email);
           const html = await renderer.render(AddressValidationEmail, {
             props: {
-              appName: 'ESPHome Designer',
+              appName: 'vESP.cloud',
               recipient: username,
               verificationUrl: event.url.origin,
             },
@@ -78,7 +78,7 @@ export const actions: Actions = {
 
           const welcomeResult = await sendEmail({
             to: recipient,
-            subject: 'Confirm your ESPHome Designer email address',
+            subject: 'Confirm your vESP.cloud email address',
             html,
             text: toPlainText(html),
           });

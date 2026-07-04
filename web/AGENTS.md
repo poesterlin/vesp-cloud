@@ -1,6 +1,6 @@
-# ESPHome Designer - Agent Instructions
+# vESP.cloud - Agent Instructions
 
-This is a monorepo for the ESPHome Designer web application.
+This is a monorepo for the vESP.cloud web application.
 
 ## Architecture Overview
 

@@ -10,7 +10,7 @@
 <div class="auth-page">
   <div class="auth-card">
     <h1>Reset Password</h1>
-    <p class="subtitle">ESPHome Designer</p>
+    <p class="subtitle">vESP.cloud</p>
 
     {#if form?.message}
       <div class="success-message">{form.message}</div>

@@ -1,4 +1,4 @@
-import type { Theme } from "@esphome-designer/schema";
+import type { Theme } from "@vesp-cloud/schema";
 
 export const RETRO_THEME: Theme = {
   id: "retro",

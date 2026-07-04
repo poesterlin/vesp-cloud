@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Condition, EntityBinding, EntityCondition } from "@esphome-designer/schema";
+  import type { Condition, EntityBinding, EntityCondition } from "@vesp-cloud/schema";
   import { homeAssistantStore } from "$lib/stores/homeassistant.svelte";
   import Self from "./ConditionEditor.svelte";
   import EntityPicker from "./EntityPicker.svelte";

@@ -1,4 +1,4 @@
-import type { Project, LightStateComponent, Component, TodoListComponent, TextComponent, HvacComponent, WeatherComponent, CalendarComponent } from "@esphome-designer/schema";
+import type { Project, LightStateComponent, Component, TodoListComponent, TextComponent, HvacComponent, WeatherComponent, CalendarComponent } from "@vesp-cloud/schema";
 import { toCppIdentifier, firstScreenId, cppDefaultValue, cppTypeFor, stateVarFromEntity, collectAllComponents, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, calendarEventsVarFromEntity, todoEntityIdFromComponent } from "./utils";
 import { collectConditionEntities } from "./condition-expr";
 import { extractBindings, parseTemplate } from "../utils/template-utils";

@@ -20,7 +20,7 @@ import type {
   StateCondition,
   CompoundCondition,
   NotCondition,
-} from "@esphome-designer/schema";
+} from "@vesp-cloud/schema";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
 
 export interface ValidationError {

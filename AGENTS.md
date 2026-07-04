@@ -242,7 +242,7 @@ The **improved** project is simpler because:
 When adding a new widget type to the codegen project:
 1. Implement the C++ class in `templates/includes/ui_widgets.h`
 2. Add the TypeScript generator function in `codegen/ui-screens.ts`
-3. Add the schema type in the `@esphome-designer/schema` package
+3. Add the schema type in the `@vesp-cloud/schema` package
 4. Add the canvas renderer, property editor, and palette entry in the Svelte UI
 5. Add validation rules in `codegen/validations.ts`
 6. Add tests in `codegen/__tests__/`
@@ -277,7 +277,7 @@ When studying a legacy feature for a new codegen implementation:
 
 ### Codegen ↔ Schema
 
-The `@esphome-designer/schema` package (at `web/packages/schema/`) defines the
+The `@vesp-cloud/schema` package (at `web/packages/schema/`) defines the
 TypeScript types for the `Project` JSON model. Every component type in the codegen
 must have a corresponding type in the schema. The schema is auto-generated from
 JSON Schema files.
@@ -286,7 +286,7 @@ JSON Schema files.
 web/packages/schema/
 ├── dist/types.ts      — Generated TypeScript types
 ├── src/               — JSON Schema source
-└── package.json       — Published as @esphome-designer/schema
+└── package.json       — Published as @vesp-cloud/schema
 ```
 
 ---
@@ -335,7 +335,7 @@ When adding a feature to the codegen project:
 1. [ ] Study the legacy implementation for UX behavior and HA API calls
 2. [ ] Implement/update the C++ widget class in `templates/includes/ui_widgets.h`
 3. [ ] Add/update the TypeScript generator in `codegen/ui-screens.ts`
-4. [ ] Add/update schema types in `@esphome-designer/schema`
+4. [ ] Add/update schema types in `@vesp-cloud/schema`
 5. [ ] Add the canvas renderer in `components/canvas/renderers/`
 6. [ ] Add property editor fields in `components/sidebar/PropertyEditor.svelte`
 7. [ ] Add to the component palette in `components/sidebar/ComponentPalette.svelte`

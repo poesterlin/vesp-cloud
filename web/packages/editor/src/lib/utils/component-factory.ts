@@ -1,4 +1,4 @@
-import type { Component } from "@esphome-designer/schema";
+import type { Component } from "@vesp-cloud/schema";
 
 export function createComponent(type: string, x: number, y: number): Component {
   const id = `${type}-${Date.now()}`;

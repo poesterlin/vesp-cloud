@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Component } from "@esphome-designer/schema";
+  import type { Component } from "@vesp-cloud/schema";
   import TextRenderer from "./TextRenderer.svelte";
   import DigitalClockRenderer from "./DigitalClockRenderer.svelte";
   import ButtonRenderer from "./ButtonRenderer.svelte";

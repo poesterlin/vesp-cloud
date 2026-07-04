@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ProceduralIconComponent } from "@esphome-designer/schema";
+  import type { ProceduralIconComponent } from "@vesp-cloud/schema";
   import Draggable from "../Draggable.svelte";
   import { projectStore } from "$lib/stores/project.svelte";
   import { colorToCss } from "$lib/utils/color-utils";

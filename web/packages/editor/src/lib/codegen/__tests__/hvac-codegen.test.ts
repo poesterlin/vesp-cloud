@@ -4,7 +4,7 @@ import { validateProject } from "../validations";
 import { generateUIStateHeader } from "../ui-state";
 import { generateUIScreensHeader } from "../ui-screens";
 import { generateESPHomeYAML } from "../esphome-yaml";
-import type { Project } from "@esphome-designer/schema";
+import type { Project } from "@vesp-cloud/schema";
 
 function makeProject(overrides: Partial<Project> = {}): Project {
   return {

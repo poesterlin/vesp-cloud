@@ -1,4 +1,4 @@
-import type { Condition } from "@esphome-designer/schema";
+import type { Condition } from "@vesp-cloud/schema";
 
 export function describeCondition(condition: Condition | undefined): string {
   if (!condition) return "Always (default)";

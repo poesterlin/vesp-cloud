@@ -3,7 +3,7 @@ import { describe, test, expect } from "bun:test";
 import { generateESPHomeYAML } from "../esphome-yaml";
 import { generateUIStateHeader } from "../ui-state";
 import { generateUIScreensHeader } from "../ui-screens";
-import type { Project } from "@esphome-designer/schema";
+import type { Project } from "@vesp-cloud/schema";
 
 function makeProject(overrides: Partial<Project> = {}): Project {
   return {

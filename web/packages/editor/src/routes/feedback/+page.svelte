@@ -9,7 +9,7 @@
 </script>
 
 <svelte:head>
-  <title>Feedback - ESPHome Designer</title>
+  <title>Feedback - vESP.cloud</title>
 </svelte:head>
 
 <div class="feedback-page">

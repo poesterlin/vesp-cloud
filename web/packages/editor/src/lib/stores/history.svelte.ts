@@ -4,7 +4,7 @@
  * Stores delta snapshots for efficient undo/redo operations.
  */
 
-import type { Project } from "@esphome-designer/schema";
+import type { Project } from "@vesp-cloud/schema";
 import { projectStore } from "./project.svelte.js";
 
 interface HistoryEntry {

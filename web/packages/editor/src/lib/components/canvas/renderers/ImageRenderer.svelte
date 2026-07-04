@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ImageComponent } from "@esphome-designer/schema";
+  import type { ImageComponent } from "@vesp-cloud/schema";
   import { selectionStore } from "$lib/stores/selection.svelte";
   import Draggable from "../Draggable.svelte";
   import { colorToCss } from "../../../utils/color-utils";

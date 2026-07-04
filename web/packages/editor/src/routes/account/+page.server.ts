@@ -1,7 +1,7 @@
 import { fail, redirect } from "@sveltejs/kit";
 import type { Actions, PageServerLoad } from "./$types";
-import { getDb } from "@esphome-designer/db";
-import * as table from "@esphome-designer/db/schema";
+import { getDb } from "@vesp-cloud/db";
+import * as table from "@vesp-cloud/db/schema";
 import * as auth from "$lib/server/auth";
 import { eq } from "drizzle-orm";
 import { z } from "zod";

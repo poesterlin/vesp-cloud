@@ -1,7 +1,7 @@
 import { startWorker, stopWorker } from "$lib/utils/worker";
 import { json, type Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
-import { getDb } from "@esphome-designer/db";
+import { getDb } from "@vesp-cloud/db";
 import * as auth from "$lib/server/auth";
 import { env } from "$env/dynamic/private";
 

@@ -3,7 +3,7 @@
  * Tests for the MDI icon font codegen pipeline.
  */
 import { describe, test, expect } from "bun:test";
-import type { Project } from "@esphome-designer/schema";
+import type { Project } from "@vesp-cloud/schema";
 import { collectProjectIconNames, normalizeIconName } from "../utils";
 import {
   generateFontsYAML,

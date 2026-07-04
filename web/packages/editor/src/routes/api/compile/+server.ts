@@ -5,10 +5,10 @@ import { deductCredits, CREDIT_COSTS, getBalance } from "$lib/credits";
 import { env } from "$env/dynamic/private";
 import { validateProject } from "$lib/codegen/validations";
 import { validateProjectSchema } from "$lib/server/project-schema";
-import { getDb } from "@esphome-designer/db";
-import { projects, type CompilationJob } from "@esphome-designer/db/schema";
+import { getDb } from "@vesp-cloud/db";
+import { projects, type CompilationJob } from "@vesp-cloud/db/schema";
 import { and, eq } from "drizzle-orm";
-import type { Project } from "@esphome-designer/schema";
+import type { Project } from "@vesp-cloud/schema";
 
 const IS_CLOUD = env.APP_EDITION === "cloud";
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

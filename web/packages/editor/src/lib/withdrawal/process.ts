@@ -1,16 +1,16 @@
 import { env } from '$env/dynamic/private';
-import { getDb } from '@esphome-designer/db';
-import { withdrawalRequests } from '@esphome-designer/db/schema';
+import { getDb } from '@vesp-cloud/db';
+import { withdrawalRequests } from '@vesp-cloud/db/schema';
 import { sendEmail } from '$lib/server/email';
 import { createLogger } from '$lib/server/logger';
-import { WithdrawalConfirmationEmail, Renderer, toPlainText } from '@esphome-designer/email';
+import { WithdrawalConfirmationEmail, Renderer, toPlainText } from '@vesp-cloud/email';
 import { and, eq, ne } from 'drizzle-orm';
 import type { PurchaseLookupResult } from './lookup';
 
 const renderer = new Renderer();
 const logger = createLogger('withdrawal');
 
-export const SUPPORT_EMAIL = 'support@esphome-designer.com';
+export const SUPPORT_EMAIL = 'support@vesp-cloud.com';
 
 function isActiveWithdrawalConflict(err: unknown): boolean {
   if (!err || typeof err !== 'object') return false;
@@ -64,7 +64,7 @@ export async function confirmWithdrawal(
 
     await sendEmail({
       to: email,
-      subject: 'Withdrawal confirmation – ESPHome Designer',
+      subject: 'Withdrawal confirmation – vESP.cloud',
       html,
       text: toPlainText(html),
     });

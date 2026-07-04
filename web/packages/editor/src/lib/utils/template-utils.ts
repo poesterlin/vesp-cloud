@@ -1,5 +1,5 @@
-import type { EntityBinding } from "@esphome-designer/schema";
-import type { Entity } from "@esphome-designer/schema/homeassistant";
+import type { EntityBinding } from "@vesp-cloud/schema";
+import type { Entity } from "@vesp-cloud/schema/homeassistant";
 
 export interface TextSegment {
   type: "text";

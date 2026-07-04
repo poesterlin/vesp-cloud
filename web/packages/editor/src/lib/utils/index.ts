@@ -1,4 +1,4 @@
-import type { TextComponent, ButtonComponent, SliderComponent, GaugeComponent, IconComponent, ProceduralIconComponent, ContainerComponent, ImageComponent, TodoListComponent, LightStateComponent, AutoLayoutListComponent, ConditionalAreaComponent, TabContainerComponent } from "@esphome-designer/schema";
+import type { TextComponent, ButtonComponent, SliderComponent, GaugeComponent, IconComponent, ProceduralIconComponent, ContainerComponent, ImageComponent, TodoListComponent, LightStateComponent, AutoLayoutListComponent, ConditionalAreaComponent, TabContainerComponent } from "@vesp-cloud/schema";
 
 /**
  * Simple assertion function that throws an error if the condition is false.

@@ -7,9 +7,9 @@ import type {
   Area,
   Services,
   ServiceAction,
-} from "@esphome-designer/schema/homeassistant";
+} from "@vesp-cloud/schema/homeassistant";
 
-const STORAGE_KEY = "esphome-designer-homeassistant-dump";
+const STORAGE_KEY = "vesp-cloud-homeassistant-dump";
 
 function createHomeAssistantStore() {
   let dump = $state<HomeAssistantDump | null>(null);

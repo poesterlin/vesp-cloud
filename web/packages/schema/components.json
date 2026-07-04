@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://esphome-designer.local/schema/components.json",
-  "title": "ESPHome Designer Schema",
+  "$id": "https://vesp-cloud.local/schema/components.json",
+  "title": "vESP.cloud Schema",
   "description": "Schema for ESPHome visual display editor components",
   "definitions": {
     "Position": {

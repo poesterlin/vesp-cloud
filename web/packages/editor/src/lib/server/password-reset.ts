@@ -1,6 +1,6 @@
 import { env } from '$env/dynamic/private';
-import { getDb } from '@esphome-designer/db';
-import * as table from '@esphome-designer/db/schema';
+import { getDb } from '@vesp-cloud/db';
+import * as table from '@vesp-cloud/db/schema';
 import { sha256 } from '@oslojs/crypto/sha2';
 import { encodeBase64url, encodeHexLowerCase } from '@oslojs/encoding';
 import { and, eq, isNull } from 'drizzle-orm';

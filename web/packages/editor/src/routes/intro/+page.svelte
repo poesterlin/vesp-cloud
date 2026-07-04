@@ -19,7 +19,7 @@
 </script>
 
 <svelte:head>
-  <title>ESPHome Designer — Introduction</title>
+  <title>vESP.cloud — Introduction</title>
 </svelte:head>
 
 <div class="intro-page">
@@ -40,7 +40,7 @@
         </form>
       </div>
     {/if}
-    <h1>ESPHome Designer</h1>
+    <h1>vESP.cloud</h1>
     <p>The visual architect for your smart home displays</p>
   </header>
 
@@ -101,7 +101,7 @@
         </div>
         <div class="block-content">
           <h2>Working Device</h2>
-          <p>Screenshots of the device running ESPHome Designer dashboards.</p>
+          <p>Screenshots of the device running vESP.cloud dashboards.</p>
           <div class="photo-grid">
             <!--
             <img src="/photos/device-1.jpg" alt="Device running dashboard" class="photo" />
@@ -200,8 +200,8 @@
           <p>A Home Assistant integration that makes looking up entity IDs simple and gives the editor real example data to work with. <em>Strongly recommended.</em></p>
           <ol class="steps">
             <li><span class="step-badge">1</span> Open HACS → <strong>Integrations → Custom repositories</strong></li>
-            <li><span class="step-badge">2</span> Add <code>https://github.com/poesterlin/home-display</code> as an <strong>Integration</strong> repository</li>
-            <li><span class="step-badge">3</span> Install <strong>ESPHome Display Notifications &amp; Data Bridge</strong> and restart Home Assistant</li>
+            <li><span class="step-badge">2</span> Add <code>https://github.com/poesterlin/vesp-cloud</code> as an <strong>Integration</strong> repository</li>
+            <li><span class="step-badge">3</span> Install <strong>HA Metadata Exporter</strong> and restart Home Assistant</li>
             <li><span class="step-badge">4</span> Navigate to the dashboard it creates in Home Assistant</li>
             <li><span class="step-badge">5</span> Use <strong>Download Metadata File</strong> to export a JSON file</li>
             <li><span class="step-badge">6</span> Drag the file into the editor to populate entities &amp; devices</li>

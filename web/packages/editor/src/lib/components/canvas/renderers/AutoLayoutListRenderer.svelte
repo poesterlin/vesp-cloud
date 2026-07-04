@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Component } from "@esphome-designer/schema";
+  import type { Component } from "@vesp-cloud/schema";
   import * as mdiIcons from "@mdi/js";
   import Draggable from "../Draggable.svelte";
   import { homeAssistantStore } from "$lib/stores/homeassistant.svelte";

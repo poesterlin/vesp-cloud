@@ -1,5 +1,5 @@
 {
-  "name": "@esphome-designer/editor",
+  "name": "@vesp-cloud/editor",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -19,6 +19,7 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@vesp-cloud/assets": "workspace:*",
     "@esphome-designer/db": "workspace:*",
     "@esphome-designer/email": "workspace:*",
     "@esphome-designer/schema": "workspace:*",

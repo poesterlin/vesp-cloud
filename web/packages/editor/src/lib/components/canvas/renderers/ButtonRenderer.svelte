@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ButtonComponent } from "@esphome-designer/schema";
+  import type { ButtonComponent } from "@vesp-cloud/schema";
   import Draggable from "../Draggable.svelte";
   import { projectStore } from "$lib/stores/project.svelte";
   import { colorToCss } from "$lib/utils/color-utils";

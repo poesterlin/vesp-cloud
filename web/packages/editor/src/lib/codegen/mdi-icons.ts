@@ -12,7 +12,7 @@
  * literals so the source is plain ASCII.
  */
 
-import type { Project } from "@esphome-designer/schema";
+import type { Project } from "@vesp-cloud/schema";
 import { collectProjectIconNames, normalizeIconName } from "./utils";
 import mdiCodepoints from "./mdi-codepoints.json" with { type: "json" };
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { GaugeComponent } from "@esphome-designer/schema";
+  import type { GaugeComponent } from "@vesp-cloud/schema";
   import Draggable from "../Draggable.svelte";
   import { projectStore } from "../../../stores/project.svelte";
   import { colorToCss } from "../../../utils/color-utils";

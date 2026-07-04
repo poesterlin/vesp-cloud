@@ -3,11 +3,11 @@ import { spawn, type ChildProcess } from 'child_process';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { cpus } from 'os';
-import { getDb, schema } from '@esphome-designer/db';
+import { getDb, schema } from '@vesp-cloud/db';
 import { eq, desc, inArray, and, asc } from 'drizzle-orm';
-import type { CompilationJob, NewCompilationJob } from '@esphome-designer/db/schema';
+import type { CompilationJob, NewCompilationJob } from '@vesp-cloud/db/schema';
 
-import type { Project } from '@esphome-designer/schema';
+import type { Project } from '@vesp-cloud/schema';
 import { generateESPHomeYAML, generateUITypesHeader, generateUIStateHeader, generateUIThemeHeader, generateUIScreensHeader, generateFontsYAML } from '$lib/codegen/esphome';
 import { generateSecretsYAML } from '$lib/codegen/secrets';
 import { validateProject } from '$lib/codegen/validations';

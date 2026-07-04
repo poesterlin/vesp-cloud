@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { NavigationAction } from "@esphome-designer/schema";
+  import type { NavigationAction } from "@vesp-cloud/schema";
   import { projectStore } from "$lib/stores/project.svelte";
   import { selectionStore } from "$lib/stores/selection.svelte";
   import { historyStore } from "$lib/stores/history.svelte";

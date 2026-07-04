@@ -1,7 +1,7 @@
-import { getDb } from "@esphome-designer/db";
-import { creditBalances, creditTransactions } from "@esphome-designer/db/schema";
+import { getDb } from "@vesp-cloud/db";
+import { creditBalances, creditTransactions } from "@vesp-cloud/db/schema";
 import { eq } from "drizzle-orm";
-import type { CreditBalance } from "@esphome-designer/db/schema";
+import type { CreditBalance } from "@vesp-cloud/db/schema";
 
 interface AddCreditsParams {
   userId: string;

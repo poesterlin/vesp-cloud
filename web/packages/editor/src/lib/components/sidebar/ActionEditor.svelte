@@ -3,7 +3,7 @@
     ActionBinding,
     ServiceAction,
     NavigationAction,
-  } from "@esphome-designer/schema";
+  } from "@vesp-cloud/schema";
   import { projectStore } from "$lib/stores/project.svelte";
   import { homeAssistantStore } from "$lib/stores/homeassistant.svelte";
   import { SERVICE_PRESETS } from "$lib/data/service-presets";

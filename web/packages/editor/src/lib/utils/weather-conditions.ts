@@ -1,4 +1,4 @@
-import type { Color } from "@esphome-designer/schema";
+import type { Color } from "@vesp-cloud/schema";
 
 export interface WeatherConditionInfo {
   label: string;

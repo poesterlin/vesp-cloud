@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Component, EntityBinding } from "@esphome-designer/schema";
+  import type { Component, EntityBinding } from "@vesp-cloud/schema";
   import Draggable from "../Draggable.svelte";
   import { homeAssistantStore } from "$lib/stores/homeassistant.svelte";
   import {

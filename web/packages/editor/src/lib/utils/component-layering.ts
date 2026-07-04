@@ -1,4 +1,4 @@
-import type { Component } from "@esphome-designer/schema";
+import type { Component } from "@vesp-cloud/schema";
 
 export function isBackgroundComponent(component: Component): boolean {
   return component.type === "rectangle";

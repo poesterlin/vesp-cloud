@@ -1,5 +1,5 @@
 import { projectStore } from "../stores/project.svelte";
-import type { Theme } from "@esphome-designer/schema";
+import type { Theme } from "@vesp-cloud/schema";
 
 /**
  * Returns the current theme from the project store.

@@ -180,7 +180,7 @@ inline void setup_ui_screens(ScreenController &screens, UiState &state,
       int t2 = tabs->add_tab("INFO");
       {
         auto *l = tabs->emplace_child<LabelWidget>(t2, UiRect{30, 234, 420, 20},
-            "Home Display v2.0", g_theme.header);
+            "vESP.cloud v2.0", g_theme.header);
         l->set_bg_color(tab_bg);
       }
       {

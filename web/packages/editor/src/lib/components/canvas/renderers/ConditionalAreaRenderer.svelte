@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ConditionalAreaComponent, Condition } from "@esphome-designer/schema";
+  import type { ConditionalAreaComponent, Condition } from "@vesp-cloud/schema";
   import { selectionStore } from "$lib/stores/selection.svelte";
   import { conditionalEditorStore } from "$lib/stores/conditional-editor.svelte";
   import { projectStore } from "$lib/stores/project.svelte";

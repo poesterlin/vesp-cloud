@@ -1,12 +1,12 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getDb } from '@esphome-designer/db';
-import { projects, compilationJobs } from '@esphome-designer/db/schema';
+import { getDb } from '@vesp-cloud/db';
+import { projects, compilationJobs } from '@vesp-cloud/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { getOtaBinaryStats, otaBinaryExists, ensureS3, factoryBinKey } from '$lib/server/s3';
 import { createLogger } from '$lib/server/logger';
 import { diffProject } from '$lib/diff';
-import type { Project } from '@esphome-designer/schema';
+import type { Project } from '@vesp-cloud/schema';
 
 function releaseSummary(currentConfig: string | null, previousConfig: string | null): string | undefined {
   if (!currentConfig) return undefined;
@@ -84,7 +84,7 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
   const hasFactory = await factoryFile.exists();
 
   return json({
-    name: 'ESPHome Designer Firmware',
+    name: 'vESP.cloud Firmware',
     version: job.id,
     builds: [
       {

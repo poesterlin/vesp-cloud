@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "esphome-designer",
+      "name": "vesp-cloud",
       "devDependencies": {
         "@mdi/js": "7.4.47",
         "@types/bun": "latest",
@@ -12,10 +12,10 @@
       },
     },
     "packages/admin": {
-      "name": "@esphome-designer/admin",
+      "name": "@vesp-cloud/admin",
       "version": "0.1.0",
       "dependencies": {
-        "@esphome-designer/db": "workspace:*",
+        "@vesp-cloud/db": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "jose": "6.2.3",
       },
@@ -32,7 +32,7 @@
       },
     },
     "packages/db": {
-      "name": "@esphome-designer/db",
+      "name": "@vesp-cloud/db",
       "version": "0.1.0",
       "dependencies": {
         "drizzle-orm": "^0.45.2",
@@ -43,12 +43,12 @@
       },
     },
     "packages/editor": {
-      "name": "@esphome-designer/editor",
+      "name": "@vesp-cloud/editor",
       "version": "0.1.0",
       "dependencies": {
-        "@esphome-designer/db": "workspace:*",
-        "@esphome-designer/email": "workspace:*",
-        "@esphome-designer/schema": "workspace:*",
+        "@vesp-cloud/db": "workspace:*",
+        "@vesp-cloud/email": "workspace:*",
+        "@vesp-cloud/schema": "workspace:*",
         "@fontsource/roboto": "5.2.10",
         "@node-rs/argon2": "2.0.2",
         "@oslojs/crypto": "1.0.1",
@@ -77,7 +77,7 @@
       },
     },
     "packages/email": {
-      "name": "@esphome-designer/email",
+      "name": "@vesp-cloud/email",
       "version": "0.1.0",
       "dependencies": {
         "@better-svelte-email/components": "^2.1.1",
@@ -89,7 +89,7 @@
       },
     },
     "packages/schema": {
-      "name": "@esphome-designer/schema",
+      "name": "@vesp-cloud/schema",
       "version": "0.1.0",
       "devDependencies": {
         "json-schema-to-typescript": "^15.0.0",
@@ -186,15 +186,15 @@
 
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.4.1", "", { "dependencies": { "@eslint/core": "^0.17.0", "levn": "^0.4.1" } }, "sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA=="],
 
-    "@esphome-designer/admin": ["@esphome-designer/admin@workspace:packages/admin"],
+    "@vesp-cloud/admin": ["@vesp-cloud/admin@workspace:packages/admin"],
 
-    "@esphome-designer/db": ["@esphome-designer/db@workspace:packages/db"],
+    "@vesp-cloud/db": ["@vesp-cloud/db@workspace:packages/db"],
 
-    "@esphome-designer/editor": ["@esphome-designer/editor@workspace:packages/editor"],
+    "@vesp-cloud/editor": ["@vesp-cloud/editor@workspace:packages/editor"],
 
-    "@esphome-designer/email": ["@esphome-designer/email@workspace:packages/email"],
+    "@vesp-cloud/email": ["@vesp-cloud/email@workspace:packages/email"],
 
-    "@esphome-designer/schema": ["@esphome-designer/schema@workspace:packages/schema"],
+    "@vesp-cloud/schema": ["@vesp-cloud/schema@workspace:packages/schema"],
 
     "@fontsource/roboto": ["@fontsource/roboto@5.2.10", "", {}, "sha512-8HlA5FtSfz//oFSr2eL7GFXAiE7eIkcGOtx7tjsLKq+as702x9+GU7K95iDeWFapHC4M2hv9RrpXKRTGGBI8Zg=="],
 

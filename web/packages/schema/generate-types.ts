@@ -1,5 +1,5 @@
 /**
- * Type Generator for ESPHome Designer
+ * Type Generator for vESP.cloud
  *
  * Generates TypeScript types from the JSON Schema.
  * Run: bun run generate-types.ts
@@ -55,7 +55,7 @@ async function generate() {
 
   // Also generate a convenience re-export index
   const indexContent = `/**
- * ESPHome Designer Schema Types
+ * vESP.cloud Schema Types
  *
  * Re-exports all generated types for convenient importing.
  */

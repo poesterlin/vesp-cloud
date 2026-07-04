@@ -3,7 +3,7 @@
   import EmailShell from './email-shell.svelte';
 
   let {
-    appName = 'Home Display',
+    appName = 'vESP.cloud',
     recoveryUrl,
     expiresIn = '15 minutes',
     recipient = 'operator',

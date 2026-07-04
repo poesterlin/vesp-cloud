@@ -9,7 +9,7 @@
     <section>
       <h2>1. Service Use</h2>
       <p>
-        ESPHome Designer is provided as-is to help you create and export interface configurations and firmware builds.
+        vESP.cloud is provided as-is to help you create and export interface configurations and firmware builds.
         You are responsible for your own devices, automations, and deployment outcomes.
       </p>
     </section>
@@ -75,7 +75,7 @@
       <h2>7. Contact</h2>
       <p>
         For billing, withdrawal, or account issues, contact
-        <a href="mailto:support@esphome-designer.com">support@esphome-designer.com</a>.
+        <a href="mailto:support@vesp-cloud.com">support@vesp-cloud.com</a>.
       </p>
     </section>
 

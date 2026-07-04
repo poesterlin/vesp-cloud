@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { Component, EntityBinding } from "@esphome-designer/schema";
+  import type { Component, EntityBinding } from "@vesp-cloud/schema";
   import { homeAssistantStore } from "$lib/stores/homeassistant.svelte";
-  import type { Entity } from "@esphome-designer/schema/homeassistant";
+  import type { Entity } from "@vesp-cloud/schema/homeassistant";
   import {
     mdiAccessPointOff,
     mdiAccountOutline,

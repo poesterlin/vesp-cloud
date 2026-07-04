@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getDb } from '@esphome-designer/db';
-import { compilationJobs } from '@esphome-designer/db/schema';
+import { getDb } from '@vesp-cloud/db';
+import { compilationJobs } from '@vesp-cloud/db/schema';
 import { eq, and } from 'drizzle-orm';
 
 export const POST: RequestHandler = async ({ locals, params }) => {

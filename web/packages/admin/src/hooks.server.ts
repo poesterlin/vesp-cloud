@@ -1,4 +1,4 @@
-import { getDb } from "@esphome-designer/db";
+import { getDb } from "@vesp-cloud/db";
 import { env } from "$env/dynamic/private";
 import { sequence } from "@sveltejs/kit/hooks";
 import type { Handle } from "@sveltejs/kit";

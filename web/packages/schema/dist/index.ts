@@ -1,5 +1,5 @@
 /**
- * ESPHome Designer Schema Types
+ * vESP.cloud Schema Types
  *
  * Re-exports all generated types for convenient importing.
  */

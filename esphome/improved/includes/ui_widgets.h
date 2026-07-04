@@ -752,7 +752,7 @@ class LoadingWidget : public Widget {
 
     if (g_theme.label.font != nullptr) {
       it.printf(cx, cy + 54, g_theme.label.font, RetroColors::STEEL,
-                TextAlign::CENTER, "Home Display v2.0");
+                TextAlign::CENTER, "vESP.cloud v2.0");
     }
   }
 

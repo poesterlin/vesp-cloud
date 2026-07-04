@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { TabContainerComponent } from "@esphome-designer/schema";
+  import type { TabContainerComponent } from "@vesp-cloud/schema";
   import { selectionStore } from "$lib/stores/selection.svelte";
   import { conditionalEditorStore } from "$lib/stores/conditional-editor.svelte";
   import { projectStore } from "$lib/stores/project.svelte";

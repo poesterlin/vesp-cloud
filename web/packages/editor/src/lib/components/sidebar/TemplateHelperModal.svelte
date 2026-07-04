@@ -1,7 +1,7 @@
 <script lang="ts">
   import { homeAssistantStore } from "$lib/stores/homeassistant.svelte";
-  import type { EntityBinding } from "@esphome-designer/schema";
-  import type { Entity } from "@esphome-designer/schema/homeassistant";
+  import type { EntityBinding } from "@vesp-cloud/schema";
+  import type { Entity } from "@vesp-cloud/schema/homeassistant";
   import {
     mdiAccountOutline,
     mdiCameraOutline,

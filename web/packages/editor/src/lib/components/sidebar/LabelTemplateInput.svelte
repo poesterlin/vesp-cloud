@@ -2,7 +2,7 @@
   import CompositeInput from "../CompositeInput.svelte";
   import TemplateHelperModal from "./TemplateHelperModal.svelte";
   import { homeAssistantStore } from "$lib/stores/homeassistant.svelte";
-  import type { EntityBinding } from "@esphome-designer/schema";
+  import type { EntityBinding } from "@vesp-cloud/schema";
   import { mdiCodeBraces } from "@mdi/js";
   import {
     type BindingSegment,

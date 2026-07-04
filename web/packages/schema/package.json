@@ -1,5 +1,5 @@
 {
-  "name": "@esphome-designer/schema",
+  "name": "@vesp-cloud/schema",
   "version": "0.1.0",
   "private": true,
   "type": "module",

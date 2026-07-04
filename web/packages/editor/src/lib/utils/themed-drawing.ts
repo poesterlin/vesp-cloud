@@ -1,4 +1,4 @@
-import type { Theme, Color } from "@esphome-designer/schema";
+import type { Theme, Color } from "@vesp-cloud/schema";
 
 export function colorToRgb(c: Color): string {
   return `rgb(${c.r}, ${c.g}, ${c.b})`;

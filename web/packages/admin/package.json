@@ -1,5 +1,5 @@
 {
-  "name": "@esphome-designer/admin",
+  "name": "@vesp-cloud/admin",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@esphome-designer/db": "workspace:*",
+    "@vesp-cloud/db": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "jose": "6.2.3"
   },

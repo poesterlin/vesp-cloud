@@ -1,5 +1,5 @@
-import { getDb } from '@esphome-designer/db';
-import { feedbackEntries } from '@esphome-designer/db/schema';
+import { getDb } from '@vesp-cloud/db';
+import { feedbackEntries } from '@vesp-cloud/db/schema';
 import { fail, redirect } from '@sveltejs/kit';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';

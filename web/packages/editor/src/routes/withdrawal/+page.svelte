@@ -43,7 +43,7 @@
 </script>
 
 <svelte:head>
-  <title>Withdraw from contract – ESPHome Designer</title>
+  <title>Withdraw from contract – vESP.cloud</title>
 </svelte:head>
 
 <div class="withdrawal-page">
@@ -234,7 +234,7 @@
         {#if alreadySubmitted}
           <p>
             A withdrawal request for this order has already been submitted. If you need help, contact
-            <a href="mailto:support@esphome-designer.com">support@esphome-designer.com</a>.
+            <a href="mailto:support@vesp-cloud.com">support@vesp-cloud.com</a>.
           </p>
         {:else}
           <p>

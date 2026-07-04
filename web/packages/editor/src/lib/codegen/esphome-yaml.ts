@@ -1,4 +1,4 @@
-import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent, HvacComponent, WeatherComponent, CalendarComponent } from "@esphome-designer/schema";
+import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent, HvacComponent, WeatherComponent, CalendarComponent } from "@vesp-cloud/schema";
 import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted, calendarEventsVarFromEntity, todoEntityIdFromComponent } from "./utils";
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
 import { ICON_FONT_ID, WEATHER_ICON_FONT_ID, getIconGlyphs, projectHasWeather } from "./mdi-icons";

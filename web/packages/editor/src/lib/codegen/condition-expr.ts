@@ -10,7 +10,7 @@ import type {
   CompoundCondition,
   NotCondition,
   ComparisonOperator,
-} from "@esphome-designer/schema";
+} from "@vesp-cloud/schema";
 import { stateVarFromEntity, escapeCString } from "./utils";
 
 type ConditionValue = string | number | boolean;

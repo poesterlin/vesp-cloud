@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { LightStateComponent } from "@esphome-designer/schema";
+  import type { LightStateComponent } from "@vesp-cloud/schema";
   import Draggable from "../Draggable.svelte";
   import * as mdiIcons from "@mdi/js";
   import { colorToCss } from "$lib/utils/color-utils";

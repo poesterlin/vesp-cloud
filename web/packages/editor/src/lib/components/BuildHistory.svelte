@@ -6,7 +6,7 @@
     type JobStatus,
   } from "$lib/stores/deployment.svelte";
   import { diffProject } from "$lib/diff";
-  import type { Project } from "@esphome-designer/schema";
+  import type { Project } from "@vesp-cloud/schema";
 
   interface Props {
     onFlash?: (jobId: string) => void;

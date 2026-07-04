@@ -8,14 +8,14 @@ import type {
   PageHeader,
   Project,
   Theme,
-} from "@esphome-designer/schema";
+} from "@vesp-cloud/schema";
 import { RETRO_THEME } from "../themes/retro";
 import { conditionalEditorStore } from "./conditional-editor.svelte";
 import { selectionStore } from "./selection.svelte";
 
 const LATEST_VERSION = "1.0.0";
-const PROJECTS_INDEX_KEY = "esphome-designer-projects-index";
-const PROJECT_PREFIX = "esphome-designer-project-";
+const PROJECTS_INDEX_KEY = "vesp-cloud-projects-index";
+const PROJECT_PREFIX = "vesp-cloud-project-";
 const TAB_HEADER_HEIGHT = 36;
 const HEADER_RENDER_HEIGHT = 49;
 

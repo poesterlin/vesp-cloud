@@ -1,4 +1,4 @@
-import { getDb } from '@esphome-designer/db';
+import { getDb } from '@vesp-cloud/db';
 import { startWorker, stopWorker } from './lib/utils/worker';
 
 const databaseUrl = process.env.DATABASE_URL;

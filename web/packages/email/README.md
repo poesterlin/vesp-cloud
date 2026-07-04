@@ -1,4 +1,4 @@
-# @esphome-designer/email
+# @vesp-cloud/email
 
 Retro-futuristic Svelte email templates for the monorepo.
 
@@ -14,9 +14,9 @@ The package depends on:
 
 Available exports:
 
-- `@esphome-designer/email`
-- `@esphome-designer/email/address-validation.svelte`
-- `@esphome-designer/email/account-recovery.svelte`
+- `@vesp-cloud/email`
+- `@vesp-cloud/email/address-validation.svelte`
+- `@vesp-cloud/email/account-recovery.svelte`
 
 The root export also re-exports:
 
@@ -30,14 +30,14 @@ The root export also re-exports:
 ### Render an email
 
 ```ts
-import { Renderer } from '@esphome-designer/email';
-import AddressValidationEmail from '@esphome-designer/email/address-validation.svelte';
+import { Renderer } from '@vesp-cloud/email';
+import AddressValidationEmail from '@vesp-cloud/email/address-validation.svelte';
 
 const { render } = new Renderer();
 
 const html = await render(AddressValidationEmail, {
   props: {
-    appName: 'Home Display',
+    appName: 'vESP.cloud',
     recipient: 'Alex',
     verificationUrl: 'https://example.com/verify?token=abc'
   }
@@ -47,7 +47,7 @@ const html = await render(AddressValidationEmail, {
 ### Plain text version
 
 ```ts
-import { toPlainText } from '@esphome-designer/email';
+import { toPlainText } from '@vesp-cloud/email';
 
 const text = toPlainText(html);
 ```
@@ -59,7 +59,7 @@ const text = toPlainText(html);
 Props:
 
 - `verificationUrl` required
-- `appName` optional, defaults to `Home Display`
+- `appName` optional, defaults to `vESP.cloud`
 - `recipient` optional, defaults to `operator`
 - `expiresIn` optional, defaults to `10 minutes`
 
@@ -68,7 +68,7 @@ Props:
 Props:
 
 - `recoveryUrl` required
-- `appName` optional, defaults to `Home Display`
+- `appName` optional, defaults to `vESP.cloud`
 - `recipient` optional, defaults to `operator`
 - `expiresIn` optional, defaults to `15 minutes`
 
@@ -89,7 +89,7 @@ The shared shell lives in `src/email-shell.svelte` and keeps the visual system c
 Type-check the package:
 
 ```bash
-bun run --filter @esphome-designer/email lint
+bun run --filter @vesp-cloud/email lint
 ```
 
 ## Notes

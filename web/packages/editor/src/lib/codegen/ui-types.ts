@@ -1,4 +1,4 @@
-import type { Project } from "@esphome-designer/schema";
+import type { Project } from "@vesp-cloud/schema";
 import { toCppIdentifier } from "./utils";
 
 function detailScreenId(id: string, title: string): string {

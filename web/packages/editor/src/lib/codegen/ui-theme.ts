@@ -1,4 +1,4 @@
-import type { Project } from "@esphome-designer/schema";
+import type { Project } from "@vesp-cloud/schema";
 
 export function generateUIThemeHeader(project: Project): string {
   const isRetro = project.theme?.id === "retro";

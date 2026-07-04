@@ -1,8 +1,8 @@
 import { getStripe } from "./client";
 import { addCredits } from "../credits";
 import { getPackByPriceId } from "../packs";
-import { getDb } from "@esphome-designer/db";
-import { stripeCheckoutSessions, stripeEvents } from "@esphome-designer/db/schema";
+import { getDb } from "@vesp-cloud/db";
+import { stripeCheckoutSessions, stripeEvents } from "@vesp-cloud/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "$lib/server/logger";
 import type Stripe from "stripe";

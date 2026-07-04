@@ -1,8 +1,8 @@
-import { getDb } from '@esphome-designer/db';
-import * as table from '@esphome-designer/db/schema';
+import { getDb } from '@vesp-cloud/db';
+import * as table from '@vesp-cloud/db/schema';
 import { createPasswordResetToken, getPasswordResetBaseUrl } from '$lib/server/password-reset';
 import { sendEmail } from '$lib/server/email';
-import { AccountRecoveryEmail, Renderer, toPlainText } from '@esphome-designer/email';
+import { AccountRecoveryEmail, Renderer, toPlainText } from '@vesp-cloud/email';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { validateForm } from '$lib/server/form';
@@ -39,7 +39,7 @@ export const actions: Actions = {
         try {
           const html = await renderer.render(AccountRecoveryEmail, {
             props: {
-              appName: 'ESPHome Designer',
+              appName: 'vESP.cloud',
               recipient: user.username,
               recoveryUrl: resetUrl.toString(),
               expiresIn: '1 hour',
@@ -48,7 +48,7 @@ export const actions: Actions = {
 
           await sendEmail({
             to: user.email,
-            subject: 'Reset your ESPHome Designer password',
+            subject: 'Reset your vESP.cloud password',
             html,
             text: toPlainText(html),
           });

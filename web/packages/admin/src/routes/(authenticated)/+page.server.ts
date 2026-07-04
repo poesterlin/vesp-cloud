@@ -1,5 +1,5 @@
-import { getDb } from "@esphome-designer/db";
-import { usersTable, compilationJobs, creditBalances, withdrawalRequests } from "@esphome-designer/db/schema";
+import { getDb } from "@vesp-cloud/db";
+import { usersTable, compilationJobs, creditBalances, withdrawalRequests } from "@vesp-cloud/db/schema";
 import { eq, sql, desc } from "drizzle-orm";
 import { env } from "$env/dynamic/private";
 

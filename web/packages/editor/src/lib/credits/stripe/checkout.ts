@@ -1,6 +1,6 @@
 import { getStripe } from "./client";
-import { getDb } from "@esphome-designer/db";
-import { stripeCheckoutSessions, stripeCustomers } from "@esphome-designer/db/schema";
+import { getDb } from "@vesp-cloud/db";
+import { stripeCheckoutSessions, stripeCustomers } from "@vesp-cloud/db/schema";
 import { eq } from "drizzle-orm";
 import { getPackByPriceId } from "../packs";
 import { createLogger } from "$lib/server/logger";

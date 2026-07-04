@@ -10,7 +10,7 @@
 <div class="auth-page">
   <div class="auth-card">
     <h1>Create Account</h1>
-    <p class="subtitle">ESPHome Designer</p>
+    <p class="subtitle">vESP.cloud</p>
 
     {#if form?.message}
       <div class="error-message">{form.message}</div>

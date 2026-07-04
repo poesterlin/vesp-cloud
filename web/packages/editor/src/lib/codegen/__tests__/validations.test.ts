@@ -1,7 +1,7 @@
 /// <reference types="bun" />
 import { describe, test, expect } from "bun:test";
 import { validateProject } from "../validations";
-import type { Project } from "@esphome-designer/schema";
+import type { Project } from "@vesp-cloud/schema";
 
 function makeProject(overrides: Partial<Project> = {}): Project {
   return {

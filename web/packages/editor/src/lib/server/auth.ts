@@ -2,8 +2,8 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { sha256 } from '@oslojs/crypto/sha2';
 import { encodeBase64url, encodeHexLowerCase } from '@oslojs/encoding';
-import { getDb } from '@esphome-designer/db';
-import * as table from '@esphome-designer/db/schema';
+import { getDb } from '@vesp-cloud/db';
+import * as table from '@vesp-cloud/db/schema';
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
 

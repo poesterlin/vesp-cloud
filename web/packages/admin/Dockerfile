@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
 
 COPY packages ./packages
 
-RUN bun run --filter @esphome-designer/admin build
+RUN bun run --filter @vesp-cloud/admin build
 
 RUN bun install --production --frozen-lockfile
 

@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/poesterlin/home-display-editor:main
+    image: ghcr.io/poesterlin/vesp-cloud-editor:main
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://postgres:password@postgres:5432/esphome

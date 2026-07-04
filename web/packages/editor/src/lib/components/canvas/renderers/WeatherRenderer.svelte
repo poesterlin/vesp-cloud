@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as mdiIcons from "@mdi/js";
-  import type { WeatherComponent } from "@esphome-designer/schema";
+  import type { WeatherComponent } from "@vesp-cloud/schema";
   import Draggable from "../Draggable.svelte";
   import {
     getWeatherConditionColor,

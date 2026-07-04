@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Color } from "@esphome-designer/schema";
+  import type { Color } from "@vesp-cloud/schema";
 
   let { value, onUpdate, label } = $props<{
     value: Color | undefined;

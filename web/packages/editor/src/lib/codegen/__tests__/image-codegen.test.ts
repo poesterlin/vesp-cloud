@@ -1,6 +1,6 @@
 /// <reference types="bun" />
 import { describe, expect, test } from "bun:test";
-import type { Project } from "@esphome-designer/schema";
+import type { Project } from "@vesp-cloud/schema";
 import { generateESPHomeYAML } from "../esphome-yaml";
 import { generateSecretsYAML } from "../secrets";
 import { generateUIScreensHeader } from "../ui-screens";

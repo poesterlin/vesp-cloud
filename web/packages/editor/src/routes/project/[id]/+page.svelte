@@ -44,7 +44,7 @@
 </script>
 
 <svelte:head>
-  <title>ESPHome Designer {projectStore.project ? `- ${projectStore.project.name}` : ''}</title>
+  <title>vESP.cloud {projectStore.project ? `- ${projectStore.project.name}` : ''}</title>
 </svelte:head>
 
 {#if loading}

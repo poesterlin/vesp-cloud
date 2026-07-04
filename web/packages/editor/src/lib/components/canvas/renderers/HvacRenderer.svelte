@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { HvacComponent } from "@esphome-designer/schema";
+  import type { HvacComponent } from "@vesp-cloud/schema";
   import Draggable from "../Draggable.svelte";
   import { getHvacModeColor, getHvacOffColor, colorToCss as modeColorToCss } from "$lib/utils/hvac-modes";
 

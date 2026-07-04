@@ -1,0 +1,16 @@
+{
+  "name": "@vesp-cloud/assets",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    },
+    "./logo-1024x1024.jpg": "./imgs/logo-1024x1024.jpg",
+    "./logo-256x256.jpg": "./imgs/logo-256x256.jpg",
+    "./imgs/*": "./imgs/*",
+    "./package.json": "./package.json"
+  }
+}

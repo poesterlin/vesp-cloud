@@ -4,7 +4,7 @@
   import { historyStore } from "$lib/stores/history.svelte";
   import { snapStore } from "$lib/stores/snap.svelte";
   import { validationStore } from "$lib/stores/validation.svelte";
-  import type { Component } from "@esphome-designer/schema";
+  import type { Component } from "@vesp-cloud/schema";
   import type { Snippet } from "svelte";
 
 

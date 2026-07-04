@@ -1,6 +1,6 @@
 import * as auth from '$lib/server/auth';
-import { getDb } from '@esphome-designer/db';
-import * as table from '@esphome-designer/db/schema';
+import { getDb } from '@vesp-cloud/db';
+import * as table from '@vesp-cloud/db/schema';
 import { verify } from '@node-rs/argon2';
 import { fail, redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';

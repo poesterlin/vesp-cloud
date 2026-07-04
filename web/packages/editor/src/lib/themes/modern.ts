@@ -1,4 +1,4 @@
-import type { Theme } from "@esphome-designer/schema";
+import type { Theme } from "@vesp-cloud/schema";
 
 export const MODERN_THEME: Theme = {
   id: "modern",

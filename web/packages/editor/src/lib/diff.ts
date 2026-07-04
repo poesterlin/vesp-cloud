@@ -1,4 +1,4 @@
-import type { Component, Project } from '@esphome-designer/schema';
+import type { Component, Project } from '@vesp-cloud/schema';
 
 interface ChangeItem {
   message: string;

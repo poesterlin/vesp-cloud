@@ -10,7 +10,7 @@ import type {
   LightStateComponent,
   TodoListComponent,
   EntityBinding,
-} from "@esphome-designer/schema";
+} from "@vesp-cloud/schema";
 
 export function toCppIdentifier(name: string): string {
   return name

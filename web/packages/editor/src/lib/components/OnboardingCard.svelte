@@ -35,11 +35,11 @@
         <svg width="20" height="20" viewBox="0 0 24 24" class="icon">
           <path d={mdiIcons.mdiMonitor} />
         </svg>
-        <span>ESPHome Designer is built for laptop and desktop use. Please switch to a larger screen for the best experience.</span>
+        <span>vESP.cloud is built for laptop and desktop use. Please switch to a larger screen for the best experience.</span>
       </div>
     {/if}
     <div class="onboarding-header">
-      <h2>Welcome to ESPHome Designer</h2>
+      <h2>Welcome to vESP.cloud</h2>
       <p>
         Everything you need to know to get your smart display up and running.
       </p>

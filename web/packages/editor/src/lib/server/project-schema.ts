@@ -1,5 +1,5 @@
 import Ajv from 'ajv';
-import schema from '@esphome-designer/schema/schema';
+import schema from '@vesp-cloud/schema/schema';
 
 interface JsonSchema {
   definitions?: Record<string, unknown>;

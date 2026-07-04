@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { getDb } from '@esphome-designer/db';
-import { projects, compilationJobs } from '@esphome-designer/db/schema';
+import { getDb } from '@vesp-cloud/db';
+import { projects, compilationJobs } from '@vesp-cloud/db/schema';
 import { eq, and, notInArray, desc } from 'drizzle-orm';
 
 const TERMINAL_STATUSES = ['completed', 'failed'];

@@ -1,4 +1,4 @@
-import type { Session } from '@esphome-designer/db/schema';
+import type { Session } from '@vesp-cloud/db/schema';
 
 declare global {
   namespace App {

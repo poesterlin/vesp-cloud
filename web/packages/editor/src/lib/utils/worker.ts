@@ -1,6 +1,6 @@
-import type { CompilationJob, NewCompilationJob } from '@esphome-designer/db/schema';
+import type { CompilationJob, NewCompilationJob } from '@vesp-cloud/db/schema';
 import { CompilationQueue } from '$lib/queue/index.js';
-import { getDb, schema } from '@esphome-designer/db';
+import { getDb, schema } from '@vesp-cloud/db';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 export { getDb, schema };

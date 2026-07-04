@@ -17,7 +17,7 @@ import type {
   CalendarComponent,
   Color,
   OnTapAction,
-} from "@esphome-designer/schema";
+} from "@vesp-cloud/schema";
 import {
   toCppIdentifier,
   escapeCString,

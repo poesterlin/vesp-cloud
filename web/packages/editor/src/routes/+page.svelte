@@ -151,7 +151,7 @@
         </form>
       </div>
     {/if}
-    <h1>ESPHome Designer</h1>
+    <h1>vESP.cloud</h1>
     <p>The visual architect for your smart home displays</p>
   </header>
 
@@ -327,12 +327,12 @@
               </li>
               <li>
                 <span class="step-badge">2</span>
-                Add <code>https://github.com/poesterlin/home-display</code> as an
+                Add <code>https://github.com/poesterlin/vesp-cloud</code> as an
                 <strong>Integration</strong> repository
               </li>
               <li>
                 <span class="step-badge">3</span>
-                Install <strong>ESPHome Display Notifications &amp; Data Bridge</strong>
+                Install <strong>vESP.cloud Notifications &amp; Data Bridge</strong>
                 and restart Home Assistant
               </li>
               <li>

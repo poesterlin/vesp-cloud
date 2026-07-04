@@ -1,11 +1,11 @@
 import { fail } from '@sveltejs/kit';
-import { getDb } from '@esphome-designer/db';
+import { getDb } from '@vesp-cloud/db';
 import {
   creditBalances,
   creditTransactions,
   usersTable,
   withdrawalRequests,
-} from '@esphome-designer/db/schema';
+} from '@vesp-cloud/db/schema';
 import { desc, eq } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
 import type { Actions, PageServerLoad } from './$types';

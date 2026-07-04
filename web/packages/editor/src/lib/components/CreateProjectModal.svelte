@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { NotificationOverlayConfig } from "@esphome-designer/schema";
+  import type { NotificationOverlayConfig } from "@vesp-cloud/schema";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import TimezoneEditor from "$lib/components/TimezoneEditor.svelte";
@@ -190,7 +190,7 @@ input_select:
       - question
       - critical</code></pre>
               <p class="note">
-                Install the <a href="https://github.com/esphome-designer/ha-integration" target="_blank" rel="noopener">ESPHome Designer HACS integration</a> to auto-create these entities.
+                Install the <a href="https://github.com/vesp-cloud/ha-integration" target="_blank" rel="noopener">vESP.cloud HACS integration</a> to auto-create these entities.
               </p>
             </section>
 

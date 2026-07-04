@@ -1,7 +1,7 @@
 <script lang="ts">
   import { projectStore } from "$lib/stores/project.svelte";
   import { diffProject, type ProjectChanges } from "$lib/diff";
-  import type { Project } from "@esphome-designer/schema";
+  import type { Project } from "@vesp-cloud/schema";
 
   interface Props {
     lastSavedData: unknown;

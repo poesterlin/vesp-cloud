@@ -2,6 +2,8 @@ import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 
 const PUBLIC_PATHS = [
+  '/robots.txt',
+  '/sitemap.xml',
   '/login',
   '/register',
   '/forgot-password',

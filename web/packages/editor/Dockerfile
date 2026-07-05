@@ -69,6 +69,7 @@ COPY bun.lock package.json bunfig.toml ./
 
 # Copy workspace manifests first (better dependency caching)
 COPY packages/db/package.json ./packages/db/package.json
+COPY packages/assets/package.json ./packages/assets/package.json
 COPY packages/email/package.json ./packages/email/package.json
 COPY packages/editor/package.json ./packages/editor/package.json
 COPY packages/schema/package.json ./packages/schema/package.json

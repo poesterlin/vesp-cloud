@@ -755,7 +755,7 @@
     onclick={closeModal}
     onkeydown={handleKeydown}
   >
-    <div class="modal">
+    <div class="modal" onclick={(e) => e.stopPropagation()}>
       <div class="modal-header">
         <h2>Select Entity</h2>
         <button class="modal-close" onclick={closeModal} aria-label="Close entity picker">

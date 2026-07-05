@@ -1,4 +1,5 @@
 import { startWorker, stopWorker } from "$lib/utils/worker";
+import { building } from "$app/environment";
 import { json, type Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { getDb } from "@vesp-cloud/db";
@@ -10,8 +11,8 @@ const configuredCompilerMode = (env.COMPILER_MODE ?? "embedded").toLowerCase();
 const compilerMode = configuredCompilerMode === "external" ? "external" : "embedded";
 const runEmbeddedWorker = compilerMode === "embedded";
 
-// Initialize database and start worker on server startup
-if (!workerStarted) {
+// Initialize database and start worker on server startup (runtime only)
+if (!building && !workerStarted) {
   (async () => {
     try {
       console.log("Initializing database...");

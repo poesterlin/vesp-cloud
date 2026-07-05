@@ -31,6 +31,10 @@
         "vite": "^8.0.10",
       },
     },
+    "packages/assets": {
+      "name": "@vesp-cloud/assets",
+      "version": "0.1.0",
+    },
     "packages/db": {
       "name": "@vesp-cloud/db",
       "version": "0.1.0",
@@ -46,13 +50,14 @@
       "name": "@vesp-cloud/editor",
       "version": "0.1.0",
       "dependencies": {
-        "@vesp-cloud/db": "workspace:*",
-        "@vesp-cloud/email": "workspace:*",
-        "@vesp-cloud/schema": "workspace:*",
         "@fontsource/roboto": "5.2.10",
         "@node-rs/argon2": "2.0.2",
         "@oslojs/crypto": "1.0.1",
         "@oslojs/encoding": "1.1.0",
+        "@vesp-cloud/assets": "workspace:*",
+        "@vesp-cloud/db": "workspace:*",
+        "@vesp-cloud/email": "workspace:*",
+        "@vesp-cloud/schema": "workspace:*",
         "ajv": "8.17.1",
         "drizzle-orm": "^0.45.2",
         "fuzzysort": "3.1.0",
@@ -185,16 +190,6 @@
     "@eslint/object-schema": ["@eslint/object-schema@2.1.7", "", {}, "sha512-VtAOaymWVfZcmZbp6E2mympDIHvyjXs/12LqWYjVw6qjrfF+VK+fyG33kChz3nnK+SU5/NeHOqrTEHS8sXO3OA=="],
 
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.4.1", "", { "dependencies": { "@eslint/core": "^0.17.0", "levn": "^0.4.1" } }, "sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA=="],
-
-    "@vesp-cloud/admin": ["@vesp-cloud/admin@workspace:packages/admin"],
-
-    "@vesp-cloud/db": ["@vesp-cloud/db@workspace:packages/db"],
-
-    "@vesp-cloud/editor": ["@vesp-cloud/editor@workspace:packages/editor"],
-
-    "@vesp-cloud/email": ["@vesp-cloud/email@workspace:packages/email"],
-
-    "@vesp-cloud/schema": ["@vesp-cloud/schema@workspace:packages/schema"],
 
     "@fontsource/roboto": ["@fontsource/roboto@5.2.10", "", {}, "sha512-8HlA5FtSfz//oFSr2eL7GFXAiE7eIkcGOtx7tjsLKq+as702x9+GU7K95iDeWFapHC4M2hv9RrpXKRTGGBI8Zg=="],
 
@@ -391,6 +386,18 @@
     "@types/trusted-types": ["@types/trusted-types@2.0.7", "", {}, "sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw=="],
 
     "@typescript-eslint/types": ["@typescript-eslint/types@8.57.0", "", {}, "sha512-dTLI8PEXhjUC7B9Kre+u0XznO696BhXcTlOn0/6kf1fHaQW8+VjJAVHJ3eTI14ZapTxdkOmc80HblPQLaEeJdg=="],
+
+    "@vesp-cloud/admin": ["@vesp-cloud/admin@workspace:packages/admin"],
+
+    "@vesp-cloud/assets": ["@vesp-cloud/assets@workspace:packages/assets"],
+
+    "@vesp-cloud/db": ["@vesp-cloud/db@workspace:packages/db"],
+
+    "@vesp-cloud/editor": ["@vesp-cloud/editor@workspace:packages/editor"],
+
+    "@vesp-cloud/email": ["@vesp-cloud/email@workspace:packages/email"],
+
+    "@vesp-cloud/schema": ["@vesp-cloud/schema@workspace:packages/schema"],
 
     "acorn": ["acorn@8.15.0", "", { "bin": { "acorn": "bin/acorn" } }, "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg=="],
 

@@ -2,6 +2,9 @@
 ARG BUN_VERSION=1.3.13
 FROM oven/bun:${BUN_VERSION} AS builder
 
+ARG DOMAIN
+ENV DOMAIN=${DOMAIN}
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \

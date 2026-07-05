@@ -2,6 +2,8 @@ services:
   esphome:
     build:
       dockerfile: packages/editor/Dockerfile
+      args: 
+        DOMAIN: ${DOMAIN}
     cpus: "6.0"
     mem_limit: 20g
     mem_reservation: 2g

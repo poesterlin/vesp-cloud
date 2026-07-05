@@ -2,9 +2,10 @@
 
 import logging
 from pathlib import Path
-from homeassistant.core import HomeAssistant
+
 from homeassistant.components import frontend, panel_custom
 from homeassistant.components.http import StaticPathConfig
+from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 

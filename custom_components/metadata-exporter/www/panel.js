@@ -138,10 +138,10 @@ class DisplayMetadataPanel extends LitElement {
     return html`
       <div class="container">
         <h1>Sync Metadata</h1>
-        
+
         <div class="card">
           <p>Download your Home Assistant configuration metadata to enable autocomplete and validation in the <strong>Display Web Editor</strong>.</p>
-          
+
           <div class="privacy-note">
             <strong>🔒 Privacy & Security</strong>
             <ul>
@@ -158,7 +158,7 @@ class DisplayMetadataPanel extends LitElement {
         </div>
 
         <div id="status" class="status hidden"></div>
-        
+
         <div id="preview" class="card hidden">
           <h3>Data Preview:</h3>
           <pre id="preview-content"></pre>
@@ -181,7 +181,7 @@ class DisplayMetadataPanel extends LitElement {
     statusEl.textContent = message;
     statusEl.className = `status ${type}`;
     statusEl.classList.remove('hidden');
-    
+
     if (type === 'success') {
       setTimeout(() => {
         statusEl.classList.add('hidden');

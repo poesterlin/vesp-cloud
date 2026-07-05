@@ -1,6 +1,7 @@
 """Auto-create notification overlay helper entities for display integrations."""
 
 import logging
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
@@ -39,16 +40,7 @@ NOTIFICATION_ENTITIES: dict[str, list[dict]] = {
 
 
 async def async_ensure_notification_entities(hass: HomeAssistant) -> None:
-    """Auto-create input_text and input_select helper entities for notification overlay.
-
-    Creates the following entities if they do not already exist:
-      - input_text.notification_title
-      - input_text.notification_body
-      - input_select.notification_severity
-
-    Uses the same storage mechanism as the Home Assistant UI, so entities
-    persist across restarts and appear in Settings > Devices & Services > Helpers.
-    """
+    """Ensure helper entities for notification overlay exist."""
     for domain, entities_config in NOTIFICATION_ENTITIES.items():
         store = Store(hass, STORAGE_VERSION, domain)
         stored = await store.async_load()
@@ -73,7 +65,6 @@ async def async_ensure_notification_entities(hass: HomeAssistant) -> None:
 
         if created:
             await store.async_save(stored)
-            # Reload the component so the new entities become active immediately
             if hass.services.has_service(domain, "reload"):
                 await hass.services.async_call(domain, "reload", blocking=True)
                 _LOGGER.debug("Reloaded %s component to activate new entities", domain)

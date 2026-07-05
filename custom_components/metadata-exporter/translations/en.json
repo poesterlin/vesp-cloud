@@ -3,29 +3,7 @@
     "step": {
       "user": {
         "title": "HA Metadata Exporter",
-        "description": "This integration exports Home Assistant metadata (entities, services, devices, and areas) for editor tooling.\n\nNotification helpers are optional.",
-        "data": {
-          "notifications": "Enable optional notification helpers",
-          "default_severity": "Default notification severity"
-        },
-        "data_description": {
-          "notifications": "Optionally creates input_text.notification_title / notification_body and input_select.notification_severity for display notifications",
-          "default_severity": "Alert level used when no severity is specified"
-        }
-      }
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "HA Metadata Exporter Options",
-        "description": "Adjust integration-wide settings",
-        "data": {
-          "default_timeout": "Default notification timeout (seconds)"
-        },
-        "data_description": {
-          "default_timeout": "How long notifications display by default before auto-closing (0 = manual dismiss only)"
-        }
+        "description": "This integration exports Home Assistant metadata (entities, services, devices, and areas) for editor tooling."
       }
     }
   }

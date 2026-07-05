@@ -1,7 +1,6 @@
-"""HA Metadata Exporter integration with optional notifications."""
+"""HA Metadata Exporter integration."""
 
 import json
-import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -17,14 +16,7 @@ from homeassistant.helpers import (
 )
 
 from .const import DOMAIN
-from .notification_entities import async_ensure_notification_entities
 from .panel import async_register_panel, async_unregister_panel
-
-_LOGGER = logging.getLogger(__name__)
-
-CONF_NOTIFICATIONS = "notifications"
-CONF_DEFAULT_SEVERITY = "default_severity"
-CONF_DEVICES = "devices"  # old v1 format
 
 PLATFORMS: list[str] = []
 
@@ -110,7 +102,6 @@ _SERVICE_METADATA: dict[str, dict[str, Any]] = {
     "reload":              {"icon": "mdi:reload",                "targets": ["automation", "script", "scene"]},
 }
 
-# ── Metadata exporter (websocket) ──────────────────────────────────
 
 class MetadataExporter:
     """Gathers HA metadata for the visual editor panel."""
@@ -342,21 +333,14 @@ async def websocket_export_metadata(
     connection.send_result(msg["id"], metadata)
 
 
-# ── setup / teardown ───────────────────────────────────────────────
-
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up from a config entry."""
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {"http_registered": False}
 
-    if entry.data.get(CONF_NOTIFICATIONS, True):
-        await async_ensure_notification_entities(hass)
-
     if PLATFORMS:
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Infrastructure last (best-effort) — websocket + panel
     if not hass.data[DOMAIN].get("http_registered"):
         websocket_api.async_register_command(hass, websocket_export_metadata)
         await async_register_panel(hass)
@@ -370,25 +354,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if PLATFORMS:
         await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     async_unregister_panel(hass)
-    return True
-
-
-async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Migrate config entry from version 1 (devices dict) to version 2 (flat)."""
-    if entry.version == 1:
-        devices = entry.data.get(CONF_DEVICES, {})
-
-        first_device = next(iter(devices.values()), {})
-        default_severity = first_device.get("default_severity", "info")
-
-        hass.config_entries.async_update_entry(
-            entry,
-            data={
-                "notifications": True,
-                "default_severity": default_severity,
-            },
-            version=2,
-        )
-        _LOGGER.info("Migrated config entry to v2")
-
     return True

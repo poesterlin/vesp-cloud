@@ -1,4 +1,4 @@
-"""Config flow for HA Metadata Exporter integration."""
+"""Config flow for vESP.cloud Notifications integration."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from .const import DOMAIN
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for HA Metadata Exporter."""
+    """Handle a config flow for vESP.cloud Notifications."""
 
     VERSION = 1
 
@@ -20,7 +20,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Single-screen setup."""
 
+        await self.async_set_unique_id(DOMAIN)
+        self._abort_if_unique_id_configured()
+
         if user_input is not None:
-            return self.async_create_entry(title="HA Metadata Exporter", data={})
+            return self.async_create_entry(title="vESP.cloud Notifications", data={})
 
         return self.async_show_form(step_id="user")

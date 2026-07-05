@@ -1,13 +1,13 @@
 {
   "manifest_version": 1,
-  "domain": "esphome_display",
-  "name": "HA Metadata Exporter",
+  "domain": "esphome_display_notifications",
+  "name": "vESP.cloud Notifications",
   "codeowners": ["@poesterlin"],
   "config_flow": true,
   "documentation": "https://github.com/poesterlin/vesp-cloud",
   "issue_tracker": "https://github.com/poesterlin/vesp-cloud/issues",
   "requirements": [],
-  "version": "2.0.0",
+  "version": "1.1.0",
   "homeassistant": "2024.1.0",
   "iot_class": "local_push"
 }

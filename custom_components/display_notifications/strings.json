@@ -1,0 +1,10 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "vESP.cloud Notifications",
+        "description": "Creates one global broadcast notification sensor and service for all displays."
+      }
+    }
+  }
+}

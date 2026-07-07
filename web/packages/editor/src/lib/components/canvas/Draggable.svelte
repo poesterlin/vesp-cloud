@@ -4,6 +4,7 @@
   import { historyStore } from "$lib/stores/history.svelte";
   import { snapStore } from "$lib/stores/snap.svelte";
   import { validationStore } from "$lib/stores/validation.svelte";
+  import { canvasZoomStore } from "$lib/stores/canvas-zoom.svelte";
   import type { Component } from "@vesp-cloud/schema";
   import type { Snippet } from "svelte";
 
@@ -78,8 +79,9 @@
   function handleMouseMove(e: MouseEvent) {
     if (!dragging || !dragStart) return;
 
-    const dx = e.clientX - dragStart.x;
-    const dy = e.clientY - dragStart.y;
+    const zoom = canvasZoomStore.level;
+    const dx = (e.clientX - dragStart.x) / zoom;
+    const dy = (e.clientY - dragStart.y) / zoom;
 
     if (multiSelectDrag && multiSelectStartPositions.size > 0) {
       const updates: Array<{ id: string; updates: Partial<Component> }> = [];

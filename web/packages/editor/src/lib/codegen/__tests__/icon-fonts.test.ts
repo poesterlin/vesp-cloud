@@ -15,7 +15,7 @@ import { generateUIScreensHeader } from "../ui-screens";
 import { generateESPHomeYAML } from "../esphome-yaml";
 
 const BASE_FONTS_YAML = `font:
-  - file: "gfonts://Share Tech Mono"
+  - file: "gfonts://Turret Road"
     id: font_tiny
     size: 12
     glyphs: 'ABC'
@@ -408,7 +408,7 @@ describe("generateUIScreensHeader icon emission", () => {
       ],
     });
     const out = generateUIScreensHeader(project);
-    expect(out).toContain("home_header->set_suppress_time_condition");
+    expect(out).toContain("home_header->set_visibility_condition");
     expect(out).toContain("state.home_page_index == 1");
   });
 

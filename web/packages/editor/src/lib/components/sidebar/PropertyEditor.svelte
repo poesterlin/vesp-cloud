@@ -598,6 +598,15 @@
         </div>
 
       </div>
+
+      <div class="property-section">
+        <label class="section-label">Styling</label>
+        <ColorPicker
+          label="Color"
+          value={selectedComponent.color}
+          onUpdate={(color) => updateProperty("color", color)}
+        />
+      </div>
     {/if}
 
     {#if selectedComponent.type === "light_state"}

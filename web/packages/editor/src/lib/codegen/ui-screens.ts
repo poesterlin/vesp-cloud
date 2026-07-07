@@ -446,6 +446,9 @@ function generateTodoListWidget(
   const bridgeEntity = todoEntity ? "" : (c.itemsBinding?.entityId ?? "");
   const idSafe = safeCppIdentifier(c.id, 'component');
   let out = `${indent}auto *todo_${idSafe} = ${factory('TodoPreviewWidget', `${rect(x, y, w, h)}, state.${itemsVar}.ptr(), ${maxItems}, ${rowHeight}, ${scrollable}, ${checkable}, ${onTap || '[](){}'}, "${incompleteIcon}", "${completeIcon}", "${escapeCString(todoEntity)}", "${escapeCString(bridgeEntity)}"`)};\n`;
+  if (c.color) {
+    out += `${indent}todo_${idSafe}->set_color(${emitColor(c.color)});\n`;
+  }
   if (visibilityExpr) {
     out += `${indent}todo_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
   }

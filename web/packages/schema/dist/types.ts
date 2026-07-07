@@ -140,6 +140,7 @@ export type TodoListComponent = BaseComponent & {
   rowHeight?: number;
   scrollable?: boolean;
   checkable?: boolean;
+  color?: Color;
 };
 export type LightStateComponent = BaseComponent & {
   type: "light_state";

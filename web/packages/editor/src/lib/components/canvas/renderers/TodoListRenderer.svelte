@@ -23,8 +23,13 @@
   const innerCorner = 6;
   const innerMargin = 2;
 
-  const amberColor = "rgb(255, 180, 0)";
-  const amberDimColor = "rgb(160, 110, 0)";
+  const customColor = component.color;
+  const amberColor = customColor
+    ? `rgb(${customColor.r}, ${customColor.g}, ${customColor.b})`
+    : "rgb(255, 180, 0)";
+  const amberDimColor = customColor
+    ? `rgb(${Math.floor(customColor.r * 0.6)}, ${Math.floor(customColor.g * 0.6)}, ${Math.floor(customColor.b * 0.6)})`
+    : "rgb(160, 110, 0)";
   const containerBg = "rgb(10, 12, 18)";
   const whiteColor = "rgb(230, 240, 250)";
   const grayColor = "rgb(120, 130, 145)";

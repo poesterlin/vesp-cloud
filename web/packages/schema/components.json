@@ -628,7 +628,8 @@
             "checkable": {
               "type": "boolean",
               "default": false
-            }
+            },
+            "color": { "$ref": "#/definitions/Color" }
           },
           "required": ["type", "size"]
         }

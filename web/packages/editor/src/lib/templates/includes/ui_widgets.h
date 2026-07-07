@@ -1462,13 +1462,15 @@ class TodoPreviewWidget : public Widget {
     Widget::update(now);
   }
 
+  void set_color(Color c) { color_ = c; mark_dirty(); }
+
   void draw(display::Display &it, const UiState &state) override {
     (void)state;
 
-    const Color border = RetroColors::AMBER;
+    const Color border = color_;
     const Color bg(10, 12, 18);
     const Color text = RetroColors::WHITE;
-    const Color due_ok = RetroColors::AMBER;
+    const Color due_ok = color_;
     const Color due_overdue = RetroColors::RED;
     const Color dim = RetroColors::GRAY;
     const UiRect r = screen_rect(rect_);
@@ -1479,8 +1481,9 @@ class TodoPreviewWidget : public Widget {
     // Inner double-line
     {
       const UiRect inner = r.inset(2);
+      Color border_dim(color_.r * 0.6f, color_.g * 0.6f, color_.b * 0.6f);
       draw_clipped_border(it, inner.x, inner.y, inner.w, inner.h,
-                          6, 6, 6, 6, RetroColors::AMBER_DIM);
+                          6, 6, 6, 6, border_dim);
     }
 
     if (items_ == nullptr || items_->empty()) {
@@ -1767,6 +1770,7 @@ class TodoPreviewWidget : public Widget {
   bool dragging_ = false;
   std::string last_items_;
   bool baseline_set_ = false;
+  Color color_{RetroColors::AMBER};
 };
 
 class CalendarListWidget : public Widget {

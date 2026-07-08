@@ -522,6 +522,10 @@
       <PageIndicator
         count={projectStore.dashboardPages.length}
         currentIndex={projectStore.currentPageIndex}
+        onSelect={(i) => {
+          const page = projectStore.dashboardPages[i];
+          if (page) projectStore.setDashboardPage(page.id);
+        }}
       />
     {/if}
   </div>

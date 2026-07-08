@@ -66,7 +66,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const validationErrors = validateProject(parsedConfig);
     if (validationErrors.length > 0) {
       const messages = validationErrors.map((e) => `[${e.type}] ${e.message}`).join("; ");
-      return json({ error: `Project validation failed: ${messages}` }, { status: 400 });
+      return json({
+        error: `Project validation failed: ${messages}`,
+        validationErrors,
+      }, { status: 400 });
     }
 
     if (IS_CLOUD) {

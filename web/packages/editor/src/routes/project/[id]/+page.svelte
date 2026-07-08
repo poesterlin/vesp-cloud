@@ -11,7 +11,9 @@
   import { projectStore } from "$lib/stores/project.svelte";
   import { deploymentStore } from "$lib/stores/deployment.svelte";
   import { onMount } from "svelte";
+  import { page } from "$app/state";
   import ProjectSettings from "$lib/components/sidebar/ProjectSettings.svelte";
+  import type { Component } from "@vesp-cloud/schema";
   import { selectionStore } from "$lib/stores/selection.svelte.js";
 
   let { data } = $props();
@@ -25,6 +27,11 @@
     if (data.project) {
       projectStore.loadFromServer(data.project);
       loading = false;
+
+      const componentId = page.url.searchParams.get("componentId");
+      if (componentId) {
+        navigateToComponent(componentId);
+      }
     } else {
       error = "Project not found";
       loading = false;
@@ -34,6 +41,52 @@
       deploymentStore.restoreJob(data.activeJob.id, data.activeJob.status);
     }
   });
+
+  function navigateToComponent(compId: string) {
+    const project = projectStore.project;
+    if (!project) return;
+
+    function containsId(components: Component[], target: string): boolean {
+      for (const c of components) {
+        if (c.id === target) return true;
+        if (c.type === "conditional_area") {
+          for (const v of c.variants) {
+            if (containsId(v.components, target)) return true;
+          }
+        } else if (c.type === "tab_container") {
+          for (const t of c.tabs) {
+            if (containsId(t.components, target)) return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    if (project.pageHeader && containsId(project.pageHeader.components, compId)) {
+      // Header components are visible on any dashboard page
+      if (projectStore.viewMode !== "dashboard") {
+        projectStore.setDashboardPage(projectStore.dashboardPages[0]?.id);
+      }
+      selectionStore.select(compId);
+      return;
+    }
+
+    for (const page of projectStore.dashboardPages) {
+      if (containsId(page.components, compId)) {
+        projectStore.setDashboardPage(page.id);
+        selectionStore.select(compId);
+        return;
+      }
+    }
+
+    for (const view of projectStore.detailViews) {
+      if (containsId(view.components, compId)) {
+        projectStore.setDetailView(view.id);
+        selectionStore.select(compId);
+        return;
+      }
+    }
+  }
 
   function clearSelection(event: MouseEvent) {
     const isSelf = (event.target as HTMLElement).classList.contains("canvas-area");

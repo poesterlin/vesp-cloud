@@ -1,5 +1,6 @@
 import { projectStore } from "$lib/stores/project.svelte";
 import { assert } from "$lib/utils";
+import type { ValidationError } from "$lib/codegen/validations";
 
 interface DeploymentState {
   step: "idle" | "compiling" | "ready" | "flash" | "publish" | "done";
@@ -12,6 +13,7 @@ interface DeploymentState {
   manifestUrl: string | null;
   published: boolean;
   publishing: boolean;
+  validationErrors: ValidationError[];
 }
 
 export type JobStatus = {
@@ -44,6 +46,7 @@ function createDeploymentStore() {
     manifestUrl: null,
     published: false,
     publishing: false,
+    validationErrors: [],
   });
 
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
@@ -87,6 +90,7 @@ function createDeploymentStore() {
     state.manifestUrl = null;
     state.published = false;
     state.publishing = false;
+    state.validationErrors = [];
   }
 
   async function compile(flowType: "new" | "update" | null = null) {
@@ -110,7 +114,10 @@ function createDeploymentStore() {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to start compilation");
+      if (!response.ok) {
+        state.validationErrors = data.validationErrors || [];
+        throw new Error(data.error || "Failed to start compilation");
+      }
 
       state.jobId = data.jobId;
       state.published = false;

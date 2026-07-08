@@ -91,7 +91,10 @@
       }
 
       zip.file("fonts.yaml", generateFontsYAML(project, baseFontsYaml));
-      zip.file("secrets.yaml", generateSecretsYAML(project, { includeOtaSecrets: false }));
+      zip.file(
+        "secrets.yaml",
+        generateSecretsYAML(project, { includeOtaSecrets: false }),
+      );
 
       const validationErrors = validateProject(project);
       if (validationErrors.length > 0) {
@@ -99,6 +102,7 @@
           .map((e) => `[${e.type}] ${e.message}`)
           .join("\n");
         deploymentStore.state.error = `Project validation failed:\n${messages}`;
+        deploymentStore.state.validationErrors = validationErrors;
         return;
       }
 
@@ -218,6 +222,7 @@
   </header>
 
   {#if deploymentStore.state.step === "compiling" && deploymentStore.state.error}
+    {@const id = deploymentStore.state.validationErrors[0]?.componentId}
     <div class="error-banner">
       <div class="error-banner-content">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -236,10 +241,17 @@
           />
         </svg>
         <span>Build failed: {deploymentStore.state.error}</span>
-        <button class="error-retry" onclick={handleNewBuild}>Retry</button>
-        <button class="error-dismiss" onclick={() => deploymentStore.reset()}
-          >Dismiss</button
-        >
+        {#if id}
+          <a
+            class="error-goto"
+            href="/project/{projectStore.project?.id}?componentId={id}"
+            >Go to issue</a
+          >
+        {:else}
+          <a class="error-goto" href="/project/{projectStore.project?.id}"
+            >Go to Editor</a
+          >
+        {/if}
       </div>
     </div>
   {/if}
@@ -592,6 +604,23 @@
 
   .error-retry:hover {
     background: #e53935;
+  }
+
+  .error-goto {
+    padding: 4px 10px;
+    background: transparent;
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent);
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    font-family: inherit;
+  }
+
+  .error-goto:hover {
+    background: var(--color-accent);
+    color: white;
   }
 
   .error-dismiss {

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { projectStore } from "$lib/stores/project.svelte";
   import { historyStore } from "$lib/stores/history.svelte";
+  import { canvasZoomStore } from "$lib/stores/canvas-zoom.svelte";
   import * as mdiIcons from "@mdi/js";
   import { dev } from "$app/environment";
 
@@ -52,6 +53,22 @@
         <span>Debug</span>
       </button>
     {/if}
+    <div class="separator"></div>
+    <div class="zoom-control" title="Canvas Zoom">
+      <svg width="14" height="14" viewBox="0 0 24 24" class="icon">
+        <path d={mdiIcons.mdiMagnify} />
+      </svg>
+      <input
+        type="range"
+        min="1"
+        max="2"
+        step="0.25"
+        value={canvasZoomStore.level}
+        oninput={(e) => canvasZoomStore.setLevel(parseFloat((e.target as HTMLInputElement).value))}
+        class="zoom-slider"
+      />
+      <span class="zoom-label">{canvasZoomStore.level.toFixed(2)}x</span>
+    </div>
     <div class="separator"></div>
     <button
       onclick={() => historyStore.undo()}
@@ -205,5 +222,50 @@
     flex-shrink: 0;
     fill: currentColor;
     stroke: none;
+  }
+
+  .zoom-control {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--color-text-muted);
+  }
+
+  .zoom-slider {
+    width: 80px;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--color-border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    cursor: pointer;
+  }
+
+  .zoom-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    cursor: pointer;
+    border: none;
+  }
+
+  .zoom-label {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    min-width: 36px;
+    text-align: right;
+    color: var(--color-text-secondary);
   }
 </style>

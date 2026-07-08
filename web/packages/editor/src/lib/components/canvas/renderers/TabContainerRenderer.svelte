@@ -5,6 +5,7 @@
   import { projectStore } from "$lib/stores/project.svelte";
   import { historyStore } from "$lib/stores/history.svelte";
   import { canvasPasteTargetStore } from "$lib/stores/canvas-paste-target.svelte";
+  import { canvasZoomStore } from "$lib/stores/canvas-zoom.svelte";
   import { createComponent } from "$lib/utils/component-factory";
   import { colorToCss } from "$lib/utils/color-utils";
   import { sortComponentsForRender } from "$lib/utils/component-layering";
@@ -101,8 +102,9 @@
     if (!componentType || !contentEl || !activeTab) return;
 
     const rect = contentEl.getBoundingClientRect();
-    const x = Math.round(e.clientX - rect.left);
-    const y = Math.round(e.clientY - rect.top);
+    const zoom = canvasZoomStore.level;
+    const x = Math.round((e.clientX - rect.left) / zoom);
+    const y = Math.round((e.clientY - rect.top) / zoom);
 
     historyStore.record(`Add ${componentType} to tab`);
     const newComponent = createComponent(componentType, x, y);

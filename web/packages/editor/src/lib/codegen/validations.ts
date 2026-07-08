@@ -315,6 +315,22 @@ function validateAction(action: OnTapAction | ActionBinding | undefined, fieldNa
         },
       ];
     }
+
+    if (action.target?.entityId) {
+      const serviceDomain = action.service.split(".")[0];
+      const entityDomain = action.target.entityId.split(".")[0];
+      if (serviceDomain && entityDomain && serviceDomain !== entityDomain) {
+        return [
+          {
+            type: "warning" as const,
+            message: `"${fieldLabel}" ${compLabel}: service domain "${serviceDomain}" does not match entity domain "${entityDomain}"`,
+            componentId,
+            componentLabel: compLabel,
+            field: fieldName,
+          },
+        ];
+      }
+    }
   }
 
   return [];
@@ -342,6 +358,19 @@ function validateActionTargets(project: Project): ValidationError[] {
       const btn = c as ButtonComponent;
       errors.push(...validateAction(btn.pressAction, "pressAction", c.id, label));
       errors.push(...validateAction(btn.holdAction, "holdAction", c.id, label));
+
+      const allActionFields = [
+        c.onTap, c.onHold, c.onDragStart, c.onDragEnd,
+        btn.pressAction, btn.holdAction,
+      ];
+      if (allActionFields.every((a) => !a)) {
+        errors.push({
+          type: "warning" as const,
+          message: `${label} has no action configured`,
+          componentId: c.id,
+          componentLabel: label,
+        });
+      }
     }
   }
 

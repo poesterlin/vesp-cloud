@@ -3,6 +3,7 @@
   import { selectionStore } from "$lib/stores/selection.svelte";
   import { historyStore } from "$lib/stores/history.svelte";
   import { snapStore } from "$lib/stores/snap.svelte";
+  import { canvasZoomStore } from "$lib/stores/canvas-zoom.svelte";
 
   interface Props {
     region?: "header" | "content";
@@ -51,8 +52,9 @@
   function handleResizeMove(e: MouseEvent) {
     if (!resizing || !resizeStart) return;
 
-    const dx = e.clientX - resizeStart.x;
-    const dy = e.clientY - resizeStart.y;
+    const zoom = canvasZoomStore.level;
+    const dx = (e.clientX - resizeStart.x) / zoom;
+    const dy = (e.clientY - resizeStart.y) / zoom;
 
     let newWidth = resizeStart.width;
     let newHeight = resizeStart.height;

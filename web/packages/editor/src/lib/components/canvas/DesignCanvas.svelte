@@ -5,6 +5,7 @@
   import { historyStore } from "$lib/stores/history.svelte";
   import { snapStore } from "$lib/stores/snap.svelte";
   import { conditionalEditorStore } from "$lib/stores/conditional-editor.svelte";
+  import { canvasZoomStore } from "$lib/stores/canvas-zoom.svelte";
   import {
     canvasPasteTargetStore,
     type CanvasPasteTarget,
@@ -309,8 +310,9 @@
     if (!componentType || !canvasEl) return;
 
     const rect = canvasEl.getBoundingClientRect();
-    const x = Math.round(e.clientX - rect.left);
-    const y = Math.round(e.clientY - rect.top);
+    const zoom = canvasZoomStore.level;
+    const x = Math.round((e.clientX - rect.left) / zoom);
+    const y = Math.round((e.clientY - rect.top) / zoom);
 
     historyStore.record(`Add ${componentType}`);
 
@@ -480,6 +482,7 @@
   class="canvas-wrapper"
   style:width="{projectStore.display?.width ?? 240}px"
   style:height="{canvasHeight}px"
+  style:zoom={canvasZoomStore.level}
 >
   {#if projectStore.viewMode === "detail" && projectStore.currentDetailView}
     <DetailHeader

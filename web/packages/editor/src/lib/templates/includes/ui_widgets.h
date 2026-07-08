@@ -1590,6 +1590,22 @@ class TodoPreviewWidget : public Widget {
     const int start_index = scrollable_ ? (scroll_offset_ / row_height_) : 0;
     const int pixel_offset = scrollable_ ? (scroll_offset_ % row_height_) : 0;
 
+    int due_max_w = 0;
+    if (g_theme.label.font != nullptr) {
+      for (auto &row : rows_) {
+        if (row.due.empty()) continue;
+        std::string due_fmt = ui_format_date_display(row.due);
+        int tx, ty, tw, th;
+        it.get_text_bounds(0, 0, due_fmt.c_str(), g_theme.label.font,
+                          TextAlign::TOP_LEFT, &tx, &ty, &tw, &th);
+        if (tw > due_max_w) due_max_w = tw;
+      }
+    }
+    if (due_max_w > 0) {
+      if (due_max_w < 30) due_max_w = 30;
+      if (due_max_w > kTodoDueMaxW) due_max_w = kTodoDueMaxW;
+    }
+
     for (int i = start_index; i < static_cast<int>(rows_.size()) && drawn < row_limit; i++) {
       auto &row = rows_[i];
       const int y = r.y + top_padding + drawn * row_height_ - pixel_offset;
@@ -1625,13 +1641,12 @@ class TodoPreviewWidget : public Widget {
       }
 
       int text_x = r.x + kTodoTextX;
-      if (!row.due.empty() && g_theme.label.font != nullptr) {
-        const int due_max_w = kTodoDueMaxW;
+      if (!row.due.empty() && g_theme.label.font != nullptr && due_max_w > 0) {
         std::string due_formatted = ui_format_date_display(row.due);
         ui_print_truncated(it, r.x + kTodoTextX, row_cy, g_theme.label.font,
                           overdue ? due_overdue : due_ok,
                           TextAlign::CENTER_LEFT, due_formatted, due_max_w);
-        text_x = r.x + kTodoTextX + kTodoDueMaxW + ui_spacing::xs;
+        text_x = r.x + kTodoTextX + due_max_w + ui_spacing::xs;
       }
       if (g_theme.label.font != nullptr) {
         const int summary_max_w = r.x + r.w - text_x - 4;
@@ -1697,7 +1712,7 @@ class TodoPreviewWidget : public Widget {
   static constexpr int kTodoCheckTextX = 10;  // fallback "[ ]" / "[x]" X
   static constexpr int kTodoIconCX = 22;     // MDI icon centre X
   static constexpr int kTodoTextX = 40;      // main text + due-date X
-  static constexpr int kTodoDueMaxW = 92;    // width reserved for due date column
+  static constexpr int kTodoDueMaxW = 64;    // width reserved for due date column
 
   static void trim_inplace(std::string &value) {
     std::size_t f = value.find_first_not_of(" \t\r\n");

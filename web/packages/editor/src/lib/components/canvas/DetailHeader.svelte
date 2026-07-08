@@ -10,9 +10,13 @@
   let { title, onBack }: Props = $props();
   const theme = $derived(projectStore.theme);
 
-  const accent = $derived(colorToRgb(theme.colors.accent || { r: 0, g: 255, b: 255 }));
-  const foreground = $derived(colorToRgb(theme.colors.foreground || { r: 255, g: 255, b: 255 }));
-  const muted = $derived(colorToRgb(theme.colors.foregroundMuted || { r: 128, g: 128, b: 128 }));
+  const accent = $derived(
+    colorToRgb(
+      theme.chromeAccent ?? theme.colors.accent ?? { r: 0, g: 255, b: 255 },
+    ),
+  );
+  const foreground = $derived(colorToRgb(theme.colors.foreground ?? { r: 255, g: 255, b: 255 }));
+  const muted = $derived(colorToRgb(theme.colors.foregroundMuted ?? { r: 128, g: 128, b: 128 }));
 </script>
 
 <div class="detail-header" style:border-bottom="1px solid {muted}">

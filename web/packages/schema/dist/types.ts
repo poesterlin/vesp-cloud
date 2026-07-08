@@ -274,6 +274,7 @@ export interface Theme {
     warning?: Color;
     error?: Color;
   };
+  chromeAccent?: Color;
   style?: {
     buttonShadow?: boolean;
     buttonCornerAccents?: boolean;

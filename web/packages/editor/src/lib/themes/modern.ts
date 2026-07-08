@@ -14,6 +14,7 @@ export const MODERN_THEME: Theme = {
     warning: { r: 255, g: 152, b: 0 },
     error: { r: 244, g: 67, b: 54 },
   },
+  chromeAccent: { r: 0, g: 230, b: 118 },
   style: {
     buttonShadow: false,
     buttonCornerAccents: false,

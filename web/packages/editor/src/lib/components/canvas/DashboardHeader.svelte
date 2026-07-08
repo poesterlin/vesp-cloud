@@ -1,9 +1,15 @@
 <script lang="ts">
   import { projectStore } from "../../stores/project.svelte";
+  import { colorToRgb } from "../../utils/themed-drawing";
 
   const headerHeight = $derived(projectStore.pageHeader?.height ?? 49);
+  const theme = $derived(projectStore.theme);
 
-  const timeColor = "rgb(0, 240, 255)";
+  const timeColor = $derived(
+    colorToRgb(
+      theme.chromeAccent ?? theme.colors.accent ?? { r: 0, g: 240, b: 255 },
+    ),
+  );
   const colonColor = "rgb(230, 240, 250)";
   const dateColor = "rgb(120, 130, 145)";
   const voidBg = "rgb(2, 3, 5)";

@@ -867,6 +867,7 @@
           },
           "required": ["background", "foreground", "accent"]
         },
+        "chromeAccent": { "$ref": "#/definitions/Color" },
         "style": {
           "type": "object",
           "properties": {

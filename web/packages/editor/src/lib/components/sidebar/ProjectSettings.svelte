@@ -4,6 +4,7 @@
   import { MODERN_THEME } from "$lib/themes/modern";
   import { fade } from "svelte/transition";
   import TimezoneEditor from "$lib/components/TimezoneEditor.svelte";
+  import ColorPicker from "$lib/components/sidebar/ColorPicker.svelte";
   import { goto } from "$app/navigation";
 
   interface Props {
@@ -21,6 +22,10 @@
 
   let projectName = $state(projectStore.project?.name ?? "");
   let selectedThemeId = $state(projectStore.theme.id);
+  let chromeAccent = $state(
+    projectStore.project?.theme?.chromeAccent ??
+      themes.find((t) => t.id === selectedThemeId)?.chromeAccent,
+  );
   let notificationOverlayEnabled = $state(
     projectStore.project?.notificationOverlay?.enabled !== false,
   );
@@ -42,8 +47,17 @@
 
   let timezone = $state(projectStore.project?.timezone ?? "");
 
-  function handleSave() {
-    const theme = themes.find((t) => t.id === selectedThemeId) ?? RETRO_THEME;
+  let settingsSaving = $state(false);
+  let settingsSaved = $state(false);
+
+  async function handleSave() {
+    if (settingsSaving) return;
+    settingsSaving = true;
+
+    const theme = {
+      ...(themes.find((t) => t.id === selectedThemeId) ?? RETRO_THEME),
+      chromeAccent,
+    };
 
     const notificationOverlay = notificationOverlayEnabled
       ? {
@@ -83,7 +97,10 @@
           homeAssistantBaseUrl.trim().replace(/\/+$/, "") || undefined,
       },
     });
-    onClose();
+    await projectStore.saveNow();
+    settingsSaving = false;
+    settingsSaved = true;
+    setTimeout(() => onClose(), 600);
   }
 
   async function handleDelete() {
@@ -144,6 +161,19 @@
           </button>
         {/each}
       </div>
+    </section>
+
+    <section>
+      <h3>Chrome Accent</h3>
+      <p class="section-hint">
+        Sets the color for the clock, page indicator active dot, and detail
+        header title.
+      </p>
+      <ColorPicker
+        label="Accent Color"
+        value={chromeAccent}
+        onUpdate={(v) => (chromeAccent = v)}
+      />
     </section>
 
     <section>
@@ -231,8 +261,18 @@
   </div>
 
   <footer>
-    <button class="secondary" onclick={onClose}>Cancel</button>
-    <button class="primary" onclick={handleSave}>Save Changes</button>
+    <button class="secondary" onclick={onClose} disabled={settingsSaving}>Cancel</button>
+    <button class="primary" onclick={handleSave} disabled={settingsSaving || settingsSaved}>
+      {#if settingsSaving}
+        <span class="spinner"></span>
+        Saving…
+      {:else if settingsSaved}
+        <span class="check">&#10003;</span>
+        Saved
+      {:else}
+        Save Changes
+      {/if}
+    </button>
   </footer>
 </div>
 
@@ -443,5 +483,24 @@
     gap: var(--spacing-md);
     padding: var(--spacing-lg) var(--spacing-xl);
     border-top: 1px solid var(--color-border);
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  .check {
+    display: inline-block;
+    font-weight: 700;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 </style>

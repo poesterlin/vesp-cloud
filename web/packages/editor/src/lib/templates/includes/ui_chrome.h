@@ -40,13 +40,13 @@ class PageIndicatorWidget : public Widget {
       if (i == page) {
 #if UI_THEME_RETRO
         // Active page: filled diamond
-        it.line(dot_x, y_ - radius_active_, dot_x + radius_active_, y_, RetroColors::CYAN);
-        it.line(dot_x + radius_active_, y_, dot_x, y_ + radius_active_, RetroColors::CYAN);
-        it.line(dot_x, y_ + radius_active_, dot_x - radius_active_, y_, RetroColors::CYAN);
-        it.line(dot_x - radius_active_, y_, dot_x, y_ - radius_active_, RetroColors::CYAN);
+        it.line(dot_x, y_ - radius_active_, dot_x + radius_active_, y_, CHROME_ACCENT_COLOR);
+        it.line(dot_x + radius_active_, y_, dot_x, y_ + radius_active_, CHROME_ACCENT_COLOR);
+        it.line(dot_x, y_ + radius_active_, dot_x - radius_active_, y_, CHROME_ACCENT_COLOR);
+        it.line(dot_x - radius_active_, y_, dot_x, y_ - radius_active_, CHROME_ACCENT_COLOR);
 #else
         // Active page: filled circle
-        it.filled_circle(dot_x, y_, radius_active_ - 2, RetroColors::CYAN);
+        it.filled_circle(dot_x, y_, radius_active_ - 2, CHROME_ACCENT_COLOR);
 #endif
       } else {
 #if UI_THEME_RETRO
@@ -147,7 +147,7 @@ class HeaderWidget : public Widget {
     if (t_active) {
       int minutes = t_rem / 60;
       int seconds = t_rem % 60;
-      Color tc = (t_rem == 0) ? RetroColors::RED : RetroColors::CYAN;
+      Color tc = (t_rem == 0) ? RetroColors::RED : CHROME_ACCENT_COLOR;
 
       int cx = 40, cy = 25;
       it.circle(cx, cy, 10, tc);
@@ -162,12 +162,12 @@ class HeaderWidget : public Widget {
         if (!suppress_time) {
 #if UI_THEME_RETRO
           // Time display with cyan accent
-          it.printf(18, 8, time_font_, RetroColors::CYAN, TextAlign::TOP_LEFT, "%02d", time_now.hour);
+          it.printf(18, 8, time_font_, CHROME_ACCENT_COLOR, TextAlign::TOP_LEFT, "%02d", time_now.hour);
           it.printf(18 + 32, 8, time_font_, RetroColors::WHITE, TextAlign::TOP_LEFT, ":");
-          it.printf(18 + 44, 8, time_font_, RetroColors::CYAN, TextAlign::TOP_LEFT, "%02d", time_now.minute);
+          it.printf(18 + 44, 8, time_font_, CHROME_ACCENT_COLOR, TextAlign::TOP_LEFT, "%02d", time_now.minute);
 #else
           // Time display as a single string (avoiding hardcoded character offsets)
-          it.printf(18, 8, time_font_, RetroColors::CYAN, TextAlign::TOP_LEFT, "%02d:%02d", time_now.hour, time_now.minute);
+          it.printf(18, 8, time_font_, CHROME_ACCENT_COLOR, TextAlign::TOP_LEFT, "%02d:%02d", time_now.hour, time_now.minute);
 #endif
         }
 
@@ -262,20 +262,20 @@ class DetailHeaderWidget : public Widget {
 
     // Back button — filled clipped box with drawn chevron
     const int bx = 14, by = 6, bw = 52, bh = 38;
-    draw_clipped_box(it, bx, by, bw, bh, 5, RetroColors::CYAN, RetroColors::DIM, true);
+    draw_clipped_box(it, bx, by, bw, bh, 5, CHROME_ACCENT_COLOR, RetroColors::DIM, true);
     const int cx = bx + bw / 2;
     const int cy = by + bh / 2;
-    it.line(cx + 6, cy - 7, cx - 4, cy, RetroColors::CYAN);
-    it.line(cx - 4, cy, cx + 6, cy + 7, RetroColors::CYAN);
+    it.line(cx + 6, cy - 7, cx - 4, cy, CHROME_ACCENT_COLOR);
+    it.line(cx - 4, cy, cx + 6, cy + 7, CHROME_ACCENT_COLOR);
 
     if (title_ && title_font_) {
       // Keep retro terminal brackets only in retro theme.
 #if UI_THEME_RETRO
-      it.printf(240, 20, title_font_, RetroColors::CYAN, TextAlign::CENTER, "[ %s ]", title_);
+      it.printf(240, 20, title_font_, CHROME_ACCENT_COLOR, TextAlign::CENTER, "[ %s ]", title_);
 #else
       // Faux-bold in modern theme: draw a second pass 1px to the right.
-      it.printf(240, 20, title_font_, RetroColors::CYAN, TextAlign::CENTER, "%s", title_);
-      it.printf(241, 20, title_font_, RetroColors::CYAN, TextAlign::CENTER, "%s", title_);
+      it.printf(240, 20, title_font_, CHROME_ACCENT_COLOR, TextAlign::CENTER, "%s", title_);
+      it.printf(241, 20, title_font_, CHROME_ACCENT_COLOR, TextAlign::CENTER, "%s", title_);
 #endif
     }
 

@@ -14,6 +14,7 @@ export const RETRO_THEME: Theme = {
     warning: { r: 255, g: 191, b: 0 },
     error: { r: 255, g: 0, b: 0 },
   },
+  chromeAccent: { r: 0, g: 240, b: 255 },
   style: {
     buttonShadow: false,
     buttonCornerAccents: false,

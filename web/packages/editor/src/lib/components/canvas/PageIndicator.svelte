@@ -32,9 +32,12 @@
         class="dot"
         class:active={i === currentIndex}
         style:border-color={i === currentIndex
-          ? colorToRgb(theme.colors.accent || { r: 0, g: 255, b: 255 })
+          ? colorToRgb(
+              theme.chromeAccent ??
+                theme.colors.accent ?? { r: 0, g: 255, b: 255 },
+            )
           : colorToRgb(
-              theme.colors.foregroundMuted || { r: 128, g: 128, b: 128 },
+              theme.colors.foregroundMuted ?? { r: 128, g: 128, b: 128 },
             )}
         onclick={() => handleDotClick(i)}
         onkeydown={(event) => handleDotKeydown(event, i)}
@@ -68,12 +71,9 @@
     height: 12px;
     border: 2px solid;
     padding: 0;
-    background: none;
     cursor: pointer;
     transform: rotate(45deg);
+    background-color: transparent;
   }
 
-  .dot.active {
-    background-color: currentColor;
-  }
 </style>

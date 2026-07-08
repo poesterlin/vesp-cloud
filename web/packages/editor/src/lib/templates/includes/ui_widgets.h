@@ -225,6 +225,69 @@ inline void ui_print_truncated(display::Display &it, int x, int y,
   ui_draw_truncation_dots(it, tx + tw, baseline_y, color);
 }
 
+// Format a calendar-like date string for compact display.
+//   "2026-05-19T14:30:00" (today)     → "14:30"
+//   "2026-05-19T14:30:00" (not today) → "19/05 14:30"
+//   "2026-05-19"                       → "19/05"
+//   Non-ISO strings                    → unchanged
+inline std::string ui_format_date_display(const std::string &date_str) {
+  if (date_str.size() >= 16 && date_str[4] == '-' && date_str[7] == '-' &&
+      (date_str[10] == 'T' || date_str[10] == ' ')) {
+    const std::string fallback = date_str.substr(8, 2) + "/" +
+                                 date_str.substr(5, 2) + " " +
+                                 date_str.substr(11, 5);
+    if (sntp_time != nullptr) {
+      auto now = sntp_time->now();
+      if (now.is_valid()) {
+        int year = 0, month = 0, day = 0, hour = 0, minute = 0;
+        const int parsed = sscanf(date_str.c_str(), "%4d-%2d-%2d%*[T ]%2d:%2d",
+                                  &year, &month, &day, &hour, &minute);
+        if (parsed == 5) {
+          std::tm event_tm = {};
+          event_tm.tm_year = year - 1900;
+          event_tm.tm_mon = month - 1;
+          event_tm.tm_mday = day;
+          event_tm.tm_hour = hour;
+          event_tm.tm_min = minute;
+          event_tm.tm_sec = 0;
+          event_tm.tm_isdst = -1;
+          const std::time_t event_ts = std::mktime(&event_tm);
+          if (event_ts != static_cast<std::time_t>(-1)) {
+            constexpr std::time_t kDaySeconds = 24 * 60 * 60;
+            std::time_t now_ts = static_cast<std::time_t>(now.timestamp);
+            std::tm today_tm = *std::localtime(&now_ts);
+            today_tm.tm_hour = 0;
+            today_tm.tm_min = 0;
+            today_tm.tm_sec = 0;
+            const std::time_t today_midnight_ts = std::mktime(&today_tm);
+            if (today_midnight_ts != static_cast<std::time_t>(-1) &&
+                event_ts >= today_midnight_ts &&
+                event_ts < (today_midnight_ts + kDaySeconds)) {
+              return date_str.substr(11, 5);
+            }
+          }
+        }
+      }
+    }
+    return fallback;
+  }
+
+  if (date_str.size() >= 10 && date_str[4] == '-' && date_str[7] == '-') {
+    return date_str.substr(8, 2) + "/" + date_str.substr(5, 2);
+  }
+  if (date_str.size() >= 10 && date_str[4] == '/' && date_str[7] == '/') {
+    return date_str.substr(8, 2) + "/" + date_str.substr(5, 2);
+  }
+  if (date_str.size() >= 5 &&
+      std::isdigit(static_cast<unsigned char>(date_str[0])) &&
+      std::isdigit(static_cast<unsigned char>(date_str[1])) &&
+      std::isdigit(static_cast<unsigned char>(date_str[2])) &&
+      std::isdigit(static_cast<unsigned char>(date_str[3])) &&
+      (date_str[4] == '-' || date_str[4] == '/')) {
+    return date_str.substr(5);
+  }
+  return date_str;
+}
 
 
 struct UiState;
@@ -1564,9 +1627,10 @@ class TodoPreviewWidget : public Widget {
       int text_x = r.x + kTodoTextX;
       if (!row.due.empty() && g_theme.label.font != nullptr) {
         const int due_max_w = kTodoDueMaxW;
+        std::string due_formatted = ui_format_date_display(row.due);
         ui_print_truncated(it, r.x + kTodoTextX, row_cy, g_theme.label.font,
                           overdue ? due_overdue : due_ok,
-                          TextAlign::CENTER_LEFT, row.due, due_max_w);
+                          TextAlign::CENTER_LEFT, due_formatted, due_max_w);
         text_x = r.x + kTodoTextX + kTodoDueMaxW + ui_spacing::xs;
       }
       if (g_theme.label.font != nullptr) {
@@ -1918,7 +1982,7 @@ class CalendarListWidget : public Widget {
       ui_fast_filled_rectangle(it, row_x, row_y, row_w, row_h, Color(18, 22, 32));
       it.rectangle(row_x, row_y, row_w, row_h, Color(35, 40, 55));
 
-      const std::string date_text = row.start.empty() ? "--" : format_start_(row.start);
+      const std::string date_text = row.start.empty() ? "--" : ui_format_date_display(row.start);
       const bool date_includes_day = date_text.find(' ') != std::string::npos;
       const int date_w = date_includes_day ? 110 : 78;
       const int date_x = row_x + 6;
@@ -1981,65 +2045,6 @@ class CalendarListWidget : public Widget {
     }
     std::size_t l = value.find_last_not_of(" \t\r\n");
     value = value.substr(f, l - f + 1);
-  }
-
-  static std::string format_start_(const std::string &start) {
-    if (start.size() >= 16 && start[4] == '-' && start[7] == '-' && (start[10] == 'T' || start[10] == ' ')) {
-      const std::string fallback = start.substr(8, 2) + "/" + start.substr(5, 2) + " " + start.substr(11, 5);
-      if (sntp_time == nullptr) return fallback;
-
-      auto now = sntp_time->now();
-      if (!now.is_valid()) return fallback;
-
-      int year = 0;
-      int month = 0;
-      int day = 0;
-      int hour = 0;
-      int minute = 0;
-      const int parsed =
-          sscanf(start.c_str(), "%4d-%2d-%2d%*[T ]%2d:%2d", &year, &month, &day, &hour, &minute);
-      if (parsed != 5) return fallback;
-
-      std::tm event_tm = {};
-      event_tm.tm_year = year - 1900;
-      event_tm.tm_mon = month - 1;
-      event_tm.tm_mday = day;
-      event_tm.tm_hour = hour;
-      event_tm.tm_min = minute;
-      event_tm.tm_sec = 0;
-      event_tm.tm_isdst = -1;
-      const std::time_t event_ts = std::mktime(&event_tm);
-      if (event_ts == static_cast<std::time_t>(-1)) return fallback;
-
-      constexpr std::time_t kDaySeconds = 24 * 60 * 60;
-      std::time_t now_ts = static_cast<std::time_t>(now.timestamp);
-      std::tm today_tm = *std::localtime(&now_ts);
-      today_tm.tm_hour = 0;
-      today_tm.tm_min = 0;
-      today_tm.tm_sec = 0;
-      const std::time_t today_midnight_ts = std::mktime(&today_tm);
-      if (today_midnight_ts != static_cast<std::time_t>(-1) &&
-          event_ts >= today_midnight_ts && event_ts < (today_midnight_ts + kDaySeconds)) {
-        return start.substr(11, 5);
-      }
-      return fallback;
-    }
-
-    if (start.size() >= 10 && start[4] == '-' && start[7] == '-') {
-      return start.substr(8, 2) + "/" + start.substr(5, 2);
-    }
-    if (start.size() >= 10 && start[4] == '/' && start[7] == '/') {
-      return start.substr(8, 2) + "/" + start.substr(5, 2);
-    }
-    if (start.size() >= 5 &&
-        std::isdigit(static_cast<unsigned char>(start[0])) &&
-        std::isdigit(static_cast<unsigned char>(start[1])) &&
-        std::isdigit(static_cast<unsigned char>(start[2])) &&
-        std::isdigit(static_cast<unsigned char>(start[3])) &&
-        (start[4] == '-' || start[4] == '/')) {
-      return start.substr(5);
-    }
-    return start;
   }
 
   void parse_rows(const std::string &src) {

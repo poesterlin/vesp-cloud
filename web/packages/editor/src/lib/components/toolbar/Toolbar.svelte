@@ -4,16 +4,16 @@
   import { canvasZoomStore } from "$lib/stores/canvas-zoom.svelte";
   import * as mdiIcons from "@mdi/js";
   import { dev } from "$app/environment";
+  import { fade } from "svelte/transition";
 
   interface Props {
     onSettings: () => void;
     onDebug: () => void;
   }
 
-  let {
-    onSettings,
-    onDebug,
-  }: Props = $props();
+  let { onSettings, onDebug }: Props = $props();
+
+  let saving = $derived(projectStore.saving);
 </script>
 
 <header class="toolbar">
@@ -39,6 +39,13 @@
   </div>
 
   <div class="toolbar-right">
+    {#if saving}
+      <div
+        class="save-spinner"
+        in:fade={{ duration: 250, delay: 500 }}
+        out:fade
+      ></div>
+    {/if}
     <button onclick={onSettings} title="Project Settings" class="settings-btn">
       <svg width="16" height="16" viewBox="0 0 24 24" class="icon">
         <path d={mdiIcons.mdiCog} />
@@ -64,7 +71,10 @@
         max="2"
         step="0.25"
         value={canvasZoomStore.level}
-        oninput={(e) => canvasZoomStore.setLevel(parseFloat((e.target as HTMLInputElement).value))}
+        oninput={(e) =>
+          canvasZoomStore.setLevel(
+            parseFloat((e.target as HTMLInputElement).value),
+          )}
         class="zoom-slider"
       />
       <span class="zoom-label">{canvasZoomStore.level.toFixed(2)}x</span>
@@ -267,5 +277,22 @@
     min-width: 36px;
     text-align: right;
     color: var(--color-text-secondary);
+  }
+
+  .save-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-top-color: var(--color-accent);
+    border-radius: 50%;
+    animation: save-spin 0.6s linear infinite;
+  }
+
+  @keyframes save-spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

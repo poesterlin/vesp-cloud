@@ -66,16 +66,23 @@ function createProjectStore() {
     if (!project || !serverProjectId) return;
     saving = true;
     try {
-      await fetch(`/api/projects/${serverProjectId}`, {
+      const res = await fetch(`/api/projects/${serverProjectId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: project.name, data: project }),
       });
+      if (!res.ok) throw new Error(`Save failed: ${res.status} ${res.statusText}`);
     } catch (e) {
       console.error('Failed to save project', e);
+      throw e;
     } finally {
       saving = false;
     }
+  }
+
+  async function immediateSave() {
+    if (saveTimer) clearTimeout(saveTimer);
+    await saveToServer();
   }
 
   // localStorage helpers for migration
@@ -894,6 +901,8 @@ function createProjectStore() {
         scheduleSave();
       }
     },
+
+    async saveNow() { await immediateSave(); },
 
     async createNewProject(name: string, config?: ProjectConfig): Promise<Project> {
       const display = {

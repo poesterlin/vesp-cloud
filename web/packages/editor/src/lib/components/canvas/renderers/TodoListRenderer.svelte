@@ -23,13 +23,16 @@
   const innerCorner = 6;
   const innerMargin = 2;
 
-  const customColor = component.color;
-  const amberColor = customColor
-    ? `rgb(${customColor.r}, ${customColor.g}, ${customColor.b})`
-    : "rgb(255, 180, 0)";
-  const amberDimColor = customColor
-    ? `rgb(${Math.floor(customColor.r * 0.6)}, ${Math.floor(customColor.g * 0.6)}, ${Math.floor(customColor.b * 0.6)})`
-    : "rgb(160, 110, 0)";
+  const borderColor = $derived(
+    component.color
+      ? `rgb(${component.color.r}, ${component.color.g}, ${component.color.b})`
+      : "rgb(255, 180, 0)",
+  );
+  const borderDimColor = $derived(
+    component.color
+      ? `rgb(${Math.floor(component.color.r * 0.6)}, ${Math.floor(component.color.g * 0.6)}, ${Math.floor(component.color.b * 0.6)})`
+      : "rgb(160, 110, 0)",
+  );
   const containerBg = "rgb(10, 12, 18)";
   const whiteColor = "rgb(230, 240, 250)";
   const grayColor = "rgb(120, 130, 145)";
@@ -112,13 +115,13 @@
       <polygon
         points={clippedPolygonPoints(width, height, cornerSize)}
         fill={containerBg}
-        stroke={amberColor}
+        stroke={borderColor}
         stroke-width="1"
       />
       <polygon
         points={clippedPolygonPoints(width - innerMargin * 2, height - innerMargin * 2, innerCorner)}
         fill="none"
-        stroke={amberDimColor}
+        stroke={borderDimColor}
         stroke-width="1"
         transform="translate({innerMargin}, {innerMargin})"
       />
@@ -136,7 +139,7 @@
             onclick={() => toggleChecked(index)}
             onkeydown={(event) => handleRowKeydown(event, index)}
           >
-            <span class="checkbox" style:color={completed ? greenColor : amberColor}>
+            <span class="checkbox" style:color={completed ? greenColor : borderColor}>
               {#if showMDI}
                 <svg viewBox="0 0 24 24" class="checkbox-icon">
                   <path d={completed ? iconPathComplete! : iconPathIncomplete!} fill="currentColor" />
@@ -146,7 +149,7 @@
               {/if}
             </span>
             {#if row.due}
-              <span class="due" class:overdue={row.overdue} style:color={row.overdue ? redColor : amberColor}>{row.due}</span>
+              <span class="due" class:overdue={row.overdue} style:color={row.overdue ? redColor : borderColor}>{row.due}</span>
             {/if}
             <span
               class="summary"
@@ -162,7 +165,7 @@
             class="todo-row"
             style:height="{rowHeight}px"
           >
-            <span class="checkbox" style:color={completed ? greenColor : amberColor}>
+            <span class="checkbox" style:color={completed ? greenColor : borderColor}>
               {#if showMDI}
                 <svg viewBox="0 0 24 24" class="checkbox-icon">
                   <path d={completed ? iconPathComplete! : iconPathIncomplete!} fill="currentColor" />
@@ -172,7 +175,7 @@
               {/if}
             </span>
             {#if row.due}
-              <span class="due" class:overdue={row.overdue} style:color={row.overdue ? redColor : amberColor}>{row.due}</span>
+              <span class="due" class:overdue={row.overdue} style:color={row.overdue ? redColor : borderColor}>{row.due}</span>
             {/if}
             <span
               class="summary"

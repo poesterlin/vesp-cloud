@@ -50,8 +50,8 @@
 
   const previewRows = $derived.by(() => {
     const psv = [
-      "Buy coffee beans and filter paper|2026-05-19|ok",
-      "Pick up milk|2026-05-22|ok",
+      "Buy coffee beans and filter paper|no-date|ok",
+      "Pick up milk|no-date|ok",
       "Send parcel|2026-05-15|overdue",
       "Refill cat food|no-date|completed",
       "Call insurance|2026-05-23|ok",

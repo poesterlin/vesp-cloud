@@ -1,33 +1,12 @@
 <script lang="ts">
   import type { Color } from "@vesp-cloud/schema";
 
-  let { value, onUpdate, label } = $props<{
+  let { value, defaultValue, onUpdate, label } = $props<{
     value: Color | undefined;
+    defaultValue?: Color;
     onUpdate: (value: Color | undefined) => void;
     label?: string;
   }>();
-
-  // Convert Color object to hex string for the input
-  const hexValue = $derived.by(() => {
-    if (!value) return "#000000";
-    return `#${value.r.toString(16).padStart(2, "0")}${value.g.toString(16).padStart(2, "0")}${value.b.toString(16).padStart(2, "0")}`;
-  });
-
-  function fromHex(hex: string): Color {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return { r, g, b };
-  }
-
-  function handleInput(e: Event) {
-    const hex = (e.target as HTMLInputElement).value;
-    onUpdate(fromHex(hex));
-  }
-
-  function clear() {
-    onUpdate(undefined);
-  }
 
   const MERGED_PALETTE = [
     { name: "Ink Black", hex: "#001219" },
@@ -51,10 +30,51 @@
     { name: "Strawberry Red", hex: "#f94144" },
   ] as const;
 
-  const colorPresets = MERGED_PALETTE.map((preset) => ({
-    name: preset.name,
-    color: fromHex(preset.hex),
+  function colorToHex(c: Color): string {
+    const r = c.r.toString(16).padStart(2, "0");
+    const g = c.g.toString(16).padStart(2, "0");
+    const b = c.b.toString(16).padStart(2, "0");
+    return `#${r}${g}${b}`;
+  }
+
+  function hexToColor(hex: string): Color | null {
+    const v = hex.replace(/^#/, "").trim();
+    if (!/^[0-9a-fA-F]{6}$/.test(v)) return null;
+    return {
+      r: parseInt(v.slice(0, 2), 16),
+      g: parseInt(v.slice(2, 4), 16),
+      b: parseInt(v.slice(4, 6), 16),
+    };
+  }
+
+  const displayHex = $derived(
+    value ? colorToHex(value) : defaultValue ? colorToHex(defaultValue) : "inherit",
+  );
+
+
+  function handleColorInput(e: Event) {
+    const hex = (e.target as HTMLInputElement).value;
+    const c = hexToColor(hex);
+    if (c) onUpdate(c);
+  }
+
+  function clear() {
+    onUpdate(undefined);
+  }
+
+  function colorsEqual(a: Color, b: Color): boolean {
+    return a.r === b.r && a.g === b.g && a.b === b.b;
+  }
+
+  const colorPresets = MERGED_PALETTE.map((p) => ({
+    name: p.name,
+    color: hexToColor(p.hex)!,
   }));
+
+  const activePresetIndex = $derived.by(() => {
+    if (!value) return -1;
+    return colorPresets.findIndex((p) => colorsEqual(p.color, value));
+  });
 </script>
 
 <div class="color-picker-container">
@@ -63,33 +83,44 @@
   {/if}
   <div class="picker-row">
     <div class="input-wrapper" class:is-custom={!!value}>
+      {#if value}
+        <div class="color-preview" style:background-color={displayHex}></div>
+      {:else}
+        <div
+          class="color-preview default-state"
+          style:background-color={displayHex}
+          title="Using theme default"
+        ></div>
+      {/if}
       <input
         type="color"
-        value={hexValue}
-        oninput={handleInput}
-        title={value ? "Custom color set" : "Using theme default"}
+        value={displayHex === "inherit" ? "#000000" : displayHex}
+        oninput={handleColorInput}
+        title={value ? "Custom color" : "Theme default"}
       />
-      {#if !value}
-        <div class="default-indicator" title="Theme default">D</div>
-      {/if}
     </div>
-    
+
     <div class="presets">
-      {#each colorPresets as preset}
+      {#each colorPresets as preset, i}
         <button
           class="preset-btn"
-          style="background-color: rgb({preset.color.r}, {preset.color.g}, {preset.color.b})"
+          class:active={i === activePresetIndex}
+          style:background-color={colorToHex(preset.color)}
           title={preset.name}
           onclick={() => onUpdate(preset.color)}
         ></button>
       {/each}
     </div>
 
-    {#if value}
-      <button class="clear-btn" onclick={clear} title="Reset to theme default">
-        ×
-      </button>
-    {/if}
+    <button
+      class="clear-btn"
+      class:hidden={!value}
+      onclick={clear}
+      disabled={!value}
+      title="Reset to theme default"
+    >
+      &times;
+    </button>
   </div>
 </div>
 
@@ -111,50 +142,47 @@
   .picker-row {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
+    gap: 6px;
   }
 
   .input-wrapper {
     position: relative;
-    width: 32px;
-    height: 28px;
+    width: 38px;
+    height: 32px;
+    flex-shrink: 0;
   }
 
-  input[type="color"] {
-    appearance: none;
-    -webkit-appearance: none;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
+  .input-wrapper input[type="color"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
     width: 100%;
     height: 100%;
     padding: 0;
-    cursor: pointer;
-    background: var(--color-bg-tertiary);
-  }
-
-  input[type="color"]::-webkit-color-swatch-wrapper {
-    padding: 2px;
-  }
-
-  input[type="color"]::-webkit-color-swatch {
     border: none;
-    border-radius: 2px;
   }
 
-  .is-custom input[type="color"] {
+  .color-preview {
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    pointer-events: none;
+  }
+
+  .is-custom .color-preview {
     border-color: var(--color-accent);
   }
 
-  .default-indicator {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 10px;
-    font-weight: bold;
-    color: white;
-    text-shadow: 0 0 2px black;
-    pointer-events: none;
+  .default-state {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 3px,
+      rgba(255, 255, 255, 0.06) 3px,
+      rgba(255, 255, 255, 0.06) 6px
+    );
     opacity: 0.7;
   }
 
@@ -166,17 +194,49 @@
   }
 
   .preset-btn {
-    width: 18px;
-    height: 18px;
-    border-radius: 2px;
+    width: 22px;
+    height: 22px;
+    border-radius: 3px;
     border: 1px solid var(--color-border);
     padding: 0;
     cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.1s, border-color 0.1s, box-shadow 0.1s;
   }
 
   .preset-btn:hover {
-    transform: scale(1.1);
+    transform: scale(1.15);
     border-color: var(--color-accent);
+  }
+
+  .preset-btn.active {
+    transform: scale(1.18);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px var(--color-bg-primary), 0 0 0 3px var(--color-accent);
+    z-index: 1;
+  }
+
+  .hex-input {
+    width: 68px;
+    height: 28px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-family: monospace;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-primary);
+    flex-shrink: 0;
+  }
+
+  .hex-input::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.5;
+  }
+
+  .hex-input:focus {
+    border-color: var(--color-accent);
+    outline: none;
   }
 
   .clear-btn {
@@ -192,9 +252,16 @@
     cursor: pointer;
     font-size: 16px;
     padding: 0;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
   }
 
-  .clear-btn:hover {
+  .clear-btn.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .clear-btn:not(.hidden):hover {
     color: var(--color-error);
     border-color: var(--color-error);
   }

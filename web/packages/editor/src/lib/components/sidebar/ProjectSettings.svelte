@@ -172,6 +172,7 @@
       <ColorPicker
         label="Accent Color"
         value={chromeAccent}
+        defaultValue={themes.find((t) => t.id === selectedThemeId)?.chromeAccent}
         onUpdate={(v) => (chromeAccent = v)}
       />
     </section>

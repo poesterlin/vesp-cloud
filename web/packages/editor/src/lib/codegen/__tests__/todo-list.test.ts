@@ -343,4 +343,173 @@ describe("todo_list codegen", () => {
     expect(yaml).toContain('status: "needs_action"');
     expect(yaml).not.toContain('bind_ha_string_attr("todo.shopping_2"');
   });
+
+  test("subscribes to todo entity state changes and sets refetch flag", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "todos",
+              type: "todo_list",
+              position: { x: 0, y: 0 },
+              size: { width: 220, height: 140 },
+              todoEntityId: "todo.shopping_list",
+            },
+          ],
+        },
+      ],
+    });
+
+    const yaml = generateESPHomeYAML(project);
+    // Should define the bind_todo_refetch binder lambda
+    expect(yaml).toContain("auto bind_todo_refetch");
+    // Should subscribe to the todo entity and set the refetch flag
+    expect(yaml).toContain('bind_todo_refetch("todo.shopping_list", &id(g_todo_refetch_todo_shopping_list_items))');
+    // Should NOT use bind_ha_string_attr for the todo entity
+    expect(yaml).not.toContain('bind_ha_string_attr("todo.shopping_list"');
+  });
+
+  test("generates global bool refetch flag for todo entity", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "todos",
+              type: "todo_list",
+              position: { x: 0, y: 0 },
+              size: { width: 220, height: 140 },
+              todoEntityId: "todo.shopping_list",
+            },
+          ],
+        },
+      ],
+    });
+
+    const yaml = generateESPHomeYAML(project);
+    expect(yaml).toContain("g_todo_refetch_todo_shopping_list_items");
+    expect(yaml).toContain('type: bool');
+  });
+
+  test("generates 250ms fast interval checking refetch flags", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "todos",
+              type: "todo_list",
+              position: { x: 0, y: 0 },
+              size: { width: 220, height: 140 },
+              todoEntityId: "todo.shopping_list",
+            },
+          ],
+        },
+      ],
+    });
+
+    const yaml = generateESPHomeYAML(project);
+    expect(yaml).toContain("interval: 250ms");
+    // The fast interval should check the flag in an if condition
+    expect(yaml).toContain("return id(g_todo_refetch_todo_shopping_list_items)");
+    // It should clear the flag before firing the service call
+    expect(yaml).toContain("id(g_todo_refetch_todo_shopping_list_items) = false;");
+    // It should fire todo.get_items inside the if block
+    expect(yaml).toContain("refetch triggered for todo.shopping_list");
+  });
+
+  test("generates 2min fallback interval that sets refetch flags", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "todos",
+              type: "todo_list",
+              position: { x: 0, y: 0 },
+              size: { width: 220, height: 140 },
+              todoEntityId: "todo.shopping_list",
+            },
+          ],
+        },
+      ],
+    });
+
+    const yaml = generateESPHomeYAML(project);
+    expect(yaml).toContain("interval: 2min");
+    expect(yaml).toContain("startup_delay: 7s");
+    // The fallback interval should set the flag (not fire the service directly)
+    expect(yaml).toContain("id(g_todo_refetch_todo_shopping_list_items) = true;");
+  });
+
+  test("does not generate refetch mechanism for bridge-sensor todo components", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "todos",
+              type: "todo_list",
+              position: { x: 0, y: 0 },
+              size: { width: 220, height: 140 },
+              itemsBinding: {
+                entityId: "sensor.esphome_todo_bridge",
+                attribute: "all_items",
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    const yaml = generateESPHomeYAML(project);
+    // Bridge sensor path should NOT have refetch globals or fast interval
+    expect(yaml).not.toContain("g_todo_refetch_");
+    expect(yaml).not.toContain("interval: 250ms");
+    expect(yaml).not.toContain("bind_todo_refetch");
+  });
+
+  test("handles multiple todo entities with separate refetch flags", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "todos1",
+              type: "todo_list",
+              position: { x: 0, y: 0 },
+              size: { width: 220, height: 140 },
+              todoEntityId: "todo.shopping_list",
+            },
+            {
+              id: "todos2",
+              type: "todo_list",
+              position: { x: 0, y: 160 },
+              size: { width: 220, height: 140 },
+              todoEntityId: "todo.chores",
+            },
+          ],
+        },
+      ],
+    });
+
+    const yaml = generateESPHomeYAML(project);
+    expect(yaml).toContain("g_todo_refetch_todo_shopping_list_items");
+    expect(yaml).toContain("g_todo_refetch_todo_chores_items");
+    expect(yaml).toContain('bind_todo_refetch("todo.shopping_list"');
+    expect(yaml).toContain('bind_todo_refetch("todo.chores"');
+  });
 });

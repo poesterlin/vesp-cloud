@@ -386,6 +386,21 @@ function generateBindings(project: Project): string {
     lines.push(`          bind_ha_string_attr("${escapeCString(entityId)}", "${escapeCString(attribute)}", &g_ui_app.state().${stateVar});`);
   }
 
+  // For todo entities using the service-call path, subscribe to state
+  // changes so we can trigger an immediate refetch via a flag instead
+  // of waiting for the 2-minute polling interval.
+  for (const c of allComponents) {
+    if (c.type !== "todo_list") continue;
+    const tc = c as TodoListComponent;
+    const todoEntityId = todoEntityIdFromComponent(tc);
+    if (!todoEntityId) continue;
+    const itemsVar = todoItemsVarFromTodoEntity(todoEntityId);
+    const refetchFlag = `g_todo_refetch_${itemsVar}`;
+    if (claimed.has(refetchFlag)) continue;
+    claimed.add(refetchFlag);
+    lines.push(`          bind_todo_refetch("${escapeCString(todoEntityId)}", &id(${refetchFlag}));`);
+  }
+
   for (const c of allComponents) {
     if (c.type !== "text") continue;
     const tc = c as TextComponent;
@@ -628,7 +643,7 @@ function generateWeatherForecastIntervals(project: Project): string {
   return entries.join('\n\n');
 }
 
-function generateTodoItemsIntervals(project: Project): string {
+function generateTodoRefetchGlobals(project: Project): string {
   const allComponents = collectProjectComponents(project);
   const todoComponents = allComponents.filter(c => c.type === 'todo_list') as TodoListComponent[];
   if (todoComponents.length === 0) return '';
@@ -641,68 +656,123 @@ function generateTodoItemsIntervals(project: Project): string {
     if (!entityId) continue;
     if (seen.has(entityId)) continue;
     seen.add(entityId);
+    const itemsVar = todoItemsVarFromTodoEntity(entityId);
+    entries.push(`  - id: g_todo_refetch_${itemsVar}
+    type: bool
+    restore_value: no
+    initial_value: "false"`);
+  }
 
+  return entries.join('\n');
+}
+
+function generateTodoItemsIntervals(project: Project): string {
+  const allComponents = collectProjectComponents(project);
+  const todoComponents = allComponents.filter(c => c.type === 'todo_list') as TodoListComponent[];
+  if (todoComponents.length === 0) return '';
+
+  const seen = new Set<string>();
+  interface TodoEntry { entityId: string; escapedId: string; itemsVar: string; escapedStatusFilter: string; refetchFlag: string; }
+  const todos: TodoEntry[] = [];
+
+  for (const tc of todoComponents) {
+    const entityId = todoEntityIdFromComponent(tc);
+    if (!entityId) continue;
+    if (seen.has(entityId)) continue;
+    seen.add(entityId);
     const escapedId = escapeCString(entityId);
     const itemsVar = todoItemsVarFromTodoEntity(entityId);
-    // itemsBinding.attribute doubles as the status filter, default to needs_action
     const statusFilter = tc.itemsBinding?.attribute ?? 'needs_action';
     const escapedStatusFilter = escapeYAMLDoubleQuoted(statusFilter);
+    const refetchFlag = `g_todo_refetch_${itemsVar}`;
+    todos.push({ entityId, escapedId, itemsVar, escapedStatusFilter, refetchFlag });
+  }
 
-    entries.push(`  - interval: 2min
+  if (todos.length === 0) return '';
+
+  // Shared response-parsing lambda body for todo.get_items on_success.
+  function onSuccessLambda(t: TodoEntry): string {
+    return [
+      `                  - lambda: |-`,
+      `                      JsonVariantConst root = response;`,
+      `                      auto resp_wrapper = response["response"];`,
+      `                      if (resp_wrapper.is<JsonObjectConst>()) root = resp_wrapper;`,
+      `                      auto entity_obj = root["${t.escapedId}"];`,
+      `                      JsonVariantConst items = entity_obj["items"];`,
+      `                      if (!items.is<JsonArrayConst>()) {`,
+      `                        // Some integrations return {"items": [...]} directly`,
+      `                        // without entity-id nesting.`,
+      `                        items = root["items"];`,
+      `                      }`,
+      `                      if (!items.is<JsonArrayConst>()) {`,
+      `                        ESP_LOGW("todo", "todo.get_items response missing items for %s", "${t.escapedId}");`,
+      `                        return;`,
+      `                      }`,
+      `                      JsonArrayConst items_arr = items.as<JsonArrayConst>();`,
+      `                      auto sanitize = [](std::string s) {`,
+      `                        for (char &ch : s) {`,
+      `                          if (ch == '|' || ch == '\\n' || ch == '\\r' || ch == '\\t') ch = ' ';`,
+      `                        }`,
+      `                        return s;`,
+      `                      };`,
+      `                      std::string formatted;`,
+      `                      for (JsonVariantConst item : items_arr) {`,
+      `                        std::string summary;`,
+      `                        std::string due;`,
+      `                        std::string status;`,
+      `                        std::string uid;`,
+      `                        if (item["summary"].is<std::string>()) summary = sanitize(item["summary"].as<std::string>());`,
+      `                        if (item["due"].is<std::string>()) due = sanitize(item["due"].as<std::string>());`,
+      `                        if (item["status"].is<std::string>()) status = sanitize(item["status"].as<std::string>());`,
+      `                        if (item["uid"].is<std::string>()) uid = sanitize(item["uid"].as<std::string>());`,
+      `                        else if (item["id"].is<std::string>()) uid = sanitize(item["id"].as<std::string>());`,
+      `                        if (!formatted.empty()) formatted += "\\n";`,
+      `                        formatted += summary + "|" + due + "|" + status + "|" + uid;`,
+      `                      }`,
+      `                      if (formatted.empty()) formatted = "LIST EMPTY";`,
+      `                      g_ui_app.state().${t.itemsVar}.set(formatted);`,
+      `                      UiRedraw::trigger_display_update();`,
+    ].join('\n');
+  }
+
+  // Build the if-blocks for the fast interval. Each block checks a
+  // refetch flag, clears it, and fires todo.get_items with capture_response.
+  const ifBlocks = todos.map(t => `      - if:
+          condition:
+            lambda: 'return id(${t.refetchFlag});'
+          then:
+            - lambda: 'id(${t.refetchFlag}) = false;'
+            - logger.log:
+                level: WARN
+                tag: todo
+                format: "refetch triggered for ${t.escapedId}"
+            - homeassistant.service:
+                service: todo.get_items
+                data:
+                  entity_id: "${t.escapedId}"
+                  status: "${t.escapedStatusFilter}"
+                capture_response: true
+                on_success:
+                  then:
+${onSuccessLambda(t)}`);
+
+  const entries: string[] = [];
+
+  // Fast interval: checks refetch flags (set by HA state subscriptions)
+  // every 250ms and fires todo.get_items when a change is detected.
+  entries.push(`  - interval: 250ms
+    then:
+${ifBlocks.join('\n')}`);
+
+  // Fallback: set all refetch flags every 2 minutes (and once 7s after
+  // boot) so the fast interval picks them up even if no push notification
+  // was received.
+  const flagSetters = todos.map(t => `        id(${t.refetchFlag}) = true;`).join('\n');
+  entries.push(`  - interval: 2min
     startup_delay: 7s
     then:
-      - logger.log:
-          level: WARN
-          tag: todo
-          format: "calling todo.get_items for ${escapedId}"
-      - homeassistant.service:
-          service: todo.get_items
-          data:
-            entity_id: "${escapedId}"
-            status: "${escapedStatusFilter}"
-          capture_response: true
-          on_success:
-            then:
-              - lambda: |-
-                  JsonVariantConst root = response;
-                  auto resp_wrapper = response["response"];
-                  if (resp_wrapper.is<JsonObjectConst>()) root = resp_wrapper;
-                  auto entity_obj = root["${escapedId}"];
-                  JsonVariantConst items = entity_obj["items"];
-                  if (!items.is<JsonArrayConst>()) {
-                    // Some integrations return {"items": [...]} directly
-                    // without entity-id nesting.
-                    items = root["items"];
-                  }
-                  if (!items.is<JsonArrayConst>()) {
-                    ESP_LOGW("todo", "todo.get_items response missing items for %s", "${escapedId}");
-                    return;
-                  }
-                  JsonArrayConst items_arr = items.as<JsonArrayConst>();
-                  auto sanitize = [](std::string s) {
-                    for (char &ch : s) {
-                      if (ch == '|' || ch == '\\n' || ch == '\\r' || ch == '\\t') ch = ' ';
-                    }
-                    return s;
-                  };
-                  std::string formatted;
-                  for (JsonVariantConst item : items_arr) {
-                    std::string summary;
-                    std::string due;
-                    std::string status;
-                    std::string uid;
-                    if (item["summary"].is<std::string>()) summary = sanitize(item["summary"].as<std::string>());
-                    if (item["due"].is<std::string>()) due = sanitize(item["due"].as<std::string>());
-                    if (item["status"].is<std::string>()) status = sanitize(item["status"].as<std::string>());
-                    if (item["uid"].is<std::string>()) uid = sanitize(item["uid"].as<std::string>());
-                    else if (item["id"].is<std::string>()) uid = sanitize(item["id"].as<std::string>());
-                    if (!formatted.empty()) formatted += "\\n";
-                    formatted += summary + "|" + due + "|" + status + "|" + uid;
-                  }
-                  if (formatted.empty()) formatted = "LIST EMPTY";
-                  g_ui_app.state().${itemsVar}.set(formatted);
-                  UiRedraw::trigger_display_update();`);
-  }
+      - lambda: |-
+${flagSetters}`);
 
   return entries.join('\n\n');
 }
@@ -821,6 +891,8 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   const bindings = generateBindings(project);
   const weatherIntervals = generateWeatherForecastIntervals(project);
   const todoIntervals = generateTodoItemsIntervals(project);
+  const todoRefetchGlobals = generateTodoRefetchGlobals(project);
+  const hasTodoEntityRefetch = !!todoRefetchGlobals;
   const calendarIntervals = generateCalendarIntervals(project);
   const notificationSubs = generateNotificationSubscriptions(project);
   const notificationBindings = notificationSubs ? `\n${notificationSubs}` : '';
@@ -1085,6 +1157,19 @@ ${imageBindingHelper}
                   UiRedraw::trigger_display_update();
                 });
           };
+${hasTodoEntityRefetch ? `
+          // Subscribe to a todo entity's state changes and set a flag so
+          // the fast 250ms interval can trigger an immediate todo.get_items
+          // refetch. This bridges HA push notifications to the YAML service
+          // action (which needs capture_response, only available in YAML).
+          auto bind_todo_refetch = [](const std::string& entity_id, bool* flag) {
+            auto *api = esphome::api::global_api_server;
+            if (api == nullptr) return;
+            api->subscribe_home_assistant_state(
+                entity_id, esphome::optional<std::string>(),
+                [flag](esphome::StringRef) { *flag = true; });
+          };
+` : ''}
 ${bindings ? bindings + '\n' : ''}${notificationBindings ? notificationBindings + '\n' : ''}  includes:
     - includes/ui_theme.h
     - includes/ui_types.h
@@ -1112,6 +1197,7 @@ globals:
     restore_value: no
     initial_value: "0"
 ${onlineImageFormatGlobals}
+${todoRefetchGlobals ? '\n' + todoRefetchGlobals : ''}
 
 touchscreen:
   platform: gt911

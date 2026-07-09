@@ -21,6 +21,10 @@ export function toCppIdentifier(name: string): string {
     .join('');
 }
 
+export function detailScreenId(id: string, title: string): string {
+  return 'Detail' + (toCppIdentifier(id) || toCppIdentifier(title) || 'View');
+}
+
 export function firstScreenId(_project: { dashboardPages: { name: string }[] }): string {
   return 'Home';
 }

@@ -1,9 +1,5 @@
 import type { Project } from "@vesp-cloud/schema";
-import { toCppIdentifier } from "./utils";
-
-function detailScreenId(id: string, title: string): string {
-  return 'Detail' + (toCppIdentifier(id) || toCppIdentifier(title) || 'View');
-}
+import { toCppIdentifier, detailScreenId } from "./utils";
 
 export function generateUITypesHeader(project: Project): string {
   const screenIds: string[] = ['Home'];

@@ -136,7 +136,7 @@ describe("image component codegen", () => {
     expect(yaml).toContain("format: jpeg");
     expect(yaml).not.toContain("home_assistant_bearer_token");
     expect(yaml).not.toContain("Authorization:");
-    expect(yaml).toContain('bind_ha_image_url("image.album_art", "entity_picture", id(img_albumart), id(img_albumart_alt), &id(img_albumart_prefer_fallback));');
+    expect(yaml).toContain('bind_ha_image_url("image.album_art", "entity_picture", id(img_albumart), id(img_albumart_alt), &id(img_albumart_prefer_fallback), &id(img_albumart_pending_fetch));');
     expect(yaml).toContain("id: img_albumart_prefer_fallback");
     expect(yaml).not.toContain("home_assistant_base_url");
     expect(yaml).toContain("http_request:");

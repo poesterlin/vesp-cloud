@@ -20,6 +20,7 @@ import type {
 } from "@vesp-cloud/schema";
 import {
   toCppIdentifier,
+  detailScreenId,
   escapeCString,
   stateVarFromEntity,
   calendarEventsVarFromEntity,
@@ -201,10 +202,6 @@ function componentBottom(c: Component): number {
 
 function detailContentHeight(view: { height?: number; components: Component[] }): number {
   return Math.max(view.height ?? 0, 0, ...view.components.map(componentBottom));
-}
-
-function detailScreenId(id: string, title: string): string {
-  return 'Detail' + (toCppIdentifier(id) || toCppIdentifier(title) || 'View');
 }
 
 function collectScreens(project: Project): ScreenDescriptor[] {

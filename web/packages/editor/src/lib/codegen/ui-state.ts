@@ -269,6 +269,8 @@ ${observableFields}
 
   int images_rendered_this_frame = 0;
   static constexpr int MAX_IMAGES_PER_FRAME = 2;
+  int image_fetches_in_flight = 0;
+  static constexpr int MAX_CONCURRENT_IMAGE_FETCHES = 1;
 };
 `;
 }

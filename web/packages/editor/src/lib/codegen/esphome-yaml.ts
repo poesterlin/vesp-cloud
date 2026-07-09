@@ -1,5 +1,5 @@
 import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent, HvacComponent, WeatherComponent, CalendarComponent } from "@vesp-cloud/schema";
-import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted, calendarEventsVarFromEntity, todoEntityIdFromComponent } from "./utils";
+import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted, calendarEventsVarFromEntity, todoEntityIdFromComponent, toCppIdentifier, detailScreenId } from "./utils";
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
 import { ICON_FONT_ID, WEATHER_ICON_FONT_ID, getIconGlyphs, projectHasWeather } from "./mdi-icons";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
@@ -89,6 +89,23 @@ function isHomeAssistantImage(c: ImageComponent): boolean {
   return c.imageSource === "ha" || (c.imageSource == null && !!c.imageBinding?.entityId);
 }
 
+function buildImageScreenMap(project: Project): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const page of project.dashboardPages) {
+    for (const c of page.components) {
+      if (c.type === "image") map.set(c.id, "Home");
+    }
+  }
+  for (const view of project.detailViews) {
+    const id = detailScreenId(view.id, view.title);
+    if (!id) continue;
+    for (const c of view.components) {
+      if (c.type === "image") map.set(c.id, id);
+    }
+  }
+  return map;
+}
+
 function generateStaticImagesYAML(project: Project): string {
   const lines: string[] = [];
   for (const c of collectImageComponents(project)) {
@@ -105,7 +122,7 @@ function generateStaticImagesYAML(project: Project): string {
   return lines.length > 0 ? `\nimage:\n${lines.join('\n')}\n` : '';
 }
 
-function generateOnlineImagesYAML(project: Project): string {
+function generateOnlineImagesYAML(project: Project, imageScreenMap: Map<string, string>): string {
   const lines: string[] = [];
   for (const c of collectImageComponents(project)) {
     if (!isHomeAssistantImage(c) || !c.imageBinding?.entityId) continue;
@@ -114,6 +131,12 @@ function generateOnlineImagesYAML(project: Project): string {
     const primaryId = imageIdFromComponentId(c.id);
     const fallbackId = imageFallbackIdFromComponentId(c.id);
     const preferFallbackId = `${primaryId}_prefer_fallback`;
+    const pendingFetchId = `${primaryId}_pending_fetch`;
+    const screenId = imageScreenMap.get(c.id) ?? "Home";
+    const x = c.position.x;
+    const y = c.position.y;
+    const w = c.size?.width ?? 100;
+    const h = c.size?.height ?? 100;
     lines.push(`  - url: "http://127.0.0.1/"`);
     lines.push(`    id: ${primaryId}`);
     lines.push(`    format: ${primaryFormat}`);
@@ -125,21 +148,28 @@ function generateOnlineImagesYAML(project: Project): string {
     lines.push(`      then:`);
     lines.push(`        - lambda: |-`);
     lines.push(`            id(${preferFallbackId}) = false;`);
+    lines.push(`            if (g_ui_app.state().image_fetches_in_flight > 0)`);
+    lines.push(`              g_ui_app.state().image_fetches_in_flight--;`);
     lines.push(`            if (g_ui_app.state().image_bootstrap_active) {`);
     lines.push(`              g_ui_app.state().online_images_completed++;`);
     lines.push(`              const int done = g_ui_app.state().online_images_completed + g_ui_app.state().online_images_failed;`);
     lines.push(`              if (done >= g_ui_app.state().online_images_expected) {`);
     lines.push(`                g_ui_app.state().image_bootstrap_active = false;`);
+    lines.push(`                UiRedraw::request_full();`);
+    lines.push(`                UiRedraw::trigger_display_update();`);
     lines.push(`              }`);
     lines.push(`            }`);
-    lines.push(`            UiRedraw::request_full();`);
+    lines.push(`            if (g_ui_app.screens().current_id() != UiScreenId::${screenId})`);
+    lines.push(`              return;`);
+    lines.push(`            UiInvalidation::request_rect(UiDirtyRect{${x}, ${y}, ${w}, ${h}}, "img_${primaryId}_done");`);
     lines.push(`            UiRedraw::trigger_display_update();`);
     lines.push(`    on_error:`);
     lines.push(`      then:`);
     lines.push(`        - lambda: |-`);
     lines.push(`            id(${preferFallbackId}) = true;`);
-    lines.push(`            id(${fallbackId}).update();`);
-    lines.push(`            UiRedraw::trigger_display_update();`);
+    lines.push(`            if (g_ui_app.state().image_fetches_in_flight > 0)`);
+    lines.push(`              g_ui_app.state().image_fetches_in_flight--;`);
+    lines.push(`            id(${pendingFetchId}) = true;`);
 
     lines.push(`  - url: "http://127.0.0.1/"`);
     lines.push(`    id: ${fallbackId}`);
@@ -152,28 +182,36 @@ function generateOnlineImagesYAML(project: Project): string {
     lines.push(`      then:`);
     lines.push(`        - lambda: |-`);
     lines.push(`            id(${preferFallbackId}) = true;`);
+    lines.push(`            if (g_ui_app.state().image_fetches_in_flight > 0)`);
+    lines.push(`              g_ui_app.state().image_fetches_in_flight--;`);
     lines.push(`            if (g_ui_app.state().image_bootstrap_active) {`);
     lines.push(`              g_ui_app.state().online_images_completed++;`);
     lines.push(`              const int done = g_ui_app.state().online_images_completed + g_ui_app.state().online_images_failed;`);
     lines.push(`              if (done >= g_ui_app.state().online_images_expected) {`);
     lines.push(`                g_ui_app.state().image_bootstrap_active = false;`);
+    lines.push(`                UiRedraw::request_full();`);
+    lines.push(`                UiRedraw::trigger_display_update();`);
     lines.push(`              }`);
     lines.push(`            }`);
-    lines.push(`            UiRedraw::request_full();`);
+    lines.push(`            if (g_ui_app.screens().current_id() != UiScreenId::${screenId})`);
+    lines.push(`              return;`);
+    lines.push(`            UiInvalidation::request_rect(UiDirtyRect{${x}, ${y}, ${w}, ${h}}, "img_${primaryId}_done");`);
     lines.push(`            UiRedraw::trigger_display_update();`);
     lines.push(`    on_error:`);
     lines.push(`      then:`);
     lines.push(`        - lambda: |-`);
     lines.push(`            id(${preferFallbackId}) = false;`);
+    lines.push(`            if (g_ui_app.state().image_fetches_in_flight > 0)`);
+    lines.push(`              g_ui_app.state().image_fetches_in_flight--;`);
     lines.push(`            if (g_ui_app.state().image_bootstrap_active) {`);
     lines.push(`              g_ui_app.state().online_images_failed++;`);
     lines.push(`              const int done = g_ui_app.state().online_images_completed + g_ui_app.state().online_images_failed;`);
     lines.push(`              if (done >= g_ui_app.state().online_images_expected) {`);
     lines.push(`                g_ui_app.state().image_bootstrap_active = false;`);
+    lines.push(`                UiRedraw::request_full();`);
+    lines.push(`                UiRedraw::trigger_display_update();`);
     lines.push(`              }`);
     lines.push(`            }`);
-    lines.push(`            UiRedraw::request_full();`);
-    lines.push(`            UiRedraw::trigger_display_update();`);
   }
   return lines.length > 0 ? `\nonline_image:\n${lines.join('\n')}\n` : '';
 }
@@ -182,12 +220,86 @@ function generateOnlineImageFormatGlobals(project: Project): string {
   const lines: string[] = [];
   for (const c of collectImageComponents(project)) {
     if (!isHomeAssistantImage(c) || !c.imageBinding?.entityId) continue;
-    lines.push(`  - id: ${imageIdFromComponentId(c.id)}_prefer_fallback`);
+    const imgId = imageIdFromComponentId(c.id);
+    lines.push(`  - id: ${imgId}_prefer_fallback`);
+    lines.push(`    type: bool`);
+    lines.push(`    restore_value: no`);
+    lines.push(`    initial_value: "false"`);
+    lines.push(`  - id: ${imgId}_pending_fetch`);
     lines.push(`    type: bool`);
     lines.push(`    restore_value: no`);
     lines.push(`    initial_value: "false"`);
   }
   return lines.length > 0 ? `\n${lines.join('\n')}` : '';
+}
+
+function generateFetchPump(project: Project, imageScreenMap: Map<string, string>): string {
+  const images = collectImageComponents(project).filter(
+    c => isHomeAssistantImage(c) && !!c.imageBinding?.entityId
+  );
+  if (images.length === 0) return '';
+
+  const lines: string[] = [];
+  lines.push(`          // --- Image fetch pump (at most one decode at a time) ---`);
+  lines.push(`          if (connected && g_ui_app.state().image_fetches_in_flight < UiState::MAX_CONCURRENT_IMAGE_FETCHES) {`);
+  lines.push(`            auto &st = g_ui_app.state();`);
+  lines.push(`            const auto cur = g_ui_app.screens().current_id();`);
+  lines.push(`            bool started = false;`);
+
+  // Group images by screen
+  const byScreen = new Map<string, typeof images>();
+  for (const img of images) {
+    const sid = imageScreenMap.get(img.id) ?? "Home";
+    if (!byScreen.has(sid)) byScreen.set(sid, []);
+    byScreen.get(sid)!.push(img);
+  }
+
+  // Pass 1: visible screen images first
+  lines.push(``);
+  lines.push(`            // Pass 1: visible screen images`);
+  for (const [sid, comps] of byScreen) {
+    lines.push(`            if (!started && cur == UiScreenId::${sid}) {`);
+    for (const c of comps) {
+      const imgId = imageIdFromComponentId(c.id);
+      const fallbackId = imageFallbackIdFromComponentId(c.id);
+      lines.push(`              if (id(${imgId}_pending_fetch)) {`);
+      lines.push(`                id(${imgId}_pending_fetch) = false;`);
+      lines.push(`                st.image_fetches_in_flight++;`);
+      lines.push(`                started = true;`);
+      lines.push(`                if (id(${imgId}_prefer_fallback))`);
+      lines.push(`                  id(${fallbackId}).update();`);
+      lines.push(`                else`);
+      lines.push(`                  id(${imgId}).update();`);
+      lines.push(`              }`);
+    }
+    lines.push(`            }`);
+  }
+
+  // Pass 2: prefetch off-screen
+  lines.push(``);
+  lines.push(`            // Pass 2: prefetch off-screen`);
+  lines.push(`            if (!started) {`);
+  for (const [sid, comps] of byScreen) {
+    lines.push(`              if (cur != UiScreenId::${sid}) {`);
+    for (const c of comps) {
+      const imgId = imageIdFromComponentId(c.id);
+      const fallbackId = imageFallbackIdFromComponentId(c.id);
+      lines.push(`                if (!started && id(${imgId}_pending_fetch)) {`);
+      lines.push(`                  id(${imgId}_pending_fetch) = false;`);
+      lines.push(`                  st.image_fetches_in_flight++;`);
+      lines.push(`                  started = true;`);
+      lines.push(`                  if (id(${imgId}_prefer_fallback))`);
+      lines.push(`                    id(${fallbackId}).update();`);
+      lines.push(`                  else`);
+      lines.push(`                    id(${imgId}).update();`);
+      lines.push(`                }`);
+    }
+    lines.push(`              }`);
+  }
+  lines.push(`            }`);
+
+  lines.push(`          }`);
+  return lines.join('\n') + '\n';
 }
 
 function hasOnlineImages(project: Project): boolean {
@@ -300,7 +412,7 @@ function generateBindings(project: Project): string {
     if (claimed.has(key)) continue;
     claimed.add(key);
     const imageId = imageIdFromComponentId(ic.id);
-    lines.push(`          bind_ha_image_url("${escapeCString(entityId)}", "${escapeCString(attribute)}", id(${imageId}), id(${imageFallbackIdFromComponentId(ic.id)}), &id(${imageId}_prefer_fallback));`);
+    lines.push(`          bind_ha_image_url("${escapeCString(entityId)}", "${escapeCString(attribute)}", id(${imageId}), id(${imageFallbackIdFromComponentId(ic.id)}), &id(${imageId}_prefer_fallback), &id(${imageId}_pending_fetch));`);
   }
 
   for (const f of (project.state?.fields ?? []) as StateField[]) {
@@ -702,6 +814,7 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
     : '';
   const onlineImagesEnabled = hasOnlineImages(project);
   const onlineImageCount = countOnlineImages(project);
+  const imageScreenMap = buildImageScreenMap(project);
   const homeAssistantBaseUrlEnabled = onlineImagesEnabled && !!project.secrets?.homeAssistantBaseUrl;
   const httpOtaEnabled = !!(project.secrets?.firmwareUpdateUrl);
   const httpRequestEnabled = onlineImagesEnabled || httpOtaEnabled;
@@ -719,8 +832,9 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
     ? `\n          g_theme.weather_icon.font = id(${WEATHER_ICON_FONT_ID});`
     : '';
   const imageYaml = generateStaticImagesYAML(project);
-  const onlineImageYaml = generateOnlineImagesYAML(project);
+  const onlineImageYaml = generateOnlineImagesYAML(project, imageScreenMap);
   const onlineImageFormatGlobals = generateOnlineImageFormatGlobals(project);
+  const fetchPump = generateFetchPump(project, imageScreenMap);
   const httpRequestYaml = httpRequestEnabled
     ? `\nhttp_request:\n  verify_ssl: false\n  timeout: 10s\n`
     : '';
@@ -768,8 +882,8 @@ ota:
     : '';
   const imageHelperCapture = homeAssistantBaseUrlEnabled ? '[ha_base_url]' : '[]';
   const imageCallbackCapture = homeAssistantBaseUrlEnabled
-    ? '[primary, fallback, prefer_fallback, ha_base_url]'
-    : '[primary, fallback, prefer_fallback]';
+    ? '[primary, fallback, prefer_fallback, pending_fetch, ha_base_url]'
+    : '[primary, fallback, prefer_fallback, pending_fetch]';
   const relativeImageHandling = homeAssistantBaseUrlEnabled
     ? `
                   if (url.rfind("/", 0) == 0) {
@@ -779,7 +893,7 @@ ota:
                   if (url.rfind("/", 0) == 0) return;`;
   const imageBindingHelper = onlineImagesEnabled
     ? `
-          auto bind_ha_image_url = ${imageHelperCapture}(const std::string& entity_id, const std::string& attribute, auto *primary, auto *fallback, bool *prefer_fallback) {
+          auto bind_ha_image_url = ${imageHelperCapture}(const std::string& entity_id, const std::string& attribute, auto *primary, auto *fallback, bool *prefer_fallback, bool *pending_fetch) {
             auto *api = esphome::api::global_api_server;
             if (api == nullptr) return;
             api->subscribe_home_assistant_state(
@@ -791,12 +905,10 @@ ${relativeImageHandling}
                   if (url.rfind("http://", 0) != 0 && url.rfind("https://", 0) != 0) return;
                   primary->set_url(url);
                   fallback->set_url(url);
-                  if (prefer_fallback != nullptr && *prefer_fallback) {
-                    fallback->update();
-                  } else {
-                    primary->update();
-                  }
-                  UiRedraw::trigger_display_update();
+                  if (prefer_fallback != nullptr)
+                    *prefer_fallback = false;
+                  if (pending_fetch != nullptr)
+                    *pending_fetch = true;
                 });
           };
 `
@@ -1042,6 +1154,7 @@ interval:
             g_ui_app.state().ha_connected = connected;
             if (!connected) {
               g_ui_app.state().image_bootstrap_active = false;
+              g_ui_app.state().image_fetches_in_flight = 0;
               g_ui_app.state().online_images_completed = 0;
               g_ui_app.state().online_images_failed = 0;
               g_ui_app.screens().navigate_to(UiScreenId::Home);
@@ -1068,7 +1181,7 @@ interval:
               return;
             }
           }
-          if (!connected) {
+${fetchPump}          if (!connected) {
             id(main_display).update();
           }
   - interval: 10s

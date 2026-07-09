@@ -767,7 +767,7 @@ ${ifBlocks.join('\n')}`);
   // Fallback: set all refetch flags every 2 minutes (and once 7s after
   // boot) so the fast interval picks them up even if no push notification
   // was received.
-  const flagSetters = todos.map(t => `        id(${t.refetchFlag}) = true;`).join('\n');
+  const flagSetters = todos.map(t => `          id(${t.refetchFlag}) = true;`).join('\n');
   entries.push(`  - interval: 2min
     startup_delay: 7s
     then:

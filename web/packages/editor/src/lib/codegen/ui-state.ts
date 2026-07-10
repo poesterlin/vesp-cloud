@@ -1,4 +1,4 @@
-import type { Project, LightStateComponent, Component, TodoListComponent, TextComponent, HvacComponent, WeatherComponent, CalendarComponent } from "@vesp-cloud/schema";
+import type { Project, LightStateComponent, Component, TodoListComponent, TextComponent, HvacComponent, WeatherComponent, CalendarComponent, RangeSliderComponent } from "@vesp-cloud/schema";
 import { toCppIdentifier, firstScreenId, cppDefaultValue, cppTypeFor, stateVarFromEntity, collectAllComponents, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, calendarEventsVarFromEntity, todoEntityIdFromComponent } from "./utils";
 import { collectConditionEntities } from "./condition-expr";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
@@ -121,6 +121,27 @@ function collectCalendarStateVars(project: Project): { varName: string; cppType:
   return result;
 }
 
+function collectRangeSliderStateVars(project: Project): { varName: string; cppType: string; initValue: string }[] {
+  const result: { varName: string; cppType: string; initValue: string }[] = [];
+  const seen = new Set<string>();
+  const allComponents = collectAllComponents([
+    ...project.dashboardPages.flatMap(p => p.components),
+    ...project.detailViews.flatMap(v => v.components),
+  ]);
+  for (const c of allComponents) {
+    if (c.type !== 'range_slider') continue;
+    const rc = c as RangeSliderComponent;
+    if (!rc.valueBinding) continue;
+    const entityId = rc.valueBinding.entityId;
+    if (!entityId) continue;
+    const varName = stateVarFromEntity(entityId);
+    if (seen.has(varName)) continue;
+    seen.add(varName);
+    result.push({ varName, cppType: 'float', initValue: '0.0f' });
+  }
+  return result;
+}
+
 function collectTextEntityVars(project: Project): string[] {
   const vars = new Set<string>();
   const allComponents = collectAllComponents([
@@ -161,6 +182,8 @@ export function generateUIStateHeader(project: Project): string {
   for (const v of weatherVars) existingNames.add(v.varName);
   const calendarVars = collectCalendarStateVars(project).filter(v => !existingNames.has(v.varName));
   for (const v of calendarVars) existingNames.add(v.varName);
+  const rangeSliderVars = collectRangeSliderStateVars(project).filter(v => !existingNames.has(v.varName));
+  for (const v of rangeSliderVars) existingNames.add(v.varName);
   const conditionEntities = collectConditionEntities(project).filter(e => !existingNames.has(e.varName));
 
   const overlayEnabled = project.notificationOverlay != null && project.notificationOverlay.enabled !== false;
@@ -181,6 +204,7 @@ export function generateUIStateHeader(project: Project): string {
     ...hvacVars.map(v => `  Observable<${cppTypeFor(v.cppType)}> ${v.varName}{${v.initValue}};`),
     ...weatherVars.map(v => `  Observable<${cppTypeFor(v.cppType)}> ${v.varName}{${v.initValue}};`),
     ...calendarVars.map(v => `  Observable<${cppTypeFor(v.cppType)}> ${v.varName}{${v.initValue}};`),
+    ...rangeSliderVars.map(v => `  Observable<${cppTypeFor(v.cppType)}> ${v.varName}{${v.initValue}};`),
     ...overlayVars,
   ];
 

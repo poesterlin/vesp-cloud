@@ -105,7 +105,7 @@
     if (component.type === "image") {
       return component.imageBinding;
     }
-    if (component.type === "slider" || component.type === "gauge") {
+    if (component.type === "slider" || component.type === "gauge" || component.type === "range_slider") {
       return component.valueBinding;
     }
     return undefined;

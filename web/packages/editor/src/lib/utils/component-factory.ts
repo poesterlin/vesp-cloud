@@ -46,6 +46,19 @@ export function createComponent(type: string, x: number, y: number): Component {
         size: { width: 120, height: 24 },
       } as Component;
 
+    case "range_slider":
+      return {
+        ...base,
+        type: "range_slider",
+        label: "Range",
+        min: 0,
+        max: 100,
+        step: 1,
+        value: 50,
+        valueDecimals: 1,
+        size: { width: 320, height: 96 },
+      } as Component;
+
     case "gauge":
       return {
         ...base,

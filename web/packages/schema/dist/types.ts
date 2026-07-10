@@ -10,6 +10,7 @@ export type Component =
   | DigitalClockComponent
   | ButtonComponent
   | SliderComponent
+  | RangeSliderComponent
   | GaugeComponent
   | IconComponent
   | ProceduralIconComponent
@@ -65,6 +66,39 @@ export type SliderComponent = BaseComponent & {
   fillColor?: Color;
   handleColor?: Color;
 };
+export type RangeSliderComponent = BaseComponent & {
+  type: "range_slider";
+  /**
+   * Header label displayed above the track
+   */
+  label?: string;
+  /**
+   * Unit suffix appended to values (e.g. '°', '%')
+   */
+  unit?: string;
+  /**
+   * Minimum value of the range
+   */
+  min?: number;
+  /**
+   * Maximum value of the range
+   */
+  max?: number;
+  /**
+   * Step increment between values
+   */
+  step?: number;
+  /**
+   * Initial slider value
+   */
+  value?: number;
+  /**
+   * Number of decimal places for displayed values
+   */
+  valueDecimals?: number;
+  color?: Color3;
+  valueBinding?: EntityBinding2;
+};
 export type GaugeComponent = BaseComponent & {
   type: "gauge";
   min: number;
@@ -112,7 +146,7 @@ export type ImageComponent = BaseComponent & {
    */
   imageSource?: "static" | "ha";
   file: string;
-  imageBinding?: EntityBinding2;
+  imageBinding?: EntityBinding3;
   /**
    * Encoded format expected from the online image URL when imageBinding is used.
    */
@@ -161,7 +195,7 @@ export type LightStateComponent = BaseComponent & {
 export type HvacComponent = BaseComponent & {
   type: "hvac";
   label?: string;
-  stateBinding?: EntityBinding3;
+  stateBinding?: EntityBinding4;
   tempStep?: number;
   minTemp?: number;
   maxTemp?: number;
@@ -179,12 +213,12 @@ export type WeatherComponent = BaseComponent & {
    * today = single-day view, forecast = 3-day forecast view
    */
   mode?: "today" | "forecast";
-  stateBinding?: EntityBinding4;
+  stateBinding?: EntityBinding5;
 };
 export type CalendarComponent = BaseComponent & {
   type: "calendar";
   label?: string;
-  entityBinding?: EntityBinding5;
+  entityBinding?: EntityBinding6;
   maxItems?: number;
   scrollable?: boolean;
   /**
@@ -404,30 +438,45 @@ export interface Color2 {
   b: number;
 }
 /**
- * Home Assistant image/camera entity. The entity_picture attribute is used by default and loaded with online_image.
+ * Accent color for track fill, thumbs, and borders
+ */
+export interface Color3 {
+  r: number;
+  g: number;
+  b: number;
+}
+/**
+ * Home Assistant number/light brightness entity to bind the slider value to
  */
 export interface EntityBinding2 {
   entityId: string;
   attribute?: string | null;
 }
 /**
- * Home Assistant climate entity (climate.xxx)
+ * Home Assistant image/camera entity. The entity_picture attribute is used by default and loaded with online_image.
  */
 export interface EntityBinding3 {
   entityId: string;
   attribute?: string | null;
 }
 /**
- * Home Assistant weather entity (weather.xxx). The state string is the condition (sunny, cloudy, rainy, ...); the 8 numeric attributes (temperature, dew_point, humidity, cloud_coverage, uv_index, pressure, wind_bearing, wind_speed) are read-only.
+ * Home Assistant climate entity (climate.xxx)
  */
 export interface EntityBinding4 {
   entityId: string;
   attribute?: string | null;
 }
 /**
- * Home Assistant calendar entity (calendar.xxx). Events are loaded via calendar.get_events service calls.
+ * Home Assistant weather entity (weather.xxx). The state string is the condition (sunny, cloudy, rainy, ...); the 8 numeric attributes (temperature, dew_point, humidity, cloud_coverage, uv_index, pressure, wind_bearing, wind_speed) are read-only.
  */
 export interface EntityBinding5 {
+  entityId: string;
+  attribute?: string | null;
+}
+/**
+ * Home Assistant calendar entity (calendar.xxx). Events are loaded via calendar.get_events service calls.
+ */
+export interface EntityBinding6 {
   entityId: string;
   attribute?: string | null;
 }
@@ -572,7 +621,7 @@ export interface PageHeader {
    * Height of the header region in pixels
    */
   height: number;
-  backgroundColor?: Color3;
+  backgroundColor?: Color4;
   /**
    * Components rendered in the header region (positions relative to header origin)
    */
@@ -581,7 +630,7 @@ export interface PageHeader {
 /**
  * Background color of the header region (falls back to theme background)
  */
-export interface Color3 {
+export interface Color4 {
   r: number;
   g: number;
   b: number;

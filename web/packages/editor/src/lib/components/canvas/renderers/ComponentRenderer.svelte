@@ -4,7 +4,6 @@
   import DigitalClockRenderer from "./DigitalClockRenderer.svelte";
   import ButtonRenderer from "./ButtonRenderer.svelte";
   import SliderRenderer from "./SliderRenderer.svelte";
-  import GaugeRenderer from "./GaugeRenderer.svelte";
   import IconRenderer from "./IconRenderer.svelte";
   import ProceduralIconRenderer from "./ProceduralIconRenderer.svelte";
   import ContainerRenderer from "./ContainerRenderer.svelte";
@@ -35,10 +34,8 @@
   <AutoLayoutListRenderer {component} />
 {:else if component.type === "button"}
   <ButtonRenderer {component} />
-{:else if component.type === "slider"}
+{:else if component.type === "range_slider"}
   <SliderRenderer {component} />
-{:else if component.type === "gauge"}
-  <GaugeRenderer {component} />
 {:else if component.type === "icon"}
   <IconRenderer {component} />
 {:else if component.type === "procedural_icon"}

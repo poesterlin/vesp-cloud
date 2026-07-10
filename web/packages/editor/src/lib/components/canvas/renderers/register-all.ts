@@ -23,6 +23,7 @@ registerRenderer('digital_clock', DigitalClockRenderer);
 registerRenderer('auto_layout_list', AutoLayoutListRenderer);
 registerRenderer('button', ButtonRenderer);
 registerRenderer('slider', SliderRenderer);
+registerRenderer('range_slider', SliderRenderer);
 registerRenderer('gauge', GaugeRenderer);
 registerRenderer('icon', IconRenderer);
 registerRenderer('procedural_icon', ProceduralIconRenderer);

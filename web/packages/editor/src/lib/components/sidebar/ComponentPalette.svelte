@@ -13,6 +13,7 @@
     mdiThermometer,
     mdiWeatherPartlyCloudy,
     mdiCalendarMonth,
+    mdiTuneVertical,
   } from '@mdi/js';
 
   interface ComponentTemplate {
@@ -46,6 +47,12 @@
       label: "Icon",
       icon: mdiStarOutline,
       description: "Render Material Design Icons with custom color and size",
+    },
+    {
+      type: "range_slider",
+      label: "Range Slider",
+      icon: mdiTuneVertical,
+      description: "Dual-thumb range control with retro or modern styling",
     },
     {
       type: "rectangle",

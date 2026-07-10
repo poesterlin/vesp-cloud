@@ -11,6 +11,7 @@ export type ComponentType =
   | "text"
   | "button"
   | "slider"
+  | "range_slider"
   | "gauge"
   | "icon"
   | "procedural_icon"
@@ -37,6 +38,10 @@ export function isSliderComponent(c: Component): c is SliderComponent {
   return c.type === "slider";
 }
 
+export function isRangeSliderComponent(c: Component): c is RangeSliderComponent {
+  return c.type === "range_slider";
+}
+
 export function isGaugeComponent(c: Component): c is GaugeComponent {
   return c.type === "gauge";
 }
@@ -58,6 +63,7 @@ import type {
   TextComponent,
   ButtonComponent,
   SliderComponent,
+  RangeSliderComponent,
   GaugeComponent,
   IconComponent,
   HvacComponent,

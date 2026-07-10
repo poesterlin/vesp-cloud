@@ -13,7 +13,6 @@
   import { describeCondition } from "$lib/utils/condition-utils";
   import ActionEditor from "./ActionEditor.svelte";
   import { HVAC_MODE_LIST } from "$lib/utils/hvac-modes";
-  import { WEATHER_CONDITION_COLORS, colorToCss as weatherColorToCss } from "$lib/utils/weather-conditions";
 
   const NAV_ICONS: Record<string, string> = {
     OPEN_DETAIL: "mdi:open-in-new",
@@ -766,6 +765,80 @@
       </div>
     {/if}
 
+    {#if selectedComponent.type === "range_slider"}
+      <div class="property-section">
+        <label class="section-label">Range Slider</label>
+        <div class="field">
+          <span class="field-label">Label</span>
+          <input
+            type="text"
+            value={selectedComponent.label ?? ""}
+            oninput={(e) => updateProperty("label", e.currentTarget.value)}
+          />
+        </div>
+        <div class="field">
+          <span class="field-label">Unit</span>
+          <input
+            type="text"
+            value={selectedComponent.unit ?? ""}
+            oninput={(e) => updateProperty("unit", e.currentTarget.value)}
+          />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <span class="field-label">Min</span>
+            <input
+              type="number"
+              value={selectedComponent.min ?? 0}
+              oninput={(e) =>
+                updateProperty("min", parseFloat(e.currentTarget.value) || 0)}
+            />
+          </div>
+          <div class="field">
+            <span class="field-label">Max</span>
+            <input
+              type="number"
+              value={selectedComponent.max ?? 100}
+              oninput={(e) =>
+                updateProperty("max", parseFloat(e.currentTarget.value) || 100)}
+            />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <span class="field-label">Step</span>
+            <input
+              type="number"
+              min="0.01"
+              step="0.1"
+              value={selectedComponent.step ?? 1}
+              oninput={(e) =>
+                updateProperty("step", Math.max(0.01, parseFloat(e.currentTarget.value) || 1))}
+            />
+          </div>
+          <div class="field">
+            <span class="field-label">Value</span>
+            <input
+              type="number"
+              step={selectedComponent.step ?? 1}
+              value={selectedComponent.value ?? 50}
+              oninput={(e) =>
+                updateProperty("value", parseFloat(e.currentTarget.value) || 50)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="property-section">
+        <label class="section-label">Styling</label>
+        <ColorPicker
+          label="Color"
+          value={selectedComponent.color}
+          onUpdate={(color) => updateProperty("color", color)}
+        />
+      </div>
+    {/if}
+
     {#if selectedComponent.type === "conditional_area"}
       <div class="property-section">
         <label class="section-label">Variants</label>
@@ -925,7 +998,7 @@
     {/if}
 
     <!-- Entity Binding (only for components that display entity values) -->
-    {#if selectedComponent.type === "todo_list" || selectedComponent.type === "light_state" || selectedComponent.type === "hvac" || selectedComponent.type === "weather" || selectedComponent.type === "calendar"}
+    {#if selectedComponent.type === "todo_list" || selectedComponent.type === "light_state" || selectedComponent.type === "hvac" || selectedComponent.type === "weather" || selectedComponent.type === "calendar" || selectedComponent.type === "range_slider"}
       <div class="property-section">
         <label class="section-label">Entity Binding</label>
         <EntityPicker
@@ -937,6 +1010,8 @@
                 ? "weather"
                 : selectedComponent.type === "calendar"
                   ? "calendar"
+                  : selectedComponent.type === "range_slider"
+                    ? "number"
                 : "light"}
           allowedDomains={selectedComponent.type === "todo_list"
             ? ["todo"]
@@ -955,6 +1030,8 @@
               updateProperty("itemsBinding", binding);
             } else if (selectedComponent.type === "calendar") {
               updateProperty("entityBinding", binding);
+            } else if (selectedComponent.type === "range_slider") {
+              updateProperty("valueBinding", binding);
             } else {
               updateProperty("stateBinding", binding);
             }

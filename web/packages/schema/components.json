@@ -467,6 +467,27 @@
         }
       ]
     },
+    "RangeSliderComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "range_slider" },
+            "label": { "type": "string", "description": "Header label displayed above the track" },
+            "unit": { "type": "string", "description": "Unit suffix appended to values (e.g. '°', '%')" },
+            "min": { "type": "number", "default": 0, "description": "Minimum value of the range" },
+            "max": { "type": "number", "default": 100, "description": "Maximum value of the range" },
+            "step": { "type": "number", "default": 1, "description": "Step increment between values" },
+            "value": { "type": "number", "description": "Initial slider value" },
+            "valueDecimals": { "type": "integer", "minimum": 0, "maximum": 3, "default": 1, "description": "Number of decimal places for displayed values" },
+            "color": { "$ref": "#/definitions/Color", "description": "Accent color for track fill, thumbs, and borders" },
+            "valueBinding": { "$ref": "#/definitions/EntityBinding", "description": "Home Assistant number/light brightness entity to bind the slider value to" }
+          },
+          "required": ["type", "size"]
+        }
+      ]
+    },
     "GaugeComponent": {
       "allOf": [
         { "$ref": "#/definitions/BaseComponent" },
@@ -754,6 +775,7 @@
         { "$ref": "#/definitions/DigitalClockComponent" },
         { "$ref": "#/definitions/ButtonComponent" },
         { "$ref": "#/definitions/SliderComponent" },
+        { "$ref": "#/definitions/RangeSliderComponent" },
         { "$ref": "#/definitions/GaugeComponent" },
         { "$ref": "#/definitions/IconComponent" },
         { "$ref": "#/definitions/ProceduralIconComponent" },

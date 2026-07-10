@@ -2455,12 +2455,12 @@ class RangeSliderWidget : public Widget {
   void set_accent(Color c) {
     accent_override_ = c;
     has_accent_override_ = true;
-    mark_dirty();
+    mark_full_dirty();
   }
 
   void set_unit(const char *unit) {
     unit_ = unit ? unit : "";
-    mark_dirty();
+    mark_full_dirty();
   }
 
   void bind(const float *value_ptr) {
@@ -2474,11 +2474,16 @@ class RangeSliderWidget : public Widget {
   float min_value() const { return min_value_; }
   float max_value() const { return max_value_; }
 
+  void mark_full_dirty() {
+    needs_full_draw_ = true;
+    mark_dirty();
+  }
+
   void set_value(float v, bool notify = false) {
     v = clamp_to_step(v);
     if (value_ == v) return;
     value_ = v;
-    mark_dirty();
+    mark_full_dirty();
     if (notify && on_change_) on_change_(value_);
   }
 
@@ -2489,7 +2494,7 @@ class RangeSliderWidget : public Widget {
       if (!baseline_set_ ||
           ui_value_changed_quantized(v, last_value_, step_)) {
         value_ = v;
-        mark_dirty();
+        mark_full_dirty();
       }
     }
     Widget::update(now);
@@ -2517,6 +2522,7 @@ class RangeSliderWidget : public Widget {
       if (!dragging_) return false;
       apply_drag_(l, event.x, /*commit=*/true);
       dragging_ = false;
+      mark_full_dirty();
       return true;
     }
 
@@ -2613,14 +2619,30 @@ class RangeSliderWidget : public Widget {
     if (next < min_value_) next = min_value_;
     if (next > max_value_) next = max_value_;
     const bool changed = ui_value_changed_quantized(next, value_, step_);
-    value_ = next;
     if (changed) {
-      mark_dirty();
+      const int old_cx = value_to_x_(l, value_);
+      value_ = next;
+      const int new_cx = value_to_x_(l, value_);
+      mark_track_dirty_(l, old_cx, new_cx);
       if (on_change_) on_change_(value_);
+    } else {
+      value_ = next;
     }
     if (commit && on_release_) {
       on_release_(value_);
     }
+  }
+
+  void mark_track_dirty_(const SliderLayout &l, int old_cx, int new_cx) {
+    const int rad = l.thumb_r + 3;
+    const int left_cx = std::min(old_cx, new_cx);
+    const int right_cx = std::max(old_cx, new_cx);
+    int left = std::min(l.track_x - rad, left_cx - rad);
+    int right = std::max(l.track_x + l.track_w + rad, right_cx + rad);
+    int top = l.track_y - rad;
+    int bottom = l.track_y + l.track_h + rad;
+    UiInvalidation::request_rect(
+        UiDirtyRect{left, top, right - left, bottom - top}, "slider:drag");
   }
 
   Color accent_() const {
@@ -2632,22 +2654,6 @@ class RangeSliderWidget : public Widget {
 #endif
   }
 
-  void format_value_(char *buf, size_t n, float v) const {
-    if (value_decimals_ <= 0) {
-      snprintf(buf, n, "%d%s", static_cast<int>(std::lround(v)),
-               unit_ ? unit_ : "");
-      return;
-    }
-    float q = v;
-    if (std::floor(q) == q) {
-      snprintf(buf, n, "%d%s", static_cast<int>(q), unit_ ? unit_ : "");
-    } else {
-      char fmt[16];
-      snprintf(fmt, sizeof(fmt), "%%.%df%%s", value_decimals_);
-      snprintf(buf, n, fmt, q, unit_ ? unit_ : "");
-    }
-  }
-
   void draw_modern_(display::Display &it, const UiRect &r) {
     const SliderLayout l = compute_layout_(r);
     const Color accent = accent_();
@@ -2655,25 +2661,24 @@ class RangeSliderWidget : public Widget {
     const Color track_bg(28, 34, 46);
     const Color track_border(42, 50, 66);
     const Color fill = accent;
-    const Color text = Color(245, 248, 255);
     const Color dim(140, 150, 168);
     const Color thumb_fill(250, 252, 255);
     const Color thumb_ring = accent;
 
-    draw_clipped_box(it, r.x, r.y, r.w, r.h,
-                     ui_corner_radius_for_height(r.h), track_border, bg, false);
+    // Only redraw the box background and label on a non-drag full redraw.
+    // During dragging, dirty rects are constrained to the thumb + track
+    // region so the expensive background fill is skipped → no flicker.
+    if (needs_full_draw_) {
+      draw_clipped_box(it, r.x, r.y, r.w, r.h,
+                       ui_corner_radius_for_height(r.h), track_border, bg, false);
 
-    if (label_ && label_[0] && g_theme.label.font != nullptr) {
-      const int max_label_w = r.w - 2 * l.pad - 110;
-      ui_print_truncated(it, r.x + l.pad, l.label_y,
-                         g_theme.label.font, dim,
-                         TextAlign::TOP_LEFT, label_, max_label_w);
-    }
-    if (g_theme.label.font != nullptr) {
-      char buf[16];
-      format_value_(buf, sizeof(buf), value_);
-      it.printf(r.x + r.w - l.pad, l.label_y, g_theme.label.font, text,
-                TextAlign::TOP_RIGHT, "%s", buf);
+      if (label_ && label_[0] && g_theme.label.font != nullptr) {
+        const int max_label_w = r.w - 2 * l.pad - 110;
+        ui_print_truncated(it, r.x + l.pad, l.label_y,
+                           g_theme.label.font, dim,
+                           TextAlign::TOP_LEFT, label_, max_label_w);
+      }
+      needs_full_draw_ = false;
     }
 
     const int track_mid = l.track_y + l.track_h / 2;
@@ -2692,14 +2697,6 @@ class RangeSliderWidget : public Widget {
     it.circle(cx, track_mid, rad, thumb_ring);
     it.circle(cx, track_mid, rad - 1, thumb_ring);
     it.filled_circle(cx, track_mid, 3, accent);
-
-    if (g_theme.label.font != nullptr) {
-      char buf[16];
-      format_value_(buf, sizeof(buf), value_);
-      it.printf(cx, l.value_y, g_theme.label.font,
-                dragging_ ? accent : dim,
-                TextAlign::TOP_CENTER, "%s", buf);
-    }
   }
 
 #if UI_THEME_RETRO
@@ -2709,37 +2706,35 @@ class RangeSliderWidget : public Widget {
     const Color accent_hi = RetroColors::AMBER;
     const Color bg = RetroColors::VOID;
     const Color track_bg = RetroColors::DIMMER;
-    const Color text = RetroColors::WHITE;
     const Color dim = RetroColors::STEEL;
     const Color fill = accent;
 
-    draw_clipped_box(it, r.x, r.y, r.w, r.h,
-                     ui_corner_radius_for_height(r.h), accent, bg, true);
-    draw_clipped_border(it, r.x + 2, r.y + 2, r.w - 4, r.h - 4,
-                        7, 7, 7, 7, RetroColors::DIMMER);
-    draw_corner_accent_tl(it, r.x + 4, r.y + 4, 5, RetroColors::CYAN_DIM);
-    draw_corner_accent_tr(it, r.x + r.w - 5, r.y + 4, 5, RetroColors::CYAN_DIM);
-    draw_corner_accent_bl(it, r.x + 4, r.y + r.h - 5, 5, RetroColors::CYAN_DIM);
-    draw_corner_accent_br(it, r.x + r.w - 5, r.y + r.h - 5, 5,
-                          RetroColors::CYAN_DIM);
+    // Skip expensive static decorations during drag (box, border, corners,
+    // divider, label). Only the track + thumb region is dirty → no flicker.
+    if (needs_full_draw_) {
+      draw_clipped_box(it, r.x, r.y, r.w, r.h,
+                       ui_corner_radius_for_height(r.h), accent, bg, true);
+      draw_clipped_border(it, r.x + 2, r.y + 2, r.w - 4, r.h - 4,
+                          7, 7, 7, 7, RetroColors::DIMMER);
+      draw_corner_accent_tl(it, r.x + 4, r.y + 4, 5, RetroColors::CYAN_DIM);
+      draw_corner_accent_tr(it, r.x + r.w - 5, r.y + 4, 5, RetroColors::CYAN_DIM);
+      draw_corner_accent_bl(it, r.x + 4, r.y + r.h - 5, 5, RetroColors::CYAN_DIM);
+      draw_corner_accent_br(it, r.x + r.w - 5, r.y + r.h - 5, 5,
+                            RetroColors::CYAN_DIM);
 
-    if (label_ && label_[0] && g_theme.header.font != nullptr) {
-      const int max_label_w = r.w - 2 * l.pad - 120;
-      ui_print_truncated(it, r.x + l.pad, l.label_y,
-                         g_theme.header.font, dim,
-                         TextAlign::TOP_LEFT, label_, max_label_w);
-    }
-    if (g_theme.header.font != nullptr) {
-      char buf[16];
-      format_value_(buf, sizeof(buf), value_);
-      it.printf(r.x + r.w - l.pad, l.label_y, g_theme.header.font, accent,
-                TextAlign::TOP_RIGHT, "%s", buf);
-    }
+      if (label_ && label_[0] && g_theme.header.font != nullptr) {
+        const int max_label_w = r.w - 2 * l.pad - 120;
+        ui_print_truncated(it, r.x + l.pad, l.label_y,
+                           g_theme.header.font, dim,
+                           TextAlign::TOP_LEFT, label_, max_label_w);
+      }
 
-    {
-      const int div_y = l.label_y + l.header_h;
-      draw_dashed_hline(it, r.x + l.pad, r.x + r.w - l.pad, div_y,
-                        RetroColors::DIMMER, 3, 3);
+      {
+        const int div_y = l.label_y + l.header_h;
+        draw_dashed_hline(it, r.x + l.pad, r.x + r.w - l.pad, div_y,
+                          RetroColors::DIMMER, 3, 3);
+      }
+      needs_full_draw_ = false;
     }
 
     const int track_mid = l.track_y + l.track_h / 2;
@@ -2770,14 +2765,6 @@ class RangeSliderWidget : public Widget {
     draw_corner_accent_tr(it, tx + side, ty - 1, arm, bc);
     draw_corner_accent_bl(it, tx - 1, ty + side, arm, bc);
     draw_corner_accent_br(it, tx + side, ty + side, arm, bc);
-
-    if (g_theme.label.font != nullptr) {
-      char buf[16];
-      format_value_(buf, sizeof(buf), value_);
-      it.printf(cx, l.value_y, g_theme.label.font,
-                dragging_ ? accent_hi : text,
-                TextAlign::TOP_CENTER, "%s", buf);
-    }
   }
 #endif
 
@@ -2801,6 +2788,7 @@ class RangeSliderWidget : public Widget {
   bool dragging_ = false;
   float last_value_ = 50.0f;
   bool baseline_set_ = false;
+  bool needs_full_draw_ = true;
 };
 
 class HvacWidget : public Widget {

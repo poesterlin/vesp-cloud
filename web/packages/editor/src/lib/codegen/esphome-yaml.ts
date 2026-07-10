@@ -375,7 +375,7 @@ function generateBindings(project: Project): string {
     const rc = c as RangeSliderComponent;
     const binding = rc.valueBinding;
     if (!binding?.entityId) continue;
-    const stateVar = stateVarFromEntity(binding.entityId);
+    const stateVar = stateVarFromEntity(binding.entityId, binding.attribute);
     if (claimed.has(stateVar)) continue;
     claimed.add(stateVar);
     if (binding.attribute) {

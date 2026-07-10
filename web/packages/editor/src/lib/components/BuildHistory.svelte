@@ -117,6 +117,22 @@
     }
   }
 
+  async function togglePin(job: JobStatus) {
+    if (isBusy) return;
+    try {
+      const res = await fetch(`/api/compile/${job.id}/pin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pinned: !job.pinned }),
+      });
+      if (!res.ok) throw new Error("Failed to toggle pin");
+      const projectId = projectStore.serverProjectId;
+      if (projectId) loadJobs(projectId);
+    } catch (e) {
+      console.error("Failed to toggle pin", e);
+    }
+  }
+
   function toggleDiff(job: JobStatus) {
     if (isBusy) return;
     const next = new Map(diffs);
@@ -252,6 +268,9 @@
                   {#if job.published}
                     <span class="badge live">Live</span>
                   {/if}
+                  {#if job.pinned}
+                    <span class="badge pinned">Pinned</span>
+                  {/if}
                 </div>
                 {#if job.status === "failed" && job.error}
                   <span class="build-error">{job.error}</span>
@@ -334,6 +353,17 @@
                   </li>
                   <li>
                     <button
+                      onclick={() => togglePin(job)}
+                      disabled={isBusy}
+                    >
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d={mdiIcons.mdiPin} />
+                      </svg>
+                      {job.pinned ? "Unpin" : "Pin firmware"}
+                    </button>
+                  </li>
+                  <li>
+                    <button
                       onclick={() => toggleDiff(job)}
                       disabled={isBusy || !job.config}
                     >
@@ -384,6 +414,15 @@
                         <path d={mdiIcons.mdiRestore} />
                       </svg>
                       Roll back project
+                    </button>
+                    <button
+                      onclick={() => togglePin(job)}
+                      disabled={isBusy}
+                    >
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d={mdiIcons.mdiPin} />
+                      </svg>
+                      {job.pinned ? "Unpin" : "Pin firmware"}
                     </button>
                     <button
                       onclick={() => toggleDiff(job)}
@@ -571,6 +610,11 @@
   .badge.live {
     background: rgba(76, 175, 80, 0.15);
     color: #66bb6a;
+  }
+
+  .badge.pinned {
+    background: rgba(33, 150, 243, 0.15);
+    color: #64b5f6;
   }
 
   .progress-bar {

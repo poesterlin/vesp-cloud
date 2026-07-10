@@ -39,7 +39,7 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
     error(404, 'Not found');
   }
 
-  const [job] = await db
+  let [job] = await db
     .select({ id: compilationJobs.id, config: compilationJobs.config, completedAt: compilationJobs.completedAt })
     .from(compilationJobs)
     .where(
@@ -47,9 +47,24 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
         eq(compilationJobs.projectId, project.id),
         eq(compilationJobs.status, 'completed'),
         eq(compilationJobs.published, true),
+        eq(compilationJobs.pinned, true),
       ),
     )
     .orderBy(desc(compilationJobs.completedAt));
+
+  if (!job) {
+    [job] = await db
+      .select({ id: compilationJobs.id, config: compilationJobs.config, completedAt: compilationJobs.completedAt })
+      .from(compilationJobs)
+      .where(
+        and(
+          eq(compilationJobs.projectId, project.id),
+          eq(compilationJobs.status, 'completed'),
+          eq(compilationJobs.published, true),
+        ),
+      )
+      .orderBy(desc(compilationJobs.completedAt));
+  }
 
   if (!job) {
     logger.warn(`manifest request rejected: no published firmware for project=${project.id}`);

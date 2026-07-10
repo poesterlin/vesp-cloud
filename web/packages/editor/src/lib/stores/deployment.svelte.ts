@@ -22,6 +22,7 @@ export type JobStatus = {
   projectName: string;
   status: string;
   published: boolean;
+  pinned: boolean;
   createdAt: string;
   completedAt: string | null;
   error: string | null;

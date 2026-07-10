@@ -652,6 +652,8 @@ function generateComponentSetup(
       return generateTabContainerWidget(c, screenVar, indent, visibilityExpr, offsetX, offsetY, dirtyBoundsExpr);
     case 'range_slider':
       return generateRangeSliderWidget(c as RangeSliderComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
+    case 'conditional_area':
+      return generateConditionalAreaWidget(c, screenVar, indent, visibilityExpr, offsetX, offsetY);
     default:
       return `${indent}// TODO: component type '${c.type}' (id: ${c.id})\n`;
   }

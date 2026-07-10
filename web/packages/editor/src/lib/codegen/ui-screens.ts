@@ -449,6 +449,21 @@ function generateRangeSliderWidget(
   if (c.valueBinding?.entityId) {
     const stateVar = stateVarFromEntity(c.valueBinding.entityId, c.valueBinding.attribute ?? undefined);
     out += `${indent}${idSafe}->bind(state.${stateVar}.ptr());\n`;
+    const entityId = c.valueBinding.entityId;
+    const domain = entityId.split('.')[0];
+    const service = `${domain}.set_value`;
+    out += `${indent}${idSafe}->on_release([entity_id = "${escapeCString(entityId)}"](float v) {\n`;
+    out += `${indent}  auto *api = esphome::api::global_api_server;\n`;
+    out += `${indent}  if (api == nullptr || !api->is_connected()) return;\n`;
+    out += `${indent}  esphome::api::HomeAssistantServiceCallAction<> call(api, false);\n`;
+    out += `${indent}  call.set_service("${escapeCString(service)}");\n`;
+    out += `${indent}  call.init_data(2);\n`;
+    out += `${indent}  call.add_data("entity_id", entity_id);\n`;
+    out += `${indent}  char val_buf[16];\n`;
+    out += `${indent}  snprintf(val_buf, sizeof(val_buf), "%f", v);\n`;
+    out += `${indent}  call.add_data("value", val_buf);\n`;
+    out += `${indent}  call.play();\n`;
+    out += `${indent}});\n`;
   }
   if (visibilityExpr) {
     out += `${indent}${idSafe}->set_visibility_condition(${visibilityExpr});\n`;

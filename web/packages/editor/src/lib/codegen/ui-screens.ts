@@ -441,7 +441,8 @@ function generateRangeSliderWidget(
   const decimals = Math.max(0, Math.min(3, c.valueDecimals ?? 1));
   const idSafe = safeCppIdentifier(c.id, 'component');
 
-  let out = `${indent}auto *${idSafe} = ${factory('RangeSliderWidget', `${rect(x, y, w, h)}, "${escapeCString(label)}", ${min}f, ${max}f, ${step}f, ${value}f, "${escapeCString(unit)}", ${decimals}`)};\n`;
+  const fmtFloat = (v: number) => Number.isInteger(v) ? `${v}.0f` : `${v}f`;
+  let out = `${indent}auto *${idSafe} = ${factory('RangeSliderWidget', `${rect(x, y, w, h)}, "${escapeCString(label)}", ${fmtFloat(min)}, ${fmtFloat(max)}, ${fmtFloat(step)}, ${fmtFloat(value)}, "${escapeCString(unit)}", ${decimals}`)};\n`;
   if (c.color) {
     out += `${indent}${idSafe}->set_accent(${emitColor(c.color)});\n`;
   }

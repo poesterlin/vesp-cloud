@@ -42,7 +42,6 @@
       step,
     }),
   );
-  let dragging = $state(false);
 
   $effect(() => {
     const next = clampToStep(component.value ?? (minValue + maxValue) / 2, {
@@ -50,9 +49,7 @@
       max: maxValue,
       step,
     });
-    if (!dragging) {
-      value = next;
-    }
+    value = next;
   });
 
   const pad = 12;
@@ -119,8 +116,6 @@
       class="range-slider"
       class:retro={isRetro}
       class:modern={!isRetro}
-      style:width="100%"
-      style:height="100%"
       style:--accent={accent}
       style:--accent-hi={accentHi}
       role="group"
@@ -222,11 +217,11 @@
           {/if}
 
           {#if true}
-            {@const half = dragging ? thumbR + 1 : thumbR}
+            {@const half = thumbR}
             {@const side = half * 2}
             {@const tx = thumbX - half}
             {@const ty = trackMid - half}
-            {@const bc = dragging ? accentHi : accent}
+            {@const bc = accent}
             <rect
               x={tx}
               y={ty}
@@ -283,7 +278,7 @@
           {/if}
 
           {#if true}
-            {@const rad = dragging ? thumbR + 2 : thumbR}
+            {@const rad = thumbR}
             <circle
               cx={thumbX}
               cy={trackMid}
@@ -302,11 +297,6 @@
           {/if}
         </svg>
       {/if}
-
-      <div class="header">
-        <span class="label" title={label}>{label}</span>
-        <span class="summary" title={formattedValue}>{formattedValue}</span>
-      </div>
     </div>
   {/if}
 </Draggable>
@@ -320,6 +310,8 @@
     user-select: none;
     cursor: default;
     color: rgb(230, 240, 250);
+    width: 100%;
+    height: 100%;
   }
 
   .range-slider.modern {
@@ -354,71 +346,4 @@
     border-radius: 6px;
   }
 
-  .header {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    right: 12px;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  .label {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-family: var(--display-font, monospace);
-    font-size: 12px;
-    font-weight: 600;
-    color: rgb(120, 130, 145);
-  }
-
-  .retro .label {
-    color: rgb(130, 150, 170);
-  }
-
-  .summary {
-    flex: 0 0 auto;
-    font-family: var(--display-font, monospace);
-    font-size: 12px;
-    font-weight: 700;
-    color: rgb(245, 248, 255);
-    white-space: nowrap;
-  }
-
-  .retro .summary {
-    color: var(--accent);
-  }
-
-  .values {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 14px;
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  .value {
-    position: absolute;
-    transform: translateX(-50%);
-    font-family: var(--display-font, monospace);
-    font-size: 10px;
-    font-weight: 600;
-    color: rgb(120, 130, 145);
-    white-space: nowrap;
-  }
-
-  .value.active {
-    color: var(--accent-hi);
-  }
-
-  .modern .value.active {
-    color: var(--accent);
-  }
 </style>

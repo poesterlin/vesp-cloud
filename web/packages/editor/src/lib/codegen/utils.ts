@@ -54,8 +54,13 @@ export function sanitizeDeviceName(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
-export function stateVarFromEntity(entityId: string): string {
-  return entityId.replace(/\./g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+export function stateVarFromEntity(entityId: string, attribute?: string | null): string {
+  let name = entityId.replace(/\./g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+  if (attribute) {
+    const attr = attribute.replace(/[^a-zA-Z0-9_]/g, '_').replace(/^_+|_+$/g, '');
+    if (attr) name += `_${attr}`;
+  }
+  return name;
 }
 
 export function safeCppIdentifier(value: string, prefix = 'id'): string {

@@ -134,7 +134,7 @@ function collectRangeSliderStateVars(project: Project): { varName: string; cppTy
     if (!rc.valueBinding) continue;
     const entityId = rc.valueBinding.entityId;
     if (!entityId) continue;
-    const varName = stateVarFromEntity(entityId);
+    const varName = stateVarFromEntity(entityId, rc.valueBinding.attribute);
     if (seen.has(varName)) continue;
     seen.add(varName);
     result.push({ varName, cppType: 'float', initValue: '0.0f' });

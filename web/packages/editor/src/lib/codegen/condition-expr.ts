@@ -75,7 +75,7 @@ function emitComparison(
 }
 
 function emitEntity(c: EntityCondition, entityTypes?: EntityTypeMap): string {
-  const varName = stateVarFromEntity(c.entityId);
+  const varName = stateVarFromEntity(c.entityId, c.attribute ?? undefined);
   const cppType = entityTypes?.get(varName);
   const lhs = stateAccess(varName, c.value, cppType);
   return emitComparison(lhs, c.operator, c.value);
@@ -222,7 +222,7 @@ export function collectConditionEntities(project: Project): ConditionEntityRef[]
     ...project.detailViews.flatMap(v => v.components),
   ];
   visitComponentConditions(allRoots, ec => {
-    const varName = stateVarFromEntity(ec.entityId);
+    const varName = stateVarFromEntity(ec.entityId, ec.attribute ?? undefined);
     if (!varName) return;
     const incoming = inferCppType(ec.value);
     const existing = map.get(varName);

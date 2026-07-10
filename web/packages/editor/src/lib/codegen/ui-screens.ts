@@ -447,7 +447,7 @@ function generateRangeSliderWidget(
     out += `${indent}${idSafe}->set_accent(${emitColor(c.color)});\n`;
   }
   if (c.valueBinding?.entityId) {
-    const stateVar = stateVarFromEntity(c.valueBinding.entityId);
+    const stateVar = stateVarFromEntity(c.valueBinding.entityId, c.valueBinding.attribute ?? undefined);
     out += `${indent}${idSafe}->bind(state.${stateVar}.ptr());\n`;
   }
   if (visibilityExpr) {

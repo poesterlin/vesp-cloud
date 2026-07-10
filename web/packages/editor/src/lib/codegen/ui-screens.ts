@@ -36,7 +36,7 @@ import {
   type WidgetFactory,
 } from "./utils";
 import { HVAC_MODES, HVAC_OFF_COLOR } from "../utils/hvac-modes";
-import { emitConditionExpression } from "./condition-expr";
+import { emitConditionExpression, collectConditionEntities, type EntityTypeMap } from "./condition-expr";
 import { getMdiUtf8CEscape } from "./mdi-icons";
 import { parseTemplate } from "../utils/template-utils";
 
@@ -587,6 +587,7 @@ function generateComponentSetup(
     // small per-widget dirty rect would cause the area bg to fill and erase
     // siblings whose own bounds don't intersect the dirty rect.
     dirtyBoundsExpr?: string,
+    entityTypes?: EntityTypeMap,
 ): string {
   const factory: WidgetFactory = (typeName, args) =>
     `${screenVar}->emplace_widget<${typeName}>(${args})`;
@@ -649,11 +650,11 @@ function generateComponentSetup(
       return generateTodoListWidget(tc, itemsVar, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     }
     case 'tab_container':
-      return generateTabContainerWidget(c, screenVar, indent, visibilityExpr, offsetX, offsetY, dirtyBoundsExpr);
+      return generateTabContainerWidget(c, screenVar, indent, visibilityExpr, offsetX, offsetY, dirtyBoundsExpr, entityTypes);
     case 'range_slider':
       return generateRangeSliderWidget(c as RangeSliderComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     case 'conditional_area':
-      return generateConditionalAreaWidget(c, screenVar, indent, visibilityExpr, offsetX, offsetY);
+      return generateConditionalAreaWidget(c, screenVar, indent, visibilityExpr, offsetX, offsetY, entityTypes);
     default:
       return `${indent}// TODO: component type '${c.type}' (id: ${c.id})\n`;
   }
@@ -735,26 +736,27 @@ function findDefaultVariantIndex(
   return variantsInOrder.findIndex(v => !v.condition);
 }
 
-function variantMatchExpression(variant: ConditionalVariant): string {
-  return variant.condition ? emitConditionExpression(variant.condition) : 'true';
+function variantMatchExpression(variant: ConditionalVariant, entityTypes?: EntityTypeMap): string {
+  return variant.condition ? emitConditionExpression(variant.condition, entityTypes) : 'true';
 }
 
 function variantActiveExpression(
   variantsInOrder: ConditionalVariant[],
   index: number,
   defaultIndex: number,
+  entityTypes?: EntityTypeMap,
 ): string {
   const variant = variantsInOrder[index]!;
   const isDefault = index === defaultIndex;
   const guard = variantsInOrder
     .slice(0, index)
     .filter((_, j) => j !== defaultIndex)
-    .map(v => `!${variantMatchExpression(v)}`);
-  const own = variantMatchExpression(variant);
+    .map(v => `!${variantMatchExpression(v, entityTypes)}`);
+  const own = variantMatchExpression(variant, entityTypes);
 
   if (isDefault) {
     const noneMatch = variantsInOrder
-      .map((v, j) => (j === index ? null : `!${variantMatchExpression(v)}`))
+      .map((v, j) => (j === index ? null : `!${variantMatchExpression(v, entityTypes)}`))
       .filter((s): s is string => s !== null);
     if (noneMatch.length === 0) {
       return 'true';
@@ -775,6 +777,7 @@ function generateConditionalAreaWidget(
   parentVisibilityExpr?: string,
   offsetX = 0,
   offsetY = 0,
+  entityTypes?: EntityTypeMap,
 ): string {
   const areaIdSafe = safeCppIdentifier(c.id, 'area');
   const areaX = c.position.x + offsetX;
@@ -810,7 +813,7 @@ function generateConditionalAreaWidget(
     if (variant.components.length === 0) continue;
     const variantIdSafe = safeCppIdentifier(variant.id, 'variant');
     const variantLambdaVar = `cv_${areaIdSafe}_${variantIdSafe}`;
-    const activeExpr = variantActiveExpression(variantsInOrder, i, defaultIndex);
+    const activeExpr = variantActiveExpression(variantsInOrder, i, defaultIndex, entityTypes);
 
     if (parentVisibilityExpr) {
       out += `${indent}auto ${variantLambdaVar} = [&state, ${parentVisibilityExpr}]() { return ${parentVisibilityExpr}() && (${activeExpr}); };\n`;
@@ -820,12 +823,13 @@ function generateConditionalAreaWidget(
 
     const orderedChildren = sortComponentsForWidgetLayering(variant.components);
     for (const child of orderedChildren) {
-      out += generateComponentSetup(child, screenVar, indent, variantLambdaVar, areaX, areaY, dirtyBoundsExpr);
+      out += generateComponentSetup(child, screenVar, indent, variantLambdaVar, areaX, areaY, dirtyBoundsExpr, entityTypes);
     }
   }
 
   return out;
 }
+
 
 function generateTabContainerWidget(
     c: TabContainerComponent,
@@ -835,6 +839,7 @@ function generateTabContainerWidget(
     offX = 0,
     offY = 0,
     dirtyBoundsExpr?: string,
+    entityTypes?: EntityTypeMap,
 ): string {
   const x = c.position.x + offX;
   const y = c.position.y + offY;
@@ -868,7 +873,7 @@ function generateTabContainerWidget(
   for (let i = 0; i < c.tabs.length; i++) {
     const orderedChildren = sortComponentsForWidgetLayering(c.tabs[i]!.components);
     for (const child of orderedChildren) {
-      out += generateNestedComponent(child, varName, i, indent, x, y + TAB_BAR_HEIGHT, bgVar, undefined, dirtyBoundsExpr);
+      out += generateNestedComponent(child, varName, i, indent, x, y + TAB_BAR_HEIGHT, bgVar, undefined, dirtyBoundsExpr, entityTypes);
     }
   }
 
@@ -877,7 +882,7 @@ function generateTabContainerWidget(
 
 function generateNestedComponent(c: Component, containerVar: string, tabIndex: number, indent: string,
     offsetX: number, offsetY: number, tabBgVar?: string, visibilityExpr?: string,
-    dirtyBoundsExpr?: string): string {
+    dirtyBoundsExpr?: string, entityTypes?: EntityTypeMap): string {
   const x = c.position.x + offsetX;
   const y = c.position.y + offsetY;
   const w = c.size?.width ?? 60;
@@ -981,7 +986,7 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
       return generateTodoListWidget(tc, itemsVar, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     }
     case 'conditional_area':
-      return generateConditionalAreaNested(c, containerVar, tabIndex, indent, visibilityExpr, offsetX, offsetY, tabBgVar);
+      return generateConditionalAreaNested(c, containerVar, tabIndex, indent, visibilityExpr, offsetX, offsetY, tabBgVar, entityTypes);
     case 'range_slider':
       return generateRangeSliderWidget(c as RangeSliderComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     default:
@@ -998,6 +1003,7 @@ function generateConditionalAreaNested(
   offsetX: number,
   offsetY: number,
   tabBgVar?: string,
+  entityTypes?: EntityTypeMap,
 ): string {
   const areaIdSafe = safeCppIdentifier(c.id, 'area');
   const areaX = c.position.x + offsetX;
@@ -1028,7 +1034,7 @@ function generateConditionalAreaNested(
     if (variant.components.length === 0) continue;
     const variantIdSafe = safeCppIdentifier(variant.id, 'variant');
     const variantLambdaVar = `cv_${areaIdSafe}_${variantIdSafe}`;
-    const activeExpr = variantActiveExpression(variantsInOrder, i, defaultIndex);
+    const activeExpr = variantActiveExpression(variantsInOrder, i, defaultIndex, entityTypes);
 
     if (parentVisibilityExpr) {
       out += `${indent}auto ${variantLambdaVar} = [&state, ${parentVisibilityExpr}]() { return ${parentVisibilityExpr}() && (${activeExpr}); };\n`;
@@ -1038,7 +1044,7 @@ function generateConditionalAreaNested(
 
     const orderedChildren = sortComponentsForWidgetLayering(variant.components);
     for (const child of orderedChildren) {
-      out += generateNestedComponent(child, containerVar, tabIndex, indent, areaX, areaY, tabBgVar, variantLambdaVar, dirtyBoundsExpr);
+      out += generateNestedComponent(child, containerVar, tabIndex, indent, areaX, areaY, tabBgVar, variantLambdaVar, dirtyBoundsExpr, entityTypes);
     }
   }
 
@@ -1053,6 +1059,9 @@ export function generateUIScreensHeader(project: Project): string {
   const overlayEnabled = project.notificationOverlay != null && project.notificationOverlay.enabled !== false;
   const dw = project.display.width ?? 480;
   const dh = project.display.height ?? 480;
+  const entityTypes: EntityTypeMap = new Map(
+    collectConditionEntities(project).map(e => [e.varName, e.cppType])
+  );
 
   const screenCtor = `    // Pre-create all screen slots
     for (int i = 0; i <= static_cast<int>(UiScreenId::${lastScreen}); i++) {
@@ -1109,7 +1118,7 @@ export function generateUIScreensHeader(project: Project): string {
         ? dashboardOffsetY
         : 0;
       for (const c of orderedComponents) {
-        setupBody += generateComponentSetup(c, 'home', '    ', `p${index}`, 0, pageOffsetY);
+        setupBody += generateComponentSetup(c, 'home', '    ', `p${index}`, 0, pageOffsetY, undefined, entityTypes);
         setupBody += '\n';
       }
       setupBody += `  }\n\n`;
@@ -1138,7 +1147,7 @@ export function generateUIScreensHeader(project: Project): string {
     setupBody += `  // Detail: ${cppLineCommentText(view.title)}\n`;
     const orderedComponents = sortComponentsForWidgetLayering(view.components);
     for (const c of orderedComponents) {
-      setupBody += generateComponentSetup(c, screenVar, '  ');
+      setupBody += generateComponentSetup(c, screenVar, '  ', undefined, 0, 0, undefined, entityTypes);
       setupBody += '\n';
     }
     setupBody += '\n';

@@ -26,13 +26,21 @@ function emitLiteral(value: ConditionValue): string {
   return `std::string("${escapeCString(value)}")`;
 }
 
-function stateAccess(varName: string, value: ConditionValue): string {
+function stateAccess(varName: string, value: ConditionValue, cppType?: ConditionEntityType): string {
   // Treat HA boolean strings as bool, matching bind_ha_bool which produces
   // Observable<bool>. These Observables can't be cast to std::string.
   if (typeof value === "string") {
     const lower = value.toLowerCase();
     if (lower === "on" || lower === "off") {
       return `state.${varName}`;
+    }
+    // If the observable is typed as float, use std::to_string instead of
+    // static_cast<std::string> which is invalid for Observable<float>.
+    // Note: std::to_string(float) emits trailing zeros (e.g. "21.500000"),
+    // so string comparisons against a float-typed entity must match that
+    // formatting.
+    if (cppType === "float") {
+      return `std::to_string(static_cast<float>(state.${varName}))`;
     }
     return `static_cast<std::string>(state.${varName})`;
   }
@@ -66,9 +74,10 @@ function emitComparison(
   }
 }
 
-function emitEntity(c: EntityCondition): string {
+function emitEntity(c: EntityCondition, entityTypes?: EntityTypeMap): string {
   const varName = stateVarFromEntity(c.entityId);
-  const lhs = stateAccess(varName, c.value);
+  const cppType = entityTypes?.get(varName);
+  const lhs = stateAccess(varName, c.value, cppType);
   return emitComparison(lhs, c.operator, c.value);
 }
 
@@ -84,16 +93,23 @@ function emitTime(_c: TimeCondition): string {
   return "true";
 }
 
-function emitCompound(c: CompoundCondition): string {
+function emitCompound(c: CompoundCondition, entityTypes?: EntityTypeMap): string {
   if (!c.conditions || c.conditions.length === 0) return "true";
   const op = c.operator === "and" ? " && " : " || ";
-  const parts = c.conditions.map(inner => emitConditionExpression(inner));
+  const parts = c.conditions.map(inner => emitConditionExpression(inner, entityTypes));
   return `(${parts.join(op)})`;
 }
 
-function emitNot(c: NotCondition): string {
-  return `(!${emitConditionExpression(c.condition)})`;
+function emitNot(c: NotCondition, entityTypes?: EntityTypeMap): string {
+  return `(!${emitConditionExpression(c.condition, entityTypes)})`;
 }
+
+/**
+ * Map from sanitized variable name (as produced by `stateVarFromEntity(entityId)`)
+ * to the C++ type declared for that entity's Observable. Used to generate
+ * type-safe access expressions in conditions.
+ */
+export type EntityTypeMap = Map<string, ConditionEntityType>;
 
 /**
  * Convert a schema Condition into a C++ boolean expression that can be used
@@ -102,14 +118,17 @@ function emitNot(c: NotCondition): string {
  * Returns "true" when condition is undefined or unsupported, so the surrounding
  * widget remains visible by default.
  */
-export function emitConditionExpression(condition: Condition | undefined): string {
+export function emitConditionExpression(
+  condition: Condition | undefined,
+  entityTypes?: EntityTypeMap,
+): string {
   if (!condition) return "true";
   switch (condition.type) {
-    case "entity": return emitEntity(condition);
+    case "entity": return emitEntity(condition, entityTypes);
     case "state": return emitState(condition);
     case "time": return emitTime(condition);
-    case "compound": return emitCompound(condition);
-    case "not": return emitNot(condition);
+    case "compound": return emitCompound(condition, entityTypes);
+    case "not": return emitNot(condition, entityTypes);
     default:
       return "true";
   }

@@ -22,6 +22,11 @@ floating-point scaling, chroma-key mapping, and repeated bounds checks. PNG
 decoding remains progressive; transparent and non-RGB565 images retain the
 stock compatibility path.
 
+For resized opaque PNGs, a pinned PNGLE 1.1.0 pre-build patch receives the
+decoder's integer boundary maps. PNGLE still inflates and unfilters every
+source byte, as required by PNG, but source pixels that cannot contribute to
+the destination skip RGBA conversion and callback dispatch entirely.
+
 After installing firmware, a successful fast decode logs a line like:
 
 ```text

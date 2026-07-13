@@ -125,6 +125,12 @@ void PngDecoder::initialize_output(uint32_t width, uint32_t height) {
       this->target_y_for_source_boundary_[source_y] = target_y;
     }
   }
+  if (!this->target_x_for_source_boundary_.empty() &&
+      !this->target_y_for_source_boundary_.empty()) {
+    pngle_set_draw_boundaries(this->pngle_,
+                              this->target_x_for_source_boundary_.data(),
+                              this->target_y_for_source_boundary_.data());
+  }
   this->fast_path_ready_ = true;
 }
 

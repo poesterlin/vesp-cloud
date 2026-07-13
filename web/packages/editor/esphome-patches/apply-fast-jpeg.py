@@ -78,6 +78,17 @@ if 'cg.add_build_flag("-DARDUINO_ARCH_ESP32")' not in codegen:
     if define_anchor not in codegen:
         raise SystemExit("ESPHome runtime_image codegen changed; refusing a partial SIMD patch")
     codegen = codegen.replace(define_anchor, define_replacement, 1)
+
+png_anchor = '        cg.add_library("pngle", "1.1.0")\n'
+png_patch_option = (
+    png_anchor
+    + f'        cg.add_platformio_option("extra_scripts", '
+      f'["pre:{PATCH_DIR / "patch-pngle.py"}"])\n'
+)
+if "patch-pngle.py" not in codegen:
+    if png_anchor not in codegen:
+        raise SystemExit("ESPHome PNG codegen changed; refusing a partial PNGLE patch")
+    codegen = codegen.replace(png_anchor, png_patch_option, 1)
 RUNTIME_IMAGE_CODEGEN.write_text(codegen)
 
 print(f"Installed fast JPEG and PNG decoders into ESPHome {PACKAGE_VERSION}")

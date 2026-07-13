@@ -52,14 +52,19 @@ describe("fast runtime image firmware integration", () => {
     const installer = readEditorFile("esphome-patches/apply-fast-jpeg.py");
     const header = readEditorFile("esphome-patches/png_decoder.h");
     const decoder = readEditorFile("esphome-patches/png_decoder.cpp");
+    const pnglePatch = readEditorFile("esphome-patches/patch-pngle.py");
 
     expect(installer).toContain('PATCH_DIR / "png_decoder.cpp"');
     expect(installer).toContain('PATCH_DIR / "png_decoder.h"');
+    expect(installer).toContain('["pre:{PATCH_DIR / "patch-pngle.py"}"]');
     expect(header).toContain("target_x_for_source_boundary_");
     expect(decoder).toContain("get_decode_buffer()");
     expect(decoder).toContain("!this->image_->has_transparency()");
     expect(decoder).not.toContain("std::lower_bound");
     expect(decoder).toContain("this->draw(x, y, width, height, Color(");
     expect(decoder).toContain('"Fast RGB565: source=%" PRIu32');
+    expect(decoder).toContain("pngle_set_draw_boundaries");
+    expect(pnglePatch).toContain("skip color conversion and callbacks");
+    expect(pnglePatch).toContain("continue;");
   });
 });

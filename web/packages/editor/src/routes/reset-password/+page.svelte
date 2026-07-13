@@ -4,6 +4,10 @@
   let { data, form } = $props();
 </script>
 
+<svelte:head>
+  <title>vESP.cloud — New Password</title>
+</svelte:head>
+
 <div class="auth-page">
   <div class="auth-card">
     <h1>Reset Password</h1>

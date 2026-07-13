@@ -5,7 +5,7 @@
 </script>
 
 <svelte:head>
-  <title>Home Assistant Entity Export — vESP.cloud</title>
+  <title>vESP.cloud — Import</title>
   <meta
     name="description"
     content="Install the HA Metadata Exporter with HACS, download a privacy-safe Home Assistant entity dump, and import it into vESP.cloud."

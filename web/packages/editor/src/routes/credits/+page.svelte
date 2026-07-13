@@ -63,6 +63,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>vESP.cloud — Credits</title>
+</svelte:head>
+
 <div class="credits-page">
   <header class="credits-header">
     <a href="/" class="back-link">

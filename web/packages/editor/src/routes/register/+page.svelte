@@ -7,6 +7,10 @@
   const redirectParam = $derived(page.url.searchParams.get('redirect') || '');
 </script>
 
+<svelte:head>
+  <title>vESP.cloud — Sign Up</title>
+</svelte:head>
+
 <div class="auth-page">
   <div class="auth-card">
     <h1>Create Account</h1>

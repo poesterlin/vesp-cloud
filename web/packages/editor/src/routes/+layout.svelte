@@ -11,7 +11,7 @@
   function getSeoForPath(pathname: string) {
     if (pathname === "/intro") {
       return {
-        title: "vESP.cloud - Display Builder",
+        title: "vESP.cloud — Intro",
         description:
           "Design dashboards for Home Assistant, export firmware, and deploy updates with vESP.cloud.",
       };
@@ -19,7 +19,7 @@
 
     if (pathname === "/home-assistant-entity-export") {
       return {
-        title: "Home Assistant Entity Export - vESP.cloud",
+        title: "vESP.cloud — Import",
         description:
           "Install HA Metadata Exporter with HACS and import your Home Assistant entities into vESP.cloud.",
       };
@@ -27,7 +27,7 @@
 
     if (pathname === "/terms") {
       return {
-        title: "Terms of Service - vESP.cloud",
+        title: "vESP.cloud — Terms",
         description:
           "Read the vESP.cloud terms for account usage, purchases, privacy, and consumer rights.",
       };
@@ -35,14 +35,14 @@
 
     if (pathname === "/withdrawal") {
       return {
-        title: "Right of Withdrawal - vESP.cloud",
+        title: "vESP.cloud — Withdrawal",
         description:
           "Submit and track your statutory withdrawal request for vESP.cloud credit pack purchases.",
       };
     }
 
     return {
-      title: SITE_NAME,
+      title: "vESP.cloud — Builder",
       description: DEFAULT_DESCRIPTION,
     };
   }

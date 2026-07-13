@@ -102,7 +102,7 @@
 </script>
 
 <svelte:head>
-  <title>vESP.cloud {projectStore.project ? `- ${projectStore.project.name}` : ''}</title>
+  <title>{projectStore.project?.name || "Project"} — vESP.cloud</title>
 </svelte:head>
 
 {#if loading}

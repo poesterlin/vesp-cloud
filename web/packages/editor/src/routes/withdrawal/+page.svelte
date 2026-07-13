@@ -43,7 +43,7 @@
 </script>
 
 <svelte:head>
-  <title>Withdraw from contract – vESP.cloud</title>
+  <title>vESP.cloud — Withdrawal</title>
 </svelte:head>
 
 <div class="withdrawal-page">

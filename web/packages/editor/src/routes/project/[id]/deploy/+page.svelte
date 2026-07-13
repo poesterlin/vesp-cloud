@@ -171,11 +171,7 @@
 </script>
 
 <svelte:head>
-  <title
-    >Deploy {projectStore.project
-      ? `- ${projectStore.project.name}`
-      : ""}</title
-  >
+  <title>vESP.cloud — Deploy</title>
   <script
     type="module"
     src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"

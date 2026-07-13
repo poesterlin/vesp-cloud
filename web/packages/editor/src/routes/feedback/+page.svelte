@@ -11,7 +11,7 @@
 </script>
 
 <svelte:head>
-  <title>Feedback - vESP.cloud</title>
+  <title>vESP.cloud — Feedback</title>
 </svelte:head>
 
 <div class="feedback-page">

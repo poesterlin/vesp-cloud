@@ -1,3 +1,7 @@
+<svelte:head>
+  <title>vESP.cloud — Terms</title>
+</svelte:head>
+
 <div class="terms-page">
   <header class="terms-header">
     <a href="/" class="back-link">Back to App</a>

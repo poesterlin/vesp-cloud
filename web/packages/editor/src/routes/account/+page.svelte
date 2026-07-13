@@ -26,6 +26,10 @@
   );
 </script>
 
+<svelte:head>
+  <title>vESP.cloud — Account</title>
+</svelte:head>
+
 <div class="account-page">
   <header class="account-header">
     <a href="/" class="back-link">

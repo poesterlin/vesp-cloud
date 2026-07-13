@@ -146,7 +146,11 @@ inline void draw_clipped_border(display::Display &it, int x, int y, int w, int h
   };
   clamp(c_tl); clamp(c_tr); clamp(c_br); clamp(c_bl);
 
-  int x1 = x, x2 = x + w, y1 = y, y2 = y + h;
+  // Width/height follow ESPHome's rectangle convention: the last drawable
+  // pixel is x + w - 1 / y + h - 1.  Keeping the polygon inside that
+  // half-open extent also makes it compatible with Widget::draw_clipped(),
+  // whose right/bottom clip edges are exclusive.
+  int x1 = x, x2 = x + w - 1, y1 = y, y2 = y + h - 1;
 
   // Top edge
   if ((c_tl > 0 || c_tr > 0) && (x2 - c_tr) > (x1 + c_tl))

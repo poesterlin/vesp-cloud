@@ -50,4 +50,12 @@ describe("dirty-region architecture", () => {
     expect(screens).not.toContain("w->draw(it, state)");
     expect(tabs).not.toContain("w->draw(it, state)");
   });
+
+  test("retro borders stay inside the widget's half-open paint bounds", async () => {
+    const retro = await includeSource("ui_retro.h");
+
+    expect(retro).toContain("x2 = x + w - 1");
+    expect(retro).toContain("y2 = y + h - 1");
+    expect(retro).not.toContain("x2 = x + w, y1 = y, y2 = y + h;");
+  });
 });

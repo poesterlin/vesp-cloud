@@ -50,9 +50,9 @@
     },
     {
       type: "range_slider",
-      label: "Range Slider",
+      label: "Slider",
       icon: mdiTuneVertical,
-      description: "Dual-thumb range control with retro or modern styling",
+      description: "Slider to control numbers in a range like media volume",
     },
     {
       type: "rectangle",

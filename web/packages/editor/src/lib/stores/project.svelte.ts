@@ -193,6 +193,7 @@ function createProjectStore() {
       project.dashboardPages.push(newPage);
       currentDashboardPageId = newPage.id;
       viewMode = "dashboard";
+      selectionStore.clear();
       scheduleSave();
       return newPage;
     },
@@ -204,6 +205,7 @@ function createProjectStore() {
         project.dashboardPages.splice(idx, 1);
         if (currentDashboardPageId === id) {
           currentDashboardPageId = project.dashboardPages[0].id;
+          selectionStore.clear();
         }
         scheduleSave();
       }
@@ -234,12 +236,13 @@ function createProjectStore() {
       const newView: DetailView = {
         id: view?.id ?? toUpperSnakeCase(title),
         title: title,
-        height: view?.height ?? 640,
+        height: view?.height ?? 480,
         components: view?.components ?? [],
       };
       project.detailViews.push(newView);
       currentDetailViewId = newView.id;
       viewMode = "detail";
+      selectionStore.clear();
       scheduleSave();
       return newView;
     },
@@ -261,6 +264,7 @@ function createProjectStore() {
         if (currentDetailViewId === id) {
           currentDetailViewId = null;
           viewMode = "dashboard";
+          selectionStore.clear();
         }
         scheduleSave();
       }
@@ -355,6 +359,209 @@ function createProjectStore() {
           return component;
         }
       }
+    },
+
+    isComponentNested(id: string): boolean {
+      if (!project) return false;
+
+      const containsNested = (components: Component[], depth: number): boolean => {
+        for (const component of components) {
+          if (component.id === id) return depth > 0;
+          if (component.type === "conditional_area") {
+            for (const variant of component.variants) {
+              if (containsNested(variant.components, depth + 1)) return true;
+            }
+          } else if (component.type === "tab_container") {
+            for (const tab of component.tabs) {
+              if (containsNested(tab.components, depth + 1)) return true;
+            }
+          }
+        }
+        return false;
+      };
+
+      if (project.pageHeader && containsNested(project.pageHeader.components, 0)) return true;
+      for (const page of project.dashboardPages) {
+        if (containsNested(page.components, 0)) return true;
+      }
+      for (const view of project.detailViews) {
+        if (containsNested(view.components, 0)) return true;
+      }
+      return false;
+    },
+
+    moveComponentToRoot(id: string): boolean {
+      if (!project) return false;
+
+      // Reparent atomically. Replacing the project model ensures every derived
+      // canvas value observes the new root array; mutating the source and
+      // destination arrays in place can leave a derived array cached.
+      const nextProject = JSON.parse(JSON.stringify(project)) as Project;
+
+      const moveFromRoot = (root: Component[]): boolean => {
+        // Root component positions and nested component positions use different
+        // coordinate spaces. Accumulate the container offsets while finding the
+        // child so it remains in the same visual location after reparenting.
+        const removeNested = (
+          components: Component[],
+          origin: { x: number; y: number },
+          depth: number,
+        ): Component | undefined => {
+          for (let index = 0; index < components.length; index += 1) {
+            const component = components[index];
+            if (component.id === id) {
+              if (depth === 0) return undefined;
+              components.splice(index, 1);
+              component.position = {
+                x: origin.x + component.position.x,
+                y: origin.y + component.position.y,
+              };
+              return component;
+            }
+
+            const componentOrigin = {
+              x: origin.x + component.position.x,
+              y: origin.y + component.position.y,
+            };
+            if (component.type === "conditional_area") {
+              for (const variant of component.variants) {
+                const found = removeNested(variant.components, componentOrigin, depth + 1);
+                if (found) return found;
+              }
+            } else if (component.type === "tab_container") {
+              const tabOrigin = {
+                x: componentOrigin.x,
+                y: componentOrigin.y + TAB_HEADER_HEIGHT,
+              };
+              for (const tab of component.tabs) {
+                const found = removeNested(tab.components, tabOrigin, depth + 1);
+                if (found) return found;
+              }
+            }
+          }
+          return undefined;
+        };
+
+        const component = removeNested(root, { x: 0, y: 0 }, 0);
+        if (!component) return false;
+        root.push(component);
+        return true;
+      };
+
+      let moved = false;
+      if (nextProject.pageHeader) {
+        moved = moveFromRoot(nextProject.pageHeader.components);
+      }
+      if (!moved) {
+        for (const page of nextProject.dashboardPages) {
+          if (moveFromRoot(page.components)) {
+            moved = true;
+            break;
+          }
+        }
+      }
+      if (!moved) {
+        for (const view of nextProject.detailViews) {
+          if (moveFromRoot(view.components)) {
+            moved = true;
+            break;
+          }
+        }
+      }
+      if (!moved) return false;
+
+      project = nextProject;
+      scheduleSave();
+      return true;
+    },
+
+    moveComponentIntoContainer(id: string, parentId: string): boolean {
+      if (!project || id === parentId || this.isComponentNested(id)) return false;
+
+      const parent = this.getComponent(parentId);
+      if (parent?.type !== "conditional_area" && parent?.type !== "tab_container") {
+        return false;
+      }
+
+      const parentPosition = this.getComponentAbsolutePosition(parentId);
+      const targetOffsetY = parent.type === "tab_container" ? TAB_HEADER_HEIGHT : 0;
+      const nextProject = JSON.parse(JSON.stringify(project)) as Project;
+
+      const findInComponents = (components: Component[]): Component | undefined => {
+        for (const component of components) {
+          if (component.id === parentId) return component;
+          if (component.type === "conditional_area") {
+            for (const variant of component.variants) {
+              const found = findInComponents(variant.components);
+              if (found) return found;
+            }
+          } else if (component.type === "tab_container") {
+            for (const tab of component.tabs) {
+              const found = findInComponents(tab.components);
+              if (found) return found;
+            }
+          }
+        }
+        return undefined;
+      };
+
+      const moveWithinRoot = (root: Component[]): boolean => {
+        const sourceIndex = root.findIndex((component) => component.id === id);
+        if (sourceIndex === -1) return false;
+        const target = findInComponents(root);
+        if (!target || (target.type !== "conditional_area" && target.type !== "tab_container")) {
+          return false;
+        }
+
+        const [component] = root.splice(sourceIndex, 1);
+        component.position = {
+          x: component.position.x - parentPosition.x,
+          y: component.position.y - parentPosition.y - targetOffsetY,
+        };
+
+        if (target.type === "conditional_area") {
+          const variantId = conditionalEditorStore.getActiveVariant(
+            target.id,
+            target.defaultVariantId ?? target.variants[0]?.id,
+          );
+          const variant = target.variants.find((item) => item.id === variantId) ?? target.variants[0];
+          if (!variant) return false;
+          variant.components.push(component);
+        } else {
+          const tabId = conditionalEditorStore.getActiveTab(
+            target.id,
+            target.defaultTabId ?? target.tabs[0]?.id,
+          );
+          const tab = target.tabs.find((item) => item.id === tabId) ?? target.tabs[0];
+          if (!tab) return false;
+          tab.components.push(component);
+        }
+        return true;
+      };
+
+      let moved = false;
+      if (nextProject.pageHeader) moved = moveWithinRoot(nextProject.pageHeader.components);
+      if (!moved) {
+        for (const page of nextProject.dashboardPages) {
+          if (moveWithinRoot(page.components)) {
+            moved = true;
+            break;
+          }
+        }
+      }
+      if (!moved) {
+        for (const view of nextProject.detailViews) {
+          if (moveWithinRoot(view.components)) {
+            moved = true;
+            break;
+          }
+        }
+      }
+      if (!moved) return false;
+
+      project = nextProject;
+      scheduleSave();
+      return true;
     },
 
     updateComponent(id: string, updates: Partial<Component>, skipSave?: boolean) {
@@ -935,6 +1142,7 @@ function createProjectStore() {
       currentDashboardPageId = newProject.dashboardPages[0].id;
       currentDetailViewId = null;
       viewMode = "dashboard";
+      selectionStore.clear();
       return newProject;
     },
 
@@ -945,6 +1153,7 @@ function createProjectStore() {
       currentDashboardPageId = parsed.dashboardPages[0]?.id ?? "";
       currentDetailViewId = null;
       viewMode = "dashboard";
+      selectionStore.clear();
       if (!project.pageHeader) {
         this.enablePageHeader();
       }
@@ -961,6 +1170,7 @@ function createProjectStore() {
           currentDashboardPageId = parsed.dashboardPages[0]?.id ?? "";
           currentDetailViewId = null;
           viewMode = "dashboard";
+          selectionStore.clear();
           return true;
         } catch (e) {
           console.error("Failed to parse project", e);
@@ -974,6 +1184,7 @@ function createProjectStore() {
       if (serverProjectId === id) {
         project = null;
         serverProjectId = null;
+        selectionStore.clear();
       }
     },
 
@@ -1016,6 +1227,7 @@ function createProjectStore() {
         currentDashboardPageId = parsed.dashboardPages[0]?.id ?? "";
         currentDetailViewId = null;
         viewMode = "dashboard";
+        selectionStore.clear();
         scheduleSave();
         return true;
       } catch (e) {

@@ -58,6 +58,11 @@ describe("calendar codegen", () => {
     expect(yaml).toContain('duration: "720:00:00"');
     expect(yaml).toContain("g_ui_app.state().calendar_family_events_1d_raw.set(formatted);");
     expect(yaml).toContain("g_ui_app.state().calendar_family_events_30d_raw.set(formatted);");
+    expect(yaml).toContain('bind_calendar_refetch("calendar.family", &id(g_calendar_refetch_calendar_family_events_1d_raw));');
+    expect(yaml).toContain('bind_calendar_refetch("calendar.family", &id(g_calendar_refetch_calendar_family_events_30d_raw));');
+    expect(yaml).toContain("- interval: 250ms");
+    expect(yaml).toContain("return id(g_calendar_refetch_calendar_family_events_1d_raw);");
+    expect(yaml).toContain("return id(g_calendar_refetch_calendar_family_events_30d_raw);");
   });
 
   test("deduplicates identical calendar entity + duration windows", () => {
@@ -92,5 +97,6 @@ describe("calendar codegen", () => {
     const calls = yaml.match(/service: calendar.get_events/g)?.length ?? 0;
     expect(calls).toBe(1);
     expect(yaml).toContain("g_ui_app.state().calendar_family_events_7d_raw.set(formatted);");
+    expect(yaml.match(/id: g_calendar_refetch_calendar_family_events_7d_raw/g)?.length).toBe(1);
   });
 });

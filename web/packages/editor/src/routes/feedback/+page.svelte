@@ -1,7 +1,9 @@
 <script lang="ts">
   import * as mdiIcons from '@mdi/js';
+  import type { PageProps } from './$types';
 
-  let { data, form } = $props();
+  let { data, form }: PageProps = $props();
+  const entries = $derived(data?.entries ?? []);
 
   function formatDate(value: string) {
     return new Date(value).toLocaleString();
@@ -50,11 +52,11 @@
   <section class="panel">
     <h2>Your Messages</h2>
 
-    {#if data.entries.length === 0}
+    {#if entries.length === 0}
       <p class="empty">No feedback sent yet.</p>
     {:else}
       <div class="entries">
-        {#each data.entries as entry (entry.id)}
+        {#each entries as entry (entry.id)}
           <article class="entry">
             <div class="meta">Sent {formatDate(entry.createdAt)}</div>
             <p class="message">{entry.message}</p>

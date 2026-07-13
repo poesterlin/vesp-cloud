@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 
 export const prerender = true;
-const INDEXABLE_PATHS = ['/intro', '/terms', '/withdrawal'];
+const INDEXABLE_PATHS = ['/intro', '/home-assistant-entity-export', '/terms', '/withdrawal'];
 const SITEMAP_LASTMOD = new Date().toISOString();
 
 export const GET: RequestHandler = ({ url }) => {

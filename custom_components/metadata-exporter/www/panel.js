@@ -167,7 +167,7 @@ class DisplayMetadataPanel extends LitElement {
         <div class="card">
           <h3>Next Steps</h3>
           <ol>
-            <li>Save the <code>display-metadata.json</code> file.</li>
+            <li>Save the <code>ha-metadata.json</code> file.</li>
             <li>Open the <strong>Web Editor</strong>.</li>
             <li>Upload the file when prompted to sync your entities.</li>
           </ol>
@@ -228,7 +228,7 @@ class DisplayMetadataPanel extends LitElement {
       if (result) {
         this._showStatus('Successfully exported metadata!', 'success');
         this._showPreview(result);
-        this._downloadFile(result, 'display-metadata.json');
+        this._downloadFile(result, 'ha-metadata.json');
       } else {
         throw new Error('No data received from WebSocket');
       }

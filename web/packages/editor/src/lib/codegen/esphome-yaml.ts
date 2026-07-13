@@ -417,6 +417,18 @@ function generateBindings(project: Project): string {
   }
 
   for (const c of allComponents) {
+    if (c.type !== "calendar") continue;
+    const cc = c as CalendarComponent;
+    const entityId = cc.entityBinding?.entityId;
+    if (!entityId) continue;
+    const eventsVar = calendarEventsVarFromEntity(entityId, cc.durationDays);
+    const refetchFlag = `g_calendar_refetch_${eventsVar}`;
+    if (claimed.has(refetchFlag)) continue;
+    claimed.add(refetchFlag);
+    lines.push(`          bind_calendar_refetch("${escapeCString(entityId)}", &id(${refetchFlag}));`);
+  }
+
+  for (const c of allComponents) {
     if (c.type !== "text") continue;
     const tc = c as TextComponent;
     for (const b of collectTextBindings(tc)) {
@@ -792,6 +804,25 @@ ${flagSetters}`);
   return entries.join('\n\n');
 }
 
+function generateCalendarRefetchGlobals(project: Project): string {
+  const calendarComponents = collectProjectComponents(project)
+    .filter(c => c.type === 'calendar') as CalendarComponent[];
+  const seen = new Set<string>();
+  const entries: string[] = [];
+  for (const cc of calendarComponents) {
+    const entityId = cc.entityBinding?.entityId;
+    if (!entityId) continue;
+    const eventsVar = calendarEventsVarFromEntity(entityId, cc.durationDays);
+    if (seen.has(eventsVar)) continue;
+    seen.add(eventsVar);
+    entries.push(`  - id: g_calendar_refetch_${eventsVar}
+    type: bool
+    restore_value: no
+    initial_value: "false"`);
+  }
+  return entries.join('\n');
+}
+
 function generateCalendarIntervals(project: Project): string {
   const allComponents = collectProjectComponents(project);
   const calendarComponents = allComponents.filter(c => c.type === 'calendar') as CalendarComponent[];
@@ -813,7 +844,8 @@ function generateCalendarIntervals(project: Project): string {
     if (nextMaxItems > currentMaxItems) selectedByEntityWindow.set(key, cc);
   }
 
-  const entries: string[] = [];
+  const fetchBlocks: string[] = [];
+  const flagSetters: string[] = [];
   for (const cc of selectedByEntityWindow.values()) {
     const entityId = cc.entityBinding?.entityId;
     if (!entityId) continue;
@@ -822,72 +854,85 @@ function generateCalendarIntervals(project: Project): string {
     const durationHours = durationDays * 24;
     const durationString = `${durationHours}:00:00`;
     const eventsVar = calendarEventsVarFromEntity(entityId, durationDays);
+    const refetchFlag = `g_calendar_refetch_${eventsVar}`;
+    flagSetters.push(`          id(${refetchFlag}) = true;`);
 
-    entries.push(`  - interval: 2min
-    startup_delay: 6s
-    then:
-      - logger.log:
-          level: WARN
-          tag: calendar
-          format: "calling calendar.get_events for ${escapedId}"
-      - homeassistant.service:
-          service: calendar.get_events
-          data:
-            entity_id: "${escapedId}"
-            duration: "${durationString}"
-          capture_response: true
-          on_success:
-            then:
-              - lambda: |-
-                  auto resp_wrapper = response["response"];
-                  if (!resp_wrapper.is<JsonObjectConst>()) {
-                    ESP_LOGW("calendar", "response.response is not object");
-                    return;
-                  }
-                  auto entity_obj = resp_wrapper["${escapedId}"];
-                  if (!entity_obj.is<JsonObjectConst>()) {
-                    ESP_LOGW("calendar", "entity key not found: %s", "${escapedId}");
-                    return;
-                  }
-                  auto events_var = entity_obj["events"];
-                  if (!events_var.is<JsonArrayConst>()) {
-                    ESP_LOGW("calendar", "events is not array");
-                    g_ui_app.state().${eventsVar}.set("NO EVENTS");
-                    UiRedraw::trigger_display_update();
-                    return;
-                  }
-                  JsonArrayConst events = events_var.as<JsonArrayConst>();
+    fetchBlocks.push(`      - if:
+          condition:
+            lambda: 'return id(${refetchFlag});'
+          then:
+            - lambda: 'id(${refetchFlag}) = false;'
+            - logger.log:
+                level: WARN
+                tag: calendar
+                format: "calling calendar.get_events for ${escapedId}"
+            - homeassistant.service:
+                service: calendar.get_events
+                data:
+                  entity_id: "${escapedId}"
+                  duration: "${durationString}"
+                capture_response: true
+                on_success:
+                  then:
+                    - lambda: |-
+                      auto resp_wrapper = response["response"];
+                      if (!resp_wrapper.is<JsonObjectConst>()) {
+                        ESP_LOGW("calendar", "response.response is not object");
+                        return;
+                      }
+                      auto entity_obj = resp_wrapper["${escapedId}"];
+                      if (!entity_obj.is<JsonObjectConst>()) {
+                        ESP_LOGW("calendar", "entity key not found: %s", "${escapedId}");
+                        return;
+                      }
+                      auto events_var = entity_obj["events"];
+                      if (!events_var.is<JsonArrayConst>()) {
+                        ESP_LOGW("calendar", "events is not array");
+                        g_ui_app.state().${eventsVar}.set("NO EVENTS");
+                        UiRedraw::trigger_display_update();
+                        return;
+                      }
+                      JsonArrayConst events = events_var.as<JsonArrayConst>();
 
-                  auto sanitize = [](std::string s) {
-                    for (char &ch : s) {
-                      if (ch == '|' || ch == '\\n' || ch == '\\r' || ch == '\\t') ch = ' ';
-                    }
-                    return s;
-                  };
+                      auto sanitize = [](std::string s) {
+                        for (char &ch : s) {
+                          if (ch == '|' || ch == '\\n' || ch == '\\r' || ch == '\\t') ch = ' ';
+                        }
+                        return s;
+                      };
 
-                  std::string formatted;
-                  int count = 0;
-                  for (JsonVariantConst item : events) {
-                    if (count >= 32) break;
-                    std::string start;
-                    std::string end_time;
-                    std::string summary;
-                    std::string location;
-                    if (item["start"].is<std::string>()) start = sanitize(item["start"].as<std::string>());
-                    if (item["end"].is<std::string>()) end_time = sanitize(item["end"].as<std::string>());
-                    if (item["summary"].is<std::string>()) summary = sanitize(item["summary"].as<std::string>());
-                    if (item["location"].is<std::string>()) location = sanitize(item["location"].as<std::string>());
-                    if (summary.empty()) continue;
-                    if (!formatted.empty()) formatted += "\\n";
-                    formatted += start + "|" + end_time + "|" + summary + "|" + location;
-                    count++;
-                  }
-                  if (formatted.empty()) formatted = "NO EVENTS";
-                  g_ui_app.state().${eventsVar}.set(formatted);
-                  UiRedraw::trigger_display_update();`);
+                      std::string formatted;
+                      int count = 0;
+                      for (JsonVariantConst item : events) {
+                        if (count >= 32) break;
+                        std::string start;
+                        std::string end_time;
+                        std::string summary;
+                        std::string location;
+                        if (item["start"].is<std::string>()) start = sanitize(item["start"].as<std::string>());
+                        if (item["end"].is<std::string>()) end_time = sanitize(item["end"].as<std::string>());
+                        if (item["summary"].is<std::string>()) summary = sanitize(item["summary"].as<std::string>());
+                        if (item["location"].is<std::string>()) location = sanitize(item["location"].as<std::string>());
+                        if (summary.empty()) continue;
+                        if (!formatted.empty()) formatted += "\\n";
+                        formatted += start + "|" + end_time + "|" + summary + "|" + location;
+                        count++;
+                      }
+                      if (formatted.empty()) formatted = "NO EVENTS";
+                      g_ui_app.state().${eventsVar}.set(formatted);
+                      UiRedraw::trigger_display_update();`);
   }
 
-  return entries.join('\n\n');
+  if (fetchBlocks.length === 0) return '';
+  return `  - interval: 250ms
+    then:
+${fetchBlocks.join('\n')}
+
+  - interval: 2min
+    startup_delay: 6s
+    then:
+      - lambda: |-
+${flagSetters.join('\n')}`;
 }
 
 export function generateESPHomeYAML(project: Project, firmwareVersion?: string): string {
@@ -908,6 +953,8 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   const todoIntervals = generateTodoItemsIntervals(project);
   const todoRefetchGlobals = generateTodoRefetchGlobals(project);
   const hasTodoEntityRefetch = !!todoRefetchGlobals;
+  const calendarRefetchGlobals = generateCalendarRefetchGlobals(project);
+  const hasCalendarEntityRefetch = !!calendarRefetchGlobals;
   const calendarIntervals = generateCalendarIntervals(project);
   const notificationSubs = generateNotificationSubscriptions(project);
   const notificationBindings = notificationSubs ? `\n${notificationSubs}` : '';
@@ -1185,6 +1232,15 @@ ${hasTodoEntityRefetch ? `
                 [flag](esphome::StringRef) { *flag = true; });
           };
 ` : ''}
+${hasCalendarEntityRefetch ? `
+          auto bind_calendar_refetch = [](const std::string& entity_id, bool* flag) {
+            auto *api = esphome::api::global_api_server;
+            if (api == nullptr) return;
+            api->subscribe_home_assistant_state(
+                entity_id, esphome::optional<std::string>(),
+                [flag](esphome::StringRef) { *flag = true; });
+          };
+` : ''}
 ${bindings ? bindings + '\n' : ''}${notificationBindings ? notificationBindings + '\n' : ''}  includes:
     - includes/ui_theme.h
     - includes/ui_types.h
@@ -1229,6 +1285,7 @@ globals:
     initial_value: "0"
 ${onlineImageFormatGlobals}
 ${todoRefetchGlobals ? '\n' + todoRefetchGlobals : ''}
+${calendarRefetchGlobals ? '\n' + calendarRefetchGlobals : ''}
 
 touchscreen:
   platform: gt911

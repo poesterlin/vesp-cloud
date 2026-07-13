@@ -213,6 +213,7 @@
     <div class="target-section">
       <span class="field-label">Target (optional)</span>
       <EntityPicker
+        allowAttribute={false}
         allowedDomains={serviceAllowedTargetDomains.length > 0
           ? serviceAllowedTargetDomains
           : undefined}

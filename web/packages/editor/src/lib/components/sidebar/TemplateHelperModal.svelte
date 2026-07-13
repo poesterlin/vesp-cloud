@@ -2,6 +2,8 @@
   import { homeAssistantStore } from "$lib/stores/homeassistant.svelte";
   import type { EntityBinding } from "@vesp-cloud/schema";
   import type { Entity } from "@vesp-cloud/schema/homeassistant";
+  import ManualBindingForm from "./entity-picker/ManualBindingForm.svelte";
+  import DumpImport from "./entity-picker/DumpImport.svelte";
   import {
     mdiAccountOutline,
     mdiCameraOutline,
@@ -286,6 +288,13 @@
     });
   }
 
+  function insertManualBinding(binding: EntityBinding) {
+    onInsert({
+      entityId: binding.entityId,
+      attribute: binding.attribute ?? undefined,
+    });
+  }
+
   function resetFilters() {
     selectedDomain = null;
     selectedAreaFilter = "";
@@ -311,7 +320,7 @@
       </button>
     </div>
 
-    <div class="modal-search">
+    {#if homeAssistantStore.isLoaded}<div class="modal-search">
       <svg class="icon search-icon" viewBox="0 0 24 24" aria-hidden="true">
         <path d={uiIcons.search}></path>
       </svg>
@@ -332,10 +341,19 @@
           </svg>
         </button>
       {/if}
-    </div>
+    </div>{/if}
 
     <div class="modal-body">
-      {#if searchQuery}
+      {#if !homeAssistantStore.isLoaded}
+        <div class="manual-binding-panel">
+          <div class="manual-copy">
+            <strong>Enter an entity manually</strong>
+            <span>A Home Assistant dump is optional. Attributes can also be entered by name.</span>
+          </div>
+          <ManualBindingForm binding={initialBinding} onConfirm={insertManualBinding} />
+          <DumpImport />
+        </div>
+      {:else if searchQuery}
         <div class="results-panel">
           <div class="panel-header">
             <span>Search Results</span>
@@ -669,6 +687,31 @@
     display: flex;
     flex-direction: column;
     min-height: 200px;
+  }
+
+  .manual-binding-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .manual-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--color-text-secondary);
+  }
+
+  .manual-copy strong {
+    color: var(--color-text-primary);
+    font-size: 13px;
+  }
+
+  .manual-copy span {
+    color: var(--color-text-muted);
+    font-size: 11px;
   }
 
   .browse-layout {

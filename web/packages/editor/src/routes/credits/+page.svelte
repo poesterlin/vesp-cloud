@@ -125,9 +125,9 @@
       <p class="legal-note">
         By purchasing credits, you agree to our <a href="/terms"
           >Terms of Service</a
-        >. Credits are non-refundable except where required by law. EU consumers
+        >. Credits are non-refundable except where required by law. You
         may
-        <a href="/withdrawal">withdraw from their purchase</a> within 14 days.
+        <a href="/withdrawal">withdraw from your purchase</a>.
       </p>
 
       <label class="consent">

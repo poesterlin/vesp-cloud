@@ -12,6 +12,7 @@
   import { deploymentStore } from "$lib/stores/deployment.svelte";
   import { onMount } from "svelte";
   import { page } from "$app/state";
+  import { onNavigate } from "$app/navigation";
   import ProjectSettings from "$lib/components/sidebar/ProjectSettings.svelte";
   import type { Component } from "@vesp-cloud/schema";
   import { selectionStore } from "$lib/stores/selection.svelte.js";
@@ -22,6 +23,10 @@
   let showDebug = $state(false);
   let loading = $state(true);
   let error = $state<string | null>(null);
+
+  onNavigate(() => {
+    selectionStore.clear();
+  });
 
   onMount(() => {
     if (data.project) {

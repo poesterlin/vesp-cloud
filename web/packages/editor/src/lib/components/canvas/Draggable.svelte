@@ -33,6 +33,16 @@
   const isSelected = $derived(selectionStore.isSelected(component.id));
   const isHovered = $derived(selectionStore.isHovered(component.id));
   const hasValidationError = $derived(validationStore.hasErrors(component.id));
+  const REPARENT_AREA_THRESHOLD = 0.4;
+
+  function intersectionArea(
+    a: { x: number; y: number; width: number; height: number },
+    b: { x: number; y: number; width: number; height: number },
+  ): number {
+    const width = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
+    const height = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+    return width * height;
+  }
 
   function handleMouseDown(e: MouseEvent) {
     e.stopPropagation();
@@ -98,8 +108,15 @@
       return;
     }
 
-    const newX = Math.max(0, dragStart.compX + dx);
-    const newY = Math.max(0, dragStart.compY + dy);
+    const isNested = projectStore.isComponentNested(component.id);
+    // Nested widgets may cross a container edge. They remain clipped by the
+    // container while dragging and are reparented when the drag finishes.
+    const newX = isNested
+      ? dragStart.compX + dx
+      : Math.max(0, dragStart.compX + dx);
+    const newY = isNested
+      ? dragStart.compY + dy
+      : Math.max(0, dragStart.compY + dy);
 
     let finalX = newX;
     let finalY = newY;
@@ -107,7 +124,15 @@
     const parentSurface = projectStore.getComponentParentLayoutSurface(component.id);
     const draggedBounds = projectStore.getComponentLayoutBounds(component.id);
 
-    if (!e.ctrlKey && parentSurface && draggedBounds) {
+    const isOutsideParent =
+      !!parentSurface &&
+      isNested &&
+      (newX < 0 ||
+        newY < 0 ||
+        newX + (component.size?.width ?? 50) > parentSurface.width ||
+        newY + (component.size?.height ?? 20) > parentSurface.height);
+
+    if (!e.ctrlKey && parentSurface && draggedBounds && !isOutsideParent) {
       const w = component.size?.width ?? 50;
       const h = component.size?.height ?? 20;
       const tentativeLeft = parentSurface.x + newX;
@@ -231,7 +256,65 @@
     });
   }
 
-  function handleMouseUp() {
+  function handleMouseUp(e: MouseEvent) {
+    const movedByPointer =
+      !!dragStart &&
+      (Math.abs(e.clientX - dragStart.x) > 3 || Math.abs(e.clientY - dragStart.y) > 3);
+    const wasNested = projectStore.isComponentNested(component.id);
+
+    if (!multiSelectDrag && wasNested) {
+      const parentSurface = projectStore.getComponentParentLayoutSurface(component.id);
+      const currentComponent = projectStore.getComponent(component.id);
+      const width = currentComponent?.size?.width ?? 50;
+      const height = currentComponent?.size?.height ?? 20;
+      const componentArea = width * height;
+      const areaInsideParent = parentSurface && currentComponent
+        ? intersectionArea(
+            { x: currentComponent.position.x, y: currentComponent.position.y, width, height },
+            { x: 0, y: 0, width: parentSurface.width, height: parentSurface.height },
+          )
+        : componentArea;
+      const areaOutsideRatio = componentArea > 0
+        ? 1 - areaInsideParent / componentArea
+        : 0;
+
+      if (areaOutsideRatio >= REPARENT_AREA_THRESHOLD) {
+        projectStore.moveComponentToRoot(component.id);
+      }
+    } else if (!multiSelectDrag && movedByPointer) {
+      const sourceBounds = projectStore.getComponentLayoutBounds(component.id);
+      if (sourceBounds) {
+        const sourceArea = sourceBounds.width * sourceBounds.height;
+        const target = projectStore
+          .getVisibleComponentLayoutBounds()
+          .filter(({ component: candidate, ancestorIds }) =>
+            candidate.id !== component.id &&
+            !ancestorIds.includes(component.id) &&
+            (candidate.type === "conditional_area" || candidate.type === "tab_container"))
+          .map((bounds) => {
+            const contentY = bounds.y + (bounds.component.type === "tab_container" ? 36 : 0);
+            const contentHeight = Math.max(
+              0,
+              bounds.height - (bounds.component.type === "tab_container" ? 36 : 0),
+            );
+            const overlap = intersectionArea(sourceBounds, {
+              x: bounds.x,
+              y: contentY,
+              width: bounds.width,
+              height: contentHeight,
+            });
+            return { bounds, overlap };
+          })
+          .filter(({ overlap }) => sourceArea > 0 && overlap / sourceArea >= REPARENT_AREA_THRESHOLD)
+          .sort((a, b) =>
+            b.bounds.ancestorIds.length - a.bounds.ancestorIds.length || b.overlap - a.overlap)[0];
+
+        if (target) {
+          projectStore.moveComponentIntoContainer(component.id, target.bounds.id);
+        }
+      }
+    }
+
     dragging = false;
     dragStart = null;
     multiSelectDrag = false;

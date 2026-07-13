@@ -234,6 +234,11 @@
     stroke: none;
   }
 
+  .toolbar :is(button, a) > .icon {
+    align-self: center;
+    margin-block: auto;
+  }
+
   .zoom-control {
     display: flex;
     align-items: center;

@@ -62,6 +62,7 @@ function createSelectionStore() {
 
     clear() {
       selectedIds = new Set();
+      hoveredId = null;
     },
 
     selectMultiple(ids: string[]) {

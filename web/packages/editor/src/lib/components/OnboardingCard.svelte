@@ -123,7 +123,7 @@
                 <h4>Cloud Builds &amp; OTA Updates</h4>
               </div>
               <p>
-                Design your dashboard, click build, and flash wirelessly. <strong
+                Design your dashboard, click build, and flash wirelessly. <br> <strong
                   >1 credit per build</strong
                 >
                 the most convenient way.
@@ -166,12 +166,13 @@
           </p>
           <ol class="hacs-steps">
             <li>
-              <span class="step-badge">1</span> Install the integration via HACS
-              (link coming soon)
+              <span class="step-badge">1</span> Add this repository to HACS as a
+              custom <strong>Integration</strong>
             </li>
             <li>
-              <span class="step-badge">2</span> Navigate to the dashboard it creates
-              in Home Assistant
+              <span class="step-badge">2</span> Install
+              <strong>HA Metadata Exporter</strong>, restart Home Assistant, and
+              add the integration
             </li>
             <li>
               <span class="step-badge">3</span> Use
@@ -182,6 +183,12 @@
               to populate entities &amp; devices
             </li>
           </ol>
+          <a class="hacs-guide-link" href="/home-assistant-entity-export">
+            Full installation and entity export guide
+            <svg width="14" height="14" viewBox="0 0 24 24" class="icon">
+              <path d={mdiIcons.mdiArrowRight} />
+            </svg>
+          </a>
         </div>
       </div>
     </div>
@@ -213,11 +220,12 @@
 <style>
   .onboarding-card {
     background: #161616;
-    border: 1px solid rgba(74, 158, 254, 0.15);
+    border: 1px solid rgba(83, 196, 202, 0.2);
     border-radius: 1.25rem;
     padding: 0;
     margin-bottom: 4rem;
     overflow: hidden;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
   }
 
   .mobile-warning {
@@ -238,14 +246,16 @@
   }
 
   .onboarding-header {
-    text-align: center;
-    padding: 2.5rem 2.5rem 2rem;
-    background: rgba(74, 158, 254, 0.03);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    text-align: left;
+    padding: 2.75rem 2.5rem 2.25rem;
+    background:
+      linear-gradient(110deg, rgba(241, 36, 112, 0.07), transparent 35%),
+      linear-gradient(290deg, rgba(83, 196, 202, 0.07), transparent 40%);
+    border-bottom: 1px solid rgba(83, 196, 202, 0.12);
   }
 
   .onboarding-header h2 {
-    font-size: 1.5rem;
+    font-size: 1.85rem;
     font-weight: 700;
     color: #fff;
     margin-bottom: 0.5rem;
@@ -253,7 +263,8 @@
 
   .onboarding-header p {
     color: var(--color-text-secondary);
-    font-size: 0.95rem;
+    font-size: 1.05rem;
+    line-height: 1.6;
   }
 
   .onboarding-body {
@@ -268,13 +279,13 @@
     gap: 1.25rem;
     padding: 1.5rem;
     background: #1a1a1a;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 1rem;
     transition: border-color 0.2s;
   }
 
   .info-block:hover {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(83, 196, 202, 0.2);
   }
 
   .info-icon {
@@ -284,9 +295,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(74, 158, 254, 0.1);
+    background: rgba(83, 196, 202, 0.1);
     border-radius: 0.75rem;
-    color: var(--color-accent);
+    color: #53c4ca;
   }
 
   .info-content {
@@ -295,7 +306,7 @@
   }
 
   .info-content h3 {
-    font-size: 1.05rem;
+    font-size: 1.2rem;
     font-weight: 600;
     color: #fff;
     margin-bottom: 0.5rem;
@@ -303,8 +314,8 @@
 
   .info-content p {
     color: var(--color-text-secondary);
-    font-size: 0.9rem;
-    line-height: 1.55;
+    font-size: 1rem;
+    line-height: 1.65;
   }
 
   .icon {
@@ -340,19 +351,19 @@
 
   .hardware-specs {
     color: var(--color-text-secondary);
-    font-size: 0.85rem;
-  }
-
-  .hardware-price {
-    color: var(--color-accent);
-    font-weight: 600;
     font-size: 0.95rem;
   }
 
+  .hardware-price {
+    color: #f1b829;
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+
   .hardware-description {
-    color: var(--color-text-muted);
-    font-size: 0.8rem;
-    line-height: 1.4;
+    color: #909090;
+    font-size: 0.92rem;
+    line-height: 1.55;
   }
 
   .link-icon {
@@ -394,7 +405,7 @@
   }
 
   .demo-link {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     color: var(--color-text-secondary);
   }
 
@@ -418,20 +429,20 @@
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 0.5rem;
-    color: var(--color-accent);
+    color: #53c4ca;
   }
 
   .option-header h4 {
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 600;
     color: #fff;
   }
 
   .option-cloud p,
   .option-local p {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     color: var(--color-text-secondary);
-    line-height: 1.5;
+    line-height: 1.6;
   }
 
   .option-cloud p strong,
@@ -456,20 +467,33 @@
     margin-top: 0.75rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.7rem;
   }
 
   .hacs-steps li {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
     color: var(--color-text-secondary);
   }
 
   .hacs-steps li strong {
     color: #fff;
   }
+
+  .hacs-guide-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    color: var(--color-accent);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .hacs-guide-link:hover { color: var(--color-accent-hover); }
 
   .step-badge {
     display: flex;
@@ -478,9 +502,9 @@
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: rgba(74, 158, 254, 0.15);
-    color: var(--color-accent);
-    font-size: 0.75rem;
+    background: rgba(83, 196, 202, 0.15);
+    color: #53c4ca;
+    font-size: 0.8rem;
     font-weight: 700;
     flex-shrink: 0;
   }
@@ -497,7 +521,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     color: var(--color-text-secondary);
     padding: 0.6rem 1rem;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -525,12 +549,15 @@
     font-size: 1rem;
     font-weight: 600;
     border-radius: var(--radius-lg);
+    background: #53c4ca;
+    color: #071014;
     transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .onboarding-footer button:hover {
+    background: #70d2d7;
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(74, 158, 254, 0.25);
+    box-shadow: 0 8px 24px rgba(83, 196, 202, 0.22);
   }
 
   @media (max-width: 640px) {

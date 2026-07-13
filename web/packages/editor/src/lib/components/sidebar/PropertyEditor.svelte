@@ -4,6 +4,7 @@
   import { selectionStore } from "$lib/stores/selection.svelte";
   import { historyStore } from "$lib/stores/history.svelte";
   import { validationStore } from "$lib/stores/validation.svelte";
+  import { homeAssistantStore } from "$lib/stores/homeassistant.svelte";
   import EntityPicker from "./EntityPicker.svelte";
   import IconSearcher from "./IconSearcher.svelte";
   import ConditionEditor from "./ConditionEditor.svelte";
@@ -194,6 +195,17 @@
     });
   }
 
+  function moveToPage() {
+    if (!selectedComponent || !projectStore.isComponentNested(selectedComponent.id)) return;
+    const componentId = selectedComponent.id;
+    historyStore.record("Move component to page");
+    if (projectStore.moveComponentToRoot(componentId)) {
+      // Refresh selection after crossing keyed component-renderer boundaries.
+      selectionStore.clear();
+      selectionStore.select(componentId);
+    }
+  }
+
   function updateTextContent(text: string) {
     if (!selectedComponent) return;
     historyStore.record("Update text content");
@@ -296,6 +308,11 @@
           />
         </div>
       </div>
+      {#if projectStore.isComponentNested(selectedComponent.id)}
+        <button class="move-to-page-button" onclick={moveToPage}>
+          Move out of container
+        </button>
+      {/if}
     </div>
 
     {#if selectedComponent.size && selectedComponent.type !== "hvac"}
@@ -1000,7 +1017,19 @@
     <!-- Entity Binding (only for components that display entity values) -->
     {#if selectedComponent.type === "todo_list" || selectedComponent.type === "light_state" || selectedComponent.type === "hvac" || selectedComponent.type === "weather" || selectedComponent.type === "calendar" || selectedComponent.type === "range_slider"}
       <div class="property-section">
-        <label class="section-label">Entity Binding</label>
+        <div class="section-label-row">
+          <div class="section-label">Entity Binding</div>
+          {#if !homeAssistantStore.isLoaded}
+            <a
+              class="entity-dump-info"
+              href="/home-assistant-entity-export"
+              target="_blank"
+              rel="noopener"
+              aria-label="Learn how to create a Home Assistant entity dump"
+              title="Learn how to create a Home Assistant entity dump"
+            >i</a>
+          {/if}
+        </div>
         <EntityPicker
           preselectedDomain={selectedComponent.type === "todo_list"
             ? "todo"
@@ -1109,6 +1138,32 @@
     margin-bottom: var(--spacing-sm);
   }
 
+  .section-label-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+  }
+
+  .entity-dump-info {
+    display: inline-grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--color-text-muted);
+    border-radius: 50%;
+    color: var(--color-text-muted);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .entity-dump-info:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
   .field {
     display: flex;
     align-items: center;
@@ -1130,6 +1185,24 @@
     font-size: 11px;
     color: var(--color-text-muted);
     min-width: 50px;
+  }
+
+  .move-to-page-button {
+    width: 100%;
+    margin-top: var(--spacing-sm);
+    height: 30px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .move-to-page-button:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
   }
 
   input,

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { dev } from "$app/environment";
   import { goto } from "$app/navigation";
   import {
     generateESPHomeYAML,
@@ -29,8 +30,11 @@
 
   let showConfirmModal = $state(false);
   let flashJobId = $state<string | null>(null);
+  let supportsWebSerial = $state(true);
 
   onMount(() => {
+    supportsWebSerial = "serial" in navigator;
+
     if (data.project) {
       projectStore.loadFromServer(data.project);
     }
@@ -308,6 +312,20 @@
           </div>
         </div>
 
+        {#if !supportsWebSerial}
+          <div class="browser-warning-inline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" />
+              <path d="M12 8V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              <circle cx="12" cy="16" r="0.5" fill="currentColor" />
+            </svg>
+            <span>
+              USB flashing requires <strong>Chrome</strong> or <strong>Edge</strong>. Your browser
+              does not support the Web Serial API — the install button below will not work.
+            </span>
+          </div>
+        {/if}
+
         {#if deploymentStore.state.manifestUrl}
           <esp-web-install-button manifest={deploymentStore.state.manifestUrl}>
             <button slot="activate" class="install-btn">
@@ -318,7 +336,7 @@
       </div>
     {:else}
       <div class="info-section">
-        <div class="info-card">
+        <div class="info-card info-card--usb">
           <div class="info-card-icon usb-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path
@@ -342,13 +360,13 @@
           <div class="info-card-text">
             <h4>New Device Setup</h4>
             <p>
-              Connect via USB and use the <strong>Flash</strong> button on a build
-              to install firmware. After flashing, the device creates a WiFi hotspot
-              for initial setup.
+              Connect via USB and use the <strong>Flash</strong> button on a
+              build to install firmware. After flashing, the device creates a
+              WiFi hotspot for initial setup.
             </p>
           </div>
         </div>
-        <div class="info-card">
+        <div class="info-card info-card--ota">
           <div class="info-card-icon ota-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path
@@ -409,6 +427,80 @@
               </svg>
               Check for updates in Home Assistant
             </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="getting-started">
+        <h2 class="getting-started-title">First build – getting it on your device</h2>
+        <p class="getting-started-subtitle">
+          Here's how to put your very first build onto the display hardware.
+        </p>
+
+        {#if !supportsWebSerial}
+          <div class="browser-warning-inline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" />
+              <path d="M12 8V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              <circle cx="12" cy="16" r="0.5" fill="currentColor" />
+            </svg>
+            <span>
+              USB flashing requires <strong>Chrome</strong> or <strong>Edge</strong>. Please
+              open this page in a supported browser before connecting your device.
+            </span>
+          </div>
+        {/if}
+
+        <div class="getting-started-steps">
+          <div class="getting-started-step">
+            <div class="getting-started-step-num">1</div>
+            <div class="getting-started-step-body">
+              <h4>Build the firmware</h4>
+              <p>
+                Click <strong>"Update Display"</strong> below to compile your
+                project into firmware. This typically takes 1–2 minutes. When it
+                finishes, the build appears in the history below with a
+                <strong>Flash</strong> button.
+              </p>
+            </div>
+          </div>
+          <div class="getting-started-step">
+            <div class="getting-started-step-num">2</div>
+            <div class="getting-started-step-body">
+              <h4>Connect via USB</h4>
+              <p>
+                Plug the display into this computer using a
+                <strong>USB-C cable</strong>. Make sure the cable supports data
+                (not just charging).
+              </p>
+            </div>
+          </div>
+          <div class="getting-started-step">
+            <div class="getting-started-step-num">3</div>
+            <div class="getting-started-step-body">
+              <h4>Install the firmware</h4>
+              <p>
+                Click <strong>Flash</strong> on the build entry below, then
+                click <strong>"Install to Device"</strong>. Your browser will
+                prompt you to select the serial port — pick the one that matches
+                your device and the firmware installs directly from the browser.
+              </p>
+            </div>
+          </div>
+          <div class="getting-started-step">
+            <div class="getting-started-step-num">4</div>
+            <div class="getting-started-step-body">
+              <h4>Configure WiFi</h4>
+              <p>
+                Once flashed, the display restarts and creates a temporary WiFi
+                hotspot. Connect your phone or computer to that hotspot and enter
+                your home WiFi credentials when prompted.
+              </p>
+              <p class="getting-started-step-hint">
+                After this initial setup, all future firmware updates arrive
+                automatically over WiFi — no USB cable needed again.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -638,6 +730,24 @@
     background: rgba(244, 67, 54, 0.15);
   }
 
+  .browser-warning-inline {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255, 152, 0, 0.08);
+    border: 1px solid rgba(255, 152, 0, 0.2);
+    border-radius: 8px;
+    color: #e6a817;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .browser-warning-inline svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
   .deploy-body {
     flex: 1;
     overflow-y: auto;
@@ -770,6 +880,14 @@
     border-radius: 10px;
   }
 
+  .info-card--usb {
+    border-left: 3px solid #42a5f5;
+  }
+
+  .info-card--ota {
+    border-left: 3px solid #66bb6a;
+  }
+
   .info-card-icon {
     display: flex;
     align-items: center;
@@ -819,6 +937,85 @@
 
   .ota-check-link:hover {
     opacity: 0.8;
+  }
+
+  /* ── Getting Started guide ── */
+
+  .getting-started {
+    padding: var(--spacing-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+  }
+
+  .getting-started-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .getting-started-subtitle {
+    margin: 6px 0 var(--spacing-lg) 0;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+
+  .getting-started-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .getting-started-step {
+    display: flex;
+    gap: var(--spacing-md);
+  }
+
+  .getting-started-step-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .getting-started-step-body h4 {
+    margin: 0 0 3px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .getting-started-step-body p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    line-height: 1.55;
+  }
+
+  .getting-started-step-body p + p {
+    margin-top: 6px;
+  }
+
+  .getting-started-step-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    line-height: 1.45;
   }
 
   @media (max-width: 700px) {

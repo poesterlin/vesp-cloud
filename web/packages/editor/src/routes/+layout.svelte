@@ -17,6 +17,14 @@
       };
     }
 
+    if (pathname === "/home-assistant-entity-export") {
+      return {
+        title: "Home Assistant Entity Export - vESP.cloud",
+        description:
+          "Install HA Metadata Exporter with HACS and import your Home Assistant entities into vESP.cloud.",
+      };
+    }
+
     if (pathname === "/terms") {
       return {
         title: "Terms of Service - vESP.cloud",
@@ -40,7 +48,7 @@
   }
 
   function isIndexablePath(pathname: string) {
-    return pathname === "/intro" || pathname === "/terms" || pathname === "/withdrawal";
+    return pathname === "/intro" || pathname === "/home-assistant-entity-export" || pathname === "/terms" || pathname === "/withdrawal";
   }
 
   const seo = $derived(getSeoForPath(page.url.pathname));

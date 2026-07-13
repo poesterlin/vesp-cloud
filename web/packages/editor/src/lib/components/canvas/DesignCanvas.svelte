@@ -63,6 +63,29 @@
     projectStore.viewMode === "dashboard" && hasDigitalClockInComponents(projectStore.activeComponents),
   );
 
+  // Selection is only meaningful for components painted on the active surface.
+  // Keep this as a last-line invariant in addition to clearing in navigation
+  // actions, since tabs, conditional variants, imports, and future navigation
+  // paths can all change visibility without going through the same handler.
+  $effect(() => {
+    const visibleIds = new Set(
+      projectStore
+        .getVisibleComponentLayoutBounds()
+        .filter(({ id }) => !(hideHeaderForCurrentPage && projectStore.isHeaderComponent(id)))
+        .map(({ id }) => id),
+    );
+    const visibleSelection = [...selectionStore.selectedIds].filter((id) =>
+      visibleIds.has(id),
+    );
+
+    if (visibleSelection.length !== selectionStore.selectedCount) {
+      selectionStore.selectMultiple(visibleSelection);
+    }
+    if (selectionStore.hoveredId && !visibleIds.has(selectionStore.hoveredId)) {
+      selectionStore.setHovered(null);
+    }
+  });
+
   const headerHeight = $derived(
     hasHeader && !hideHeaderForCurrentPage ? projectStore.pageHeader!.height : 0,
   );

@@ -180,7 +180,7 @@ describe("notification overlay screen header wiring", () => {
     expect(out).toContain("std::unique_ptr<NotificationOverlayWidget> notification_overlay_");
     expect(out).toContain("if (notification_overlay_) notification_overlay_->update(now);");
     expect(out).toContain("if (notification_overlay_ && notification_overlay_->is_visible(state))");
-    expect(out).toContain("if (notification_overlay_) notification_overlay_->draw(it, state);");
+    expect(out).toContain("if (notification_overlay_) notification_overlay_->draw_clipped(it, state);");
   });
 
   test("draws overlay after current screen (topmost)", () => {
@@ -195,7 +195,7 @@ describe("notification overlay screen header wiring", () => {
     // Overlay draw must appear after current_->draw
     expect(out).toContain("current_->draw(it, state);");
     const drawIdx = out.indexOf("current_->draw(it, state);");
-    const overlayIdx = out.indexOf("notification_overlay_->draw(it, state);");
+    const overlayIdx = out.indexOf("notification_overlay_->draw_clipped(it, state);");
     expect(overlayIdx).toBeGreaterThan(drawIdx);
   });
 

@@ -81,7 +81,8 @@ class ScrollableDetailScreen : public Screen {
       if (new_y == scroll_y_) return false;
       scroll_y_ = new_y;
       fast_scroll_ = (scroll_y_ != 0 && scroll_y_ != -max_scroll_);
-      UiInvalidation::request_partial();
+      UiInvalidation::request_rect(
+          UiDirtyRect{0, content_y_, 480, content_area_h_}, "detail:scroll");
       return true;
     }
 
@@ -90,7 +91,8 @@ class ScrollableDetailScreen : public Screen {
       if (scroll_y_ == 0 || scroll_y_ == -max_scroll_) {
         return false;
       }
-      UiInvalidation::request_partial();
+      UiInvalidation::request_rect(
+          UiDirtyRect{0, content_y_, 480, content_area_h_}, "detail:scroll-end");
       return true;
     }
 
@@ -135,16 +137,14 @@ class ScrollableDetailScreen : public Screen {
     (void)state;
 
     const bool full = UiInvalidation::is_full_dirty();
-    const bool legacy_partial =
-        !full && UiInvalidation::dirty_count() == 0 && UiInvalidation::needs_redraw();
-    const bool draw_all = full || legacy_partial;
+    const bool draw_all = full;
 
     last_full_draw_ms_ = millis();
 
-    // Header: only repaint if it's actually dirty (rare -- title changes)
-    // or we're doing a full / legacy repaint.
+    // Header: only repaint if it is actually dirty (rare -- title changes)
+    // or the current frame is a full redraw.
     if (draw_all || header_->needs_draw(state)) {
-      header_->draw(it, state);
+      header_->draw_clipped(it, state);
     }
 
     // Content background: only repaint when a dirty rect FULLY covers the

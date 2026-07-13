@@ -31,10 +31,13 @@ class UiRedraw {
     }
   }
 
-  static void begin_draw() { is_drawing_ = true; }
+  static void begin_draw() {
+    is_drawing_ = true;
+    UiInvalidation::begin_draw();
+  }
 
   static void end_draw() {
-    UiInvalidation::clear();
+    UiInvalidation::end_draw();
     is_drawing_ = false;
   }
 

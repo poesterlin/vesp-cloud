@@ -112,7 +112,9 @@ class GenericScreen : public Screen {
           scroll_y_ = next;
           apply_scroll_offsets();
           scroll_dirty_ = true;
-          UiInvalidation::request_partial();
+          UiInvalidation::request_rect(
+              UiDirtyRect{scroll_area_x_, scroll_area_y_, scroll_area_w_, scroll_area_h_},
+              "screen:scroll");
         }
         return true;
       }
@@ -133,7 +135,7 @@ class GenericScreen : public Screen {
   void draw(display::Display &it, const UiState &state) override {
     if (state.should_show_loading()) {
       for (auto &w : widgets_) {
-        if (w->is_loading_widget()) { w->draw(it, state); return; }
+        if (w->is_loading_widget()) { w->draw_clipped(it, state); return; }
       }
       return;
     }
@@ -193,9 +195,8 @@ class GenericScreen : public Screen {
               clip_b = std::min(clip_b, sb);
               if (clip_r <= clip_l || clip_b <= clip_t) continue;
             }
-            it.start_clipping(clip_l, clip_t, clip_r, clip_b);
-            w->draw(it, state);
-            it.end_clipping();
+            w->draw_clipped(it, state,
+                            UiRect{clip_l, clip_t, clip_r - clip_l, clip_b - clip_t});
             drew_partial_bg = true;
           }
           if (!drew_partial_bg) continue;
@@ -208,15 +209,11 @@ class GenericScreen : public Screen {
           }
         }
         if (clip_to_scroll_area) {
-          // ESPHome start_clipping(l, t, r, b) treats r/b as exclusive edges
-          // (it stores w = r - l), so pass x + w / y + h directly.
-          const int clip_right = scroll_area_x_ + scroll_area_w_;
-          const int clip_bottom = scroll_area_y_ + scroll_area_h_;
-          it.start_clipping(scroll_area_x_, scroll_area_y_, clip_right, clip_bottom);
-        }
-        w->draw(it, state);
-        if (clip_to_scroll_area) {
-          it.end_clipping();
+          w->draw_clipped(it, state,
+                          UiRect{scroll_area_x_, scroll_area_y_,
+                                 scroll_area_w_, scroll_area_h_});
+        } else {
+          w->draw_clipped(it, state);
         }
       }
     };

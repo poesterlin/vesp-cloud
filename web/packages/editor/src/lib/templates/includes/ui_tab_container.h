@@ -18,7 +18,9 @@ class TabContainerWidget : public Widget {
 
   void set_default_tab(int tab_index) {
     if (tab_index >= 0 && tab_index < static_cast<int>(tabs_.size())) {
+      if (active_tab_ == tab_index) return;
       active_tab_ = tab_index;
+      mark_dirty();
     }
   }
 
@@ -37,8 +39,6 @@ class TabContainerWidget : public Widget {
   void draw(display::Display &it, const UiState &state) override {
     const UiRect r = screen_rect(rect_);
     const bool full = UiInvalidation::is_full_dirty();
-    const bool legacy_partial =
-        !full && UiInvalidation::dirty_count() == 0 && UiInvalidation::needs_redraw();
 
     // Repaint the tab-bar/body backgrounds ONLY when a dirty rect actually
     // covers their full area (e.g. tab switch marks the container's whole
@@ -49,9 +49,9 @@ class TabContainerWidget : public Widget {
     const int body_y = r.y + kTabBarHeight;
     const int body_h = r.h - kTabBarHeight;
 
-    const bool draw_bar = full || legacy_partial ||
+    const bool draw_bar = full ||
         rect_fully_covered(r.x, bar_y, r.w, bar_h);
-    const bool draw_body_bg = full || legacy_partial ||
+    const bool draw_body_bg = full ||
         rect_fully_covered(r.x, body_y, r.w, body_h);
 
     if (draw_body_bg) {
@@ -69,18 +69,18 @@ class TabContainerWidget : public Widget {
         // there or it'll vanish.
         if (draw_body_bg) {
           w->set_render_offset_y(render_offset_y_);
-          w->draw(it, state);
+          draw_child_(it, state, *w);
           continue;
         }
-        if (full || legacy_partial) {
+        if (full) {
           w->set_render_offset_y(render_offset_y_);
-          w->draw(it, state);
+          draw_child_(it, state, *w);
           continue;
         }
         w->set_render_offset_y(render_offset_y_);
         const auto b = w->bounds();
         if (!UiInvalidation::needs_redraw_in(b.x, b.y, b.w, b.h)) continue;
-        w->draw(it, state);
+        draw_child_(it, state, *w);
       }
     };
     draw_children_pass(true);
@@ -194,7 +194,18 @@ class TabContainerWidget : public Widget {
 
   void draw_active_children(display::Display &it, const UiState &state) const {
     for (auto &w : tabs_[active_tab_].widgets) {
-      if (w->is_visible(state)) w->draw(it, state);
+      if (w->is_visible(state)) draw_child_(it, state, *w);
+    }
+  }
+
+  void draw_child_(display::Display &it, const UiState &state, Widget &widget) const {
+    if (clip_content_) {
+      const UiRect r = screen_rect(rect_);
+      widget.draw_clipped(
+          it, state,
+          UiRect{r.x, r.y + kTabBarHeight, r.w, r.h - kTabBarHeight});
+    } else {
+      widget.draw_clipped(it, state);
     }
   }
 

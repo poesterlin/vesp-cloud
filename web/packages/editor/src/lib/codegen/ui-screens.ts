@@ -1104,7 +1104,7 @@ export function generateUIScreensHeader(project: Project): string {
     : '';
 
   const overlayPostDraw = overlayEnabled
-    ? '\n    if (notification_overlay_) notification_overlay_->draw(it, state);'
+    ? '\n    if (notification_overlay_) notification_overlay_->draw_clipped(it, state);'
     : '';
 
   let setupBody = '';

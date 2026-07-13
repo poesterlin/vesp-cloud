@@ -440,6 +440,36 @@ class Widget {
   // the full screen, which means "I might be anywhere -> always redraw me".
   virtual UiRect bounds() const { return UiRect{0, 0, 480, 480}; }
 
+  // Keep painting, invalidation, and interaction geometry separate. Most
+  // widgets use the same rectangle for all three, while containers can widen
+  // dirty_bounds() and touch handlers can add slop without widening paint.
+  virtual UiRect paint_bounds() const { return bounds(); }
+  virtual UiRect touch_bounds() const { return bounds(); }
+
+  UiRect dirty_bounds() const {
+    return has_custom_dirty_bounds_ ? screen_rect(dirty_bounds_) : paint_bounds();
+  }
+
+  // Enforce the paint-bounds contract at the last common point before a
+  // widget draws. The optional constraint is used for scroll viewports and
+  // partial background intersections.
+  void draw_clipped(display::Display &it, const UiState &state) {
+    draw_clipped(it, state, paint_bounds());
+  }
+
+  void draw_clipped(display::Display &it, const UiState &state,
+                    const UiRect &constraint) {
+    const UiRect paint = paint_bounds();
+    const int left = std::max(paint.x, constraint.x);
+    const int top = std::max(paint.y, constraint.y);
+    const int right = std::min(paint.x + paint.w, constraint.x + constraint.w);
+    const int bottom = std::min(paint.y + paint.h, constraint.y + constraint.h);
+    if (right <= left || bottom <= top) return;
+    it.start_clipping(left, top, right, bottom);
+    draw(it, state);
+    it.end_clipping();
+  }
+
   void set_render_offset_y(int y) { render_offset_y_ = y; }
   void set_scroll_exempt(bool exempt) { scroll_exempt_ = exempt; }
   bool scroll_exempt() const { return scroll_exempt_; }
@@ -461,12 +491,12 @@ class Widget {
   // Mark this widget's bounds dirty so it (and only it) is redrawn on the
   // next render pass. Use this from state-change handlers / update() polls.
   void mark_dirty() {
-    const UiRect b = has_custom_dirty_bounds_ ? screen_rect(dirty_bounds_) : bounds();
+    const UiRect b = dirty_bounds();
     UiInvalidation::request_rect(UiDirtyRect{b.x, b.y, b.w, b.h}, widget_label());
   }
 
   void mark_dirty_tagged(const char *tag) {
-    const UiRect b = has_custom_dirty_bounds_ ? screen_rect(dirty_bounds_) : bounds();
+    const UiRect b = dirty_bounds();
     UiInvalidation::request_rect(UiDirtyRect{b.x, b.y, b.w, b.h}, tag);
   }
 
@@ -474,7 +504,7 @@ class Widget {
   // mark_dirty() so container-linked widgets (set_dirty_bounds) are either
   // skipped or redrawn atomically with their container eraser.
   UiRect redraw_gate_bounds() const {
-    return has_custom_dirty_bounds_ ? screen_rect(dirty_bounds_) : bounds();
+    return dirty_bounds();
   }
 
   // Should this widget actually be drawn this frame? Combines visibility
@@ -503,6 +533,8 @@ class Widget {
 
   void set_visibility_condition(std::function<bool()> check) {
     visibility_check_ = std::move(check);
+    visibility_baseline_set_ = false;
+    mark_dirty();
   }
 
  protected:
@@ -584,9 +616,10 @@ class ImageWidget : public Widget {
   void set_tint(Color on, Color off) {
     color_on_ = on;
     color_off_ = off;
+    mark_dirty();
   }
 
-  void set_bg_color(Color c) { bg_color_ = c; }
+  void set_bg_color(Color c) { bg_color_ = c; mark_dirty(); }
 
   UiRect bounds() const override { return screen_rect(rect_); }
 
@@ -594,7 +627,7 @@ class ImageWidget : public Widget {
     (void)now;
     if (!tap_callback_ || !fully_rendered_) return false;
     if (event.type != TouchType::Tap) return false;
-    if (bounds().contains(event.x, event.y)) {
+    if (touch_bounds().contains(event.x, event.y)) {
       tap_callback_();
       return true;
     }
@@ -623,7 +656,9 @@ class ImageWidget : public Widget {
         draw_placeholder(it, false);
         if (!deferred_) {
           deferred_ = true;
-          UiInvalidation::request_continue();
+          const UiRect r = bounds();
+          UiInvalidation::request_continue(
+              UiDirtyRect{r.x, r.y, r.w, r.h}, "image:deferred");
         }
         return;
       }
@@ -678,7 +713,8 @@ class ImageWidget : public Widget {
       return;
     }
 
-    UiInvalidation::request_continue();
+    UiInvalidation::request_continue(
+        UiDirtyRect{r.x, r.y, r.w, r.h}, "image:tile");
     const_cast<UiState&>(state).images_rendered_this_frame++;
   }
 
@@ -724,14 +760,16 @@ class LabelWidget : public Widget {
     };
   }
 
-  void set_bg_color(Color c) { bg_color_ = c; }
+  void set_bg_color(Color c) { bg_color_ = c; mark_dirty(); }
   void set_color(Color c) {
     color_override_ = c;
     has_color_override_ = true;
+    mark_dirty();
   }
   void set_align(TextAlign a) {
     align_ = a;
     has_align_override_ = true;
+    mark_dirty();
   }
 
   UiRect bounds() const override { return screen_rect(rect_); }
@@ -742,6 +780,7 @@ class LabelWidget : public Widget {
     off_text_ = off_text;
     last_bool_ = value != nullptr ? *value : false;
     bool_baseline_set_ = (value != nullptr);
+    mark_dirty();
   }
 
   template<typename T>
@@ -750,6 +789,7 @@ class LabelWidget : public Widget {
                              esphome::font::Font *f, Color c, TextAlign a) {
       it.printf(x, y, f, c, a, fmt, *value);
     };
+    mark_dirty();
   }
 
   // Bind the label to a runtime-computed string. Used by the codegen to
@@ -767,6 +807,7 @@ class LabelWidget : public Widget {
       last_text_ = text_fn_();
       text_baseline_set_ = true;
     }
+    mark_dirty();
   }
 
   // Poll bound state and mark dirty if it changed since the last draw. This is
@@ -942,6 +983,7 @@ class IconWidget : public Widget {
   void set_color(Color c) {
     color_override_ = c;
     has_color_override_ = true;
+    mark_dirty();
   }
 
   void draw(display::Display &it, const UiState &state) override {
@@ -994,7 +1036,7 @@ class DigitalClockWidget : public Widget {
     (void)now;
     if (event.type != TouchType::Tap) return false;
     if (!on_tap_) return false;
-    if (!ui_hit_test_with_slop(bounds(), event.x, event.y)) return false;
+    if (!ui_hit_test_with_slop(touch_bounds(), event.x, event.y)) return false;
     on_tap_();
     return true;
   }
@@ -1106,11 +1148,13 @@ class ButtonWidget : public Widget {
   void set_icon(const char *glyph, const Theme::TextStyle *icon_style) {
     icon_glyph_ = glyph;
     icon_style_ = icon_style;
+    mark_dirty();
   }
 
   void set_border_color(Color c) {
     border_color_override_ = c;
     has_border_color_override_ = true;
+    mark_dirty();
   }
 
   void update(uint32_t now) override {
@@ -1233,7 +1277,7 @@ class ButtonWidget : public Widget {
 
  private:
   bool hit_test(int tx, int ty) const {
-    return ui_hit_test_with_slop(bounds(), tx, ty);
+    return ui_hit_test_with_slop(touch_bounds(), tx, ty);
   }
 
   UiRect rect_;
@@ -1262,7 +1306,7 @@ class ImageToggleWidget : public Widget {
         icon_glyph_(icon_glyph), callback_(std::move(callback)), on_color_(on_color),
         off_color_(off_color) {}
 
-  void bind(const bool *on_state) { on_state_ = on_state; }
+  void bind(const bool *on_state) { on_state_ = on_state; mark_dirty(); }
 
   UiRect bounds() const override { return screen_rect(rect_); }
 
@@ -1373,7 +1417,7 @@ class ImageToggleWidget : public Widget {
 
  private:
   bool hit_test(int tx, int ty) const {
-    return ui_hit_test_with_slop(bounds(), tx, ty);
+    return ui_hit_test_with_slop(touch_bounds(), tx, ty);
   }
 
   UiRect rect_;
@@ -1419,7 +1463,7 @@ class TodoPreviewWidget : public Widget {
   UiRect bounds() const override { return screen_rect(rect_); }
 
   bool handle_touch(const TouchEvent &event, uint32_t now) override {
-    if (!bounds().contains(event.x, event.y)) return false;
+    if (!touch_bounds().contains(event.x, event.y)) return false;
 
     if (event.type == TouchType::Down && scrollable_) {
       dragging_ = true;
@@ -2465,6 +2509,8 @@ class RangeSliderWidget : public Widget {
 
   void bind(const float *value_ptr) {
     value_ptr_ = value_ptr;
+    baseline_set_ = false;
+    mark_dirty();
   }
 
   void on_change(ValueCallback cb) { on_change_ = std::move(cb); }

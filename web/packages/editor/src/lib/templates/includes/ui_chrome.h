@@ -93,6 +93,8 @@ class HeaderWidget : public Widget {
 
   void set_suppress_time_condition(std::function<bool()> check) {
     suppress_time_check_ = std::move(check);
+    baseline_set_ = false;
+    mark_dirty();
   }
 
   UiRect bounds() const override { return UiRect{0, 0, 480, 49}; }

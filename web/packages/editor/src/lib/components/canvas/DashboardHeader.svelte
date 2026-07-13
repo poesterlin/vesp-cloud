@@ -2,7 +2,9 @@
   import { projectStore } from "../../stores/project.svelte";
   import { colorToRgb } from "../../utils/themed-drawing";
 
-  const headerHeight = $derived(projectStore.pageHeader?.height ?? 49);
+  // HeaderWidget always paints at least 49 px; taller configured headers only
+  // affect the content offset below it.
+  const headerHeight = $derived(Math.max(projectStore.pageHeader?.height ?? 0, 49));
   const theme = $derived(projectStore.theme);
 
   const timeColor = $derived(

@@ -41,20 +41,24 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 40px;
+    box-sizing: border-box;
+    height: 50px;
     display: flex;
     align-items: center;
-    padding: 0 10px;
-    background: inherit;
+    padding: 0;
+    background: rgb(2, 3, 5);
     z-index: 10;
   }
 
   .back-button {
+    position: absolute;
+    left: 14px;
+    top: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 56px;
-    height: 36px;
+    width: 52px;
+    height: 38px;
     /* The device uses font_medium (Roboto 24) for the boxed `<`. */
     font-size: var(--display-text-medium, 24px);
     font-weight: bold;
@@ -68,7 +72,11 @@
   }
 
   h1 {
-    flex: 1;
+    position: absolute;
+    left: 72px;
+    right: 72px;
+    top: 8px;
+    line-height: 24px;
     text-align: center;
     /* Title prints via font_medium (Roboto 24) -- see DetailHeaderWidget. */
     font-size: var(--display-text-medium, 24px);
@@ -84,6 +92,6 @@
   }
 
   .spacer {
-    width: 44px;
+    display: none;
   }
 </style>

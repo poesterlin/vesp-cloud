@@ -11,6 +11,7 @@
 
   let { count, currentIndex, isStatic = false, onSelect }: Props = $props();
   const theme = $derived(projectStore.theme);
+  const isRetro = $derived(theme.id === "retro");
 
   function handleDotClick(index: number) {
     onSelect?.(index);
@@ -30,19 +31,33 @@
       <button
         type="button"
         class="dot"
-        class:active={i === currentIndex}
-        style:border-color={i === currentIndex
-          ? colorToRgb(
-              theme.chromeAccent ??
-                theme.colors.accent ?? { r: 0, g: 255, b: 255 },
-            )
-          : colorToRgb(
-              theme.colors.foregroundMuted ?? { r: 128, g: 128, b: 128 },
-            )}
+        style:left="calc(50% + {(i - (count - 1) / 2) * 28}px)"
         onclick={() => handleDotClick(i)}
         onkeydown={(event) => handleDotKeydown(event, i)}
         aria-label="Go to page {i + 1}"
-      ></button>
+      >
+        <svg viewBox="0 0 18 18" aria-hidden="true">
+          {#if isRetro}
+            {@const radius = i === currentIndex ? 7 : 5}
+            <path
+              d="M 9 {9 - radius} L {9 + radius} 9 L 9 {9 + radius} L {9 - radius} 9 Z"
+              fill="none"
+              stroke={i === currentIndex
+                ? colorToRgb(theme.chromeAccent ?? theme.colors.accent ?? { r: 0, g: 255, b: 255 })
+                : colorToRgb(theme.colors.foregroundMuted ?? { r: 128, g: 128, b: 128 })}
+            />
+          {:else}
+            <circle
+              cx="9"
+              cy="9"
+              r={i === currentIndex ? 5 : 3}
+              fill={i === currentIndex
+                ? colorToRgb(theme.chromeAccent ?? theme.colors.accent ?? { r: 0, g: 255, b: 255 })
+                : colorToRgb(theme.colors.foregroundMuted ?? { r: 128, g: 128, b: 128 })}
+            />
+          {/if}
+        </svg>
+      </button>
     {/each}
   </div>
 {/if}
@@ -50,12 +65,12 @@
 <style>
   .indicator-container {
     position: absolute;
-    bottom: 14px;
+    bottom: 11px;
     left: 0;
     right: 0;
-    display: flex;
-    justify-content: center;
-    gap: 8px;
+    height: 18px;
+    z-index: 100;
+    pointer-events: none;
   }
 
   .indicator-container.static {
@@ -66,14 +81,24 @@
   }
 
   .dot {
-    border-radius: 0;
-    width: 12px;
-    height: 12px;
-    border: 2px solid;
+    position: absolute;
+    top: 0;
+    width: 18px;
+    height: 18px;
+    border: 0;
     padding: 0;
     cursor: pointer;
-    transform: rotate(45deg);
+    transform: translateX(-50%);
     background-color: transparent;
+    pointer-events: auto;
+  }
+
+  .dot svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    overflow: visible;
+    shape-rendering: crispEdges;
   }
 
 </style>

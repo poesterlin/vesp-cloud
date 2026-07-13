@@ -87,7 +87,9 @@
   });
 
   const headerHeight = $derived(
-    hasHeader && !hideHeaderForCurrentPage ? projectStore.pageHeader!.height : 0,
+    hasHeader && !hideHeaderForCurrentPage
+      ? Math.max(projectStore.pageHeader!.height, 49)
+      : 0,
   );
 
   const contentHeight = $derived(

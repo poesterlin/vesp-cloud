@@ -10,9 +10,10 @@
 
   interface Props {
     onFlash?: (jobId: string) => void;
+    onBuildCountChange?: (count: number) => void;
   }
 
-  let { onFlash }: Props = $props();
+  let { onFlash, onBuildCountChange }: Props = $props();
 
   let jobs = $state<JobStatus[]>([]);
   let loading = $state(true);
@@ -61,6 +62,7 @@
       if (res.ok) {
         const data = await res.json();
         jobs = Array.isArray(data) ? data : [];
+        onBuildCountChange?.(jobs.length);
       }
     } catch (e) {
       console.error("Failed to load jobs", e);

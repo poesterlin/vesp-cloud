@@ -63,6 +63,12 @@ describe("calendar codegen", () => {
     expect(yaml).toContain("- interval: 250ms");
     expect(yaml).toContain("return id(g_calendar_refetch_calendar_family_events_1d_raw);");
     expect(yaml).toContain("return id(g_calendar_refetch_calendar_family_events_30d_raw);");
+    expect(yaml).toContain(
+      '                    - lambda: |-\n                        auto resp_wrapper = response["response"];',
+    );
+    expect(yaml).toContain(
+      "                        UiRedraw::trigger_display_update();\n      - if:",
+    );
   });
 
   test("deduplicates identical calendar entity + duration windows", () => {

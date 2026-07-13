@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { dev } from "$app/environment";
+  import { dev } from "$app/environment";
   import { goto } from "$app/navigation";
   import {
     generateESPHomeYAML,
@@ -31,6 +31,7 @@
   let showConfirmModal = $state(false);
   let flashJobId = $state<string | null>(null);
   let supportsWebSerial = $state(true);
+  let buildCount = $state<number | null>(null);
 
   onMount(() => {
     supportsWebSerial = "serial" in navigator;
@@ -311,13 +312,25 @@
         {#if !supportsWebSerial}
           <div class="browser-warning-inline">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" />
-              <path d="M12 8V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <path
+                d="M12 8V13"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
               <circle cx="12" cy="16" r="0.5" fill="currentColor" />
             </svg>
             <span>
-              USB flashing requires <strong>Chrome</strong> or <strong>Edge</strong>. Your browser
-              does not support the Web Serial API — the install button below will not work.
+              USB flashing requires <strong>Chrome</strong> or
+              <strong>Edge</strong>. Your browser does not support the Web
+              Serial API — the install button below will not work.
             </span>
           </div>
         {/if}
@@ -356,9 +369,9 @@
           <div class="info-card-text">
             <h4>New Device Setup</h4>
             <p>
-              Connect via USB and use the <strong>Flash</strong> button on a
-              build to install firmware. After flashing, the device creates a
-              WiFi hotspot for initial setup.
+              Connect via USB and use the <strong>Flash</strong> button on a build
+              to install firmware. After flashing, the device creates a WiFi hotspot
+              for initial setup.
             </p>
           </div>
         </div>
@@ -427,79 +440,96 @@
         </div>
       </div>
 
-      <div class="getting-started">
-        <h2 class="getting-started-title">First build – getting it on your device</h2>
-        <p class="getting-started-subtitle">
-          Here's how to put your very first build onto the display hardware.
-        </p>
+      {#if buildCount !== null && buildCount < 2}
+        <div class="getting-started">
+          <h2 class="getting-started-title">
+            First build - getting it on your device
+          </h2>
+          <p class="getting-started-subtitle">
+            Here's how to put your very first build onto the display hardware.
+          </p>
 
-        {#if !supportsWebSerial}
-          <div class="browser-warning-inline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" />
-              <path d="M12 8V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-              <circle cx="12" cy="16" r="0.5" fill="currentColor" />
-            </svg>
-            <span>
-              USB flashing requires <strong>Chrome</strong> or <strong>Edge</strong>. Please
-              open this page in a supported browser before connecting your device.
-            </span>
-          </div>
-        {/if}
+          {#if !supportsWebSerial}
+            <div class="browser-warning-inline">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M12 8V13"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+                <circle cx="12" cy="16" r="0.5" fill="currentColor" />
+              </svg>
+              <span>
+                USB flashing requires <strong>Chrome</strong> or
+                <strong>Edge</strong>. Please open this page in a supported
+                browser before connecting your device.
+              </span>
+            </div>
+          {/if}
 
-        <div class="getting-started-steps">
-          <div class="getting-started-step">
-            <div class="getting-started-step-num">1</div>
-            <div class="getting-started-step-body">
-              <h4>Build the firmware</h4>
-              <p>
-                Click <strong>"Update Display"</strong> below to compile your
-                project into firmware. This typically takes 1–2 minutes. When it
-                finishes, the build appears in the history below with a
-                <strong>Flash</strong> button.
-              </p>
+          <div class="getting-started-steps">
+            <div class="getting-started-step">
+              <div class="getting-started-step-num">1</div>
+              <div class="getting-started-step-body">
+                <h4>Build the firmware</h4>
+                <p>
+                  Click <strong>"Update Display"</strong> below to compile your
+                  project into firmware. This typically takes 1–2 minutes. When
+                  it finishes, the build appears in the history below with a
+                  <strong>Flash</strong> button.
+                </p>
+              </div>
             </div>
-          </div>
-          <div class="getting-started-step">
-            <div class="getting-started-step-num">2</div>
-            <div class="getting-started-step-body">
-              <h4>Connect via USB</h4>
-              <p>
-                Plug the display into this computer using a
-                <strong>USB-C cable</strong>. Make sure the cable supports data
-                (not just charging).
-              </p>
+            <div class="getting-started-step">
+              <div class="getting-started-step-num">2</div>
+              <div class="getting-started-step-body">
+                <h4>Connect via USB</h4>
+                <p>
+                  Plug the display into this computer using a
+                  <strong>USB-C cable</strong>. Make sure the cable supports
+                  data (not just charging).
+                </p>
+              </div>
             </div>
-          </div>
-          <div class="getting-started-step">
-            <div class="getting-started-step-num">3</div>
-            <div class="getting-started-step-body">
-              <h4>Install the firmware</h4>
-              <p>
-                Click <strong>Flash</strong> on the build entry below, then
-                click <strong>"Install to Device"</strong>. Your browser will
-                prompt you to select the serial port — pick the one that matches
-                your device and the firmware installs directly from the browser.
-              </p>
+            <div class="getting-started-step">
+              <div class="getting-started-step-num">3</div>
+              <div class="getting-started-step-body">
+                <h4>Install the firmware</h4>
+                <p>
+                  Click <strong>Flash</strong> on the build entry below, then
+                  click <strong>"Install to Device"</strong>. Your browser will
+                  prompt you to select the serial port — pick the one that
+                  matches your device and the firmware installs directly from
+                  the browser.
+                </p>
+              </div>
             </div>
-          </div>
-          <div class="getting-started-step">
-            <div class="getting-started-step-num">4</div>
-            <div class="getting-started-step-body">
-              <h4>Configure WiFi</h4>
-              <p>
-                Once flashed, the display restarts and creates a temporary WiFi
-                hotspot. Connect your phone or computer to that hotspot and enter
-                your home WiFi credentials when prompted.
-              </p>
-              <p class="getting-started-step-hint">
-                After this initial setup, all future firmware updates arrive
-                automatically over WiFi — no USB cable needed again.
-              </p>
+            <div class="getting-started-step">
+              <div class="getting-started-step-num">4</div>
+              <div class="getting-started-step-body">
+                <h4>Configure WiFi</h4>
+                <p>
+                  Once flashed, the display restarts and creates a temporary
+                  WiFi hotspot. Connect your phone or computer to that hotspot
+                  and enter your home WiFi credentials when prompted.
+                </p>
+                <p class="getting-started-step-hint">
+                  After this initial setup, all future firmware updates arrive
+                  automatically over WiFi — no USB cable needed again.
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      {/if}
 
       {#if !deploymentStore.state.compiling}
         <button class="new-build-btn" onclick={handleNewBuild}>
@@ -512,7 +542,10 @@
         <button class="new-build-btn" disabled> Building… </button>
       {/if}
 
-      <BuildHistory onFlash={handleFlash} />
+      <BuildHistory
+        onFlash={handleFlash}
+        onBuildCountChange={(count) => (buildCount = count)}
+      />
     {/if}
   </div>
 </div>

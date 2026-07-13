@@ -875,35 +875,35 @@ function generateCalendarIntervals(project: Project): string {
                 on_success:
                   then:
                     - lambda: |-
-                      auto resp_wrapper = response["response"];
-                      if (!resp_wrapper.is<JsonObjectConst>()) {
+                        auto resp_wrapper = response["response"];
+                        if (!resp_wrapper.is<JsonObjectConst>()) {
                         ESP_LOGW("calendar", "response.response is not object");
                         return;
-                      }
-                      auto entity_obj = resp_wrapper["${escapedId}"];
-                      if (!entity_obj.is<JsonObjectConst>()) {
+                        }
+                        auto entity_obj = resp_wrapper["${escapedId}"];
+                        if (!entity_obj.is<JsonObjectConst>()) {
                         ESP_LOGW("calendar", "entity key not found: %s", "${escapedId}");
                         return;
-                      }
-                      auto events_var = entity_obj["events"];
-                      if (!events_var.is<JsonArrayConst>()) {
+                        }
+                        auto events_var = entity_obj["events"];
+                        if (!events_var.is<JsonArrayConst>()) {
                         ESP_LOGW("calendar", "events is not array");
                         g_ui_app.state().${eventsVar}.set("NO EVENTS");
                         UiRedraw::trigger_display_update();
                         return;
-                      }
-                      JsonArrayConst events = events_var.as<JsonArrayConst>();
+                        }
+                        JsonArrayConst events = events_var.as<JsonArrayConst>();
 
-                      auto sanitize = [](std::string s) {
+                        auto sanitize = [](std::string s) {
                         for (char &ch : s) {
                           if (ch == '|' || ch == '\\n' || ch == '\\r' || ch == '\\t') ch = ' ';
                         }
                         return s;
-                      };
+                        };
 
-                      std::string formatted;
-                      int count = 0;
-                      for (JsonVariantConst item : events) {
+                        std::string formatted;
+                        int count = 0;
+                        for (JsonVariantConst item : events) {
                         if (count >= 32) break;
                         std::string start;
                         std::string end_time;
@@ -917,10 +917,10 @@ function generateCalendarIntervals(project: Project): string {
                         if (!formatted.empty()) formatted += "\\n";
                         formatted += start + "|" + end_time + "|" + summary + "|" + location;
                         count++;
-                      }
-                      if (formatted.empty()) formatted = "NO EVENTS";
-                      g_ui_app.state().${eventsVar}.set(formatted);
-                      UiRedraw::trigger_display_update();`);
+                        }
+                        if (formatted.empty()) formatted = "NO EVENTS";
+                        g_ui_app.state().${eventsVar}.set(formatted);
+                        UiRedraw::trigger_display_update();`);
   }
 
   if (fetchBlocks.length === 0) return '';

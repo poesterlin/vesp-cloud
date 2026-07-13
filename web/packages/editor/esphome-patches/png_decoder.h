@@ -40,8 +40,11 @@ class PngDecoder : public ImageDecoder {
   uint32_t target_height_{0};
   uint32_t allocation_us_{0};
   uint32_t decode_us_{0};
-  std::vector<uint16_t> source_x_for_target_;
-  std::vector<uint16_t> source_y_for_target_;
+  // For each source boundary, stores the first destination coordinate whose
+  // nearest-neighbour source coordinate is at or beyond that boundary.
+  // This turns PNGLE's per-pixel scaling callback from binary search into O(1).
+  std::vector<uint16_t> target_x_for_source_boundary_;
+  std::vector<uint16_t> target_y_for_source_boundary_;
 };
 
 }  // namespace esphome::runtime_image

@@ -92,19 +92,37 @@ void PngDecoder::initialize_output(uint32_t width, uint32_t height) {
   }
 
   if (width != this->target_width_) {
-    this->source_x_for_target_.resize(this->target_width_);
+    std::vector<uint16_t> source_for_target(this->target_width_);
     for (uint32_t x = 0; x < this->target_width_; x++) {
       const uint64_t centered = static_cast<uint64_t>(2 * x + 1) * width;
-      this->source_x_for_target_[x] = std::min<uint32_t>(
+      source_for_target[x] = std::min<uint32_t>(
           width - 1, centered / (2 * this->target_width_));
+    }
+    this->target_x_for_source_boundary_.resize(width + 1);
+    uint32_t target_x = 0;
+    for (uint32_t source_x = 0; source_x <= width; source_x++) {
+      while (target_x < this->target_width_ &&
+             source_for_target[target_x] < source_x) {
+        target_x++;
+      }
+      this->target_x_for_source_boundary_[source_x] = target_x;
     }
   }
   if (height != this->target_height_) {
-    this->source_y_for_target_.resize(this->target_height_);
+    std::vector<uint16_t> source_for_target(this->target_height_);
     for (uint32_t y = 0; y < this->target_height_; y++) {
       const uint64_t centered = static_cast<uint64_t>(2 * y + 1) * height;
-      this->source_y_for_target_[y] = std::min<uint32_t>(
+      source_for_target[y] = std::min<uint32_t>(
           height - 1, centered / (2 * this->target_height_));
+    }
+    this->target_y_for_source_boundary_.resize(height + 1);
+    uint32_t target_y = 0;
+    for (uint32_t source_y = 0; source_y <= height; source_y++) {
+      while (target_y < this->target_height_ &&
+             source_for_target[target_y] < source_y) {
+        target_y++;
+      }
+      this->target_y_for_source_boundary_[source_y] = target_y;
     }
   }
   this->fast_path_ready_ = true;
@@ -118,38 +136,33 @@ void PngDecoder::draw_decoded_rectangle(uint32_t x, uint32_t y,
     return;
   }
 
+  uint32_t target_x_begin;
+  uint32_t target_x_end;
+  uint32_t target_y_begin;
+  uint32_t target_y_end;
+  if (this->target_x_for_source_boundary_.empty()) {
+    target_x_begin = std::min(x, this->target_width_);
+    target_x_end = std::min(x + width, this->target_width_);
+  } else {
+    target_x_begin = this->target_x_for_source_boundary_[x];
+    target_x_end = this->target_x_for_source_boundary_[x + width];
+  }
+  if (this->target_y_for_source_boundary_.empty()) {
+    target_y_begin = std::min(y, this->target_height_);
+    target_y_end = std::min(y + height, this->target_height_);
+  } else {
+    target_y_begin = this->target_y_for_source_boundary_[y];
+    target_y_end = this->target_y_for_source_boundary_[y + height];
+  }
+  if (target_x_begin == target_x_end || target_y_begin == target_y_end) {
+    return;
+  }
+
   const uint16_t color = (static_cast<uint16_t>(rgba[0] & 0xF8) << 8) |
                          (static_cast<uint16_t>(rgba[1] & 0xFC) << 3) |
                          (rgba[2] >> 3);
   const uint8_t first = this->output_big_endian_ ? color >> 8 : color & 0xFF;
   const uint8_t second = this->output_big_endian_ ? color & 0xFF : color >> 8;
-
-  uint32_t target_x_begin;
-  uint32_t target_x_end;
-  uint32_t target_y_begin;
-  uint32_t target_y_end;
-  if (this->source_x_for_target_.empty()) {
-    target_x_begin = std::min(x, this->target_width_);
-    target_x_end = std::min(x + width, this->target_width_);
-  } else {
-    const auto begin = std::lower_bound(this->source_x_for_target_.begin(),
-                                        this->source_x_for_target_.end(), x);
-    const auto end = std::lower_bound(begin, this->source_x_for_target_.end(),
-                                      x + width);
-    target_x_begin = begin - this->source_x_for_target_.begin();
-    target_x_end = end - this->source_x_for_target_.begin();
-  }
-  if (this->source_y_for_target_.empty()) {
-    target_y_begin = std::min(y, this->target_height_);
-    target_y_end = std::min(y + height, this->target_height_);
-  } else {
-    const auto begin = std::lower_bound(this->source_y_for_target_.begin(),
-                                        this->source_y_for_target_.end(), y);
-    const auto end = std::lower_bound(begin, this->source_y_for_target_.end(),
-                                      y + height);
-    target_y_begin = begin - this->source_y_for_target_.begin();
-    target_y_end = end - this->source_y_for_target_.begin();
-  }
 
   for (uint32_t target_y = target_y_begin; target_y < target_y_end; target_y++) {
     uint8_t *pixel = this->output_ +

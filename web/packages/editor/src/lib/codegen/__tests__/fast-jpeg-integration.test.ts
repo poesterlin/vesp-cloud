@@ -55,9 +55,10 @@ describe("fast runtime image firmware integration", () => {
 
     expect(installer).toContain('PATCH_DIR / "png_decoder.cpp"');
     expect(installer).toContain('PATCH_DIR / "png_decoder.h"');
-    expect(header).toContain("source_x_for_target_");
+    expect(header).toContain("target_x_for_source_boundary_");
     expect(decoder).toContain("get_decode_buffer()");
     expect(decoder).toContain("!this->image_->has_transparency()");
+    expect(decoder).not.toContain("std::lower_bound");
     expect(decoder).toContain("this->draw(x, y, width, height, Color(");
     expect(decoder).toContain('"Fast RGB565: source=%" PRIu32');
   });

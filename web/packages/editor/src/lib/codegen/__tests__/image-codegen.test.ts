@@ -134,6 +134,7 @@ describe("image component codegen", () => {
     const yaml = generateESPHomeYAML(project);
     expect(yaml).toContain("online_image:");
     expect(yaml).toContain("format: jpeg");
+    expect(yaml.match(/    buffer_size: 2048/g)).toHaveLength(2);
     expect(yaml).not.toContain("home_assistant_bearer_token");
     expect(yaml).not.toContain("Authorization:");
     expect(yaml).toContain('bind_ha_image_url("image.album_art", "entity_picture", id(img_albumart), id(img_albumart_alt), &id(img_albumart_prefer_fallback), &id(img_albumart_pending_fetch));');

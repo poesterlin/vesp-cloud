@@ -142,6 +142,7 @@ function generateOnlineImagesYAML(project: Project, imageScreenMap: Map<string, 
     lines.push(`    format: ${primaryFormat}`);
     lines.push(`    type: ${c.image_type}`);
     lines.push(`    resize: ${imageResize(c)}`);
+    lines.push(`    buffer_size: 2048`);
     if (c.transparency) lines.push(`    transparency: ${c.transparency}`);
     if (c.byte_order) lines.push(`    byte_order: ${c.byte_order}`);
     lines.push(`    on_download_finished:`);
@@ -176,6 +177,7 @@ function generateOnlineImagesYAML(project: Project, imageScreenMap: Map<string, 
     lines.push(`    format: ${fallbackFormat}`);
     lines.push(`    type: ${c.image_type}`);
     lines.push(`    resize: ${imageResize(c)}`);
+    lines.push(`    buffer_size: 2048`);
     if (c.transparency) lines.push(`    transparency: ${c.transparency}`);
     if (c.byte_order) lines.push(`    byte_order: ${c.byte_order}`);
     lines.push(`    on_download_finished:`);
@@ -536,34 +538,33 @@ function generateNotificationSubscriptions(project: Project): string {
   return lines.join('\n');
 }
 
-function generateWeatherForecastIntervals(project: Project): string {
+function generateWeatherForecastIntervals(project: Project): { intervals: string; scripts: string } {
   const allComponents = collectProjectComponents(project);
   const weatherComponents = allComponents.filter(c => c.type === 'weather') as WeatherComponent[];
-  if (weatherComponents.length === 0) return '';
+  if (weatherComponents.length === 0) return { intervals: '', scripts: '' };
 
   const seen = new Set<string>();
-  const entries: string[] = [];
+  const scripts: string[] = [];
+  const scriptIds: string[] = [];
+  const intervals: string[] = [];
 
   for (const wc of weatherComponents) {
     const entityId = wc.stateBinding?.entityId;
     if (!entityId) continue;
     const mode = wc.mode ?? 'today';
-    // Dedup by entity_id + mode
     const key = `${entityId}|${mode}`;
     if (seen.has(key)) continue;
     seen.add(key);
 
     const escapedId = escapeCString(entityId);
     const base = stateVarFromEntity(entityId);
+    const scriptId = `_weather_fetch_${base}_${mode}`;
+    scriptIds.push(scriptId);
 
     if (mode === 'forecast') {
-      entries.push(`  - interval: 10min
-    startup_delay: 5s
+      scripts.push(`  - id: ${scriptId}
+    mode: single
     then:
-      - logger.log:
-          level: WARN
-          tag: weather
-          format: "calling weather.get_forecasts for ${escapedId}"
       - homeassistant.service:
           service: weather.get_forecasts
           data:
@@ -573,57 +574,35 @@ function generateWeatherForecastIntervals(project: Project): string {
           on_success:
             then:
               - lambda: |-
-                  ESP_LOGW("weather", "on_response fired for %s (response keys=%u)", "${escapedId}", response.size());
                   auto resp_wrapper = response["response"];
-                  if (!resp_wrapper.is<JsonObjectConst>()) {
-                    ESP_LOGW("weather", "response.response is not object (is_null=%d)", resp_wrapper.isNull());
-                    char buf[512]; serializeJson(response, buf, sizeof(buf));
-                    ESP_LOGW("weather", "raw response=%s", buf);
-                    return;
-                  }
-                  ESP_LOGW("weather", "response.response keys=%u", resp_wrapper.size());
+                  if (!resp_wrapper.is<JsonObjectConst>()) return;
                   auto entity_obj = resp_wrapper["${escapedId}"];
-                  if (!entity_obj.is<JsonObjectConst>()) {
-                    ESP_LOGW("weather", "entity key not found in response.response (is_null=%d)", entity_obj.isNull());
-                    char buf[1024]; serializeJson(resp_wrapper, buf, sizeof(buf));
-                    ESP_LOGW("weather", "response.response content=%s", buf);
-                    return;
-                  }
-                  ESP_LOGW("weather", "entity_obj keys=%u", entity_obj.size());
+                  if (!entity_obj.is<JsonObjectConst>()) return;
                   auto fc = entity_obj["forecast"];
-                  if (!fc.is<JsonArrayConst>()) {
-                    ESP_LOGW("weather", "forecast is not array (is_null=%d)", fc.isNull());
-                    return;
-                  }
-                  ESP_LOGW("weather", "forecast array size=%u", fc.size());
+                  if (!fc.is<JsonArrayConst>()) return;
                   auto d1 = fc[0];
-                  if (d1["condition"].is<std::string>())     { auto v = d1["condition"].as<std::string>(); ESP_LOGW("weather", "day1 condition=%s", v.c_str()); g_ui_app.state().${base}_day1_condition.set(v); }
-                  if (d1["temperature"].is<float>())   { auto v = d1["temperature"].as<float>(); ESP_LOGW("weather", "day1 temperature=%.1f", v); g_ui_app.state().${base}_day1_temperature.set(v); }
-                  if (d1["humidity"].is<float>())      { auto v = d1["humidity"].as<float>(); ESP_LOGW("weather", "day1 humidity=%.1f", v); g_ui_app.state().${base}_day1_humidity.set(v); }
-                  if (d1["wind_speed"].is<float>())    { auto v = d1["wind_speed"].as<float>(); ESP_LOGW("weather", "day1 wind_speed=%.1f", v); g_ui_app.state().${base}_day1_wind_speed.set(v); }
-                  if (d1["precipitation"].is<float>()) { auto v = d1["precipitation"].as<float>(); ESP_LOGW("weather", "day1 precipitation=%.1f", v); g_ui_app.state().${base}_day1_precipitation.set(v); }
+                  if (d1["condition"].is<std::string>())     { auto v = d1["condition"].as<std::string>(); g_ui_app.state().${base}_day1_condition.set(v); }
+                  if (d1["temperature"].is<float>())   { auto v = d1["temperature"].as<float>(); g_ui_app.state().${base}_day1_temperature.set(v); }
+                  if (d1["humidity"].is<float>())      { auto v = d1["humidity"].as<float>(); g_ui_app.state().${base}_day1_humidity.set(v); }
+                  if (d1["wind_speed"].is<float>())    { auto v = d1["wind_speed"].as<float>(); g_ui_app.state().${base}_day1_wind_speed.set(v); }
+                  if (d1["precipitation"].is<float>()) { auto v = d1["precipitation"].as<float>(); g_ui_app.state().${base}_day1_precipitation.set(v); }
                   if (fc.size() >= 2) { auto d2 = fc[1];
-                    if (d2["condition"].is<std::string>())     { auto v = d2["condition"].as<std::string>(); ESP_LOGW("weather", "day2 condition=%s", v.c_str()); g_ui_app.state().${base}_day2_condition.set(v); }
-                    if (d2["temperature"].is<float>())   { auto v = d2["temperature"].as<float>(); ESP_LOGW("weather", "day2 temperature=%.1f", v); g_ui_app.state().${base}_day2_temperature.set(v); }
-                    if (d2["humidity"].is<float>())      { auto v = d2["humidity"].as<float>(); ESP_LOGW("weather", "day2 humidity=%.1f", v); g_ui_app.state().${base}_day2_humidity.set(v); }
-                    if (d2["wind_speed"].is<float>())    { auto v = d2["wind_speed"].as<float>(); ESP_LOGW("weather", "day2 wind_speed=%.1f", v); g_ui_app.state().${base}_day2_wind_speed.set(v); }
-                    if (d2["precipitation"].is<float>()) { auto v = d2["precipitation"].as<float>(); ESP_LOGW("weather", "day2 precipitation=%.1f", v); g_ui_app.state().${base}_day2_precipitation.set(v); } }
+                    if (d2["condition"].is<std::string>())     { auto v = d2["condition"].as<std::string>(); g_ui_app.state().${base}_day2_condition.set(v); }
+                    if (d2["temperature"].is<float>())   { auto v = d2["temperature"].as<float>(); g_ui_app.state().${base}_day2_temperature.set(v); }
+                    if (d2["humidity"].is<float>())      { auto v = d2["humidity"].as<float>(); g_ui_app.state().${base}_day2_humidity.set(v); }
+                    if (d2["wind_speed"].is<float>())    { auto v = d2["wind_speed"].as<float>(); g_ui_app.state().${base}_day2_wind_speed.set(v); }
+                    if (d2["precipitation"].is<float>()) { auto v = d2["precipitation"].as<float>(); g_ui_app.state().${base}_day2_precipitation.set(v); } }
                   if (fc.size() >= 3) { auto d3 = fc[2];
-                    if (d3["condition"].is<std::string>())     { auto v = d3["condition"].as<std::string>(); ESP_LOGW("weather", "day3 condition=%s", v.c_str()); g_ui_app.state().${base}_day3_condition.set(v); }
-                    if (d3["temperature"].is<float>())   { auto v = d3["temperature"].as<float>(); ESP_LOGW("weather", "day3 temperature=%.1f", v); g_ui_app.state().${base}_day3_temperature.set(v); }
-                    if (d3["humidity"].is<float>())      { auto v = d3["humidity"].as<float>(); ESP_LOGW("weather", "day3 humidity=%.1f", v); g_ui_app.state().${base}_day3_humidity.set(v); }
-                    if (d3["wind_speed"].is<float>())    { auto v = d3["wind_speed"].as<float>(); ESP_LOGW("weather", "day3 wind_speed=%.1f", v); g_ui_app.state().${base}_day3_wind_speed.set(v); }
-                    if (d3["precipitation"].is<float>()) { auto v = d3["precipitation"].as<float>(); ESP_LOGW("weather", "day3 precipitation=%.1f", v); g_ui_app.state().${base}_day3_precipitation.set(v); } }
-                  ESP_LOGW("weather", "parse complete");
+                    if (d3["condition"].is<std::string>())     { auto v = d3["condition"].as<std::string>(); g_ui_app.state().${base}_day3_condition.set(v); }
+                    if (d3["temperature"].is<float>())   { auto v = d3["temperature"].as<float>(); g_ui_app.state().${base}_day3_temperature.set(v); }
+                    if (d3["humidity"].is<float>())      { auto v = d3["humidity"].as<float>(); g_ui_app.state().${base}_day3_humidity.set(v); }
+                    if (d3["wind_speed"].is<float>())    { auto v = d3["wind_speed"].as<float>(); g_ui_app.state().${base}_day3_wind_speed.set(v); }
+                    if (d3["precipitation"].is<float>()) { auto v = d3["precipitation"].as<float>(); g_ui_app.state().${base}_day3_precipitation.set(v); } }
                   UiRedraw::trigger_display_update();`);
     } else {
-      entries.push(`  - interval: 10min
-    startup_delay: 5s
+      scripts.push(`  - id: ${scriptId}
+    mode: single
     then:
-      - logger.log:
-          level: WARN
-          tag: weather
-          format: "calling weather.get_forecasts for ${escapedId}"
       - homeassistant.service:
           service: weather.get_forecasts
           data:
@@ -633,41 +612,45 @@ function generateWeatherForecastIntervals(project: Project): string {
           on_success:
             then:
               - lambda: |-
-                  ESP_LOGW("weather", "on_response fired for %s (response keys=%u)", "${escapedId}", response.size());
                   auto resp_wrapper = response["response"];
-                  if (!resp_wrapper.is<JsonObjectConst>()) {
-                    ESP_LOGW("weather", "response.response is not object (is_null=%d)", resp_wrapper.isNull());
-                    char buf[512]; serializeJson(response, buf, sizeof(buf));
-                    ESP_LOGW("weather", "raw response=%s", buf);
-                    return;
-                  }
-                  ESP_LOGW("weather", "response.response keys=%u", resp_wrapper.size());
+                  if (!resp_wrapper.is<JsonObjectConst>()) return;
                   auto entity_obj = resp_wrapper["${escapedId}"];
-                  if (!entity_obj.is<JsonObjectConst>()) {
-                    ESP_LOGW("weather", "entity key not found in response.response (is_null=%d)", entity_obj.isNull());
-                    char buf[1024]; serializeJson(resp_wrapper, buf, sizeof(buf));
-                    ESP_LOGW("weather", "response.response content=%s", buf);
-                    return;
-                  }
-                  ESP_LOGW("weather", "entity_obj keys=%u", entity_obj.size());
+                  if (!entity_obj.is<JsonObjectConst>()) return;
                   auto fc = entity_obj["forecast"];
-                  if (!fc.is<JsonArrayConst>()) {
-                    ESP_LOGW("weather", "forecast is not array (is_null=%d)", fc.isNull());
-                    return;
-                  }
-                  ESP_LOGW("weather", "forecast array size=%u", fc.size());
+                  if (!fc.is<JsonArrayConst>()) return;
                   auto today = fc[0];
-                  if (today["condition"].is<std::string>())     { auto v = today["condition"].as<std::string>(); ESP_LOGW("weather", "condition=%s", v.c_str()); g_ui_app.state().${base}_condition.set(v); }
-                  if (today["temperature"].is<float>())   { auto v = today["temperature"].as<float>(); ESP_LOGW("weather", "temperature=%.1f", v); g_ui_app.state().${base}_temperature.set(v); }
-                  if (today["humidity"].is<float>())      { auto v = today["humidity"].as<float>(); ESP_LOGW("weather", "humidity=%.1f", v); g_ui_app.state().${base}_humidity.set(v); }
-                  if (today["wind_speed"].is<float>())    { auto v = today["wind_speed"].as<float>(); ESP_LOGW("weather", "wind_speed=%.1f", v); g_ui_app.state().${base}_wind_speed.set(v); }
-                  if (today["precipitation"].is<float>()) { auto v = today["precipitation"].as<float>(); ESP_LOGW("weather", "precipitation=%.1f", v); g_ui_app.state().${base}_precipitation.set(v); }
-                  ESP_LOGW("weather", "today parse complete — hourly");
+                  if (today["condition"].is<std::string>())     { auto v = today["condition"].as<std::string>(); g_ui_app.state().${base}_condition.set(v); }
+                  if (today["temperature"].is<float>())   { auto v = today["temperature"].as<float>(); g_ui_app.state().${base}_temperature.set(v); }
+                  if (today["humidity"].is<float>())      { auto v = today["humidity"].as<float>(); g_ui_app.state().${base}_humidity.set(v); }
+                  if (today["wind_speed"].is<float>())    { auto v = today["wind_speed"].as<float>(); g_ui_app.state().${base}_wind_speed.set(v); }
+                  if (today["precipitation"].is<float>()) { auto v = today["precipitation"].as<float>(); g_ui_app.state().${base}_precipitation.set(v); }
                   UiRedraw::trigger_display_update();`);
     }
+
+    intervals.push(`  - interval: 10min
+    then:
+      - script.execute: ${scriptId}`);
   }
 
-  return entries.join('\n\n');
+  const scriptCalls = scriptIds.map(id => `      - script.execute: ${id}`).join('\n');
+
+  const result = {
+    intervals: scriptIds.length > 0 ? `  - interval: 5s
+    startup_delay: 5s
+    then:
+      - lambda: |-
+          static bool _weather_bootstrap_triggered = false;
+          if (_weather_bootstrap_triggered) return;
+          auto *api = esphome::api::global_api_server;
+          if (api == nullptr || !api->is_connected()) return;
+          _weather_bootstrap_triggered = true;
+${scriptCalls}
+
+${intervals.join('\n\n')}` : '',
+    scripts: scripts.join('\n'),
+  };
+
+  return result;
 }
 
 function generateTodoRefetchGlobals(project: Project): string {
@@ -949,7 +932,9 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   const httpOtaEnabled = !!(project.secrets?.firmwareUpdateUrl);
   const httpRequestEnabled = onlineImagesEnabled || httpOtaEnabled;
   const bindings = generateBindings(project);
-  const weatherIntervals = generateWeatherForecastIntervals(project);
+  const weatherForecastData = generateWeatherForecastIntervals(project);
+  const weatherIntervals = weatherForecastData.intervals;
+  const weatherScripts = weatherForecastData.scripts;
   const todoIntervals = generateTodoItemsIntervals(project);
   const todoRefetchGlobals = generateTodoRefetchGlobals(project);
   const hasTodoEntityRefetch = !!todoRefetchGlobals;
@@ -1388,6 +1373,7 @@ script:
           service: switch.toggle
           data:
             entity_id: none
+${weatherScripts ? '\n' + weatherScripts + '\n' : ''}
 
 binary_sensor:
   - platform: homeassistant

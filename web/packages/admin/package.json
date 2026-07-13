@@ -11,6 +11,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@sentry/sveltekit": "10.65.0",
     "@vesp-cloud/db": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "jose": "6.2.3"

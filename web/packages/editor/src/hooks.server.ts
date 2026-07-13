@@ -5,6 +5,17 @@ import { sequence } from "@sveltejs/kit/hooks";
 import { getDb } from "@vesp-cloud/db";
 import * as auth from "$lib/server/auth";
 import { env } from "$env/dynamic/private";
+import * as Sentry from "@sentry/sveltekit";
+
+const sentryEnabled = !!env.SENTRY_DSN;
+
+if (sentryEnabled) {
+  Sentry.init({
+    dsn: env.SENTRY_DSN,
+    tracesSampleRate: 0.1,
+    environment: env.APP_EDITION || "development",
+  });
+}
 
 let workerStarted = false;
 const configuredCompilerMode = (env.COMPILER_MODE ?? "embedded").toLowerCase();
@@ -91,4 +102,11 @@ const handleAuth: Handle = async ({ event, resolve }) => {
   return resolve(event);
 };
 
-export const handle: Handle = sequence(handleCsrf, handleAuth);
+const appHandles: Handle[] = [];
+if (sentryEnabled) {
+  appHandles.push(Sentry.sentryHandle());
+}
+appHandles.push(handleCsrf, handleAuth);
+
+export const handle: Handle = sequence(...appHandles);
+export const handleError = Sentry.handleErrorWithSentry();

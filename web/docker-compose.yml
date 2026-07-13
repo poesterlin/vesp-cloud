@@ -25,6 +25,7 @@ services:
       - MINIO_BUCKET=${MINIO_BUCKET}
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - SENTRY_DSN=${SENTRY_DSN:-}
       - PUBLIC_BASE_URL=https://${DOMAIN}
       - LOG_LEVEL=debug
     networks:
@@ -63,6 +64,7 @@ services:
       - MINIO_BUCKET=${MINIO_BUCKET}
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - SENTRY_DSN=${SENTRY_DSN:-}
       - PUBLIC_BASE_URL=https://${DOMAIN}
       - LOG_LEVEL=debug
     tmpfs:
@@ -82,6 +84,7 @@ services:
       - TSIDP_CLIENT_ID=${TSIDP_CLIENT_ID}
       - TSIDP_CLIENT_SECRET=${TSIDP_CLIENT_SECRET}
       - URL=https://${ADMIN_DOMAIN}
+      - SENTRY_DSN=${SENTRY_DSN:-}
     networks:
       - traefik_web
     labels:

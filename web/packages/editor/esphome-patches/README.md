@@ -1,4 +1,4 @@
-# ESPHome fast JPEG patch
+# ESPHome fast runtime-image patches
 
 The compiler images install this patch into the pinned ESPHome 2026.5.2
 package before running the shared `warmup.sh` PlatformIO build.
@@ -15,10 +15,18 @@ Other image types and transparency modes keep ESPHome's compatibility path.
 The existing UI image tiling is unchanged and still limits display painting to
 32-pixel strips across frames.
 
+For opaque RGB565 PNG images, the PNGLE callbacks write packed RGB565
+rectangles directly into the RuntimeImage buffer. Integer destination maps
+handle configured resizing without ESPHome's per-pixel `Color` construction,
+floating-point scaling, chroma-key mapping, and repeated bounds checks. PNG
+decoding remains progressive; transparent and non-RGB565 images retain the
+stock compatibility path.
+
 After installing firmware, a successful fast decode logs a line like:
 
 ```text
 [I][image_decoder.jpeg]: Fast RGB565: source=... native=... target=... scale=... alloc=...us decode=...us total=...us
+[I][image_decoder.png]: Fast RGB565: source=... target=... alloc=...us decode=...us
 ```
 
 The installer intentionally rejects any other ESPHome version. Review and

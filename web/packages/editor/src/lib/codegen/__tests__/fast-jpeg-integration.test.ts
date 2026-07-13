@@ -6,7 +6,7 @@ import { join } from "node:path";
 const editorRoot = join(import.meta.dir, "../../../..");
 const readEditorFile = (path: string) => readFileSync(join(editorRoot, path), "utf8");
 
-describe("fast JPEG firmware integration", () => {
+describe("fast runtime image firmware integration", () => {
   test("pins the S3 performance settings in generated firmware", () => {
     const baseYaml = readEditorFile("src/lib/templates/base.yaml");
 
@@ -46,5 +46,19 @@ describe("fast JPEG firmware integration", () => {
     expect(decoder).toContain("jpeg->iWidthUsed");
     expect(decoder).toContain("get_decode_buffer()");
     expect(decoder).toContain('"Fast RGB565: source=%dx%d');
+  });
+
+  test("installs direct RGB565 PNG output with compatibility fallback", () => {
+    const installer = readEditorFile("esphome-patches/apply-fast-jpeg.py");
+    const header = readEditorFile("esphome-patches/png_decoder.h");
+    const decoder = readEditorFile("esphome-patches/png_decoder.cpp");
+
+    expect(installer).toContain('PATCH_DIR / "png_decoder.cpp"');
+    expect(installer).toContain('PATCH_DIR / "png_decoder.h"');
+    expect(header).toContain("source_x_for_target_");
+    expect(decoder).toContain("get_decode_buffer()");
+    expect(decoder).toContain("!this->image_->has_transparency()");
+    expect(decoder).toContain("this->draw(x, y, width, height, Color(");
+    expect(decoder).toContain('"Fast RGB565: source=%" PRIu32');
   });
 });

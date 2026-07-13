@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install the project-owned fast JPEG path into the pinned ESPHome package."""
+"""Install the project-owned fast runtime-image paths into pinned ESPHome."""
 
 from importlib.metadata import version
 from pathlib import Path
@@ -21,20 +21,33 @@ import esphome  # noqa: E402  (validate the installed distribution first)
 PATCH_DIR = Path(__file__).resolve().parent
 RUNTIME_IMAGE_DIR = Path(esphome.__file__).resolve().parent / "components" / "runtime_image"
 JPEG_DECODER = RUNTIME_IMAGE_DIR / "jpeg_decoder.cpp"
+PNG_DECODER = RUNTIME_IMAGE_DIR / "png_decoder.cpp"
+PNG_DECODER_HEADER = RUNTIME_IMAGE_DIR / "png_decoder.h"
 RUNTIME_IMAGE_HEADER = RUNTIME_IMAGE_DIR / "runtime_image.h"
 RUNTIME_IMAGE_CODEGEN = RUNTIME_IMAGE_DIR / "__init__.py"
 
-if not JPEG_DECODER.is_file() or not RUNTIME_IMAGE_HEADER.is_file() or not RUNTIME_IMAGE_CODEGEN.is_file():
+if not all(
+    path.is_file()
+    for path in (
+        JPEG_DECODER,
+        PNG_DECODER,
+        PNG_DECODER_HEADER,
+        RUNTIME_IMAGE_HEADER,
+        RUNTIME_IMAGE_CODEGEN,
+    )
+):
     raise SystemExit(f"ESPHome runtime_image sources not found under {RUNTIME_IMAGE_DIR}")
 
 shutil.copyfile(PATCH_DIR / "jpeg_decoder.cpp", JPEG_DECODER)
+shutil.copyfile(PATCH_DIR / "png_decoder.cpp", PNG_DECODER)
+shutil.copyfile(PATCH_DIR / "png_decoder.h", PNG_DECODER_HEADER)
 
 header = RUNTIME_IMAGE_HEADER.read_text()
 anchor = """  int get_buffer_width() const { return this->buffer_width_; }
   int get_buffer_height() const { return this->buffer_height_; }
 """
 replacement = anchor + """
-  // Internal decoder accessors used by the project-owned JPEG fast path.
+  // Internal decoder accessors used by the project-owned image fast paths.
   // The buffer remains private to RuntimeImage outside decoder code.
   uint8_t *get_decode_buffer() { return this->buffer_; }
   bool get_decode_buffer_big_endian() const { return this->is_big_endian_; }
@@ -67,4 +80,4 @@ if 'cg.add_build_flag("-DARDUINO_ARCH_ESP32")' not in codegen:
     codegen = codegen.replace(define_anchor, define_replacement, 1)
 RUNTIME_IMAGE_CODEGEN.write_text(codegen)
 
-print(f"Installed fast JPEG decoder into ESPHome {PACKAGE_VERSION}")
+print(f"Installed fast JPEG and PNG decoders into ESPHome {PACKAGE_VERSION}")

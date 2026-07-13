@@ -17,8 +17,16 @@ esphome:
 
 esp32:
   variant: esp32s3
+  # Pin the actual hardware maximum. ESPHome 2026.5 defaults the S3 to
+  # 240 MHz, but an explicit value also corrects stale sdkconfig caches made
+  # by older releases that defaulted this board to 160 MHz.
+  cpu_frequency: 240MHz
   framework:
     type: esp-idf
+    advanced:
+      # JPEG entropy/IDCT work is CPU-bound. ESPHome otherwise builds for
+      # size (-Os), which is substantially slower in this hot path.
+      compiler_optimization: PERF
     sdkconfig_options:
       # Pause briefly after a panic so the Guru Meditation dump can fully
       # flush on slow USB serial (default 0 = instant reboot can race the

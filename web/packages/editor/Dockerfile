@@ -23,6 +23,12 @@ RUN python3 -m venv /opt/esphome-venv
 RUN /opt/esphome-venv/bin/pip install --upgrade pip
 RUN /opt/esphome-venv/bin/pip install "esphome==${ESPHOME_VERSION}"
 
+# ESPHome's stock JPEG wrapper expands every decoded source pixel through
+# RGB888 + floating-point scaling. Install the project-owned RGB565 block
+# decoder into the deliberately pinned ESPHome package before pre-warming.
+COPY packages/editor/esphome-patches /opt/esphome-patches
+RUN /opt/esphome-venv/bin/python /opt/esphome-patches/apply-fast-jpeg.py
+
 # Pre-compile Python bytecode for faster esphome startup
 RUN /opt/esphome-venv/bin/python -m compileall -q /opt/esphome-venv
 
@@ -42,28 +48,7 @@ ENV CCACHE_COMPRESSLEVEL=1
 ENV IDF_CCACHE_ENABLE=1
 ENV PLATFORMIO_BUILD_CACHE_DIR=/data/pio-build-cache
 ENV PLATFORMIO_CORE_DIR=/data/platformio
-RUN <<WARMUP
-set -e
-mkdir -p /tmp/warmup
-cat > /tmp/warmup/warmup.yaml <<'EOF'
-esphome:
-  name: warmup
-
-esp32:
-  variant: esp32s3
-  framework:
-    type: esp-idf
-
-logger:
-
-api:
-
-ota:
-  - platform: esphome
-EOF
-/opt/esphome-venv/bin/python -m esphome compile /tmp/warmup/warmup.yaml || true
-rm -rf /tmp/warmup
-WARMUP
+RUN /bin/sh /opt/esphome-patches/warmup.sh
 
 WORKDIR /app
 

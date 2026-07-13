@@ -11,6 +11,8 @@ build
 **/build
 .turbo
 .cache
+**/__pycache__
+**/*.py[cod]
 coverage
 npm-debug.log*
 yarn-debug.log*

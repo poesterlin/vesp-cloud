@@ -27,7 +27,7 @@ describe("dirty-region architecture", () => {
   });
 
   test("multi-frame images and scrolling retain explicit regions", async () => {
-    const widgets = await includeSource("ui_widgets.h");
+    const widgets = await includeSource("ui_widget_image.h");
     const screens = await includeSource("ui_screen_base.h");
     const detail = await includeSource("ui_scrollable_detail.h");
 
@@ -39,7 +39,7 @@ describe("dirty-region architecture", () => {
   });
 
   test("widgets draw through the paint-bounds clipping contract", async () => {
-    const widgets = await includeSource("ui_widgets.h");
+    const widgets = await includeSource("ui_widget_base.h");
     const screens = await includeSource("ui_screen_base.h");
     const tabs = await includeSource("ui_tab_container.h");
 

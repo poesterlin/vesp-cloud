@@ -1191,6 +1191,22 @@ ${bindings ? bindings + '\n' : ''}${notificationBindings ? notificationBindings 
     - includes/ui_state.h
     - includes/ui_invalidation.h
     - includes/ui_redraw.h
+    - includes/ui_rendering_utils.h
+    - includes/ui_widget_base.h
+    - includes/ui_widget_rect.h
+    - includes/ui_widget_image.h
+    - includes/ui_widget_label.h
+    - includes/ui_widget_icon.h
+    - includes/ui_widget_digital_clock.h
+    - includes/ui_widget_button.h
+    - includes/ui_widget_image_toggle.h
+    - includes/ui_widget_todo.h
+    - includes/ui_widget_calendar.h
+    - includes/ui_widget_notification_overlay.h
+    - includes/ui_widget_range_slider.h
+    - includes/ui_widget_hvac.h
+    - includes/ui_widget_weather.h
+    - includes/ui_widget_loading.h
     - includes/ui_widgets.h
     - includes/ui_chrome.h
     - includes/ui_screen_base.h

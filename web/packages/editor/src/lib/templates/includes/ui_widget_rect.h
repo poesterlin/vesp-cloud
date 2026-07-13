@@ -20,5 +20,3 @@ class RectWidget : public Widget {
   UiRect rect_;
   Color color_;
 };
-
-#if UI_HAS_ESPHOME_IMAGE_COMPONENT

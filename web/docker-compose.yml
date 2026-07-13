@@ -1,5 +1,6 @@
 services:
   esphome:
+    restart: unless-stopped
     build:
       dockerfile: packages/editor/Dockerfile
       args: 
@@ -40,6 +41,7 @@ services:
       - ccache_data:/data/ccache
 
   worker:
+    restart: unless-stopped
     profiles: ["worker"]
     build:
       dockerfile: packages/editor/Dockerfile.worker
@@ -71,6 +73,7 @@ services:
       - ccache_data:/data/ccache
 
   admin:
+    restart: unless-stopped
     build:
       dockerfile: packages/admin/Dockerfile
     environment:

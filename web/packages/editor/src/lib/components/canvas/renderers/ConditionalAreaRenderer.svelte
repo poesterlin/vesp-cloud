@@ -158,18 +158,22 @@
         <button
           class="variant-tab"
           class:active={isActive}
-          style:background={isActive ? color : `${color}33`}
-          style:border-color={isActive ? color : `${color}44`}
-          style:color={isActive ? '#fff' : color}
           onclick={() => selectVariant(variant.id)}
           title={variant.condition ? describeCondition(variant.condition) : "Default"}
           role="tab"
           aria-selected={isActive}
         >
-          {variant.name}
-          {#if !variant.condition}
-            <span class="default-badge">def</span>
-          {/if}
+          <span
+            class="variant-pill"
+            style:background={isActive ? color : `${color}33`}
+            style:border-color={isActive ? color : `${color}44`}
+          ></span>
+          <span class="variant-tab-content" style:color={isActive ? '#fff' : color}>
+            {variant.name}
+            {#if !variant.condition}
+              <span class="default-badge">def</span>
+            {/if}
+          </span>
         </button>
       {/each}
       {#if isSelected}
@@ -245,16 +249,15 @@
     left: 0;
     right: 0;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     gap: 2px;
-    height: 22px;
-    padding: 0 0 2px 2px;
+    height: 24px;
+    padding: 1px 0 1px 2px;
     background: transparent;
     overflow-x: auto;
     overflow-y: hidden;
     z-index: 5;
-    transform: translateY(-14px);
-    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
   }
 
   .variant-header > :last-child {
@@ -262,44 +265,59 @@
   }
 
   .variant-header:hover {
-    transform: translateY(0);
     background: rgba(22, 28, 36, 0.94);
     box-shadow: 0 1px 0 rgba(90, 110, 130, 0.55);
   }
 
   .variant-tab {
-    padding: 0;
-    width: 12px;
-    min-width: 12px;
-    height: 8px;
-    font-size: 0;
-    border: 1px solid transparent;
-    border-radius: 2px;
+    position: relative;
+    min-width: 32px;
+    height: 22px;
+    padding: 1px 5px;
+    font-size: 9px;
+    border: 0;
+    background: transparent;
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: padding 0.12s ease, width 0.12s ease, min-width 0.12s ease,
-                height 0.12s ease, font-size 0.12s ease, border-radius 0.12s ease,
-                filter 0.1s;
+    isolation: isolate;
   }
 
-  .variant-header:hover .variant-tab {
-    padding: 1px 5px;
-    width: auto;
-    min-width: auto;
-    height: auto;
-    font-size: 9px;
+  .variant-pill {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 8px;
+    border: 1px solid transparent;
     border-radius: 3px;
+    transform: translate(-50%, -50%);
+    transition: width 0.12s ease, height 0.12s ease, filter 0.1s;
+    pointer-events: none;
   }
 
-  .variant-tab:hover {
+  .variant-header:hover .variant-pill {
+    width: 100%;
+    height: 100%;
+  }
+
+  .variant-tab:hover .variant-pill {
     filter: brightness(1.3);
   }
 
   .variant-tab.active {
     font-weight: 600;
-    width: 24px;
-    min-width: 24px;
+  }
+
+  .variant-tab-content {
+    position: relative;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+    z-index: 1;
+  }
+
+  .variant-header:hover .variant-tab-content {
+    opacity: 1;
   }
 
   .default-badge {
@@ -327,14 +345,13 @@
     border-radius: 2px;
     color: #8ea4bc;
     cursor: pointer;
-    font-size: 0;
+    font-size: 14px;
     line-height: 1;
-    opacity: 0;
-    transition: opacity 0.12s ease, font-size 0.12s ease;
+    opacity: 0.35;
+    transition: opacity 0.12s ease;
   }
 
   .variant-header:hover .add-variant-btn {
-    font-size: 14px;
     opacity: 1;
   }
 

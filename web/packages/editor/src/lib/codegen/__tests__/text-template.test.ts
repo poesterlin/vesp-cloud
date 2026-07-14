@@ -296,4 +296,89 @@ describe("text component template codegen", () => {
     const out = generateUIScreensHeader(project);
     expect(out).toContain('"A \\"quoted\\" \\\\ thing "');
   });
+
+  test("uses the last rectangle color when it fully contains a label", () => {
+    const project = makeProject({
+      dashboardPages: [{
+        id: "p1",
+        name: "Home",
+        components: [
+          { id: "outer", type: "rectangle", position: { x: 0, y: 0 }, size: { width: 200, height: 100 }, backgroundColor: { r: 10, g: 20, b: 30 } },
+          { id: "inner", type: "rectangle", position: { x: 5, y: 5 }, size: { width: 150, height: 80 }, backgroundColor: { r: 40, g: 50, b: 60 } },
+          { id: "contained", type: "text", position: { x: 10, y: 10 }, size: { width: 100, height: 40 }, text: "Contained" },
+        ],
+      }],
+    });
+
+    const out = generateUIScreensHeader(project);
+    expect(out).toContain("contained->set_bg_color(Color(40, 50, 60));");
+  });
+
+  test("keeps the normal label background when it only overlaps a rectangle", () => {
+    const project = makeProject({
+      dashboardPages: [{
+        id: "p1",
+        name: "Home",
+        components: [
+          { id: "card", type: "rectangle", position: { x: 0, y: 0 }, size: { width: 80, height: 80 }, backgroundColor: { r: 40, g: 50, b: 60 } },
+          { id: "overlap", type: "text", position: { x: 50, y: 10 }, size: { width: 100, height: 40 }, text: "Overlap" },
+        ],
+      }],
+    });
+
+    const out = generateUIScreensHeader(project);
+    expect(out).not.toContain("overlap->set_bg_color");
+  });
+
+  test("resolves rectangle backgrounds inside a tab independently", () => {
+    const project = makeProject({
+      dashboardPages: [{
+        id: "p1",
+        name: "Home",
+        components: [{
+          id: "tabs",
+          type: "tab_container",
+          position: { x: 0, y: 0 },
+          size: { width: 220, height: 180 },
+          tabs: [{
+            id: "tab1",
+            name: "One",
+            components: [
+              { id: "card", type: "rectangle", position: { x: 5, y: 5 }, size: { width: 180, height: 80 }, backgroundColor: { r: 70, g: 80, b: 90 } },
+              { id: "tab_label", type: "text", position: { x: 10, y: 10 }, size: { width: 100, height: 40 }, text: "Tab" },
+            ],
+          }],
+        }],
+      }],
+    });
+
+    const out = generateUIScreensHeader(project);
+    expect(out).toContain("tab_label->set_bg_color(Color(70, 80, 90));");
+  });
+
+  test("resolves rectangle backgrounds within each conditional variant", () => {
+    const project = makeProject({
+      dashboardPages: [{
+        id: "p1",
+        name: "Home",
+        components: [{
+          id: "conditional",
+          type: "conditional_area",
+          position: { x: 20, y: 30 },
+          size: { width: 200, height: 120 },
+          variants: [{
+            id: "active",
+            name: "Active",
+            components: [
+              { id: "variant_card", type: "rectangle", position: { x: 5, y: 5 }, size: { width: 180, height: 80 }, backgroundColor: { r: 100, g: 110, b: 120 } },
+              { id: "variant_label", type: "text", position: { x: 10, y: 10 }, size: { width: 100, height: 40 }, text: "Variant" },
+            ],
+          }],
+        }],
+      }],
+    });
+
+    const out = generateUIScreensHeader(project);
+    expect(out).toContain("variant_label->set_bg_color(Color(100, 110, 120));");
+  });
 });

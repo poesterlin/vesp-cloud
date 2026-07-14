@@ -588,6 +588,40 @@ function sortComponentsForWidgetLayering(components: Component[]): Component[] {
   });
 }
 
+/**
+ * Resolve the opaque color a label must use when clearing its previous glyphs.
+ * Rectangles are painted first (in their original relative order), so the last
+ * rectangle which fully contains the label is the surface directly below it.
+ * Partial intersections deliberately do not qualify: using that rectangle's
+ * color would paint a rectangular artifact outside the rectangle itself.
+ */
+function labelBackgroundForScope(
+    label: TextComponent,
+    components: Component[],
+    rectangleDefault: string,
+    fallback?: string,
+): string | undefined {
+  const lx = label.position.x;
+  const ly = label.position.y;
+  const lw = label.size?.width ?? 100;
+  const lh = label.size?.height ?? 40;
+  let result = fallback;
+
+  for (const component of components) {
+    if (component.type !== 'rectangle') continue;
+    const rw = component.size?.width ?? 100;
+    const rh = component.size?.height ?? 60;
+    const fullyContained = lx >= component.position.x &&
+      ly >= component.position.y &&
+      lx + lw <= component.position.x + rw &&
+      ly + lh <= component.position.y + rh;
+    if (fullyContained) {
+      result = component.backgroundColor ? emitColor(component.backgroundColor) : rectangleDefault;
+    }
+  }
+  return result;
+}
+
 function generateComponentSetup(
     c: Component,
     screenVar: string,
@@ -604,6 +638,7 @@ function generateComponentSetup(
     // siblings whose own bounds don't intersect the dirty rect.
     dirtyBoundsExpr?: string,
     entityTypes?: EntityTypeMap,
+    labelBackgroundExpr?: string,
 ): string {
   const factory: WidgetFactory = (typeName, args) =>
     `${screenVar}->emplace_widget<${typeName}>(${args})`;
@@ -617,6 +652,7 @@ function generateComponentSetup(
       const fontSize = tc.fontSize ?? 'small';
       const staticText = labelStaticText(tc);
       let out = `${indent}auto *${idSafe} = ${factory('LabelWidget', `${rect(c.position.x + offsetX, c.position.y + offsetY, c.size?.width ?? 100, c.size?.height ?? 40)}, "${escapeCString(staticText)}", ${fontMap[fontSize]}`)};${visLine}${dirtyLine}\n`;
+      if (labelBackgroundExpr) out += `${indent}${idSafe}->set_bg_color(${labelBackgroundExpr});\n`;
       out += emitLabelAlign(tc, idSafe, indent);
       out += emitLabelColor(tc, idSafe, indent);
       out += emitLabelBindings(tc, idSafe, indent);
@@ -839,7 +875,10 @@ function generateConditionalAreaWidget(
 
     const orderedChildren = sortComponentsForWidgetLayering(variant.components);
     for (const child of orderedChildren) {
-      out += generateComponentSetup(child, screenVar, indent, variantLambdaVar, areaX, areaY, dirtyBoundsExpr, entityTypes);
+      const labelBg = child.type === 'text'
+        ? labelBackgroundForScope(child, variant.components, 'g_theme.info_bg', 'g_theme.info_bg')
+        : undefined;
+      out += generateComponentSetup(child, screenVar, indent, variantLambdaVar, areaX, areaY, dirtyBoundsExpr, entityTypes, labelBg);
     }
   }
 
@@ -889,7 +928,10 @@ function generateTabContainerWidget(
   for (let i = 0; i < c.tabs.length; i++) {
     const orderedChildren = sortComponentsForWidgetLayering(c.tabs[i]!.components);
     for (const child of orderedChildren) {
-      out += generateNestedComponent(child, varName, i, indent, x, y + TAB_BAR_HEIGHT, bgVar, undefined, dirtyBoundsExpr, entityTypes);
+      const labelBg = child.type === 'text'
+        ? labelBackgroundForScope(child, c.tabs[i]!.components, bgVar, bgVar)
+        : undefined;
+      out += generateNestedComponent(child, varName, i, indent, x, y + TAB_BAR_HEIGHT, bgVar, undefined, dirtyBoundsExpr, entityTypes, labelBg);
     }
   }
 
@@ -898,7 +940,7 @@ function generateTabContainerWidget(
 
 function generateNestedComponent(c: Component, containerVar: string, tabIndex: number, indent: string,
     offsetX: number, offsetY: number, tabBgVar?: string, visibilityExpr?: string,
-    dirtyBoundsExpr?: string, entityTypes?: EntityTypeMap): string {
+    dirtyBoundsExpr?: string, entityTypes?: EntityTypeMap, labelBackgroundExpr?: string): string {
   const x = c.position.x + offsetX;
   const y = c.position.y + offsetY;
   const w = c.size?.width ?? 60;
@@ -920,10 +962,10 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
       const alignLine = emitLabelAlign(c, idSafe, bodyIndent);
       const bindLines = emitLabelBindings(c, idSafe, bodyIndent);
       let out: string;
-      if (tabBgVar) {
+      if (labelBackgroundExpr) {
         const visInner = visibilityExpr ? `\n${indent}  ${idSafe}->set_visibility_condition(${visibilityExpr});` : '';
         const dirtyInner = dirtyBoundsExpr ? `\n${indent}  ${idSafe}->set_dirty_bounds(${dirtyBoundsExpr});` : '';
-        out = `${indent}{\n${indent}  auto *${idSafe} = ${factory('LabelWidget', wargs)};\n${indent}  ${idSafe}->set_bg_color(${tabBgVar});${visInner}${dirtyInner}\n`;
+        out = `${indent}{\n${indent}  auto *${idSafe} = ${factory('LabelWidget', wargs)};\n${indent}  ${idSafe}->set_bg_color(${labelBackgroundExpr});${visInner}${dirtyInner}\n`;
       } else if (visibilityExpr || dirtyBoundsExpr) {
         out = `${indent}auto *${idSafe} = ${factory('LabelWidget', wargs)};${visLine}${dirtyLine}\n`;
       } else {
@@ -934,7 +976,7 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
       out += emitLabelColor(c, idSafe, bodyIndent);
       out += bindLines;
 
-      if (tabBgVar) {
+      if (labelBackgroundExpr) {
         out += `${indent}}\n`;
       }
       return out;
@@ -1060,7 +1102,11 @@ function generateConditionalAreaNested(
 
     const orderedChildren = sortComponentsForWidgetLayering(variant.components);
     for (const child of orderedChildren) {
-      out += generateNestedComponent(child, containerVar, tabIndex, indent, areaX, areaY, tabBgVar, variantLambdaVar, dirtyBoundsExpr, entityTypes);
+      const inheritedBg = tabBgVar ?? 'g_theme.info_bg';
+      const labelBg = child.type === 'text'
+        ? labelBackgroundForScope(child, variant.components, inheritedBg, inheritedBg)
+        : undefined;
+      out += generateNestedComponent(child, containerVar, tabIndex, indent, areaX, areaY, tabBgVar, variantLambdaVar, dirtyBoundsExpr, entityTypes, labelBg);
     }
   }
 
@@ -1134,7 +1180,10 @@ export function generateUIScreensHeader(project: Project): string {
         ? dashboardOffsetY
         : 0;
       for (const c of orderedComponents) {
-        setupBody += generateComponentSetup(c, 'home', '    ', `p${index}`, 0, pageOffsetY, undefined, entityTypes);
+        const labelBg = c.type === 'text'
+          ? labelBackgroundForScope(c, page.components, 'g_theme.info_bg')
+          : undefined;
+        setupBody += generateComponentSetup(c, 'home', '    ', `p${index}`, 0, pageOffsetY, undefined, entityTypes, labelBg);
         setupBody += '\n';
       }
       setupBody += `  }\n\n`;
@@ -1163,7 +1212,10 @@ export function generateUIScreensHeader(project: Project): string {
     setupBody += `  // Detail: ${cppLineCommentText(view.title)}\n`;
     const orderedComponents = sortComponentsForWidgetLayering(view.components);
     for (const c of orderedComponents) {
-      setupBody += generateComponentSetup(c, screenVar, '  ', undefined, 0, 0, undefined, entityTypes);
+      const labelBg = c.type === 'text'
+        ? labelBackgroundForScope(c, view.components, 'g_theme.info_bg')
+        : undefined;
+      setupBody += generateComponentSetup(c, screenVar, '  ', undefined, 0, 0, undefined, entityTypes, labelBg);
       setupBody += '\n';
     }
     setupBody += '\n';

@@ -98,6 +98,7 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/bunfig.toml ./bunfig.toml
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /opt/esphome-venv /opt/esphome-venv
+COPY --from=builder /opt/esphome-patches /opt/esphome-patches
 COPY --from=builder /data /data
 
 ENV NODE_ENV=production

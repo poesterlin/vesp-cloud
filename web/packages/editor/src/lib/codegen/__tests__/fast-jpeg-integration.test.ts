@@ -21,6 +21,11 @@ describe("fast runtime image firmware integration", () => {
       expect(source).toContain("COPY packages/editor/esphome-patches /opt/esphome-patches");
       expect(source).toContain("/opt/esphome-patches/apply-fast-jpeg.py");
       expect(source).toContain("RUN /bin/sh /opt/esphome-patches/warmup.sh");
+      if (dockerfile === "Dockerfile") {
+        expect(source).toContain(
+          "COPY --from=builder /opt/esphome-patches /opt/esphome-patches",
+        );
+      }
       expect(source).not.toContain("cat > /tmp/warmup/warmup.yaml");
     }
   });

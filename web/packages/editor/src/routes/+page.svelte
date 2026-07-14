@@ -373,17 +373,17 @@
               </li>
               <li>
                 <span class="step-badge">2</span>
-                Add <code>https://github.com/poesterlin/vesp-cloud</code> as an
+                Add <code>https://github.com/poesterlin/ha-metadata-exporter</code> as an
                 <strong>Integration</strong> repository
               </li>
               <li>
                 <span class="step-badge">3</span>
-                Install <strong>vESP.cloud Notifications &amp; Data Bridge</strong>
+                Install <strong>HA Metadata Exporter</strong>
                 and restart Home Assistant
               </li>
               <li>
                 <span class="step-badge">4</span>
-                Use the integration's <strong>Download Metadata File</strong> and import it here
+                Use the integration's <strong>Download metadata</strong> action and import it here
               </li>
             </ol>
             <div class="dump-actions">

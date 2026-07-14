@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as mdiIcons from "@mdi/js";
 
-  const repositoryUrl = "https://github.com/poesterlin/vesp-cloud";
+  const repositoryUrl = "https://github.com/poesterlin/ha-metadata-exporter";
 </script>
 
 <svelte:head>
@@ -107,7 +107,7 @@
             <h3>Download your metadata</h3>
             <p>
               Open the exporter page and click
-              <strong>Download Metadata File</strong>. Home Assistant saves
+              <strong>Download metadata</strong>. Home Assistant saves
               <code>ha-metadata.json</code> to your computer.
             </p>
           </div>

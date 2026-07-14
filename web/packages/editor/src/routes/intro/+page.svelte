@@ -207,10 +207,10 @@
           <p>A Home Assistant integration that makes looking up entity IDs simple and gives the editor real example data to work with. <em>Strongly recommended.</em></p>
           <ol class="steps">
             <li><span class="step-badge">1</span> Open HACS → <strong>Integrations → Custom repositories</strong></li>
-            <li><span class="step-badge">2</span> Add <code>https://github.com/poesterlin/vesp-cloud</code> as an <strong>Integration</strong> repository</li>
+            <li><span class="step-badge">2</span> Add <code>https://github.com/poesterlin/ha-metadata-exporter</code> as an <strong>Integration</strong> repository</li>
             <li><span class="step-badge">3</span> Install <strong>HA Metadata Exporter</strong> and restart Home Assistant</li>
             <li><span class="step-badge">4</span> Navigate to the dashboard it creates in Home Assistant</li>
-            <li><span class="step-badge">5</span> Use <strong>Download Metadata File</strong> to export a JSON file</li>
+            <li><span class="step-badge">5</span> Use <strong>Download metadata</strong> to export a JSON file</li>
             <li><span class="step-badge">6</span> Drag the file into the editor to populate entities &amp; devices</li>
           </ol>
           <a class="hacs-guide-link" href="/home-assistant-entity-export">

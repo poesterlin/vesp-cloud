@@ -54,6 +54,28 @@ class DigitalClockWidget : public Widget {
     if (r.w > 2 && r.h > 2) {
       draw_scanline_overlay(it, r.x + 1, r.y + 1, r.w - 2, r.h - 2, 4, RetroColors::SCANLINE);
     }
+    if (r.w >= 80 && r.h >= 44) {
+      // Cockpit-style registration marks and a tiny signal meter turn the
+      // clock into a piece of shipboard instrumentation.
+      draw_corner_accent_tl(it, r.x + 4, r.y + 4, 7, RetroColors::CYAN_DIM);
+      draw_corner_accent_br(it, r.x + r.w - 5, r.y + r.h - 5, 7,
+                            RetroColors::CYAN_DIM);
+      ui_fast_filled_rectangle(it, r.x + r.w - 17, r.y + 5, 3, 3, color_);
+      ui_fast_filled_rectangle(it, r.x + r.w - 11, r.y + 5, 3, 3,
+                               RetroColors::CYAN_DIM);
+      draw_segmented_bar(it, r.x + r.w - 48, r.y + r.h - 7, 36, 2,
+                         6, 4, 2, color_, RetroColors::DARK_GRAY);
+    }
+#else
+    if (r.w >= 80 && r.h >= 44) {
+      // A recessed inner edge and compact live-status accent give the clock
+      // the feel of a premium ambient dashboard card.
+      draw_clipped_border(it, r.x + 2, r.y + 2, r.w - 4, r.h - 4,
+                          7, 7, 7, 7, RetroColors::DARK_GRAY);
+      ui_fast_filled_rectangle(it, r.x + 10, r.y + r.h - 4,
+                               std::min(42, r.w / 4), 2, color_);
+      it.filled_circle(r.x + r.w - 12, r.y + 11, 2, color_);
+    }
 #endif
 
     auto now = sntp_time->now();

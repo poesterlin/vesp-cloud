@@ -2,6 +2,7 @@
   import type { Component } from "@vesp-cloud/schema";
   import Draggable from "../Draggable.svelte";
   import * as mdiIcons from "@mdi/js";
+  import { projectStore } from "$lib/stores/project.svelte";
 
   type TodoListComponent = Extract<Component, { type: "todo_list" }>;
 
@@ -10,6 +11,7 @@
   }
 
   let { component }: Props = $props();
+  const isRetro = $derived(projectStore.theme.id === "retro");
 
   const maxItems = $derived(Math.max(1, Math.min(10, component.maxItems ?? 4)));
   const rowHeight = $derived(Math.max(20, Math.min(80, component.rowHeight ?? 30)));
@@ -105,7 +107,7 @@
 </script>
 
 <Draggable {component}>
-  <div class="todo-list" class:scrollable={isScrollable} style:width="100%" style:height="100%">
+  <div class="todo-list" class:scrollable={isScrollable} class:retro={isRetro} style:width="100%" style:height="100%">
     <svg
       class="todo-svg"
       width={width}
@@ -139,6 +141,7 @@
             onclick={() => toggleChecked(index)}
             onkeydown={(event) => handleRowKeydown(event, index)}
           >
+            <span class:queue-rail={isRetro} class:modern-rail={!isRetro} style:background={row.overdue ? redColor : borderDimColor}></span>
             <span class="checkbox" style:color={completed ? greenColor : borderColor}>
               {#if showMDI}
                 <svg viewBox="0 0 24 24" class="checkbox-icon">
@@ -165,6 +168,7 @@
             class="todo-row"
             style:height="{rowHeight}px"
           >
+            <span class:queue-rail={isRetro} class:modern-rail={!isRetro} style:background={row.overdue ? redColor : borderDimColor}></span>
             <span class="checkbox" style:color={completed ? greenColor : borderColor}>
               {#if showMDI}
                 <svg viewBox="0 0 24 24" class="checkbox-icon">
@@ -226,6 +230,34 @@
     min-height: 20px;
     box-sizing: border-box;
     background: none;
+    position: relative;
+  }
+
+  .retro .todo-row { border-top: 1px dashed rgb(60, 68, 80); }
+  .retro .todo-row:first-child { border-top-color: transparent; }
+
+  .todo-list:not(.retro) .todo-row:nth-child(even) {
+    background: rgb(22, 27, 34);
+    border-radius: 5px;
+  }
+
+  .todo-list:not(.retro) .todo-row + .todo-row {
+    border-top: 1px solid rgb(48, 54, 61);
+  }
+
+  .queue-rail {
+    width: 2px;
+    height: calc(100% - 10px);
+    min-height: 3px;
+    flex: 0 0 2px;
+  }
+
+  .modern-rail {
+    width: 2px;
+    height: calc(100% - 14px);
+    min-height: 2px;
+    border-radius: 2px;
+    flex: 0 0 2px;
   }
 
   .todo-row.checkable {

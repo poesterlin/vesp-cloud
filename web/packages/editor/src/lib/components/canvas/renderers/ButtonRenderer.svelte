@@ -11,6 +11,7 @@
 
   let { component }: Props = $props();
   const theme = $derived(projectStore.theme);
+  const isRetro = $derived(theme.id === "retro");
 
   const borderColor = $derived(
     colorToCss(component.borderColor, colorToCss(theme.colors.accent)),
@@ -82,6 +83,16 @@
         stroke={borderColor}
         stroke-width="1"
       />
+      {#if isRetro && w >= 56 && h >= 30}
+        <line x1={cornerSize + 5} y1="3" x2={w - cornerSize - 12} y2="3" stroke={glowColor(borderColor)} />
+        <rect x={w - cornerSize - 8} y="2" width="3" height="3" fill={borderColor} />
+        <rect x={cornerSize + 5} y={h - 4} width="8" height="1" fill={borderColor} />
+        <rect x={cornerSize + 17} y={h - 4} width="3" height="1" fill={glowColor(borderColor)} />
+        <rect x={cornerSize + 23} y={h - 4} width="3" height="1" fill={glowColor(borderColor)} />
+      {:else if !isRetro && w >= 44 && h >= 28}
+        <line x1={cornerSize + 3} y1="2" x2={w - cornerSize - 3} y2="2" stroke="rgba(255,255,255,0.13)" />
+        <rect x={w / 2 - 9} y={h - 3} width="18" height="2" rx="1" fill={borderColor} />
+      {/if}
     </svg>
 
     <div

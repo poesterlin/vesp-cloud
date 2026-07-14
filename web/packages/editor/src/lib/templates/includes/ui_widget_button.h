@@ -75,6 +75,34 @@ class ButtonWidget : public Widget {
     draw_clipped_box(it, r.x, r.y, r.w, r.h,
                      c, bc, RetroColors::DIM, true);
 
+#if UI_THEME_RETRO
+    // Small instrument-panel details make even plain text buttons feel like
+    // physical controls without expanding their paint or touch bounds.
+    if (r.w >= 56 && r.h >= 30) {
+      const Color rail(bc.red / 2, bc.green / 2, bc.blue / 2);
+      it.line(r.x + c + 5, r.y + 3, r.x + r.w - c - 12, r.y + 3, rail);
+      ui_fast_filled_rectangle(it, r.x + r.w - c - 8, r.y + 2, 3, 3, bc);
+      for (int i = 0; i < 3; i++) {
+        const int sw = (i == 0) ? 8 : 3;
+        ui_fast_filled_rectangle(it, r.x + c + 5 + i * 6, r.y + r.h - 4,
+                                 sw, 1, i == 0 ? bc : rail);
+      }
+    }
+#else
+    // Modern buttons use a quiet layered-card treatment: a soft top highlight
+    // and a short accent underline provide depth without visual noise.
+    if (r.w >= 44 && r.h >= 28) {
+      const Color highlight(
+          static_cast<uint8_t>(std::min(255, static_cast<int>(bc.red) / 3 + 28)),
+          static_cast<uint8_t>(std::min(255, static_cast<int>(bc.green) / 3 + 28)),
+          static_cast<uint8_t>(std::min(255, static_cast<int>(bc.blue) / 3 + 28)));
+      it.horizontal_line(r.x + c + 3, r.y + 2,
+                         std::max(1, r.w - 2 * c - 6), highlight);
+      ui_fast_filled_rectangle(it, r.x + r.w / 2 - 9, r.y + r.h - 3,
+                               18, 2, bc);
+    }
+#endif
+
     if (loading_) {
       it.printf(r.x + r.w / 2, r.y + r.h / 2, f, tc, TextAlign::CENTER, "...");
       return;

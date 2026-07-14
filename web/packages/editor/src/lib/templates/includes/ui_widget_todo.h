@@ -234,6 +234,33 @@ class TodoPreviewWidget : public Widget {
       const bool completed = row.completed && !row.loading;
       std::string summary = row.summary;
 
+#if UI_THEME_RETRO
+      // Queue-address tick and broken separator: each task reads like a
+      // record in a terminal rather than a generic list row.
+      const Color row_rail = overdue ? RetroColors::RED_DIM : border_dim_color_();
+      ui_fast_filled_rectangle(it, r.x + 5, y + 5, 2,
+                               std::max(3, row_height_ - 10), row_rail);
+      if (drawn > 0) {
+        draw_dashed_hline(it, r.x + kTodoTextX, r.x + r.w - 7, y,
+                          RetroColors::DARK_GRAY, 2, 4);
+      }
+#else
+      // Modern rows sit on subtle alternating surface bands with a compact
+      // state rail. Both remain inside the existing widget paint bounds.
+      if ((i & 1) != 0) {
+        ui_fast_filled_rectangle(it, r.x + 5, y + 2, r.w - 10,
+                                 std::max(1, row_height_ - 4), RetroColors::DARK);
+      }
+      ui_fast_filled_rectangle(it, r.x + 6, y + 7, 2,
+                               std::max(2, row_height_ - 14),
+                               overdue ? RetroColors::RED_DIM : border_dim_color_());
+      if (drawn > 0) {
+        it.horizontal_line(r.x + kTodoTextX, y,
+                           std::max(1, r.w - kTodoTextX - 7),
+                           RetroColors::DIMMER);
+      }
+#endif
+
       if (g_theme.label.font != nullptr) {
         if (row.loading) {
           // Spinning line animation while waiting for HA confirmation
@@ -317,6 +344,12 @@ class TodoPreviewWidget : public Widget {
   // max-row-by-height calc), content_height (clamped height), and row_at
   // (touch hit-test) so all three stay in lockstep.
   static constexpr int kTopPadding = ui_spacing::md;
+
+  Color border_dim_color_() const {
+    return Color(static_cast<uint8_t>(color_.red / 2),
+                 static_cast<uint8_t>(color_.green / 2),
+                 static_cast<uint8_t>(color_.blue / 2));
+  }
 
   // Horizontal offsets from the widget's left edge for the check-box
   // icon area and the text that follows. The values are tuned to leave

@@ -7,7 +7,8 @@ services:
     network_mode: host
     volumes:
       - ./config:/config
-      - ../custom_components:/config/custom_components
+      - ../integrations/ha-metadata-exporter/custom_components/esphome_display:/config/custom_components/esphome_display
+      - ../integrations/ha-display-notifications/custom_components/esphome_display_notifications:/config/custom_components/esphome_display_notifications
       - /etc/localtime:/etc/localtime:ro
     environment:
       - TZ=Europe/Berlin

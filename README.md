@@ -27,11 +27,13 @@ You can generate the full ESPHome firmware code for free.
 - Export/download the generated YAML and C++ include files
 - Build and flash with your own ESPHome setup at no cost
 
-## Home Assistant HACS Component
+## Home Assistant Integrations
 
-The repository includes the `metadata-exporter` Home Assistant integration. 
+The Home Assistant integrations are published independently for HACS and synced
+into this repository under `integrations/`:
 
-[![Open your Home Assistant instance and open this repository inside HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=poesterlin&repository=vesp-cloud&category=integration)
+- [HA Metadata Exporter](https://github.com/poesterlin/ha-metadata-exporter)
+- [vESP.cloud Notifications](https://github.com/poesterlin/ha-display-notifications)
 
 ## Screenshots
 
@@ -45,7 +47,7 @@ The repository includes the `metadata-exporter` Home Assistant integration.
 - **Frontend**: Svelte 5, TypeScript, Bun
 - **Codegen**: TypeScript + JSON schema driven generation
 - **Firmware**: ESPHome + C++ headers/templates
-- **HA Integration**: Custom Home Assistant component (`custom_components/esphome_display`)
+- **HA Integrations**: Standalone HACS repositories synced with Git subtrees
 
 ## Quick Start
 
@@ -61,14 +63,19 @@ The repository includes the `metadata-exporter` Home Assistant integration.
 
 1. Open HACS in Home Assistant
 2. Go to **Integrations** -> **Custom repositories**
-3. Add `https://github.com/poesterlin/vesp-cloud` as an **Integration** repository
-4. Install **vESP.cloud Notifications & Data Bridge**
+3. Add either standalone repository as an **Integration** repository:
+   - `https://github.com/poesterlin/ha-metadata-exporter`
+   - `https://github.com/poesterlin/ha-display-notifications`
+4. Install the integration
 5. Restart Home Assistant
 
 #### Manual install
 
-Copy `custom_components/esphome_display` into your Home Assistant
-`config/custom_components/` directory.
+Copy the desired domain directory into Home Assistant's `config/custom_components/`
+directory:
+
+- `integrations/ha-metadata-exporter/custom_components/esphome_display`
+- `integrations/ha-display-notifications/custom_components/esphome_display_notifications`
 
 ### ESPHome test firmware
 
@@ -82,4 +89,4 @@ Copy `custom_components/esphome_display` into your Home Assistant
 - `web/packages/schema/` - project/component schema package
 - `web/packages/assets/` - shared brand assets and screenshots
 - `esphome/` - firmware projects and references
-- `custom_components/esphome_display/` - Home Assistant integration
+- `integrations/` - standalone Home Assistant repositories synced as Git subtrees

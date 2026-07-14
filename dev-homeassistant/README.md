@@ -1,6 +1,6 @@
 # Home Assistant Development Environment
 
-Local Home Assistant `dev` container for testing the `esphome_display` custom integration.
+Local Home Assistant `dev` container for testing both vESP.cloud custom integrations.
 
 ## Setup
 
@@ -11,7 +11,9 @@ docker compose up -d
 
 Wait ~30 seconds, then open http://localhost:8123 and complete onboarding.
 
-Your `custom_components/esphome_display/` is bind-mounted into the container at `/config/custom_components` — code changes take effect on restart.
+Both integration domain directories under `integrations/` are bind-mounted into
+the container's `/config/custom_components/` directory. Code changes take effect
+on restart.
 
 ## Commands
 

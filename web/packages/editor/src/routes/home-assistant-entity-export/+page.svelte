@@ -53,7 +53,7 @@
     <section class="guide" aria-labelledby="setup-heading">
       <div class="section-heading">
         <span>Setup</span>
-        <h2 id="setup-heading">Install, export, import</h2>
+        <h2 id="setup-heading">Install HACS Integration</h2>
       </div>
 
       <ol class="steps">

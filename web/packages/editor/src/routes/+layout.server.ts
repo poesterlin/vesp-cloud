@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   '/reset-password',
   '/terms',
   '/intro',
+  '/home-assistant-entity-export',
   '/withdrawal',
   '/api/firmware',
   '/api/stripe/webhook',

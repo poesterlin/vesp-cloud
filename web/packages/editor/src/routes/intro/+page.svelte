@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fly, scale } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
+  import { onMount, tick } from "svelte";
   import * as mdiIcons from "@mdi/js";
   import logo1024 from "@vesp-cloud/assets/logo-1024x1024.jpg";
   import homeEditor from "@vesp-cloud/assets/imgs/examples/home-editor.webp";
@@ -17,12 +18,89 @@
   type GalleryMode = 0 | 1 | 2;
 
   let galleryMode = $state<GalleryMode>(0);
+  let galleryRotationTimer: ReturnType<typeof setTimeout> | undefined;
+  let galleryRotationPaused = false;
+  let galleryAutoRotate = false;
 
-  const galleryModes: { label: string; value: GalleryMode }[] = [
-    { label: "Web Editor", value: 0 },
-    { label: "Retro Theme", value: 1 },
-    { label: "Modern Theme", value: 2 },
-  ];
+  const galleryModes = [
+    {
+      label: "Web Editor",
+      description: "Create custom dashboards in the visual web editor.",
+      value: 0,
+    },
+    {
+      label: "Retro Theme",
+      description: "Dashboards on the device in Retro theme.",
+      value: 1,
+    },
+    {
+      label: "Modern Theme",
+      description: "Dashboards on the device in Modern theme.",
+      value: 2,
+    },
+  ] as const satisfies readonly {
+    label: string;
+    description: string;
+    value: GalleryMode;
+  }[];
+
+  function stopGalleryRotation() {
+    if (galleryRotationTimer) clearTimeout(galleryRotationTimer);
+    galleryRotationTimer = undefined;
+  }
+
+  function scheduleGalleryRotation(delay = 6000) {
+    stopGalleryRotation();
+    if (!galleryAutoRotate || galleryRotationPaused) return;
+
+    galleryRotationTimer = setTimeout(() => {
+      transitionGalleryMode(
+        ((galleryMode + 1) % galleryModes.length) as GalleryMode,
+      );
+      scheduleGalleryRotation();
+    }, delay);
+  }
+
+  function transitionGalleryMode(mode: GalleryMode) {
+    const updateMode = async () => {
+      galleryMode = mode;
+      await tick();
+    };
+    const transitionDocument = document as Document & {
+      startViewTransition?: (update: () => Promise<void>) => unknown;
+    };
+
+    if (galleryAutoRotate && transitionDocument.startViewTransition) {
+      transitionDocument.startViewTransition(updateMode);
+    } else {
+      void updateMode();
+    }
+  }
+
+  function selectGalleryMode(mode: GalleryMode) {
+    transitionGalleryMode(mode);
+    scheduleGalleryRotation(10000);
+  }
+
+  function pauseGalleryRotation() {
+    galleryRotationPaused = true;
+    stopGalleryRotation();
+  }
+
+  function resumeGalleryRotation() {
+    galleryRotationPaused = false;
+    scheduleGalleryRotation(10000);
+  }
+
+  onMount(() => {
+    galleryAutoRotate = !window.matchMedia("(prefers-reduced-motion: reduce)")
+      .matches;
+    if (galleryAutoRotate) {
+      scheduleGalleryRotation();
+    }
+
+    return stopGalleryRotation;
+  });
 
   const currency = Intl.NumberFormat("us", {
     style: "currency",
@@ -133,7 +211,7 @@
             </div>
             <div class="hardware-info">
               <a
-                href="https://aliexpress.com/item/1005006622746590.html"
+                href="https://www.aliexpress.com/wholesale?SearchText=Guition+ESP32-S3+480x480"
                 target="_blank"
                 class="name-link"
               >
@@ -183,20 +261,31 @@
           </svg>
         </div>
         <div class="block-content">
-          <h2>Working Device</h2>
-          <p>See each dashboard in the editor and running on the device.</p>
-          <div class="gallery-mode-selector" aria-label="Gallery mode">
+          <h2>Device Preview</h2>
+          <p>Example dashboards, with two build-in Theme options:</p>
+          <div
+            class="gallery-mode-selector"
+            role="group"
+            aria-label="Gallery mode"
+            onmouseenter={pauseGalleryRotation}
+            onmouseleave={resumeGalleryRotation}
+            onfocusin={pauseGalleryRotation}
+            onfocusout={resumeGalleryRotation}
+          >
             {#each galleryModes as mode}
               <button
                 type="button"
                 class:active={galleryMode === mode.value}
                 aria-pressed={galleryMode === mode.value}
-                onclick={() => (galleryMode = mode.value)}
+                onclick={() => selectGalleryMode(mode.value)}
               >
                 {mode.label}
               </button>
             {/each}
           </div>
+          <p class="gallery-mode-description" aria-live="polite">
+            {galleryModes[galleryMode].description}
+          </p>
           <div class="photo-grid">
             {#each examples as example}
               {@const image = example.images[galleryMode]}
@@ -206,6 +295,7 @@
                     src={image.src}
                     alt={image.alt}
                     class="photo"
+                    style={`view-transition-name: gallery-${example.name.toLowerCase()}`}
                     width="640"
                     height="640"
                     loading="lazy"
@@ -218,7 +308,7 @@
         </div>
       </div>
 
-      <div class="block">
+      <div class="block workflow">
         <div class="block-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" class="icon">
             <path d={mdiIcons.mdiInformationOutline} />
@@ -227,17 +317,19 @@
         <div class="block-content">
           <h2>How It Works</h2>
           <div class="workflow-columns">
-            <div class="option">
+            <div class="option free-option">
               <div class="option-header">
                 <svg width="20" height="20" viewBox="0 0 24 24" class="icon">
                   <path d={mdiIcons.mdiDownload} />
                 </svg>
-                <h3>Self-Hosted ESPHome</h3>
+                <h3>Free Code Export &amp; Self-Hosting</h3>
               </div>
               <p>
-                Download the generated code and flash it with your own ESPHome
-                setup. <strong>Completely free</strong> &mdash; the code is yours
-                to keep, modify, and run however you like.
+                Export the complete generated ESPHome code and flash it with
+                your own setup. <strong
+                  >No credits or subscription required.</strong
+                >
+                The code is yours to keep, modify, and run however you like.
               </p>
             </div>
             <div class="option">
@@ -265,10 +357,15 @@
         </div>
         <div class="block-content">
           <h2>Pricing</h2>
-          <p class="pricing-intro">
-            Credits are only needed for cloud builds and OTA updates.
-            Self-hosted ESPHome usage is completely free.
-          </p>
+          <div class="free-export-callout">
+            <svg width="22" height="22" viewBox="0 0 24 24" class="icon">
+              <path d={mdiIcons.mdiCheckCircleOutline} />
+            </svg>
+            <p>
+              <strong>Exporting code and self-hosting are free.</strong>
+              You only need credits if you choose cloud builds or OTA updates.
+            </p>
+          </div>
           <div class="pricing-grid">
             {#each data.creditPacks as pack}
               <div
@@ -332,29 +429,42 @@
           </p>
           <ol class="steps">
             <li>
-              <span class="step-badge">1</span> Open HACS →
-              <strong>Integrations → Custom repositories</strong>
+              <span class="step-badge">1</span>
+              <span class="step-copy">
+                Open HACS → <strong>Integrations → Custom repositories</strong>
+              </span>
             </li>
             <li>
-              <span class="step-badge">2</span> Add
-              <code>https://github.com/poesterlin/ha-metadata-exporter</code>
-              as an <strong>Integration</strong> repository
+              <span class="step-badge">2</span>
+              <span class="step-copy">
+                Add <code>https://github.com/poesterlin/ha-metadata-exporter</code>
+                as an <strong>Integration</strong> repository
+              </span>
             </li>
             <li>
-              <span class="step-badge">3</span> Install
-              <strong>HA Metadata Exporter</strong> and restart Home Assistant
+              <span class="step-badge">3</span>
+              <span class="step-copy">
+                Install <strong>HA Metadata Exporter</strong> and restart Home
+                Assistant
+              </span>
             </li>
             <li>
-              <span class="step-badge">4</span> Navigate to the dashboard it creates
-              in Home Assistant
+              <span class="step-badge">4</span>
+              <span class="step-copy">
+                Navigate to the dashboard it creates in Home Assistant
+              </span>
             </li>
             <li>
-              <span class="step-badge">5</span> Use
-              <strong>Download metadata</strong> to export a JSON file
+              <span class="step-badge">5</span>
+              <span class="step-copy">
+                Use <strong>Download metadata</strong> to export a JSON file
+              </span>
             </li>
             <li>
-              <span class="step-badge">6</span> Drag the file into the editor to
-              populate entities &amp; devices
+              <span class="step-badge">6</span>
+              <span class="step-copy">
+                Drag the file into the editor to populate entities &amp; devices
+              </span>
             </li>
           </ol>
           <a class="hacs-guide-link" href="/home-assistant-entity-export">
@@ -429,23 +539,8 @@
     min-height: 100vh;
   }
 
-  .intro-page::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -2;
-    pointer-events: none;
-    background-image: linear-gradient(
-        rgba(83, 196, 202, 0.035) 1px,
-        transparent 1px
-      ),
-      linear-gradient(90deg, rgba(83, 196, 202, 0.035) 1px, transparent 1px);
-    background-size: 32px 32px;
-    mask-image: linear-gradient(to bottom, black, transparent 60%);
-  }
-
   header {
-    margin-bottom: 3rem;
+    margin-bottom: 4rem;
   }
 
   h1 {
@@ -473,8 +568,7 @@
     grid-template-columns: 180px 1fr;
     align-items: center;
     gap: 2.75rem;
-    padding: 2rem 0 3rem;
-    border-bottom: 1px solid rgba(83, 196, 202, 0.18);
+    padding: 2.5rem 0 3.5rem;
   }
 
   .brand-mark {
@@ -546,39 +640,23 @@
   main {
     display: flex;
     flex-direction: column;
-    gap: 3rem;
+    gap: 4rem;
   }
 
   .card {
-    background: #161616;
-    border: 1px solid rgba(83, 196, 202, 0.18);
-    border-radius: 1.25rem;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
   }
 
   .block {
+    --section-color: #53c4ca;
+    --section-rgb: 83, 196, 202;
     display: flex;
-    gap: 1.25rem;
-    padding: 2rem 2.5rem;
+    gap: 1.75rem;
+    padding: 3rem;
     background: #1a1a1a;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    transition: border-color 0.2s;
-  }
-
-  .block:last-child {
-    border-bottom: none;
-  }
-
-  .block:first-child {
-    padding-top: 2.5rem;
-  }
-
-  .block:last-child {
-    padding-bottom: 2.5rem;
-  }
-
-  .block:hover {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
   }
 
   .block-icon {
@@ -588,9 +666,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(83, 196, 202, 0.1);
+    background: rgba(var(--section-rgb), 0.1);
     border-radius: 0.75rem;
-    color: #53c4ca;
+    color: var(--section-color);
   }
 
   .block-content {
@@ -638,7 +716,7 @@
 
   .hardware-layout {
     display: flex;
-    gap: 1.5rem;
+    gap: 2rem;
     align-items: flex-start;
     flex-wrap: wrap;
   }
@@ -651,13 +729,12 @@
     width: 200px;
     height: auto;
     border-radius: 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .hardware-info {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.55rem;
   }
 
   .name-link {
@@ -730,16 +807,18 @@
   .photo-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
   }
 
   .gallery-mode-selector {
-    display: inline-flex;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     gap: 0.25rem;
-    padding: 0.25rem;
-    margin-top: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.3rem;
+    margin: 1.5rem auto 0;
+    width: max-content;
     border-radius: 0.65rem;
     background: #121212;
   }
@@ -772,8 +851,16 @@
     color: #0d0d0d;
   }
 
+  .gallery-mode-description {
+    margin-top: 0.8rem;
+    color: var(--color-text-secondary);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    text-align: center;
+  }
+
   .photo-card:last-child {
-    width: calc((100% - 1rem) / 2);
+    width: calc((100% - 1.5rem) / 2);
     grid-column: 1 / -1;
     justify-self: center;
   }
@@ -782,7 +869,6 @@
     min-width: 0;
     margin: 0;
     background: #121212;
-    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 0.75rem;
     overflow: hidden;
   }
@@ -800,17 +886,31 @@
     object-fit: cover;
   }
 
+  :global(::view-transition-group(gallery-home)),
+  :global(::view-transition-group(gallery-vacuum)),
+  :global(::view-transition-group(gallery-weather)) {
+    animation-duration: 450ms;
+    animation-timing-function: ease-in-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(::view-transition-group(gallery-home)),
+    :global(::view-transition-group(gallery-vacuum)),
+    :global(::view-transition-group(gallery-weather)) {
+      animation-duration: 0s;
+    }
+  }
+
   .workflow-columns {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-top: 0.5rem;
+    gap: 1.5rem;
+    margin-top: 1rem;
   }
 
   .option {
-    padding: 1.25rem;
+    padding: 1.5rem;
     border-radius: 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.06);
     background: #121212;
   }
 
@@ -820,6 +920,19 @@
     gap: 0.5rem;
     margin-bottom: 0.5rem;
     color: var(--color-accent);
+  }
+
+  .free-option {
+    background: rgba(74, 222, 128, 0.08);
+  }
+
+  .free-option .option-header {
+    flex-wrap: wrap;
+    color: #4ade80;
+  }
+
+  .free-option p strong {
+    color: #86efac;
   }
 
   .option p {
@@ -832,38 +945,81 @@
     color: #fff;
   }
 
-  .pricing .block-icon {
-    background: rgba(255, 152, 0, 0.1);
-    color: #ff9800;
+  .workflow {
+    --section-color: #60a5fa;
+    --section-rgb: 96, 165, 250;
   }
 
-  .photos .block-icon {
-    background: rgba(241, 36, 112, 0.1);
-    color: #f12470;
+  .hardware .price {
+    color: var(--section-color);
   }
 
-  .pricing-intro {
-    margin-bottom: 1rem;
+  .workflow .option-header {
+    color: var(--section-color);
+  }
+
+  .photos {
+    --section-color: #f12470;
+    --section-rgb: 241, 36, 112;
+  }
+
+  .photos .gallery-mode-selector button.active {
+    background: rgba(var(--section-rgb), 0.12);
+    color: var(--section-color);
+  }
+
+  .pricing {
+    --section-color: #ff9800;
+    --section-rgb: 255, 152, 0;
+  }
+
+  .pricing .pack-price {
+    color: var(--section-color);
+  }
+
+  .pricing .pricing-card .badge {
+    background: var(--section-color);
+  }
+
+  .free-export-callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    margin-bottom: 2rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 0.75rem;
+    background: rgba(74, 222, 128, 0.08);
+    color: #4ade80;
+  }
+
+  .free-export-callout > .icon {
+    flex: 0 0 22px;
+  }
+
+  .free-export-callout p {
+    margin: 0;
+  }
+
+  .free-export-callout strong {
+    color: #86efac;
   }
 
   .pricing-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
+    gap: 1.5rem;
   }
 
   .pricing-card {
     position: relative;
-    padding: 1.5rem 1.25rem;
+    padding: 1.75rem 1.5rem;
     background: #121212;
-    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 0.75rem;
     text-align: center;
     transition: all 0.2s;
   }
 
   .pricing-card.highlight {
-    border-color: rgba(74, 158, 254, 0.3);
     background: rgba(74, 158, 254, 0.05);
     transform: scale(1.03);
   }
@@ -922,33 +1078,49 @@
     text-align: center;
   }
 
-  .privacy .block-icon {
-    background: rgba(74, 222, 128, 0.1);
-    color: #4ade80;
-  }
-
   .privacy {
-    border-color: rgba(74, 222, 128, 0.1);
+    --section-color: #4ade80;
+    --section-rgb: 74, 222, 128;
   }
 
-  .privacy:hover {
-    border-color: rgba(74, 222, 128, 0.2);
+  .privacy b {
+    color: #86efac;
+  }
+
+  .hacs {
+    --section-color: #41bdf5;
+    --section-rgb: 65, 189, 245;
+  }
+
+  .hacs .step-badge {
+    background: rgba(var(--section-rgb), 0.16);
+    color: var(--section-color);
+  }
+
+  .hacs .hacs-guide-link,
+  .hacs .steps li code {
+    color: var(--section-color);
   }
 
   .steps {
-    margin-top: 0.75rem;
+    margin-top: 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 0.7rem;
+    gap: 0.9rem;
   }
 
   .steps li {
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    align-items: start;
     gap: 0.75rem;
     font-size: 0.95rem;
     line-height: 1.5;
     color: var(--color-text-secondary);
+  }
+
+  .step-copy {
+    min-width: 0;
   }
 
   .steps li strong {
@@ -968,7 +1140,7 @@
     background: rgba(74, 158, 254, 0.1);
     padding: 0.15rem 0.4rem;
     border-radius: 0.35rem;
-    word-break: break-all;
+    overflow-wrap: anywhere;
   }
 
   .step-badge {
@@ -987,9 +1159,8 @@
 
   .cta {
     text-align: center;
-    padding: 3rem 2rem;
+    padding: 4rem 2.5rem;
     background: #161616;
-    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 1.25rem;
   }
 
@@ -1042,8 +1213,8 @@
     font-size: 1rem;
     font-weight: 600;
     border-radius: var(--radius-lg);
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    border: 0;
     color: var(--color-text-secondary);
     text-decoration: none;
     transition: all 0.2s;
@@ -1051,7 +1222,6 @@
 
   .btn-outline:hover {
     background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.25);
     color: #fff;
   }
 
@@ -1062,7 +1232,7 @@
     font-size: 0.85rem;
     color: var(--color-text-secondary);
     padding: 0.6rem 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 0;
     border-radius: 0.75rem;
     text-decoration: none;
     transition: all 0.2s;
@@ -1070,7 +1240,6 @@
 
   .tutorial-link:hover {
     color: #ff0000;
-    border-color: rgba(255, 0, 0, 0.2);
     background: rgba(255, 0, 0, 0.05);
   }
 
@@ -1114,15 +1283,20 @@
     }
 
     .block {
-      padding: 1.5rem;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1.75rem;
     }
 
-    .block:first-child {
-      padding-top: 2rem;
+    .gallery-mode-selector {
+      width: 100%;
+      max-width: 100%;
     }
 
-    .block:last-child {
-      padding-bottom: 2rem;
+    .gallery-mode-selector button {
+      flex: 1 1 0;
+      min-width: 0;
+      padding-inline: 0.5rem;
     }
 
     .hardware-layout {
@@ -1153,6 +1327,25 @@
     .photo-card:last-child {
       width: 100%;
       grid-column: auto;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .intro-page {
+      padding-inline: 0.75rem;
+    }
+
+    .block {
+      padding: 1.25rem;
+    }
+
+    .gallery-mode-selector button {
+      padding-inline: 0.35rem;
+      font-size: 0.8rem;
+    }
+
+    .steps {
+      padding-left: 0;
     }
   }
 </style>

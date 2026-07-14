@@ -1,0 +1,10 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "HA Metadata Exporter",
+        "description": "This integration exports Home Assistant metadata (entities, services, devices, and areas) for editor tooling."
+      }
+    }
+  }
+}

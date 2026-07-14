@@ -1,0 +1,58 @@
+send:
+  name: Send broadcast notification
+  description: Broadcast a notification to all displays.
+  fields:
+    notification_id:
+      name: Notification ID
+      description: Stable ID used to update or clear this notification later.
+      required: true
+      example: washing_machine_done
+      selector:
+        text:
+    title:
+      name: Title
+      description: Notification title.
+      required: false
+      example: Front Door
+      selector:
+        text:
+    message:
+      name: Message
+      description: Notification message body.
+      required: true
+      example: Someone is ringing the doorbell.
+      selector:
+        text:
+    severity:
+      name: Severity
+      description: Notification severity.
+      required: false
+      default: info
+      selector:
+        select:
+          options:
+            - info
+            - warning
+            - critical
+    duration:
+      name: Duration
+      description: Seconds before auto-clear. Set 0 to persist.
+      required: false
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 86400
+          unit_of_measurement: s
+
+clear:
+  name: Clear broadcast notification
+  description: Clear the active notification only if the ID matches.
+  fields:
+    notification_id:
+      name: Notification ID
+      description: ID of the notification to clear.
+      required: true
+      example: washing_machine_done
+      selector:
+        text:

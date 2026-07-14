@@ -1,13 +1,11 @@
 {
-  "manifest_version": 1,
   "domain": "esphome_display_notifications",
   "name": "vESP.cloud Notifications",
   "codeowners": ["@poesterlin"],
   "config_flow": true,
   "documentation": "https://github.com/poesterlin/ha-display-notifications",
+  "iot_class": "local_push",
   "issue_tracker": "https://github.com/poesterlin/ha-display-notifications/issues",
   "requirements": [],
-  "version": "1.1.0",
-  "homeassistant": "2024.1.0",
-  "iot_class": "local_push"
+  "version": "1.1.0"
 }

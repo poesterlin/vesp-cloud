@@ -1,0 +1,13 @@
+{
+  "manifest_version": 1,
+  "domain": "esphome_display",
+  "name": "HA Metadata Exporter",
+  "codeowners": ["@poesterlin"],
+  "config_flow": true,
+  "documentation": "https://github.com/poesterlin/ha-metadata-exporter",
+  "issue_tracker": "https://github.com/poesterlin/ha-metadata-exporter/issues",
+  "requirements": [],
+  "version": "2.0.0",
+  "homeassistant": "2024.1.0",
+  "iot_class": "local_push"
+}

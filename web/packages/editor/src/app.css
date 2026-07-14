@@ -1,12 +1,11 @@
 /* vESP.cloud - Global Styles */
 
-/* Roboto matches the typeface ESPHome bakes into its bitmap fonts via
-   `gfonts://Roboto` in esphome/fonts.yaml. Loading it here lets the
-   editor preview measure text using the same metrics the device will
-   eventually rasterise at, so labels that fit in the preview also fit
-   on hardware. */
+/* Keep the canvas preview on the same font families generated for the
+   firmware: Turret Road for the modern theme and Share Tech Mono for retro. */
 @import "@fontsource/roboto/400.css";
 @import "@fontsource/roboto/700.css";
+@import "@fontsource/share-tech-mono/400.css";
+@import "@fontsource/turret-road/400.css";
 
 :root {
   /* Color palette */

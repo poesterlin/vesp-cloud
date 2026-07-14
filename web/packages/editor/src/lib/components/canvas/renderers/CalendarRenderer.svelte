@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Component } from "@vesp-cloud/schema";
   import Draggable from "../Draggable.svelte";
+  import { projectStore } from "$lib/stores/project.svelte";
 
   type CalendarComponent = Extract<Component, { type: "calendar" }>;
 
@@ -12,8 +13,9 @@
 
   const label = $derived(component.label?.trim() || "Calendar");
   const maxItems = $derived(Math.max(1, Math.min(10, component.maxItems ?? 4)));
-  const rowHeight = 46;
+  const rowHeight = 40;
   const isScrollable = $derived(component.scrollable === true);
+  const isRetro = $derived(projectStore.theme.id === "retro");
 
   const previewRows = $derived([
     { start: "2026-07-03", summary: "Trash Collection", location: "Front Curb" },
@@ -37,7 +39,7 @@
 
 <Draggable {component}>
   {#if component.size}
-    <div class="calendar" class:scrollable={isScrollable} style:width="100%" style:height="100%">
+    <div class="calendar" class:scrollable={isScrollable} class:retro={isRetro} style:width="100%" style:height="100%">
       <div class="frame"></div>
       <div class="header">{label}</div>
       <div class="rows" style:top="28px">
@@ -71,6 +73,11 @@
     overflow-y: auto;
   }
 
+  .calendar.retro {
+    border-radius: 0;
+    clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+  }
+
   .frame {
     position: absolute;
     inset: 2px;
@@ -86,8 +93,8 @@
     right: 12px;
     color: rgb(120, 128, 144);
     font-family: var(--display-font, monospace);
-    font-size: 12px;
-    font-weight: 600;
+    font-size: var(--display-text-small, 16px);
+    font-weight: 400;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -109,17 +116,17 @@
     gap: 8px;
     background: rgb(18, 22, 32);
     border: 1px solid rgb(35, 40, 55);
-    border-radius: 4px;
+    border-radius: 0;
     padding: 3px 6px;
     box-sizing: border-box;
   }
 
   .date {
-    width: 42px;
+    width: 78px;
     color: rgb(120, 128, 144);
     font-family: var(--display-font, monospace);
-    font-size: 10px;
-    font-weight: 700;
+    font-size: var(--display-text-small, 16px);
+    font-weight: 400;
     flex-shrink: 0;
   }
 
@@ -133,7 +140,7 @@
   .summary {
     color: rgb(230, 240, 250);
     font-family: var(--display-font, monospace);
-    font-size: 11px;
+    font-size: var(--display-text-small, 16px);
     line-height: 1.1;
     white-space: nowrap;
     overflow: hidden;
@@ -143,7 +150,7 @@
   .location {
     color: rgb(120, 128, 144);
     font-family: var(--display-font, monospace);
-    font-size: 9px;
+    font-size: var(--display-text-weather-tiny, 11px);
     line-height: 1.1;
     white-space: nowrap;
     overflow: hidden;

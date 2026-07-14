@@ -42,6 +42,7 @@
   const hasHeader = $derived(
     projectStore.viewMode === "dashboard" && !!projectStore.pageHeader,
   );
+  const isRetro = $derived(projectStore.theme.id === "retro");
 
   function hasDigitalClockInComponents(components: Component[]): boolean {
     for (const component of components) {
@@ -505,6 +506,8 @@
 
 <div
   class="canvas-wrapper"
+  class:retro-preview={isRetro}
+  class:modern-preview={!isRetro}
   style:width="{projectStore.display?.width ?? 240}px"
   style:height="{canvasHeight}px"
   style:zoom={canvasZoomStore.level}
@@ -594,21 +597,18 @@
     background: #1a1a1a;
     outline: 30px solid black;
 
-    /* Mirror the device's font system so widget previews can use the
-       same typeface and pixel sizes as the rasterised bitmap fonts
-       ESPHome ships (see esphome/fonts.yaml: font_tiny=14, font_small=18,
-       font_medium=24, font_large=32, all Roboto). */
-    --display-font: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI",
-      sans-serif;
-    --display-text-tiny: 14px;
-    --display-text-small: 18px;
-    --display-text-medium: 24px;
+    /* Match the generated bitmap font sizes from templates/fonts.yaml. */
+    --display-text-tiny: 12px;
+    --display-text-weather-tiny: 11px;
+    --display-text-small: 16px;
+    --display-text-medium: 22px;
     --display-text-large: 32px;
 
     /* Bitmap fonts on the device have no kerning, ligatures, or sub-pixel
        AA. Disabling those in the preview keeps glyph-advance widths close
        to what `display.get_text_bounds()` will measure on hardware. */
     font-family: var(--display-font);
+    font-synthesis: none;
     font-feature-settings:
       "kern" off,
       "liga" off,
@@ -617,6 +617,14 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: geometricPrecision;
+  }
+
+  .canvas-wrapper.retro-preview {
+    --display-font: "Share Tech Mono", monospace;
+  }
+
+  .canvas-wrapper.modern-preview {
+    --display-font: "Turret Road", sans-serif;
   }
 
   .canvas {

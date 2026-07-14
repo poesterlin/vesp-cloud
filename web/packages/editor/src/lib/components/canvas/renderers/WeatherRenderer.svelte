@@ -2,6 +2,7 @@
   import * as mdiIcons from "@mdi/js";
   import type { WeatherComponent } from "@vesp-cloud/schema";
   import Draggable from "../Draggable.svelte";
+  import { projectStore } from "$lib/stores/project.svelte";
   import {
     getWeatherConditionColor,
     getWeatherConditionIcon,
@@ -16,6 +17,7 @@
 
   const label = $derived(component.label?.trim() || "Weather");
   const mode = $derived(component.mode ?? "today");
+  const isRetro = $derived(projectStore.theme.id === "retro");
 
   const dimFill = "rgb(10, 14, 22)";
   const dimBorder = "rgb(25, 30, 40)";
@@ -72,7 +74,7 @@
     {@const w = component.size.width}
     {@const h = component.size.height}
 
-    <div class="weather-wrap" style:width="100%" style:height="100%">
+    <div class="weather-wrap" class:retro={isRetro} style:width="100%" style:height="100%">
       <svg
         width="100%"
         height="100%"
@@ -281,6 +283,11 @@
     line-height: 1;
   }
 
+  .retro .attr {
+    border-radius: 0;
+    clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
+  }
+
   /* Forecast mode */
   .forecast-columns {
     position: absolute;
@@ -305,6 +312,46 @@
     border-radius: 6px;
     padding: 6px 4px;
     justify-content: space-between;
+  }
+
+  .retro .forecast-columns {
+    top: 42px;
+  }
+
+  .retro .day-col {
+    justify-content: flex-start;
+    gap: 0;
+    padding: 0 4px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .retro .col-day-label {
+    font-size: var(--display-text-small, 16px);
+    font-weight: 400;
+  }
+
+  .retro .col-icon {
+    width: 48px;
+    height: 48px;
+    margin-top: 8px;
+  }
+
+  .retro .col-temp {
+    margin-top: 6px;
+    font-size: var(--display-text-small, 16px);
+    font-weight: 400;
+  }
+
+  .retro .col-rain {
+    margin-top: 12px;
+  }
+
+  .retro .col-rain-label,
+  .retro .col-rain-val {
+    font-size: var(--display-text-small, 16px);
+    font-weight: 400;
   }
 
   .col-day-label {

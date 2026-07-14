@@ -20,6 +20,8 @@
   },
   "dependencies": {
     "@fontsource/roboto": "5.2.10",
+    "@fontsource/share-tech-mono": "5.2.7",
+    "@fontsource/turret-road": "5.2.7",
     "@node-rs/argon2": "2.0.2",
     "@oslojs/crypto": "1.0.1",
     "@oslojs/encoding": "1.1.0",

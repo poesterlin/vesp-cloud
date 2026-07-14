@@ -52,6 +52,8 @@
       "version": "0.1.0",
       "dependencies": {
         "@fontsource/roboto": "5.2.10",
+        "@fontsource/share-tech-mono": "5.2.7",
+        "@fontsource/turret-road": "5.2.7",
         "@node-rs/argon2": "2.0.2",
         "@oslojs/crypto": "1.0.1",
         "@oslojs/encoding": "1.1.0",
@@ -232,6 +234,10 @@
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.4.1", "", { "dependencies": { "@eslint/core": "^0.17.0", "levn": "^0.4.1" } }, "sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA=="],
 
     "@fontsource/roboto": ["@fontsource/roboto@5.2.10", "", {}, "sha512-8HlA5FtSfz//oFSr2eL7GFXAiE7eIkcGOtx7tjsLKq+as702x9+GU7K95iDeWFapHC4M2hv9RrpXKRTGGBI8Zg=="],
+
+    "@fontsource/share-tech-mono": ["@fontsource/share-tech-mono@5.2.7", "", {}, "sha512-1JBJ6CU9u5av8aFEUOGOJkq60/IEVVOZDCmiU8X3i0skk0Pp69GngDwlBUHaTZa4G6pbF1UDrC+Fm7XSckW6TQ=="],
+
+    "@fontsource/turret-road": ["@fontsource/turret-road@5.2.7", "", {}, "sha512-Kph3Kc5az/BUiZqdhv4DejQYKNswK0FNec+xiTPeUqCn9vX+Vzt04VoQ1CNnHz1JO5ruDw/emG/f5DKD1oHJAg=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.1", "", {}, "sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA=="],
 

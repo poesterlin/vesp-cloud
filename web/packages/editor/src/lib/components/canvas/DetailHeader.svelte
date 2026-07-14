@@ -9,6 +9,7 @@
 
   let { title, onBack }: Props = $props();
   const theme = $derived(projectStore.theme);
+  const isRetro = $derived(theme.id === "retro");
 
   const accent = $derived(
     colorToRgb(
@@ -19,7 +20,7 @@
   const muted = $derived(colorToRgb(theme.colors.foregroundMuted ?? { r: 128, g: 128, b: 128 }));
 </script>
 
-<div class="detail-header" style:border-bottom="1px solid {muted}">
+<div class="detail-header" class:retro={isRetro} style:border-bottom="1px solid {muted}">
   <button
     class="back-button"
     onclick={onBack}
@@ -30,7 +31,9 @@
     &lt;
   </button>
 
-  <h1 style:color={foreground}>{title ?? ""}</h1>
+  <h1 style:color={isRetro ? accent : foreground}>
+    {isRetro ? `[ ${title ?? ""} ]` : (title ?? "")}
+  </h1>
 
   <div class="spacer"></div>
 </div>
@@ -59,7 +62,6 @@
     justify-content: center;
     width: 52px;
     height: 38px;
-    /* The device uses font_medium (Roboto 24) for the boxed `<`. */
     font-size: var(--display-text-medium, 24px);
     font-weight: bold;
     font-family: var(--display-font, monospace);
@@ -71,6 +73,13 @@
     line-height: 1;
   }
 
+  .retro .back-button {
+    background: rgb(25, 30, 40);
+    border-radius: 0;
+    clip-path: polygon(5px 0, calc(100% - 5px) 0, 100% 5px, 100% calc(100% - 5px), calc(100% - 5px) 100%, 5px 100%, 0 calc(100% - 5px), 0 5px);
+    box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 25%, transparent);
+  }
+
   h1 {
     position: absolute;
     left: 72px;
@@ -78,7 +87,6 @@
     top: 8px;
     line-height: 24px;
     text-align: center;
-    /* Title prints via font_medium (Roboto 24) -- see DetailHeaderWidget. */
     font-size: var(--display-text-medium, 24px);
     font-weight: bold;
     font-family: var(--display-font, monospace);
@@ -89,6 +97,20 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .retro h1 {
+    font-weight: 400;
+  }
+
+  .retro::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    width: 12px;
+    height: 3px;
+    background: repeating-linear-gradient(135deg, rgb(0, 30, 45) 0 1px, transparent 1px 4px);
   }
 
   .spacer {

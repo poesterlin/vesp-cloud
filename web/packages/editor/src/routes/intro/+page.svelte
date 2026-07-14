@@ -3,8 +3,26 @@
   import { cubicOut } from "svelte/easing";
   import * as mdiIcons from "@mdi/js";
   import logo1024 from "@vesp-cloud/assets/logo-1024x1024.jpg";
+  import homeEditor from "@vesp-cloud/assets/imgs/examples/home-editor.webp";
+  import homeDisplay from "@vesp-cloud/assets/imgs/examples/home-display.png";
+  import homeDisplayModern from "@vesp-cloud/assets/imgs/examples/home-display-modern.png";
+  import vacuumEditor from "@vesp-cloud/assets/imgs/examples/vacuum-editor.webp";
+  import vacuumDisplay from "@vesp-cloud/assets/imgs/examples/vacuum-display.png";
+  import vacuumDisplayModern from "@vesp-cloud/assets/imgs/examples/vacuum-display-modern.png";
+  import weatherEditor from "@vesp-cloud/assets/imgs/examples/weather-editor.webp";
+  import weatherDisplay from "@vesp-cloud/assets/imgs/examples/weather-display.png";
+  import weatherDisplayModern from "@vesp-cloud/assets/imgs/examples/weather-display-modern.png";
 
   let { data } = $props();
+  type GalleryMode = 0 | 1 | 2;
+
+  let galleryMode = $state<GalleryMode>(0);
+
+  const galleryModes: { label: string; value: GalleryMode }[] = [
+    { label: "Web Editor", value: 0 },
+    { label: "Retro Theme", value: 1 },
+    { label: "Modern Theme", value: 2 },
+  ];
 
   const currency = Intl.NumberFormat("us", {
     style: "currency",
@@ -17,6 +35,48 @@
   function fmt(amount: number) {
     return currency.format(amount);
   }
+
+  const examples = [
+    {
+      name: "Home",
+      images: [
+        { src: homeEditor, alt: "Home dashboard in the vESP.cloud editor" },
+        { src: homeDisplay, alt: "Home dashboard running on the display" },
+        {
+          src: homeDisplayModern,
+          alt: "Home dashboard running on the display with the modern theme",
+        },
+      ],
+    },
+    {
+      name: "Vacuum",
+      images: [
+        { src: vacuumEditor, alt: "Vacuum dashboard in the vESP.cloud editor" },
+        { src: vacuumDisplay, alt: "Vacuum dashboard running on the display" },
+        {
+          src: vacuumDisplayModern,
+          alt: "Vacuum dashboard running on the display with the modern theme",
+        },
+      ],
+    },
+    {
+      name: "Weather",
+      images: [
+        {
+          src: weatherEditor,
+          alt: "Weather dashboard in the vESP.cloud editor",
+        },
+        {
+          src: weatherDisplay,
+          alt: "Weather dashboard running on the display",
+        },
+        {
+          src: weatherDisplayModern,
+          alt: "Weather dashboard running on the display with the modern theme",
+        },
+      ],
+    },
+  ] as const;
 </script>
 
 <svelte:head>
@@ -24,8 +84,6 @@
 </svelte:head>
 
 <div class="intro-page">
-  <div class="glow-bg"></div>
-
   <header in:fly={{ y: -20, duration: 800, easing: cubicOut }}>
     {#if data.user}
       <div class="user-bar">
@@ -44,15 +102,17 @@
     <div class="brand-lockup">
       <img src={logo1024} alt="vESP.cloud" class="brand-mark" />
       <div class="brand-copy">
-        <span class="eyebrow">From canvas to wall</span>
-        <h1>One display.<br /><span>Your whole home.</span></h1>
-        <p>Design a touch interface, connect Home Assistant, and deploy it to real hardware.</p>
+        <h1>All the control<br /><span>Affordable hardware</span></h1>
+        <p>Design a Home Assistant display that runs directly on an ESP32.</p>
       </div>
     </div>
   </header>
 
   <main>
-    <section class="card" in:scale={{ start: 0.95, delay: 200, duration: 500, easing: cubicOut }}>
+    <section
+      class="card"
+      in:scale={{ start: 0.95, delay: 200, duration: 500, easing: cubicOut }}
+    >
       <div class="block hardware">
         <div class="block-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" class="icon">
@@ -78,19 +138,36 @@
                 class="name-link"
               >
                 <strong class="hardware-name">Guition ESP32-S3</strong>
-                <svg width="14" height="14" viewBox="0 0 24 24" class="icon ext-icon">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  class="icon ext-icon"
+                >
                   <path d={mdiIcons.mdiOpenInNew} />
                 </svg>
               </a>
               <span class="spec">480 &times; 480 pixel display</span>
-              <span class="desc">ESP32-S3 with integrated touch display, USB-C, and Wi-Fi connectivity</span>
+              <span class="desc"
+                >ESP32-S3 with integrated touch display, USB-C, and Wi-Fi
+                connectivity</span
+              >
               <span class="price">&sim;{fmt(20)}</span>
-              <a href="https://youtu.be/youtube-video-id" target="_blank" class="demo-link">
+              <a
+                href="https://youtu.be/youtube-video-id"
+                target="_blank"
+                class="demo-link"
+              >
                 <svg width="14" height="14" viewBox="0 0 24 24" class="icon">
                   <path d={mdiIcons.mdiYoutube} />
                 </svg>
                 Display demo
-                <svg width="12" height="12" viewBox="0 0 24 24" class="icon ext-icon">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  class="icon ext-icon"
+                >
                   <path d={mdiIcons.mdiOpenInNew} />
                 </svg>
               </a>
@@ -99,7 +176,6 @@
         </div>
       </div>
 
-      <!-- Device photos placeholder -->
       <div class="block photos">
         <div class="block-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" class="icon">
@@ -108,16 +184,36 @@
         </div>
         <div class="block-content">
           <h2>Working Device</h2>
-          <p>Screenshots of the device running vESP.cloud dashboards.</p>
+          <p>See each dashboard in the editor and running on the device.</p>
+          <div class="gallery-mode-selector" aria-label="Gallery mode">
+            {#each galleryModes as mode}
+              <button
+                type="button"
+                class:active={galleryMode === mode.value}
+                aria-pressed={galleryMode === mode.value}
+                onclick={() => (galleryMode = mode.value)}
+              >
+                {mode.label}
+              </button>
+            {/each}
+          </div>
           <div class="photo-grid">
-            <!--
-            <img src="/photos/device-1.jpg" alt="Device running dashboard" class="photo" />
-            <img src="/photos/device-2.jpg" alt="Device detail view" class="photo" />
-            <img src="/photos/device-3.jpg" alt="Device with weather widget" class="photo" />
-            -->
-            <div class="photo-placeholder">Photo 1</div>
-            <div class="photo-placeholder">Photo 2</div>
-            <div class="photo-placeholder">Photo 3</div>
+            {#each examples as example}
+              {@const image = example.images[galleryMode]}
+              <figure class="photo-card">
+                <div class="photo-stage">
+                  <img
+                    src={image.src}
+                    alt={image.alt}
+                    class="photo"
+                    width="640"
+                    height="640"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+              </figure>
+            {/each}
           </div>
         </div>
       </div>
@@ -138,7 +234,11 @@
                 </svg>
                 <h3>Self-Hosted ESPHome</h3>
               </div>
-              <p>Download the generated code and flash it with your own ESPHome setup. <strong>Completely free</strong> &mdash; the code is yours to keep, modify, and run however you like.</p>
+              <p>
+                Download the generated code and flash it with your own ESPHome
+                setup. <strong>Completely free</strong> &mdash; the code is yours
+                to keep, modify, and run however you like.
+              </p>
             </div>
             <div class="option">
               <div class="option-header">
@@ -147,7 +247,11 @@
                 </svg>
                 <h3>Cloud Builds &amp; OTA Updates</h3>
               </div>
-              <p>Design your dashboard, click build, and flash wirelessly. <strong>1 credit per build</strong> &mdash; the most convenient way.</p>
+              <p>
+                Design your dashboard, click build, and flash wirelessly. <strong
+                  >1 credit per build</strong
+                > &mdash; the most convenient way.
+              </p>
             </div>
           </div>
         </div>
@@ -161,25 +265,36 @@
         </div>
         <div class="block-content">
           <h2>Pricing</h2>
-          <p class="pricing-intro">Credits are only needed for cloud builds and OTA updates. Self-hosted ESPHome usage is completely free.</p>
+          <p class="pricing-intro">
+            Credits are only needed for cloud builds and OTA updates.
+            Self-hosted ESPHome usage is completely free.
+          </p>
           <div class="pricing-grid">
             {#each data.creditPacks as pack}
-              <div class="pricing-card {pack.name === 'Builder' ? 'highlight' : ''}">
-                {#if pack.name === 'Builder'}
+              <div
+                class="pricing-card {pack.name === 'Builder'
+                  ? 'highlight'
+                  : ''}"
+              >
+                {#if pack.name === "Builder"}
                   <span class="badge">Best Value</span>
                 {/if}
                 <h3>{pack.name}</h3>
                 <div class="credit-count">{pack.credits}</div>
                 <div class="credit-label">builds</div>
                 <div class="pack-price">{fmt(pack.price)}</div>
-                <div class="per-credit">{fmt(pack.price / pack.credits)} per build</div>
+                <div class="per-credit">
+                  {fmt(pack.price / pack.credits)} per build
+                </div>
               </div>
             {/each}
           </div>
           <p class="pricing-note">
             No subscription. Pay only for what you use.
-            <a href="/terms" class="terms-link">Terms of Service</a>.
-            You may <a href="/withdrawal" class="terms-link">withdraw from your purchase</a>.
+            <a href="/terms" class="terms-link">Terms of Service</a>. You may
+            <a href="/withdrawal" class="terms-link"
+              >withdraw from your purchase</a
+            >.
           </p>
         </div>
       </div>
@@ -192,7 +307,12 @@
         </div>
         <div class="block-content">
           <h2>Your Data Stays Yours</h2>
-          <p>We do <b>not</b> collect your Wi-Fi authentication details, Home Assistant access tokens, or similar connection secrets through this service. Wi-Fi setup is handled entirely by the device. Your network credentials never leave your home.</p>
+          <p>
+            We do <b>not</b> collect your Wi-Fi authentication details, Home Assistant
+            access tokens, or similar connection secrets through this service. Wi-Fi
+            setup is handled entirely by the device. Your network credentials never
+            leave your home.
+          </p>
         </div>
       </div>
 
@@ -204,14 +324,38 @@
         </div>
         <div class="block-content">
           <h2>Recommended: HACS Integration</h2>
-          <p>A Home Assistant integration that makes looking up entity IDs simple and gives the editor real example data to work with. <em>Strongly recommended.</em></p>
+          <p>
+            A Home Assistant integration that makes looking up entity IDs simple
+            and gives the editor real example data to work with. <em
+              >Strongly recommended.</em
+            >
+          </p>
           <ol class="steps">
-            <li><span class="step-badge">1</span> Open HACS → <strong>Integrations → Custom repositories</strong></li>
-            <li><span class="step-badge">2</span> Add <code>https://github.com/poesterlin/ha-metadata-exporter</code> as an <strong>Integration</strong> repository</li>
-            <li><span class="step-badge">3</span> Install <strong>HA Metadata Exporter</strong> and restart Home Assistant</li>
-            <li><span class="step-badge">4</span> Navigate to the dashboard it creates in Home Assistant</li>
-            <li><span class="step-badge">5</span> Use <strong>Download metadata</strong> to export a JSON file</li>
-            <li><span class="step-badge">6</span> Drag the file into the editor to populate entities &amp; devices</li>
+            <li>
+              <span class="step-badge">1</span> Open HACS →
+              <strong>Integrations → Custom repositories</strong>
+            </li>
+            <li>
+              <span class="step-badge">2</span> Add
+              <code>https://github.com/poesterlin/ha-metadata-exporter</code>
+              as an <strong>Integration</strong> repository
+            </li>
+            <li>
+              <span class="step-badge">3</span> Install
+              <strong>HA Metadata Exporter</strong> and restart Home Assistant
+            </li>
+            <li>
+              <span class="step-badge">4</span> Navigate to the dashboard it creates
+              in Home Assistant
+            </li>
+            <li>
+              <span class="step-badge">5</span> Use
+              <strong>Download metadata</strong> to export a JSON file
+            </li>
+            <li>
+              <span class="step-badge">6</span> Drag the file into the editor to
+              populate entities &amp; devices
+            </li>
           </ol>
           <a class="hacs-guide-link" href="/home-assistant-entity-export">
             Read the full installation and entity export guide
@@ -224,9 +368,14 @@
     </section>
 
     {#if !data.user}
-      <section class="cta" in:scale={{ start: 0.95, delay: 800, duration: 500, easing: cubicOut }}>
+      <section
+        class="cta"
+        in:scale={{ start: 0.95, delay: 800, duration: 500, easing: cubicOut }}
+      >
         <h2>Ready to get started?</h2>
-        <p>Create a free account and build your first smart home display today.</p>
+        <p>
+          Create a free account and build your first smart home display today.
+        </p>
         <div class="cta-actions">
           <a href="/register" class="btn-primary">
             <svg width="18" height="18" viewBox="0 0 24 24" class="icon">
@@ -243,14 +392,21 @@
         </div>
       </section>
     {:else}
-      <section class="cta" in:scale={{ start: 0.95, delay: 800, duration: 500, easing: cubicOut }}>
+      <section
+        class="cta"
+        in:scale={{ start: 0.95, delay: 800, duration: 500, easing: cubicOut }}
+      >
         <a href="/" class="btn-primary">
           <svg width="18" height="18" viewBox="0 0 24 24" class="icon">
             <path d={mdiIcons.mdiHome} />
           </svg>
           Go to Dashboard
         </a>
-        <a href="https://youtu.be/youtube-video-id" target="_blank" class="tutorial-link">
+        <a
+          href="https://youtu.be/youtube-video-id"
+          target="_blank"
+          class="tutorial-link"
+        >
           <svg width="16" height="16" viewBox="0 0 24 24" class="icon">
             <path d={mdiIcons.mdiSchool} />
           </svg>
@@ -279,25 +435,13 @@
     inset: 0;
     z-index: -2;
     pointer-events: none;
-    background-image:
-      linear-gradient(rgba(83, 196, 202, 0.035) 1px, transparent 1px),
+    background-image: linear-gradient(
+        rgba(83, 196, 202, 0.035) 1px,
+        transparent 1px
+      ),
       linear-gradient(90deg, rgba(83, 196, 202, 0.035) 1px, transparent 1px);
     background-size: 32px 32px;
     mask-image: linear-gradient(to bottom, black, transparent 60%);
-  }
-
-  .glow-bg {
-    position: fixed;
-    top: -10%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    height: 40%;
-    pointer-events: none;
-    z-index: -1;
-    background:
-      radial-gradient(circle at 28% 18%, rgba(241, 36, 112, 0.13), transparent 38%),
-      radial-gradient(circle at 72% 15%, rgba(83, 196, 202, 0.13), transparent 42%);
   }
 
   header {
@@ -338,7 +482,9 @@
     aspect-ratio: 1;
     border-radius: 26px;
     object-fit: cover;
-    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45), 0 0 40px rgba(241, 36, 112, 0.08);
+    box-shadow:
+      0 18px 60px rgba(0, 0, 0, 0.45),
+      0 0 40px rgba(241, 36, 112, 0.08);
   }
 
   .brand-copy {
@@ -481,7 +627,9 @@
     text-decoration: none;
   }
 
-  .hacs-guide-link:hover { color: #7bd9dd; }
+  .hacs-guide-link:hover {
+    color: #7bd9dd;
+  }
 
   .icon {
     fill: currentColor;
@@ -554,7 +702,9 @@
 
   .ext-icon {
     opacity: 0.5;
-    transition: opacity 0.2s, color 0.2s;
+    transition:
+      opacity 0.2s,
+      color 0.2s;
     flex-shrink: 0;
   }
 
@@ -579,21 +729,75 @@
 
   .photo-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
     margin-top: 1rem;
   }
 
-  .photo-placeholder {
-    aspect-ratio: 4 / 3;
+  .gallery-mode-selector {
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    margin-top: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.65rem;
     background: #121212;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
+  }
+
+  .gallery-mode-selector button {
+    padding: 0.5rem 0.9rem;
+    border: 0;
+    border-radius: 0.45rem;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition:
+      color 0.2s,
+      background 0.2s;
+  }
+
+  .gallery-mode-selector button:hover {
+    color: var(--color-text-primary);
+  }
+
+  .gallery-mode-selector button:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  .gallery-mode-selector button.active {
+    background: var(--color-accent);
+    color: #0d0d0d;
+  }
+
+  .photo-card:last-child {
+    width: calc((100% - 1rem) / 2);
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+
+  .photo-card {
+    min-width: 0;
+    margin: 0;
+    background: #121212;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 0.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-text-muted);
-    font-size: 0.85rem;
+    overflow: hidden;
+  }
+
+  .photo-stage {
+    position: relative;
+    aspect-ratio: 1;
+    background: #0d0d0d;
+  }
+
+  .photo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .workflow-columns {
@@ -752,7 +956,13 @@
   }
 
   .steps li code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(
+      --font-mono,
+      ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      monospace
+    );
     font-size: 0.88rem;
     color: var(--color-accent);
     background: rgba(74, 158, 254, 0.1);
@@ -938,6 +1148,11 @@
 
     .photo-grid {
       grid-template-columns: 1fr;
+    }
+
+    .photo-card:last-child {
+      width: 100%;
+      grid-column: auto;
     }
   }
 </style>

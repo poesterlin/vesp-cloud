@@ -166,8 +166,9 @@
           </p>
           <ol class="hacs-steps">
             <li>
-              <span class="step-badge">1</span> Add this repository to HACS as a
-              custom <strong>Integration</strong>
+              <span class="step-badge">1</span> Add
+              <code>https://github.com/poesterlin/ha-metadata-exporter</code> to
+              HACS as a custom <strong>Integration</strong>
             </li>
             <li>
               <span class="step-badge">2</span> Install
@@ -176,7 +177,7 @@
             </li>
             <li>
               <span class="step-badge">3</span> Use
-              <strong>Download Metadata File</strong> to export a JSON file
+              <strong>Download metadata</strong> to export a JSON file
             </li>
             <li>
               <span class="step-badge">4</span> Drag the file into the editor below

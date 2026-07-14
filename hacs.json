@@ -1,0 +1,6 @@
+{
+  "name": "vESP.cloud Notifications",
+  "hacs": "1.34.0",
+  "homeassistant": "2024.1.0",
+  "render_readme": true
+}

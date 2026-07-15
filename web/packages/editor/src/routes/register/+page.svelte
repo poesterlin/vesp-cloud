@@ -5,6 +5,7 @@
   let { form } = $props();
 
   let password = $state('');
+  let showPassword = $state(false);
 
   const redirectParam = $derived(page.url.searchParams.get('redirect') || '');
   const validationErrors = $derived((form?.errors ?? []) as Array<{ path?: PropertyKey[]; message: string }>);
@@ -71,20 +72,31 @@
 
       <div class="field">
         <label for="password">Password</label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          minlength="8"
-          maxlength="255"
-          autocomplete="new-password"
-          bind:value={password}
-          aria-invalid={fieldError('password') ? 'true' : undefined}
-          aria-describedby={fieldError('password')
-            ? 'password-requirements password-error'
-            : 'password-requirements'}
-        />
+        <div class="password-input">
+          <input
+            id="password"
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            required
+            minlength="8"
+            maxlength="255"
+            autocomplete="new-password"
+            bind:value={password}
+            aria-invalid={fieldError('password') ? 'true' : undefined}
+            aria-describedby={fieldError('password')
+              ? 'password-requirements password-error'
+              : 'password-requirements'}
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-pressed={showPassword}
+            onclick={() => (showPassword = !showPassword)}
+          >
+            {showPassword ? 'Hide' : 'Show'}
+          </button>
+        </div>
         {#if fieldError('password')}
           <p id="password-error" class="field-error">{fieldError('password')}</p>
         {/if}
@@ -182,6 +194,37 @@
 
   .field input[aria-invalid="true"] {
     border-color: #ff5252;
+  }
+
+  .password-input {
+    position: relative;
+  }
+
+  .password-input input {
+    box-sizing: border-box;
+    width: 100%;
+    padding-right: 4.5rem;
+  }
+
+  .password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    transform: translateY(-50%);
+    padding: 0.3rem 0.45rem;
+    border: 0;
+    background: transparent;
+    color: var(--color-accent);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .password-toggle:focus-visible {
+    border-radius: 0.25rem;
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
 
   .field-help,

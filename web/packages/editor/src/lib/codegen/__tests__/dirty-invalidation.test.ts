@@ -45,6 +45,13 @@ describe("dirty-region architecture", () => {
     expect(todo).toContain("UiInvalidation::request_continue(");
   });
 
+  test("multi-frame continuation is paced outside the display callback", async () => {
+    const renderer = await includeSource("ui_renderer.h");
+
+    expect(renderer).toContain("continuation queued");
+    expect(renderer).not.toContain("UiRedraw::trigger_display_update();");
+  });
+
   test("widgets draw through the paint-bounds clipping contract", async () => {
     const widgets = await includeSource("ui_widget_base.h");
     const screens = await includeSource("ui_screen_base.h");

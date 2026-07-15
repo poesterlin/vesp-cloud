@@ -235,25 +235,18 @@ class TodoPreviewWidget : public Widget {
       std::string summary = row.summary;
 
 #if UI_THEME_RETRO
-      // Queue-address tick and broken separator: each task reads like a
-      // record in a terminal rather than a generic list row.
-      const Color row_rail = overdue ? RetroColors::RED_DIM : border_dim_color_();
-      ui_fast_filled_rectangle(it, r.x + 5, y + 5, 2,
-                               std::max(3, row_height_ - 10), row_rail);
+      // Broken separators distinguish task records without adding a rail
+      // beside the checkbox.
       if (drawn > 0) {
         draw_dashed_hline(it, r.x + kTodoTextX, r.x + r.w - 7, y,
                           RetroColors::DARK_GRAY, 2, 4);
       }
 #else
-      // Modern rows sit on subtle alternating surface bands with a compact
-      // state rail. Both remain inside the existing widget paint bounds.
+      // Modern rows sit on subtle alternating surface bands.
       if ((i & 1) != 0) {
         ui_fast_filled_rectangle(it, r.x + 5, y + 2, r.w - 10,
                                  std::max(1, row_height_ - 4), RetroColors::DARK);
       }
-      ui_fast_filled_rectangle(it, r.x + 6, y + 7, 2,
-                               std::max(2, row_height_ - 14),
-                               overdue ? RetroColors::RED_DIM : border_dim_color_());
       if (drawn > 0) {
         it.horizontal_line(r.x + kTodoTextX, y,
                            std::max(1, r.w - kTodoTextX - 7),

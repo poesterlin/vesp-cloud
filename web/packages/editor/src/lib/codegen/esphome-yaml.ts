@@ -1342,6 +1342,12 @@ interval:
           }
 ${fetchPump}          if (!connected) {
             id(main_display).update();
+          } else if (UiInvalidation::needs_redraw()) {
+            // Pace multi-frame painters from the ESPHome main loop. Calling
+            // Display::update() directly from render_basic_ui() recursively
+            // re-enters the display callback and eventually trips the
+            // watchdog while an animation remains active.
+            id(main_display).update();
           }
   - interval: 10s
     then:

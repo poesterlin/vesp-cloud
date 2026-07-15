@@ -183,7 +183,11 @@ inline void render_basic_ui(display::Display &it) {
   const bool more_pending = UiInvalidation::should_continue();
   UiRedraw::end_draw();
   if (more_pending) {
-    ESP_LOGD("render", "[f=%u] requesting continue", UiInvalidation::frame());
-    UiRedraw::trigger_display_update();
+    // Do not call Display::update() from inside its own draw callback. The
+    // updater is synchronous, so doing that here recursively nests display
+    // updates for as long as a multi-frame painter (for example a spinner or
+    // tiled image) requests continuation. The 50 ms UI pump schedules the
+    // pending damage after this draw has returned to the ESPHome main loop.
+    ESP_LOGD("render", "[f=%u] continuation queued", UiInvalidation::frame());
   }
 }

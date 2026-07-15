@@ -128,7 +128,7 @@
       </p>
       <p class="legal-note">
         By purchasing credits, you agree to our <a href="/terms"
-          >Terms of Service</a
+          >General Terms and Conditions (AGB)</a
         >. Credits are non-refundable except where required by law. You
         may
         <a href="/withdrawal">withdraw from your purchase</a>.

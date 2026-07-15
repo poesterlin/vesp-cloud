@@ -10,9 +10,13 @@ import { validateForm } from '$lib/server/form';
 import { sendEmail } from '$lib/server/email';
 import { Renderer, toPlainText } from '@vesp-cloud/email';
 import AddressValidationEmail from '@vesp-cloud/email/address-validation.svelte';
+import { dev } from '$app/environment';
+import { env } from '$env/dynamic/private';
+import { TERMS_VERSION } from '$lib/terms';
 import type { Actions, PageServerLoad } from './$types';
 
 const renderer = new Renderer();
+const requireTermsAcceptance = dev || env.APP_EDITION === 'cloud';
 
 function isUniqueConstraintError(err: unknown, constraintName: string): boolean {
   if (!err || typeof err !== 'object') return false;
@@ -42,10 +46,22 @@ export const actions: Actions = {
         .max(255, 'Password must be 255 characters or fewer')
         .regex(/[a-zA-Z]/, 'Password must contain at least one letter')
         .regex(/[0-9]/, 'Password must contain at least one number'),
+      acceptTerms: z.string().optional(),
+      termsVersion: z.string().optional(),
       redirectTo: z.string().optional().nullable(),
     }),
     async (event, form) => {
-      const { username, password, email, redirectTo } = form;
+      const { username, password, email, acceptTerms, termsVersion, redirectTo } = form;
+
+      if (
+        requireTermsAcceptance &&
+        (acceptTerms !== 'accepted' || termsVersion !== TERMS_VERSION)
+      ) {
+        return fail(400, {
+          errors: [{ path: ['acceptTerms'], message: 'You must accept the General Terms and Conditions' }],
+          message: 'Please correct the highlighted field',
+        });
+      }
 
       const userId = generateId();
       const passwordHash = await hash(password, {

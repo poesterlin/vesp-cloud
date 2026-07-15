@@ -1,5 +1,5 @@
 import { startWorker, stopWorker } from "$lib/utils/worker";
-import { building } from "$app/environment";
+import { building, dev } from "$app/environment";
 import { json, type Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { getDb } from "@vesp-cloud/db";
@@ -8,6 +8,8 @@ import { env } from "$env/dynamic/private";
 import * as Sentry from "@sentry/sveltekit";
 
 const sentryEnabled = !!env.SENTRY_DSN;
+const showCloudLegalPages = dev || env.APP_EDITION === "cloud";
+const cloudOnlyPagePaths = new Set(["/impressum", "/privacy", "/terms"]);
 
 if (sentryEnabled) {
   Sentry.init({
@@ -81,6 +83,19 @@ const handleCsrf: Handle = async ({ event, resolve }) => {
   return resolve(event);
 };
 
+const handleCloudOnlyPages: Handle = async ({ event, resolve }) => {
+  const path = event.url.pathname.replace(/\/+$/, "") || "/";
+
+  if (!showCloudLegalPages && cloudOnlyPagePaths.has(path)) {
+    return new Response("Not Found", {
+      status: 404,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+
+  return resolve(event);
+};
+
 const handleAuth: Handle = async ({ event, resolve }) => {
   const sessionToken = event.cookies.get(auth.sessionCookieName);
   if (!sessionToken) {
@@ -106,7 +121,7 @@ const appHandles: Handle[] = [];
 if (sentryEnabled) {
   appHandles.push(Sentry.sentryHandle());
 }
-appHandles.push(handleCsrf, handleAuth);
+appHandles.push(handleCloudOnlyPages, handleCsrf, handleAuth);
 
 export const handle: Handle = sequence(...appHandles);
 export const handleError = Sentry.handleErrorWithSentry();

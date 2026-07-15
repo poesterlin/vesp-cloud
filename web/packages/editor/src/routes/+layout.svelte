@@ -2,7 +2,7 @@
   import { page } from "$app/state";
   import "../app.css";
 
-  let { children } = $props();
+  let { children, data } = $props();
 
   const SITE_NAME = "vESP.cloud";
   const DEFAULT_DESCRIPTION =
@@ -27,9 +27,23 @@
 
     if (pathname === "/terms") {
       return {
-        title: "vESP.cloud — Terms",
+        title: "vESP.cloud — General Terms and Conditions (AGB)",
         description:
-          "Read the vESP.cloud terms for account usage, purchases, privacy, and consumer rights.",
+          "Read the vESP.cloud General Terms and Conditions for accounts, cloud services and build credits.",
+      };
+    }
+
+    if (pathname === "/impressum") {
+      return {
+        title: "vESP.cloud — Impressum",
+        description: "Provider identification and legal contact information for vESP.cloud.",
+      };
+    }
+
+    if (pathname === "/privacy") {
+      return {
+        title: "vESP.cloud — Privacy Policy",
+        description: "Information about how vESP.cloud processes personal data.",
       };
     }
 
@@ -48,7 +62,7 @@
   }
 
   function isIndexablePath(pathname: string) {
-    return pathname === "/intro" || pathname === "/home-assistant-entity-export" || pathname === "/terms" || pathname === "/withdrawal";
+    return pathname === "/intro" || pathname === "/home-assistant-entity-export" || pathname === "/terms" || pathname === "/impressum" || pathname === "/privacy" || pathname === "/withdrawal";
   }
 
   const seo = $derived(getSeoForPath(page.url.pathname));
@@ -77,3 +91,61 @@
 </svelte:head>
 
 {@render children()}
+
+{#if data.showCloudLegalPages}
+  <footer class="legal-footer">
+    <nav aria-label="Legal information">
+      <a href="/impressum">Impressum</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">AGB</a>
+    </nav>
+  </footer>
+{/if}
+
+<style>
+  .legal-footer {
+    position: fixed;
+    right: 0.75rem;
+    bottom: 0.65rem;
+    z-index: 900;
+    padding: 0.35rem 0.55rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    background: rgba(20, 20, 20, 0.9);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(8px);
+  }
+
+  .legal-footer nav {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .legal-footer a {
+    color: #b8b8b8;
+    font-size: 0.72rem;
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .legal-footer a:hover,
+  .legal-footer a:focus-visible {
+    color: #fff;
+    text-decoration: underline;
+  }
+
+  @media (max-width: 520px) {
+    .legal-footer {
+      right: 50%;
+      bottom: 0.5rem;
+      transform: translateX(50%);
+    }
+  }
+
+  @media print {
+    .legal-footer {
+      display: none;
+    }
+  }
+</style>

@@ -1,8 +1,9 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { page } from '$app/state';
+  import { TERMS_VERSION } from '$lib/terms';
 
-  let { form } = $props();
+  let { form, data } = $props();
 
   let password = $state('');
   let showPassword = $state(false);
@@ -107,7 +108,35 @@
         </ul>
       </div>
 
+      {#if data.showCloudLegalPages}
+        <label class="legal-consent" class:invalid={fieldError('acceptTerms')}>
+          <input
+            type="checkbox"
+            name="acceptTerms"
+            value="accepted"
+            required
+            aria-invalid={fieldError('acceptTerms') ? 'true' : undefined}
+            aria-describedby={fieldError('acceptTerms') ? 'terms-error' : undefined}
+          />
+          <span>
+            I accept the
+            <a href="/terms" target="_blank" rel="noopener">General Terms and Conditions (AGB)</a>.
+          </span>
+        </label>
+        <input type="hidden" name="termsVersion" value={TERMS_VERSION} />
+        {#if fieldError('acceptTerms')}
+          <p id="terms-error" class="field-error terms-error">{fieldError('acceptTerms')}</p>
+        {/if}
+      {/if}
+
       <button type="submit" class="primary">Create Account</button>
+
+      {#if data.showCloudLegalPages}
+        <p class="privacy-notice">
+          We process your account information to provide and secure the service. Please read our
+          <a href="/privacy">Privacy Policy</a>.
+        </p>
+      {/if}
     </form>
 
     <p class="switch-link">
@@ -161,6 +190,46 @@
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+  }
+
+  .privacy-notice {
+    color: var(--color-text-muted);
+    font-size: 0.78rem;
+    line-height: 1.45;
+    text-align: center;
+  }
+
+  .privacy-notice a {
+    color: var(--color-text-secondary);
+  }
+
+  .legal-consent {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 0.65rem;
+    color: var(--color-text-secondary);
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+
+  .legal-consent input {
+    width: 1rem;
+    height: 1rem;
+    margin: 0.1rem 0 0;
+    accent-color: var(--color-accent);
+  }
+
+  .legal-consent a {
+    color: var(--color-accent);
+  }
+
+  .legal-consent.invalid {
+    color: #ff7373;
+  }
+
+  .terms-error {
+    margin-top: -0.85rem;
   }
 
   .field {

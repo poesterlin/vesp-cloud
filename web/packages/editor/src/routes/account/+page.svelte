@@ -96,7 +96,8 @@
         Permanently delete your account, projects, sessions, and credit history. This cannot be undone.
       </p>
       <p class="danger-legal">
-        Unused credits are forfeited when you delete your account. See <a href="/terms">Terms of Service</a>.
+        Deletion removes your credit balance. Use purchased credits or contact support before deleting your account.
+        See the <a href="/terms">General Terms and Conditions (AGB)</a>.
       </p>
 
       {#if form?.deleteError}

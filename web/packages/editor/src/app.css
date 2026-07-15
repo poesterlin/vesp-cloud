@@ -170,6 +170,171 @@ button.primary:hover {
   background: var(--color-accent-hover);
 }
 
+/* ============================================
+   Legal documents
+   ============================================ */
+
+.legal-document {
+  min-height: 100vh;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 6rem;
+  color: var(--color-text-primary);
+}
+
+.legal-document__header {
+  margin-bottom: 2rem;
+}
+
+.legal-document__back {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.legal-document__back:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.legal-document__eyebrow {
+  color: #35c8d0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.legal-document__header h1 {
+  margin-top: 0.35rem;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  letter-spacing: -0.04em;
+}
+
+.legal-document__header > p:last-child {
+  margin-top: 0.55rem;
+  color: var(--color-text-muted);
+}
+
+.legal-document__content {
+  display: grid;
+  gap: 1rem;
+}
+
+.legal-document__content section,
+.legal-document__warning,
+.legal-document__review-note {
+  padding: 1.2rem 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.legal-document__content h2 {
+  margin-bottom: 0.7rem;
+  font-size: 1.05rem;
+}
+
+.legal-document__content p,
+.legal-document__content li,
+.legal-document__content dd,
+.legal-document__content address {
+  color: #c4c4c4;
+  line-height: 1.65;
+}
+
+.legal-document__content p + p {
+  margin-top: 0.75rem;
+}
+
+.legal-document__content a {
+  color: #72b8ff;
+}
+
+.legal-document__content ul {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.65rem 0 0.65rem 1.25rem;
+}
+
+.legal-document__content li {
+  list-style: disc;
+  padding-left: 0.25rem;
+}
+
+.legal-document__content address {
+  display: grid;
+  margin-top: 0.65rem;
+  font-style: normal;
+}
+
+.legal-document__content address > span > span + span::before {
+  content: ' ';
+}
+
+.legal-document__content dl {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.legal-document__content dl > div {
+  display: grid;
+  grid-template-columns: minmax(9rem, 0.35fr) 1fr;
+  gap: 1rem;
+}
+
+.legal-document__content dt {
+  color: var(--color-text-muted);
+}
+
+.legal-document__content code {
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.3rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8e8e8;
+  overflow-wrap: anywhere;
+}
+
+.legal-document__warning {
+  border-color: rgba(255, 152, 0, 0.45);
+  background: rgba(255, 152, 0, 0.09);
+}
+
+.legal-document__warning strong,
+.legal-document__review-note strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #ffbd66;
+}
+
+.legal-document__review-note {
+  border-style: dashed;
+  border-color: rgba(255, 189, 102, 0.35);
+}
+
+.legal-missing {
+  color: #ffbd66 !important;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .legal-document {
+    padding: 1.5rem 0.85rem 6rem;
+  }
+
+  .legal-document__content section,
+  .legal-document__warning,
+  .legal-document__review-note {
+    padding: 1rem;
+  }
+
+  .legal-document__content dl > div {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+}
+
 /* Form elements */
 input,
 select,

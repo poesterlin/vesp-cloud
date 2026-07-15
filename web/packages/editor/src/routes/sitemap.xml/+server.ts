@@ -1,14 +1,22 @@
 import type { RequestHandler } from './$types';
+import { env } from '$env/dynamic/private';
+import { dev } from '$app/environment';
 
-export const prerender = true;
-const INDEXABLE_PATHS = ['/intro', '/home-assistant-entity-export', '/terms', '/withdrawal'];
-const SITEMAP_LASTMOD = new Date().toISOString();
+const BASE_INDEXABLE_PATHS = [
+  '/intro',
+  '/home-assistant-entity-export',
+  '/withdrawal',
+];
 
 export const GET: RequestHandler = ({ url }) => {
-  const urls = INDEXABLE_PATHS.map((path) => {
+  const indexablePaths = dev || env.APP_EDITION === 'cloud'
+    ? [...BASE_INDEXABLE_PATHS, '/impressum', '/privacy', '/terms']
+    : BASE_INDEXABLE_PATHS;
+  const sitemapLastmod = new Date().toISOString();
+  const urls = indexablePaths.map((path) => {
     const loc = `${url.origin}${path}`;
 
-    return `<url><loc>${loc}</loc><lastmod>${SITEMAP_LASTMOD}</lastmod></url>`;
+    return `<url><loc>${loc}</loc><lastmod>${sitemapLastmod}</lastmod></url>`;
   }).join('');
 
   const body =

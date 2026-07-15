@@ -1,6 +1,14 @@
+x-logging: &default-logging
+  driver: local
+  options:
+    max-size: "20m"
+    max-file: "5"
+    compress: "true"
+
 services:
   esphome:
     restart: unless-stopped
+    logging: *default-logging
     build:
       dockerfile: packages/editor/Dockerfile
       args: 
@@ -27,7 +35,15 @@ services:
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
       - SENTRY_DSN=${SENTRY_DSN:-}
       - PUBLIC_BASE_URL=https://${DOMAIN}
-      - LOG_LEVEL=debug
+      - PUBLIC_LEGAL_OPERATOR_NAME=${PUBLIC_LEGAL_OPERATOR_NAME:-}
+      - PUBLIC_LEGAL_STREET_ADDRESS=${PUBLIC_LEGAL_STREET_ADDRESS:-}
+      - PUBLIC_LEGAL_POSTAL_CODE=${PUBLIC_LEGAL_POSTAL_CODE:-}
+      - PUBLIC_LEGAL_LOCALITY=${PUBLIC_LEGAL_LOCALITY:-}
+      - PUBLIC_LEGAL_COUNTRY=${PUBLIC_LEGAL_COUNTRY:-}
+      - PUBLIC_LEGAL_EMAIL=${PUBLIC_LEGAL_EMAIL:-support@vesp-cloud.com}
+      - PUBLIC_LEGAL_SUPERVISORY_AUTHORITY=${PUBLIC_LEGAL_SUPERVISORY_AUTHORITY:-}
+      - PUBLIC_LEGAL_DISPUTE_RESOLUTION=${PUBLIC_LEGAL_DISPUTE_RESOLUTION:-}
+      - LOG_LEVEL=info
     networks:
       - traefik_web
     labels:
@@ -43,6 +59,7 @@ services:
 
   worker:
     restart: unless-stopped
+    logging: *default-logging
     profiles: ["worker"]
     build:
       dockerfile: packages/editor/Dockerfile.worker
@@ -66,7 +83,7 @@ services:
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
       - SENTRY_DSN=${SENTRY_DSN:-}
       - PUBLIC_BASE_URL=https://${DOMAIN}
-      - LOG_LEVEL=debug
+      - LOG_LEVEL=info
     tmpfs:
       - /tmp/esphome-builds:size=12g
     volumes:
@@ -76,6 +93,7 @@ services:
 
   admin:
     restart: unless-stopped
+    logging: *default-logging
     build:
       dockerfile: packages/admin/Dockerfile
     environment:
@@ -94,6 +112,7 @@ services:
 
   docs:
     restart: unless-stopped
+    logging: *default-logging
     build:
       dockerfile: packages/docs/Dockerfile
     networks:

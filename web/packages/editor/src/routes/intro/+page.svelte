@@ -395,7 +395,7 @@
           </div>
           <p class="pricing-note">
             No subscription. Pay only for what you use.
-            <a href="/terms" class="terms-link">Terms of Service</a>. You may
+            <a href="/terms" class="terms-link">General Terms and Conditions (AGB)</a>. You may
             <a href="/withdrawal" class="terms-link"
               >withdraw from your purchase</a
             >.

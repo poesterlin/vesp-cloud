@@ -246,7 +246,7 @@
           </p>
         {/if}
         <p class="helper">
-          <a href="/terms">View Terms of Service</a>
+          <a href="/terms">View General Terms and Conditions (AGB)</a>
         </p>
       </section>
     {/if}

@@ -1,5 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
+import { env } from '$env/dynamic/private';
+import { dev } from '$app/environment';
 
 const PUBLIC_PATHS = [
   '/robots.txt',
@@ -9,6 +11,8 @@ const PUBLIC_PATHS = [
   '/forgot-password',
   '/reset-password',
   '/terms',
+  '/impressum',
+  '/privacy',
   '/intro',
   '/home-assistant-entity-export',
   '/withdrawal',
@@ -29,5 +33,6 @@ export const load: LayoutServerLoad = async (event) => {
 
   return {
     user: event.locals.user,
+    showCloudLegalPages: dev || env.APP_EDITION === 'cloud',
   };
 };

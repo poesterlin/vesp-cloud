@@ -6,6 +6,7 @@ import * as auth from "$lib/server/auth";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { validateForm } from "$lib/server/form";
+import { deleteBinaries } from "$lib/server/s3";
 
 export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user) {
@@ -57,15 +58,26 @@ export const actions: Actions = {
       }
 
       const db = getDb();
+      const userId = event.locals.user.id;
+
+      const jobs = await db
+        .select({ id: table.compilationJobs.id })
+        .from(table.compilationJobs)
+        .where(eq(table.compilationJobs.userId, userId));
+
+      if (jobs.length > 0) {
+        await deleteBinaries(jobs.map((j) => j.id));
+      }
 
       await db.transaction(async (tx) => {
-        await tx.delete(table.creditTransactions).where(eq(table.creditTransactions.userId, event.locals.user!.id));
-        await tx.delete(table.creditBalances).where(eq(table.creditBalances.userId, event.locals.user!.id));
-        await tx.delete(table.stripeCustomers).where(eq(table.stripeCustomers.userId, event.locals.user!.id));
+        await tx.delete(table.compilationJobs).where(eq(table.compilationJobs.userId, userId));
+        await tx.delete(table.creditTransactions).where(eq(table.creditTransactions.userId, userId));
+        await tx.delete(table.creditBalances).where(eq(table.creditBalances.userId, userId));
+        await tx.delete(table.stripeCustomers).where(eq(table.stripeCustomers.userId, userId));
 
         const deleted = await tx
           .delete(table.usersTable)
-          .where(eq(table.usersTable.id, event.locals.user!.id))
+          .where(eq(table.usersTable.id, userId))
           .returning({ id: table.usersTable.id });
 
         if (deleted.length === 0) {

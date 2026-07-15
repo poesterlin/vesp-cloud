@@ -3,9 +3,16 @@
   import { RETRO_THEME } from "$lib/themes/retro";
   import { MODERN_THEME } from "$lib/themes/modern";
   import { fade } from "svelte/transition";
+  import { onMount } from "svelte";
   import TimezoneEditor from "$lib/components/TimezoneEditor.svelte";
   import ColorPicker from "$lib/components/sidebar/ColorPicker.svelte";
   import { goto } from "$app/navigation";
+  import homeDisplay from "@vesp-cloud/assets/imgs/examples/home-display.png";
+  import homeDisplayModern from "@vesp-cloud/assets/imgs/examples/home-display-modern.png";
+  import vacuumDisplay from "@vesp-cloud/assets/imgs/examples/vacuum-display.png";
+  import vacuumDisplayModern from "@vesp-cloud/assets/imgs/examples/vacuum-display-modern.png";
+  import weatherDisplay from "@vesp-cloud/assets/imgs/examples/weather-display.png";
+  import weatherDisplayModern from "@vesp-cloud/assets/imgs/examples/weather-display-modern.png";
 
   interface Props {
     onClose: () => void;
@@ -14,6 +21,62 @@
   let { onClose }: Props = $props();
 
   const themes = [RETRO_THEME, MODERN_THEME];
+  const themePreviews = [
+    {
+      name: "Home",
+      retro: homeDisplay,
+      modern: homeDisplayModern,
+    },
+    {
+      name: "Vacuum",
+      retro: vacuumDisplay,
+      modern: vacuumDisplayModern,
+    },
+    {
+      name: "Weather",
+      retro: weatherDisplay,
+      modern: weatherDisplayModern,
+    },
+  ] as const;
+
+  let themePreviewIndex = $state(0);
+  let themePreviewTimer: ReturnType<typeof setTimeout> | undefined;
+  let themePreviewRotationPaused = false;
+  let themePreviewAutoRotate = false;
+
+  function stopThemePreviewRotation() {
+    if (themePreviewTimer) clearTimeout(themePreviewTimer);
+    themePreviewTimer = undefined;
+  }
+
+  function scheduleThemePreviewRotation(delay = 3000) {
+    stopThemePreviewRotation();
+    if (!themePreviewAutoRotate || themePreviewRotationPaused) return;
+
+    themePreviewTimer = setTimeout(() => {
+      themePreviewIndex = (themePreviewIndex + 1) % themePreviews.length;
+      scheduleThemePreviewRotation();
+    }, delay);
+  }
+
+  function pauseThemePreviewRotation() {
+    themePreviewRotationPaused = true;
+    stopThemePreviewRotation();
+  }
+
+  function resumeThemePreviewRotation() {
+    themePreviewRotationPaused = false;
+    scheduleThemePreviewRotation(5000);
+  }
+
+  onMount(() => {
+    themePreviewAutoRotate = !window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    scheduleThemePreviewRotation();
+    return stopThemePreviewRotation;
+  });
+
   const defaultNotificationOverlay = {
     titleEntityId: "input_text.notification_title",
     bodyEntityId: "input_text.notification_body",
@@ -147,15 +210,31 @@
         Select the display theme used for editor previews and generated firmware
         style values.
       </p>
-      <div class="theme-grid">
+      <div
+        class="theme-grid"
+        role="group"
+        aria-label="Display theme"
+        onmouseenter={pauseThemePreviewRotation}
+        onmouseleave={resumeThemePreviewRotation}
+        onfocusin={pauseThemePreviewRotation}
+        onfocusout={resumeThemePreviewRotation}
+      >
         {#each themes as theme}
+          {@const preview = themePreviews[themePreviewIndex]}
+          {@const previewSrc = theme.id === "modern" ? preview.modern : preview.retro}
           <button
             type="button"
             class="theme-card {selectedThemeId === theme.id ? 'active' : ''}"
             onclick={() => (selectedThemeId = theme.id)}
           >
-            <div class="theme-preview placeholder">
-              <span>Theme Preview Image</span>
+            <div class="theme-preview">
+              <img
+                src={previewSrc}
+                alt={`${preview.name} dashboard with the ${theme.name} theme`}
+                width="640"
+                height="640"
+                decoding="async"
+              />
             </div>
             <strong>{theme.name}</strong>
           </button>
@@ -350,7 +429,7 @@
 
   .theme-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--spacing-md);
   }
 
@@ -375,22 +454,21 @@
 
   .theme-preview {
     width: 100%;
-    aspect-ratio: 16/9;
+    aspect-ratio: 1;
     border-radius: var(--radius-sm);
     position: relative;
     overflow: hidden;
   }
 
-  .theme-preview.placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px dashed var(--color-border);
+  .theme-preview img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .theme-preview {
     background: var(--color-bg-primary);
-    color: var(--color-text-muted);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
   }
 
   .font-list {

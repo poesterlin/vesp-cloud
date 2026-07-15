@@ -222,7 +222,7 @@
     }
 
     .modal-content.settings-modal {
-      width: 600px;
+      width: 760px;
       height: 80vh;
     }
 

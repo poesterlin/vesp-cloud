@@ -16,11 +16,19 @@
       theme.chromeAccent ?? theme.colors.accent ?? { r: 0, g: 255, b: 255 },
     ),
   );
-  const foreground = $derived(colorToRgb(theme.colors.foreground ?? { r: 255, g: 255, b: 255 }));
-  const muted = $derived(colorToRgb(theme.colors.foregroundMuted ?? { r: 128, g: 128, b: 128 }));
+  const foreground = $derived(
+    colorToRgb(theme.colors.foreground ?? { r: 255, g: 255, b: 255 }),
+  );
+  const muted = $derived(
+    colorToRgb(theme.colors.foregroundMuted ?? { r: 128, g: 128, b: 128 }),
+  );
 </script>
 
-<div class="detail-header" class:retro={isRetro} style:border-bottom="1px solid {muted}">
+<div
+  class="detail-header"
+  class:retro={isRetro}
+  style:border-bottom="1px solid {muted}"
+>
   <button
     class="back-button"
     onclick={onBack}
@@ -76,15 +84,16 @@
   .retro .back-button {
     background: rgb(25, 30, 40);
     border-radius: 0;
-    clip-path: polygon(5px 0, calc(100% - 5px) 0, 100% 5px, 100% calc(100% - 5px), calc(100% - 5px) 100%, 5px 100%, 0 calc(100% - 5px), 0 5px);
     box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 25%, transparent);
+    corner-shape: bevel;
+    border-radius: 8px;
   }
 
   h1 {
     position: absolute;
     left: 72px;
     right: 72px;
-    top: 8px;
+    top: 13px;
     line-height: 24px;
     text-align: center;
     font-size: var(--display-text-medium, 24px);
@@ -110,7 +119,11 @@
     right: 3px;
     width: 12px;
     height: 3px;
-    background: repeating-linear-gradient(135deg, rgb(0, 30, 45) 0 1px, transparent 1px 4px);
+    background: repeating-linear-gradient(
+      135deg,
+      rgb(0, 30, 45) 0 1px,
+      transparent 1px 4px
+    );
   }
 
   .spacer {

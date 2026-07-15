@@ -164,7 +164,7 @@
     </section>
 
     <section>
-      <h3>Chrome Accent</h3>
+      <h3>Project Color</h3>
       <p class="section-hint">
         Sets the color for the clock, page indicator active dot, and detail
         header title.

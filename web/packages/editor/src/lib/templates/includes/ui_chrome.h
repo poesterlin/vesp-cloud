@@ -271,13 +271,14 @@ class DetailHeaderWidget : public Widget {
     it.line(cx - 4, cy, cx + 6, cy + 7, CHROME_ACCENT_COLOR);
 
     if (title_ && title_font_) {
+      constexpr int title_y = 25;
       // Keep retro terminal brackets only in retro theme.
 #if UI_THEME_RETRO
-      it.printf(240, 20, title_font_, CHROME_ACCENT_COLOR, TextAlign::CENTER, "[ %s ]", title_);
+      it.printf(240, title_y, title_font_, CHROME_ACCENT_COLOR, TextAlign::CENTER, "[ %s ]", title_);
 #else
       // Faux-bold in modern theme: draw a second pass 1px to the right.
-      it.printf(240, 20, title_font_, CHROME_ACCENT_COLOR, TextAlign::CENTER, "%s", title_);
-      it.printf(241, 20, title_font_, CHROME_ACCENT_COLOR, TextAlign::CENTER, "%s", title_);
+      it.printf(240, title_y, title_font_, CHROME_ACCENT_COLOR, TextAlign::CENTER, "%s", title_);
+      it.printf(241, title_y, title_font_, CHROME_ACCENT_COLOR, TextAlign::CENTER, "%s", title_);
 #endif
     }
 

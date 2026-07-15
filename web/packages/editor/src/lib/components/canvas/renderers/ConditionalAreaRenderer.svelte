@@ -49,6 +49,7 @@
   function selectVariant(variantId: string) {
     conditionalEditorStore.setActiveVariant(component.id, variantId);
     canvasPasteTargetStore.set({ scope: "variant", parentId: component.id, variantId });
+    selectionStore.select(component.id);
   }
 
   function handleAddVariant() {

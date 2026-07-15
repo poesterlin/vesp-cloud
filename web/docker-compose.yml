@@ -92,6 +92,17 @@ services:
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-web}-esphome-admin.rule=Host(`${ADMIN_DOMAIN}`)"
       - "traefik.http.services.${COMPOSE_PROJECT_NAME:-web}-esphome-admin.loadbalancer.server.port=3000"
 
+  docs:
+    restart: unless-stopped
+    build:
+      dockerfile: packages/docs/Dockerfile
+    networks:
+      - traefik_web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-web}-docs.rule=Host(`${DOCS_DOMAIN}`)"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME:-web}-docs.loadbalancer.server.port=80"
+
 volumes:
   platformio_data:
   pio_cache:

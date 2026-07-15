@@ -70,14 +70,14 @@ class TodoPreviewWidget : public Widget {
       if (row.loading) {
         row.loading = false;
         row.ha_sent = false;
-        mark_dirty();
+        mark_checkbox_dirty_(idx);
         return true;
       }
       // First tap — start 2-second countdown; HA call is sent later
       row.loading = true;
       row.loading_start = now;
       row.ha_sent = false;
-      mark_dirty();
+      mark_checkbox_dirty_(idx);
       return true;
     }
 
@@ -116,7 +116,6 @@ class TodoPreviewWidget : public Widget {
       mark_dirty();
     }
     // 2-second countdown before actually calling HA; second tap cancels.
-    bool any_action = false;
     for (size_t i = 0; i < rows_.size(); i++) {
       auto &row = rows_[i];
       if (!row.loading) continue;
@@ -126,15 +125,13 @@ class TodoPreviewWidget : public Widget {
         else
           push_needs_action_to_ha(static_cast<int>(i));
         row.ha_sent = true;
-        any_action = true;
       }
       if (now - row.loading_start > TodoRow::loading_timeout_ms) {
         row.loading = false;
         row.ha_sent = false;
-        any_action = true;
+        mark_checkbox_dirty_(static_cast<int>(i));
       }
     }
-    if (any_action) mark_dirty();
     Widget::update(now);
   }
 
@@ -265,7 +262,7 @@ class TodoPreviewWidget : public Widget {
           // is painted on every display frame. request_continue() targets the
           // next damage set when called from draw().
           UiInvalidation::request_continue(
-              UiDirtyRect{r.x, y, r.w, row_height_}, "todo:spinner");
+              checkbox_damage_at_y_(y), "todo:spinner");
         } else {
           const Color check_color = completed ? Color(0, 220, 120) : border;
           if (g_theme.icon.font != nullptr &&
@@ -355,8 +352,22 @@ class TodoPreviewWidget : public Widget {
   // scrolling due-date column.
   static constexpr int kTodoCheckTextX = 10;  // fallback "[ ]" / "[x]" X
   static constexpr int kTodoIconCX = 22;     // MDI icon centre X
+  static constexpr int kTodoSpinnerDamageRadius = 13;
   static constexpr int kTodoTextX = 40;      // main text + due-date X
   static constexpr int kTodoDueMaxW = 64;    // width reserved for due date column
+
+  UiDirtyRect checkbox_damage_at_y_(int y) const {
+    const UiRect r = screen_rect(rect_);
+    return UiDirtyRect{r.x + kTodoIconCX - kTodoSpinnerDamageRadius, y,
+                       kTodoSpinnerDamageRadius * 2 + 1, row_height_};
+  }
+
+  void mark_checkbox_dirty_(int index) const {
+    const UiRect r = screen_rect(rect_);
+    const int y = r.y + kTopPadding + index * row_height_ -
+                  (scrollable_ ? scroll_offset_ : 0);
+    UiInvalidation::request_rect(checkbox_damage_at_y_(y), "todo:checkbox");
+  }
 
   static void trim_inplace(std::string &value) {
     std::size_t f = value.find_first_not_of(" \t\r\n");

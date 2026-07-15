@@ -78,9 +78,7 @@ class TabContainerWidget : public Widget {
           continue;
         }
         w->set_render_offset_y(render_offset_y_);
-        const auto b = w->bounds();
-        if (!UiInvalidation::needs_redraw_in(b.x, b.y, b.w, b.h)) continue;
-        draw_child_(it, state, *w);
+        draw_child_dirty_(it, state, *w);
       }
     };
     draw_children_pass(true);
@@ -206,6 +204,18 @@ class TabContainerWidget : public Widget {
           UiRect{r.x, r.y + kTabBarHeight, r.w, r.h - kTabBarHeight});
     } else {
       widget.draw_clipped(it, state);
+    }
+  }
+
+  void draw_child_dirty_(display::Display &it, const UiState &state,
+                         Widget &widget) const {
+    if (clip_content_) {
+      const UiRect r = screen_rect(rect_);
+      widget.draw_dirty_clipped(
+          it, state,
+          UiRect{r.x, r.y + kTabBarHeight, r.w, r.h - kTabBarHeight});
+    } else {
+      widget.draw_dirty_clipped(it, state);
     }
   }
 

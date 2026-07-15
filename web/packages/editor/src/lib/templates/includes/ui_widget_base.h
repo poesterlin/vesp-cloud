@@ -63,6 +63,48 @@ class Widget {
     it.end_clipping();
   }
 
+  // Draw a widget once, clipped to the union of the current damage that
+  // intersects it. This keeps small animated/state regions from repainting an
+  // entire large widget while avoiding repeated draw() calls when several
+  // dirty rectangles touch the same widget.
+  bool draw_dirty_clipped(display::Display &it, const UiState &state,
+                          const UiRect &constraint) {
+    const UiRect gate = redraw_gate_bounds();
+    const UiRect paint = paint_bounds();
+    bool found = false;
+    UiRect damage{};
+    for (int i = 0; i < UiInvalidation::dirty_count(); i++) {
+      const auto &dr = UiInvalidation::dirty_rect(i);
+      const int left = std::max(std::max(gate.x, paint.x),
+                                std::max(constraint.x, dr.x));
+      const int top = std::max(std::max(gate.y, paint.y),
+                               std::max(constraint.y, dr.y));
+      const int right = std::min(std::min(gate.x + gate.w, paint.x + paint.w),
+                                 std::min(constraint.x + constraint.w, dr.x + dr.w));
+      const int bottom = std::min(std::min(gate.y + gate.h, paint.y + paint.h),
+                                  std::min(constraint.y + constraint.h, dr.y + dr.h));
+      if (right <= left || bottom <= top) continue;
+      if (!found) {
+        damage = UiRect{left, top, right - left, bottom - top};
+        found = true;
+      } else {
+        const int union_left = std::min(damage.x, left);
+        const int union_top = std::min(damage.y, top);
+        const int union_right = std::max(damage.x + damage.w, right);
+        const int union_bottom = std::max(damage.y + damage.h, bottom);
+        damage = UiRect{union_left, union_top,
+                        union_right - union_left, union_bottom - union_top};
+      }
+    }
+    if (!found) return false;
+    draw_clipped(it, state, damage);
+    return true;
+  }
+
+  bool draw_dirty_clipped(display::Display &it, const UiState &state) {
+    return draw_dirty_clipped(it, state, paint_bounds());
+  }
+
   void set_render_offset_y(int y) { render_offset_y_ = y; }
   void set_scroll_exempt(bool exempt) { scroll_exempt_ = exempt; }
   bool scroll_exempt() const { return scroll_exempt_; }
@@ -158,4 +200,3 @@ class Widget {
     return current;
   }
 };
-

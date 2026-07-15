@@ -41,8 +41,20 @@ describe("dirty-region architecture", () => {
   test("todo loading spinner carries row damage into following frames", async () => {
     const todo = await includeSource("ui_widget_todo.h");
 
-    expect(todo).toContain('UiDirtyRect{r.x, y, r.w, row_height_}, "todo:spinner"');
+    expect(todo).toContain('checkbox_damage_at_y_(y), "todo:spinner"');
+    expect(todo).toContain('"todo:checkbox"');
+    expect(todo).toContain('"todo:spinner"');
     expect(todo).toContain("UiInvalidation::request_continue(");
+  });
+
+  test("partial widget redraws are clipped to current damage", async () => {
+    const widgets = await includeSource("ui_widget_base.h");
+    const screens = await includeSource("ui_screen_base.h");
+    const tabs = await includeSource("ui_tab_container.h");
+
+    expect(widgets).toContain("bool draw_dirty_clipped(");
+    expect(screens).toContain("w->draw_dirty_clipped(it, state)");
+    expect(tabs).toContain("widget.draw_dirty_clipped(it, state)");
   });
 
   test("multi-frame continuation is paced outside the display callback", async () => {

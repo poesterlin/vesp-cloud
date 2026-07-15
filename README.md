@@ -11,6 +11,11 @@ Visual editor and firmware generator for ESPHome touch displays.
 vESP.cloud lets you design dashboards visually, generate production ESPHome firmware,
 and integrate with Home Assistant for real-world smart home control.
 
+## Documentation
+
+Setup guides, hardware details, and usage documentation are available at
+[docs.vesp.cloud](https://docs.vesp.cloud/).
+
 ## Hardware Support
 
 vESP.cloud currently supports only the **Guition ESP32-S3-4848S040** display module:

@@ -115,25 +115,23 @@
           )}
       />
     </div>
-    <div class="field-row">
-      <div class="field">
-        <span class="field-label">Min °C</span>
-        <input
-          type="number"
-          value={component.minTemp ?? 10}
-          oninput={(e) =>
-            updateProperty("minTemp", parseFloat(e.currentTarget.value) || 10)}
-        />
-      </div>
-      <div class="field">
-        <span class="field-label">Max °C</span>
-        <input
-          type="number"
-          value={component.maxTemp ?? 30}
-          oninput={(e) =>
-            updateProperty("maxTemp", parseFloat(e.currentTarget.value) || 30)}
-        />
-      </div>
+    <div class="field">
+      <span class="field-label">Min °C</span>
+      <input
+        type="number"
+        value={component.minTemp ?? 10}
+        oninput={(e) =>
+          updateProperty("minTemp", parseFloat(e.currentTarget.value) || 10)}
+      />
+    </div>
+    <div class="field">
+      <span class="field-label">Max °C</span>
+      <input
+        type="number"
+        value={component.maxTemp ?? 30}
+        oninput={(e) =>
+          updateProperty("maxTemp", parseFloat(e.currentTarget.value) || 30)}
+      />
     </div>
     <div class="field">
       <span class="field-label">On Mode</span>

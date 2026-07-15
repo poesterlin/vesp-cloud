@@ -17,7 +17,6 @@
   const rowHeight = $derived(Math.max(20, Math.min(80, component.rowHeight ?? 30)));
   const isScrollable = $derived(component.scrollable === true);
   const isCheckable = $derived(component.checkable === true);
-  let toggledByIndex = $state<Record<number, boolean>>({});
 
   const width = $derived(component.size?.width ?? 200);
   const height = $derived(component.size?.height ?? 160);
@@ -37,16 +36,10 @@
   );
   const containerBg = "rgb(10, 12, 18)";
   const whiteColor = "rgb(230, 240, 250)";
-  const grayColor = "rgb(120, 130, 145)";
   const redColor = "rgb(255, 55, 55)";
-  const greenColor = "rgb(0, 220, 120)";
 
   const iconPathIncomplete = $derived.by(() => {
     const path = (mdiIcons as Record<string, unknown>).mdiCheckboxBlankOutline;
-    return typeof path === "string" ? path : null;
-  });
-  const iconPathComplete = $derived.by(() => {
-    const path = (mdiIcons as Record<string, unknown>).mdiCheckboxMarked;
     return typeof path === "string" ? path : null;
   });
 
@@ -78,31 +71,9 @@
     return previewRows.slice(0, maxItems);
   });
 
-  function toggleChecked(index: number) {
-    if (!isCheckable) return;
-    const current = toggledByIndex[index] ?? renderedRows[index]?.completed ?? false;
-    toggledByIndex = { ...toggledByIndex, [index]: !current };
-  }
-
-  function isCompleted(index: number, completed: boolean): boolean {
-    return toggledByIndex[index] ?? completed;
-  }
-
-  function handleRowKeydown(event: KeyboardEvent, index: number) {
-    if (!isCheckable) return;
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      toggleChecked(index);
-    }
-  }
 
   function clippedPolygonPoints(w: number, h: number, c: number): string {
     return `${c},0 ${w - c},0 ${w},${c} ${w},${h - c} ${w - c},${h} ${c},${h} 0,${h - c} 0,${c}`;
-  }
-
-  function iconPathForRow(index: number, row: { completed: boolean }): string | null {
-    if (isCompleted(index, row.completed)) return iconPathComplete;
-    return iconPathIncomplete;
   }
 </script>
 
@@ -132,23 +103,19 @@
     <div class="todo-rows" style:padding-top="8px" style:padding-left="8px" style:padding-right="8px">
       {#each renderedRows as row, index (row.summary + index)}
         {#if isCheckable}
-          {@const completed = isCompleted(index, row.completed)}
-          {@const showMDI = iconPathIncomplete !== null && iconPathComplete !== null}
+          {@const showMDI = iconPathIncomplete !== null}
           <button
             type="button"
             class="todo-row checkable"
             style:height="{rowHeight}px"
-            onclick={() => toggleChecked(index)}
-            onkeydown={(event) => handleRowKeydown(event, index)}
           >
-            <span class:queue-rail={isRetro} class:modern-rail={!isRetro} style:background={row.overdue ? redColor : borderDimColor}></span>
-            <span class="checkbox" style:color={completed ? greenColor : borderColor}>
+            <span class="checkbox" style:color={borderColor}>
               {#if showMDI}
                 <svg viewBox="0 0 24 24" class="checkbox-icon">
-                  <path d={completed ? iconPathComplete! : iconPathIncomplete!} fill="currentColor" />
+                  <path d={iconPathIncomplete!} fill="currentColor" />
                 </svg>
               {:else}
-                {completed ? "[x]" : "[ ]"}
+                {"[ ]"}
               {/if}
             </span>
             {#if row.due}
@@ -156,26 +123,23 @@
             {/if}
             <span
               class="summary"
-              class:completed={completed}
-              style:color={completed ? grayColor : whiteColor}
+              style:color={whiteColor}
               title={row.summary}
             >{row.summary}</span>
           </button>
         {:else}
-          {@const completed = isCompleted(index, row.completed)}
-          {@const showMDI = iconPathIncomplete !== null && iconPathComplete !== null}
+          {@const showMDI = iconPathIncomplete !== null}
           <div
             class="todo-row"
             style:height="{rowHeight}px"
           >
-            <span class:queue-rail={isRetro} class:modern-rail={!isRetro} style:background={row.overdue ? redColor : borderDimColor}></span>
-            <span class="checkbox" style:color={completed ? greenColor : borderColor}>
+            <span class="checkbox" style:color={borderColor}>
               {#if showMDI}
                 <svg viewBox="0 0 24 24" class="checkbox-icon">
-                  <path d={completed ? iconPathComplete! : iconPathIncomplete!} fill="currentColor" />
+                  <path d={iconPathIncomplete!} fill="currentColor" />
                 </svg>
               {:else}
-                {completed ? "[x]" : "[ ]"}
+                {"[ ]"}
               {/if}
             </span>
             {#if row.due}
@@ -183,8 +147,7 @@
             {/if}
             <span
               class="summary"
-              class:completed={completed}
-              style:color={completed ? grayColor : whiteColor}
+              style:color={whiteColor}
               title={row.summary}
             >{row.summary}</span>
           </div>
@@ -245,20 +208,6 @@
     border-top: 1px solid rgb(48, 54, 61);
   }
 
-  .queue-rail {
-    width: 2px;
-    height: calc(100% - 10px);
-    min-height: 3px;
-    flex: 0 0 2px;
-  }
-
-  .modern-rail {
-    width: 2px;
-    height: calc(100% - 14px);
-    min-height: 2px;
-    border-radius: 2px;
-    flex: 0 0 2px;
-  }
 
   .todo-row.checkable {
     cursor: pointer;
@@ -291,10 +240,6 @@
     text-overflow: ellipsis;
   }
 
-  .summary.completed {
-    text-decoration: line-through;
-  }
-
   .due {
     flex: 0 0 auto;
     font-family: var(--display-font, monospace);
@@ -303,9 +248,5 @@
     max-width: 92px;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-
-  .due.overdue {
-    /* color is set inline to match redColor */
   }
 </style>

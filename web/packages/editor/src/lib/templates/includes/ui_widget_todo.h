@@ -268,15 +268,20 @@ class TodoPreviewWidget : public Widget {
           int cx = r.x + kTodoIconCX;
           int cy = row_cy;
           it.line(cx, cy, cx + (int)(cosf(angle) * 8), cy + (int)(sinf(angle) * 8), border);
-        }
-
-        const Color check_color = completed ? Color(0, 220, 120) : border;
-        if (g_theme.icon.font != nullptr &&
-              incomplete_icon_ != nullptr && complete_icon_ != nullptr &&
-              incomplete_icon_[0] != '\0' && complete_icon_[0] != '\0') {
-          it.printf(r.x + kTodoIconCX, row_cy, g_theme.icon.font,
-                    check_color, TextAlign::CENTER,
-                    "%s", completed ? complete_icon_ : incomplete_icon_);
+          // Keep this row damaged until loading ends so the time-based angle
+          // is painted on every display frame. request_continue() targets the
+          // next damage set when called from draw().
+          UiInvalidation::request_continue(
+              UiDirtyRect{r.x, y, r.w, row_height_}, "todo:spinner");
+        } else {
+          const Color check_color = completed ? Color(0, 220, 120) : border;
+          if (g_theme.icon.font != nullptr &&
+                incomplete_icon_ != nullptr && complete_icon_ != nullptr &&
+                incomplete_icon_[0] != '\0' && complete_icon_[0] != '\0') {
+            it.printf(r.x + kTodoIconCX, row_cy, g_theme.icon.font,
+                      check_color, TextAlign::CENTER,
+                      "%s", completed ? complete_icon_ : incomplete_icon_);
+          }
         }
       }
 

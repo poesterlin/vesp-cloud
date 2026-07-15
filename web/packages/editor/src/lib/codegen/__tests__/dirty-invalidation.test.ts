@@ -38,6 +38,13 @@ describe("dirty-region architecture", () => {
     expect(`${widgets}${screens}${detail}`).not.toContain("request_partial()");
   });
 
+  test("todo loading spinner carries row damage into following frames", async () => {
+    const todo = await includeSource("ui_widget_todo.h");
+
+    expect(todo).toContain('UiDirtyRect{r.x, y, r.w, row_height_}, "todo:spinner"');
+    expect(todo).toContain("UiInvalidation::request_continue(");
+  });
+
   test("widgets draw through the paint-bounds clipping contract", async () => {
     const widgets = await includeSource("ui_widget_base.h");
     const screens = await includeSource("ui_screen_base.h");

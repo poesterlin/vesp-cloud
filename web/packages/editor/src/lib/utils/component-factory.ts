@@ -23,7 +23,7 @@ export function createComponent(type: string, x: number, y: number): Component {
       return {
         ...base,
         type: "digital_clock",
-        size: { width: 220, height: 80 },
+        size: { width: 260, height: 110 },
         color: { r: 0, g: 255, b: 255 },
       } as Component;
 

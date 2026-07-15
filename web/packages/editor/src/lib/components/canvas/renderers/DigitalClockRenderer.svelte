@@ -42,7 +42,9 @@
 <style>
   .digital-clock {
     width: 100%;
+    min-width: 200px;
     height: 100%;
+    min-height: 110px;
     position: relative;
   }
 

@@ -4,13 +4,18 @@
  * Stores delta snapshots for efficient undo/redo operations.
  */
 
-import type { Project } from "@vesp-cloud/schema";
 import { projectStore } from "./project.svelte.js";
+
+interface HistoryView {
+  mode: "dashboard" | "detail";
+  id: string | null;
+}
 
 interface HistoryEntry {
   snapshot: string; // JSON serialized project state
   description: string;
   timestamp: number;
+  view: HistoryView;
 }
 
 const MAX_HISTORY_SIZE = 50;
@@ -22,6 +27,24 @@ function createHistoryStore() {
   // Derived
   const canUndo = $derived(undoStack.length > 0);
   const canRedo = $derived(redoStack.length > 0);
+
+  function currentView(): HistoryView {
+    return projectStore.viewMode === "dashboard"
+      ? { mode: "dashboard", id: projectStore.currentDashboardPageId }
+      : { mode: "detail", id: projectStore.currentDetailViewId };
+  }
+
+  function restoreEntry(entry: HistoryEntry) {
+    if (!projectStore.importJSON(entry.snapshot)) return;
+
+    // Project imports default to the main page. History restores instead return
+    // to the surface where the recorded edit happened, provided it still exists.
+    if (entry.view.mode === "dashboard" && entry.view.id) {
+      projectStore.setDashboardPage(entry.view.id);
+    } else if (entry.view.mode === "detail" && entry.view.id) {
+      projectStore.setDetailView(entry.view.id);
+    }
+  }
 
   return {
     // Getters
@@ -47,6 +70,7 @@ function createHistoryStore() {
           snapshot,
           description,
           timestamp: Date.now(),
+          view: currentView(),
         },
       ];
       // Clear redo stack when new action is taken
@@ -67,6 +91,7 @@ function createHistoryStore() {
           snapshot: currentSnapshot,
           description: lastEntry.description,
           timestamp: Date.now(),
+          view: lastEntry.view,
         },
       ];
 
@@ -75,8 +100,7 @@ function createHistoryStore() {
       const entry = newUndoStack.pop()!;
       undoStack = newUndoStack;
 
-      const project = JSON.parse(entry.snapshot) as Project;
-      projectStore.importJSON(entry.snapshot);
+      restoreEntry(entry);
     },
 
     // Redo last undone action
@@ -93,6 +117,7 @@ function createHistoryStore() {
           snapshot: currentSnapshot,
           description: lastEntry.description,
           timestamp: Date.now(),
+          view: lastEntry.view,
         },
       ];
 
@@ -101,8 +126,7 @@ function createHistoryStore() {
       const entry = newRedoStack.pop()!;
       redoStack = newRedoStack;
 
-      const project = JSON.parse(entry.snapshot) as Project;
-      projectStore.importJSON(entry.snapshot);
+      restoreEntry(entry);
     },
 
     // Clear all history

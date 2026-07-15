@@ -166,7 +166,7 @@
   }
 
   .button-label.inline {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     text-align: left;
     font-size: var(--display-text-small, 18px);
   }

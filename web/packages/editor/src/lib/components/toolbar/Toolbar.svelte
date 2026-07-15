@@ -60,6 +60,12 @@
         <span>Debug</span>
       </button>
     {/if}
+    <a href="https://docs.vesp.cloud" target="_blank" title="Documentation" class="settings-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" class="icon">
+        <path d={mdiIcons.mdiBookOpenPageVariant} />
+      </svg>
+      <span>Docs</span>
+    </a>
     <div class="separator"></div>
     <div class="zoom-control" title="Canvas Zoom">
       <svg width="14" height="14" viewBox="0 0 24 24" class="icon">
@@ -156,6 +162,29 @@
     justify-content: center;
     gap: 8px;
     line-height: 1;
+    font-size: 12px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .settings-btn:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+  }
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-size: 12px;
+    padding: var(--spacing-xs) var(--spacing-sm);
   }
 
   .projects-link:hover {

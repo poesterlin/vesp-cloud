@@ -175,6 +175,12 @@
           </svg>
           Feedback
         </a>
+        <a href="https://docs.vesp.cloud" target="_blank" class="user-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" class="icon">
+            <path d={mdiIcons.mdiBookOpenPageVariant} />
+          </svg>
+          Docs
+        </a>
         <form action="/logout" method="post" class="logout-form">
           <button type="submit" class="user-link logout-link">Logout</button>
         </form>

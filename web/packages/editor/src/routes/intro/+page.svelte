@@ -172,6 +172,12 @@
           </svg>
           Dashboard
         </a>
+        <a href="https://docs.vesp.cloud" target="_blank" class="user-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" class="icon">
+            <path d={mdiIcons.mdiBookOpenPageVariant} />
+          </svg>
+          Docs
+        </a>
         <form action="/logout" method="post" class="logout-form">
           <button type="submit" class="user-link logout-link">Logout</button>
         </form>
@@ -182,6 +188,7 @@
       <div class="brand-copy">
         <h1>All the control<br /><span>Affordable hardware</span></h1>
         <p>Design a Home Assistant display that runs directly on an ESP32.</p>
+        <p class="docs-link-line"><a href="https://docs.vesp.cloud" target="_blank" class="docs-inline-link">Read the docs</a></p>
       </div>
     </div>
   </header>
@@ -561,6 +568,17 @@
     font-size: 1.25rem;
     font-weight: 400;
     opacity: 0.8;
+  }
+
+  .docs-inline-link {
+    color: #53c4ca;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .docs-inline-link:hover {
+    text-decoration: underline;
   }
 
   .brand-lockup {

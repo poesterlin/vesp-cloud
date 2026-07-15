@@ -660,7 +660,6 @@
     display: flex;
     flex-direction: column;
     background: #202526;
-    border: 1px solid #353c3e;
     border-top: 3px solid #35c8d0;
     border-radius: 0.65rem;
     text-decoration: none;
@@ -669,6 +668,7 @@
     min-height: 190px;
     overflow: hidden;
     box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+    corner-shape: bevel;
   }
 
   .project-card::before {

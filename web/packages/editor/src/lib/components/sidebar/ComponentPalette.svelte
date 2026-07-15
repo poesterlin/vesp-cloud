@@ -48,12 +48,12 @@
       icon: mdiStarOutline,
       description: "Render Material Design Icons with custom color and size",
     },
-    {
-      type: "range_slider",
-      label: "Slider",
-      icon: mdiTuneVertical,
-      description: "Slider to control numbers in a range like media volume",
-    },
+    // {
+    //   type: "range_slider",
+    //   label: "Slider",
+    //   icon: mdiTuneVertical,
+    //   description: "Slider to control numbers in a range like media volume",
+    // },
     {
       type: "rectangle",
       label: "Rectangle",

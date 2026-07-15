@@ -4,7 +4,15 @@
 
   let { form } = $props();
 
+  let password = $state('');
+
   const redirectParam = $derived(page.url.searchParams.get('redirect') || '');
+  const validationErrors = $derived((form?.errors ?? []) as Array<{ path?: PropertyKey[]; message: string }>);
+  const hasValidationErrors = $derived(validationErrors.length > 0);
+
+  function fieldError(field: string): string | undefined {
+    return validationErrors.find((issue) => issue.path?.[0] === field)?.message;
+  }
 </script>
 
 <svelte:head>
@@ -16,8 +24,10 @@
     <h1>Create Account</h1>
     <p class="subtitle">vESP.cloud</p>
 
-    {#if form?.message}
-      <div class="error-message">{form.message}</div>
+    {#if form?.message && !hasValidationErrors}
+      <div class="error-message" role="alert">{form.message}</div>
+    {:else if hasValidationErrors}
+      <div class="error-message" role="alert">Please correct the highlighted fields.</div>
     {/if}
 
     <form method="POST" action="?/register" use:enhance>
@@ -25,17 +35,64 @@
 
       <div class="field">
         <label for="username">Username</label>
-        <input id="username" name="username" type="text" required />
+        <input
+          id="username"
+          name="username"
+          type="text"
+          required
+          minlength="3"
+          maxlength="31"
+          autocomplete="username"
+          aria-invalid={fieldError('username') ? 'true' : undefined}
+          aria-describedby={fieldError('username') ? 'username-error' : 'username-help'}
+        />
+        {#if fieldError('username')}
+          <p id="username-error" class="field-error">{fieldError('username')}</p>
+        {:else}
+          <p id="username-help" class="field-help">3–31 characters</p>
+        {/if}
       </div>
 
       <div class="field">
         <label for="email">Email</label>
-        <input id="email" name="email" type="email" required autocomplete="email" />
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          autocomplete="email"
+          aria-invalid={fieldError('email') ? 'true' : undefined}
+          aria-describedby={fieldError('email') ? 'email-error' : undefined}
+        />
+        {#if fieldError('email')}
+          <p id="email-error" class="field-error">{fieldError('email')}</p>
+        {/if}
       </div>
 
       <div class="field">
         <label for="password">Password</label>
-        <input id="password" name="password" type="password" required />
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          minlength="8"
+          maxlength="255"
+          autocomplete="new-password"
+          bind:value={password}
+          aria-invalid={fieldError('password') ? 'true' : undefined}
+          aria-describedby={fieldError('password')
+            ? 'password-requirements password-error'
+            : 'password-requirements'}
+        />
+        {#if fieldError('password')}
+          <p id="password-error" class="field-error">{fieldError('password')}</p>
+        {/if}
+        <ul id="password-requirements" class="requirements" aria-label="Password requirements">
+          <li class:met={password.length >= 8}>At least 8 characters</li>
+          <li class:met={/[a-zA-Z]/.test(password)}>At least one letter</li>
+          <li class:met={/[0-9]/.test(password)}>At least one number</li>
+        </ul>
       </div>
 
       <button type="submit" class="primary">Create Account</button>
@@ -121,6 +178,45 @@
     border-color: var(--color-accent);
     outline: none;
     box-shadow: 0 0 0 3px rgba(74, 158, 254, 0.1);
+  }
+
+  .field input[aria-invalid="true"] {
+    border-color: #ff5252;
+  }
+
+  .field-help,
+  .field-error {
+    margin: 0;
+    font-size: 0.8rem;
+  }
+
+  .field-help {
+    color: var(--color-text-muted);
+  }
+
+  .field-error {
+    color: #ff7373;
+  }
+
+  .requirements {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding-left: 1.25rem;
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+  }
+
+  .requirements li::marker {
+    content: '○  ';
+  }
+
+  .requirements li.met {
+    color: #63d98b;
+  }
+
+  .requirements li.met::marker {
+    content: '✓  ';
   }
 
   button.primary {

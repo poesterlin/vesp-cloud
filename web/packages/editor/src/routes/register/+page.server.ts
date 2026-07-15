@@ -33,9 +33,15 @@ export const load: PageServerLoad = async (event) => {
 export const actions: Actions = {
   register: validateForm(
     z.object({
-      username: z.string().trim().min(3).max(31),
-      email: z.email().trim().transform((value) => value.toLowerCase()),
-      password: z.string().min(8).max(255).regex(/[a-zA-Z]/).regex(/[0-9]/),
+      username: z.string().trim()
+        .min(3, 'Username must be at least 3 characters')
+        .max(31, 'Username must be 31 characters or fewer'),
+      email: z.email('Enter a valid email address').trim().transform((value) => value.toLowerCase()),
+      password: z.string()
+        .min(8, 'Password must be at least 8 characters')
+        .max(255, 'Password must be 255 characters or fewer')
+        .regex(/[a-zA-Z]/, 'Password must contain at least one letter')
+        .regex(/[0-9]/, 'Password must contain at least one number'),
       redirectTo: z.string().optional().nullable(),
     }),
     async (event, form) => {
@@ -91,10 +97,16 @@ export const actions: Actions = {
         }
       } catch (e) {
         if (isUniqueConstraintError(e, 'user_username_unique')) {
-          return fail(409, { message: 'Username already taken' });
+          return fail(409, {
+            errors: [{ path: ['username'], message: 'Username is already taken' }],
+            message: 'Please correct the highlighted field',
+          });
         }
         if (isUniqueConstraintError(e, 'user_email_unique')) {
-          return fail(409, { message: 'Email already in use' });
+          return fail(409, {
+            errors: [{ path: ['email'], message: 'An account already uses this email address' }],
+            message: 'Please correct the highlighted field',
+          });
         }
         console.error('Registration error:', e);
         return fail(500, { message: 'An error occurred during registration' });

@@ -9,7 +9,9 @@
       "import": "./index.js"
     },
     "./logo-1024x1024.jpg": "./imgs/logo-1024x1024.jpg",
+    "./logo-1024x1024.webp": "./imgs/logo-1024x1024.webp",
     "./logo-256x256.jpg": "./imgs/logo-256x256.jpg",
+    "./logo-256x256.webp": "./imgs/logo-256x256.webp",
     "./imgs/*": "./imgs/*",
     "./package.json": "./package.json"
   }

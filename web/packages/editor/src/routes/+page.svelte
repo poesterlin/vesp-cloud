@@ -10,7 +10,7 @@
   import OnboardingCard from "$lib/components/OnboardingCard.svelte";
   import CreateProjectModal from "$lib/components/CreateProjectModal.svelte";
   import type { CreateProjectConfig } from "$lib/components/CreateProjectModal.svelte";
-  import logo1024 from "@vesp-cloud/assets/logo-1024x1024.jpg";
+  import logo1024 from "@vesp-cloud/assets/logo-1024x1024.webp";
 
   let { data } = $props();
   type ProjectSummary = {

@@ -6,7 +6,7 @@ hero:
   text: Home Display Documentation
   tagline: Design a wall-mounted Home Assistant control panel in your browser.
   image:
-    src: /logo-1024x1024.jpg
+    src: /logo-1024x1024.webp
     alt: VESP logo
   actions:
     - theme: brand

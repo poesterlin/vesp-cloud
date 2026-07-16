@@ -3,7 +3,7 @@
   import { cubicOut } from "svelte/easing";
   import { onMount, tick } from "svelte";
   import * as mdiIcons from "@mdi/js";
-  import logo1024 from "@vesp-cloud/assets/logo-1024x1024.jpg";
+  import logo1024 from "@vesp-cloud/assets/logo-1024x1024.webp";
   import homeEditor from "@vesp-cloud/assets/imgs/examples/home-editor.webp";
   import homeDisplay from "@vesp-cloud/assets/imgs/examples/home-display.png";
   import homeDisplayModern from "@vesp-cloud/assets/imgs/examples/home-display-modern.png";

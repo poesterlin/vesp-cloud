@@ -8,7 +8,7 @@ export default defineConfig({
     publicDir: '../assets/imgs'
   },
   themeConfig: {
-    logo: '/logo-256x256.jpg',
+    logo: '/logo-256x256.webp',
     nav: [
       { text: 'Getting Started', link: '/getting-started/' },
       { text: 'Concepts', link: '/concepts/' },

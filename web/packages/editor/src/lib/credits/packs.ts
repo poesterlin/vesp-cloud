@@ -7,9 +7,9 @@ const TEST_PRICE_IDS = {
 } as const;
 
 const LIVE_PRICE_IDS = {
-  starter: "prod_UdRobG0ylzovgG",
-  builder: "prod_UdRqbAJtKbP0di",
-  pro: "prod_UdRrpDxVvYhDZ2",
+  starter: "price_1Ttm1AA9sbShy9bBXHpGmL0p",
+  builder: "price_1Ttm18A9sbShy9bBsPJzsNhd",
+  pro: "price_1Ttm16A9sbShy9bBl8Ovd7j5",
 } as const;
 
 const priceIds = env.STRIPE_SECRET_KEY?.startsWith("rk_live_")

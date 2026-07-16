@@ -39,11 +39,11 @@ if ! git diff --quiet; then
       STASHED=true
       ;;
     [nN]*)
-      echo "Continuing without stashing.  Local changes may be overwritten."
+      echo "Continuing without stashing. Tracked local changes will be discarded if remote changes are deployed."
       STASHED=false
       ;;
     *)
-      echo "Invalid input.  Continuing without stashing.  Local changes may be overwritten."
+      echo "Invalid input. Continuing without stashing. Tracked local changes will be discarded if remote changes are deployed."
       STASHED=false
       ;;
   esac
@@ -57,6 +57,8 @@ if ! git diff --quiet HEAD origin/"$BRANCH"; then
   echo "Remote changes detected, updating..."
   git reset --hard origin/"$BRANCH" || handle_error "Failed to reset to remote."
   docker compose up -d --build || handle_error "Failed to run docker compose up."
+  echo "Removing superseded Docker images..."
+  docker image prune -f || echo "Warning: Failed to prune Docker images."
 else
   echo "No remote changes detected, skipping update."
 fi

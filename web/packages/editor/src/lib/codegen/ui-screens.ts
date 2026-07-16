@@ -666,6 +666,7 @@ function generateComponentSetup(
       const callback = emitTapAction(c.onTap ?? c.pressAction);
       const bounds = rect(c.position.x + offsetX, c.position.y + offsetY, c.size?.width ?? 80, c.size?.height ?? 36);
       let out = `${indent}auto *${idSafe} = ${factory('ButtonWidget', `${bounds}, "${escapeCString(label)}", ${callback || '[](){}'}, g_theme.primary`)};${visLine}${dirtyLine}\n`;
+      if (c.confirmBeforeAction) out += `${indent}${idSafe}->set_confirm_before_action(true);\n`;
       out += emitButtonBorderColor(c, idSafe, indent);
       const iconGlyph = c.icon ? getMdiUtf8CEscape(c.icon) : null;
       if (iconGlyph) {
@@ -989,11 +990,12 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
       const callback = emitTapAction(c.onTap ?? c.pressAction);
       const wargs = `${rect(x, y, w, h)}, "${escapeCString(label)}", ${callback || '[](){}'}, g_theme.primary`;
       const iconGlyph = c.icon ? getMdiUtf8CEscape(c.icon) : null;
-      if (visibilityExpr || iconGlyph || dirtyBoundsExpr || c.borderColor) {
+      if (visibilityExpr || iconGlyph || dirtyBoundsExpr || c.borderColor || c.confirmBeforeAction) {
         let out = `${indent}auto *${idSafe} = ${factory('ButtonWidget', wargs)};`;
         if (visibilityExpr) out += `\n${indent}${idSafe}->set_visibility_condition(${visibilityExpr});`;
         if (dirtyBoundsExpr) out += `\n${indent}${idSafe}->set_dirty_bounds(${dirtyBoundsExpr});`;
         if (iconGlyph) out += `\n${indent}${idSafe}->set_icon("${iconGlyph}", &g_theme.icon);`;
+        if (c.confirmBeforeAction) out += `\n${indent}${idSafe}->set_confirm_before_action(true);`;
         out += emitButtonBorderColor(c, idSafe, indent);
         return `${out}\n`;
       }
@@ -1310,6 +1312,9 @@ ${screenCtor}
 
   bool handle_touch(const TouchEvent &event, uint32_t now, const UiState &state) {
     (void)state;
+    if (g_confirmation_popup.visible()) {
+      return g_confirmation_popup.handle_touch(event, now);
+    }
 ${overlayPreTouch}    if (current_id_ == UiScreenId::Home &&
         event.type == TouchType::Up &&
         abs(event.dx) > 60 && abs(event.dx) > abs(event.dy)) {
@@ -1328,6 +1333,7 @@ ${overlayPreTouch}    if (current_id_ == UiScreenId::Home &&
 
   void draw(display::Display &it, const UiState &state) {
     current_->draw(it, state);${overlayPostDraw}
+    if (g_confirmation_popup.visible()) g_confirmation_popup.draw(it);
   }
 
   Screen* current() { return current_; }

@@ -439,6 +439,10 @@
               "$ref": "#/definitions/Color",
               "description": "Text/icon color when button is in checked/active state"
             },
+            "confirmBeforeAction": {
+              "type": "boolean",
+              "description": "Show a confirmation popup before executing the button action"
+            },
             "pressAction": { "$ref": "#/definitions/ActionBinding" },
             "holdAction": { "$ref": "#/definitions/ActionBinding" }
           },

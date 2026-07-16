@@ -1239,6 +1239,7 @@ ${bindings ? bindings + '\n' : ''}${notificationBindings ? notificationBindings 
     - includes/ui_widget_label.h
     - includes/ui_widget_icon.h
     - includes/ui_widget_digital_clock.h
+    - includes/ui_confirmation_popup.h
     - includes/ui_widget_button.h
     - includes/ui_widget_image_toggle.h
     - includes/ui_widget_todo.h

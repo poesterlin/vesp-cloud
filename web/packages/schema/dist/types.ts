@@ -50,6 +50,10 @@ export type ButtonComponent = BaseComponent & {
   borderColor?: Color;
   checkedBackgroundColor?: Color1;
   checkedForegroundColor?: Color2;
+  /**
+   * Show a confirmation popup before executing the button action
+   */
+  confirmBeforeAction?: boolean;
   pressAction?: ActionBinding;
   holdAction?: ActionBinding;
 };

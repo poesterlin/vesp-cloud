@@ -32,6 +32,7 @@ export function createComponent(type: string, x: number, y: number): Component {
         ...base,
         type: "button",
         label: "Button",
+        confirmBeforeAction: false,
         size: { width: 80, height: 44 },
       } as Component;
 

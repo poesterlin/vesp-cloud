@@ -116,6 +116,14 @@
         onSelect={(icon) => updateProperty("icon", icon)}
       />
     </div>
+    <div class="field checkbox-field">
+      <span class="field-label">Require confirmation</span>
+      <input
+        type="checkbox"
+        checked={component.confirmBeforeAction ?? false}
+        onchange={(e) => updateProperty("confirmBeforeAction", e.currentTarget.checked)}
+      />
+    </div>
   </div>
   <div class="property-section">
     <label class="section-label">Styling</label>

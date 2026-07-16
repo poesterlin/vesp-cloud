@@ -5,6 +5,7 @@
 #include "ui_widget_label.h"
 #include "ui_widget_icon.h"
 #include "ui_widget_digital_clock.h"
+#include "ui_confirmation_popup.h"
 #include "ui_widget_button.h"
 #include "ui_widget_image_toggle.h"
 #include "ui_widget_todo.h"

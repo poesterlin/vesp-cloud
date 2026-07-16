@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui_widget_base.h"
+#include "ui_confirmation_popup.h"
 
 class ButtonWidget : public Widget {
  public:
@@ -11,6 +12,8 @@ class ButtonWidget : public Widget {
       : rect_(rect), label_(label), callback_(callback), style_(&style) {}
 
   UiRect bounds() const override { return screen_rect(rect_); }
+
+  void set_confirm_before_action(bool enabled) { confirm_before_action_ = enabled; }
 
   // Configure an optional icon glyph drawn above the label using the
   // provided text style (typically `g_theme.icon` so the MDI font is used).
@@ -44,6 +47,15 @@ class ButtonWidget : public Widget {
     }
 
     if (!hit_test(event.x, event.y)) return false;
+    if (confirm_before_action_) {
+      g_confirmation_popup.show(label_, [this]() { this->execute_action_(millis()); });
+      return true;
+    }
+    execute_action_(now);
+    return true;
+  }
+
+  void execute_action_(uint32_t now) {
     loading_ = true;
     loading_start_ms_ = now;
     mark_dirty();
@@ -58,7 +70,6 @@ class ButtonWidget : public Widget {
           mark_dirty();
           UiRedraw::trigger_display_update();
         });
-    return true;
   }
 
   void draw(display::Display &it, const UiState &state) override {
@@ -185,6 +196,7 @@ class ButtonWidget : public Widget {
   const Theme::TextStyle *icon_style_ = nullptr;
   Color border_color_override_{0, 0, 0};
   bool has_border_color_override_ = false;
+  bool confirm_before_action_ = false;
   bool loading_ = false;
   uint32_t loading_start_ms_ = 0;
   uint32_t loading_timeout_ms_ = 350;

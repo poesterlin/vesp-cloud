@@ -13,9 +13,23 @@ export const usersTable = pgTable('user', {
   lastLogin: timestamp('last_login', { withTimezone: true, mode: 'date' }),
   failedLoginAttempts: integer('failed_login_attempts').notNull().default(0),
   lockedUntil: timestamp('locked_until', { withTimezone: true, mode: 'date' }),
+  emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true, mode: 'date' }),
 });
 
 export type User = typeof usersTable.$inferSelect;
+
+// ── Email Verification Tokens ──────────────────────────────────────────
+export const emailVerificationTokens = pgTable('email_verification_token', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => usersTable.id, fullCascade),
+  email: text('email').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+});
+
+export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;
 
 // ── Sessions ───────────────────────────────────────────────────────────────
 export const sessionTable = pgTable('session', {

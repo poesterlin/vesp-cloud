@@ -41,6 +41,9 @@ export async function sendEmail(options: {
 		html: options.html,
 		text: options.text,
 	});
+	if (result.error) {
+		throw new Error(`Email delivery failed: ${result.error.message}`);
+	}
 
 	return { sent: true as const, skipped: false as const, id: result.data?.id ?? null };
 }

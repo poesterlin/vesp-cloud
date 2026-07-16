@@ -47,7 +47,12 @@
         <div>
           <div class="eyebrow">Your Account</div>
           <h1>{data.user?.username}</h1>
-          <p>{data.user?.email ?? "No email on file"}</p>
+          <div class="email-summary">
+            <p>{data.user?.email ?? "No email on file"}</p>
+            <span class:verified={Boolean(data.user?.emailVerifiedAt)} class="verification-badge">
+              {data.user?.emailVerifiedAt ? "Verified" : "Not verified"}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -61,6 +66,42 @@
           <span class="meta-value">{lastLogin}</span>
         </div>
       </div>
+    </section>
+
+    <section class="panel">
+      <h2>Email address</h2>
+      <p class="panel-copy">Update your account email or optionally verify the current address.</p>
+
+      {#if form?.emailError || form?.verificationError}
+        <div class="error-box">{form.emailError ?? form.verificationError}</div>
+      {/if}
+      {#if form?.emailMessage || form?.verificationMessage}
+        <div class="success-box">{form.emailMessage ?? form.verificationMessage}</div>
+      {/if}
+
+      <form method="POST" action="?/updateEmail" class="email-form">
+        <label for="email">Email address</label>
+        <div class="email-row">
+          <input
+            id="email"
+            name="email"
+            type="email"
+            value={data.user?.email ?? ""}
+            required
+            autocomplete="email"
+          />
+          <button type="submit" class="secondary-btn">Update email</button>
+        </div>
+      </form>
+
+      {#if !data.user?.emailVerifiedAt}
+        <form method="POST" action="?/requestEmailVerification" class="verification-form">
+          <button type="submit" class="primary-btn">Send verification email</button>
+          <span>Optional; the link expires after 10 minutes.</span>
+        </form>
+      {:else}
+        <p class="verified-copy">This address has been verified.</p>
+      {/if}
     </section>
 
     <section class="panel">
@@ -221,6 +262,27 @@
     color: var(--color-text-secondary);
   }
 
+  .email-summary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .verification-badge {
+    padding: 0.18rem 0.45rem;
+    border-radius: 999px;
+    color: #ffb3b3;
+    background: rgba(244, 67, 54, 0.14);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .verification-badge.verified {
+    color: #7ee2a8;
+    background: rgba(46, 204, 113, 0.14);
+  }
+
   .meta-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -251,6 +313,82 @@
   h2 {
     font-size: 1.05rem;
     margin-bottom: 1rem;
+  }
+
+  .panel-copy {
+    margin: -0.4rem 0 1rem;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+  }
+
+  .email-form {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .email-form label {
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+  }
+
+  .email-row {
+    display: flex;
+    gap: 0.65rem;
+  }
+
+  .email-row input {
+    min-width: 0;
+    flex: 1;
+    border-radius: 0.6rem;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(0, 0, 0, 0.25);
+    color: #fff;
+    padding: 0.7rem 0.8rem;
+  }
+
+  .secondary-btn,
+  .primary-btn {
+    border-radius: 0.65rem;
+    padding: 0.7rem 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .secondary-btn {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .primary-btn {
+    border: 1px solid var(--color-accent);
+    color: #081018;
+    background: var(--color-accent);
+  }
+
+  .verification-form {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .verification-form span,
+  .verified-copy {
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+  }
+
+  .verified-copy { margin-top: 1rem; color: #7ee2a8; }
+
+  .success-box {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.65rem;
+    border: 1px solid rgba(46, 204, 113, 0.35);
+    color: #7ee2a8;
+    background: rgba(46, 204, 113, 0.12);
   }
 
   .action-list {
@@ -372,6 +510,11 @@
 
     .meta-grid {
       grid-template-columns: 1fr;
+    }
+
+    .email-row {
+      align-items: stretch;
+      flex-direction: column;
     }
   }
 </style>

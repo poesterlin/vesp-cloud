@@ -7,15 +7,11 @@ import { hash } from '@node-rs/argon2';
 import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { validateForm } from '$lib/server/form';
-import { sendEmail } from '$lib/server/email';
-import { Renderer, toPlainText } from '@vesp-cloud/email';
-import AddressValidationEmail from '@vesp-cloud/email/address-validation.svelte';
 import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { TERMS_VERSION } from '$lib/terms';
 import type { Actions, PageServerLoad } from './$types';
 
-const renderer = new Renderer();
 const requireTermsAcceptance = dev || env.APP_EDITION === 'cloud';
 
 function isUniqueConstraintError(err: unknown, constraintName: string): boolean {
@@ -88,29 +84,6 @@ export const actions: Actions = {
 
         await ensureBalanceExists(userId);
 
-        try {
-          const recipient = normalizeEmail(email);
-          const html = await renderer.render(AddressValidationEmail, {
-            props: {
-              appName: 'vESP.cloud',
-              recipient: username,
-              verificationUrl: event.url.origin,
-            },
-          });
-
-          const welcomeResult = await sendEmail({
-            to: recipient,
-            subject: 'Confirm your vESP.cloud email address',
-            html,
-            text: toPlainText(html),
-          });
-
-          if (welcomeResult.skipped) {
-            console.log('Registration email skipped because Resend is not configured');
-          }
-        } catch (error) {
-          console.error('Registration email failed:', error);
-        }
       } catch (e) {
         if (isUniqueConstraintError(e, 'user_username_unique')) {
           return fail(409, {

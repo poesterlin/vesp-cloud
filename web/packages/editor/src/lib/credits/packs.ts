@@ -12,7 +12,7 @@ const LIVE_PRICE_IDS = {
   pro: "prod_UdRrpDxVvYhDZ2",
 } as const;
 
-const priceIds = env.STRIPE_SECRET_KEY?.startsWith("sk_live_")
+const priceIds = env.STRIPE_SECRET_KEY?.startsWith("rk_live_")
   ? LIVE_PRICE_IDS
   : TEST_PRICE_IDS;
 

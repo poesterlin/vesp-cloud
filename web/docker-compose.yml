@@ -6,7 +6,7 @@ x-logging: &default-logging
     compress: "true"
 
 services:
-  esphome:
+  vesp-cloud:
     restart: unless-stopped
     logging: *default-logging
     build:
@@ -23,7 +23,7 @@ services:
         soft: 65536
         hard: 65536
     environment:
-      - DATABASE_URL=postgresql://postgres:password@homelab:5432/esphome
+      - DATABASE_URL=${DATABASE_URL}
       - CONCURRENT_JOBS=4
       - COMPILER_MODE=${COMPILER_MODE:-embedded}
       - APP_EDITION=cloud
@@ -73,7 +73,7 @@ services:
         soft: 65536
         hard: 65536
     environment:
-      - DATABASE_URL=postgresql://postgres:password@homelab:5432/esphome
+      - DATABASE_URL=${DATABASE_URL}
       - CONCURRENT_JOBS=4
       - COMPILER_MODE=external
       - APP_EDITION=cloud
@@ -97,7 +97,7 @@ services:
     build:
       dockerfile: packages/admin/Dockerfile
     environment:
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/esphome
+      - DATABASE_URL=${DATABASE_URL}
       - TSIDP_ISSUER=${TSIDP_ISSUER}
       - TSIDP_CLIENT_ID=${TSIDP_CLIENT_ID}
       - TSIDP_CLIENT_SECRET=${TSIDP_CLIENT_SECRET}

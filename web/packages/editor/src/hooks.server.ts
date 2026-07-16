@@ -4,28 +4,13 @@ import { json, type Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { getDb } from "@vesp-cloud/db";
 import * as auth from "$lib/server/auth";
+import { isPublicRoute } from "$lib/server/routes";
 import { env } from "$env/dynamic/private";
 import * as Sentry from "@sentry/sveltekit";
 
 const sentryEnabled = !!env.SENTRY_DSN;
 const showCloudLegalPages = dev || env.APP_EDITION === "cloud";
 const cloudOnlyPagePaths = new Set(["/impressum", "/privacy", "/terms"]);
-const publicRoutePrefixes = [
-  "/robots.txt",
-  "/sitemap.xml",
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-  "/terms",
-  "/impressum",
-  "/privacy",
-  "/intro",
-  "/home-assistant-entity-export",
-  "/withdrawal",
-  "/api/firmware",
-  "/api/stripe/webhook",
-];
 
 if (sentryEnabled) {
   Sentry.init({
@@ -136,14 +121,11 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 const handleCacheHeaders: Handle = async ({ event, resolve }) => {
   const response = await resolve(event);
   const isLoggedIn = event.locals.user !== null;
-  const isPublicRoute = publicRoutePrefixes.some((prefix) =>
-    event.url.pathname.startsWith(prefix),
-  );
 
   if (isLoggedIn || dev) {
     response.headers.set("Cache-Control", "private, no-store, max-age=0");
     response.headers.set("Vary", "Cookie");
-  } else if (isPublicRoute) {
+  } else if (isPublicRoute(event.route.id) && !response.headers.has("Cache-Control")) {
     response.headers.set("Cache-Control", "public, max-age=300, s-maxage=3600");
   }
 

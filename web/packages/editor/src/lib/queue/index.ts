@@ -27,8 +27,7 @@ interface ActiveJob {
   cpuSlot: number;
 }
 
-const USER_VISIBLE_COMPILE_ERROR = 'Compilation failed. Please check your project configuration and try again.';
-const USER_VISIBLE_UPLOAD_ERROR = 'Compilation succeeded but the firmware binary could not be packaged.';
+const USER_VISIBLE_COMPILE_ERROR = 'Compilation failed. Try again later. Credit refunded.';
 const MAX_PERSISTED_ERROR_LOG_CHARS = 120_000;
 
 export class CompilationQueue extends EventEmitter {
@@ -521,7 +520,7 @@ export class CompilationQueue extends EventEmitter {
             const files = await fs.readdir(pioDir).catch(() => []);
             await this.handleJobResult(job.id, {
               error: CompilationQueue.buildFailureError(
-                USER_VISIBLE_UPLOAD_ERROR,
+                USER_VISIBLE_COMPILE_ERROR,
                 uploadError,
                 `Files in ${pioDir}: ${files.join(', ')}`,
               ),

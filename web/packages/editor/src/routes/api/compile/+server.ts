@@ -12,7 +12,7 @@ import type { Project } from "@vesp-cloud/schema";
 
 const IS_CLOUD = env.APP_EDITION === "cloud";
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const USER_VISIBLE_COMPILE_ERROR = "Compilation failed. Please check your project configuration and try again.";
+const USER_VISIBLE_COMPILE_ERROR = "Compilation failed. Try again later. Credit refunded.";
 
 function serializeJob(job: CompilationJob): CompilationJob {
   return {

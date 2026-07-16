@@ -13,6 +13,7 @@ export default defineConfig({
       { text: 'Getting Started', link: '/getting-started/' },
       { text: 'Concepts', link: '/concepts/' },
       { text: 'Widgets', link: '/widgets/' },
+      { text: 'Reference', link: '/reference/' },
     ],
     sidebar: {
       '/getting-started/': [
@@ -20,6 +21,7 @@ export default defineConfig({
           text: 'Getting Started',
           items: [
             { text: 'Overview', link: '/getting-started/' },
+            { text: 'Supported Hardware', link: '/getting-started/hardware' },
             { text: 'Home Assistant entities', link: '/getting-started/home-assistant' },
             { text: 'Create a project', link: '/getting-started/create-project' },
             { text: 'Build and install', link: '/getting-started/build' },
@@ -74,6 +76,9 @@ export default defineConfig({
           items: [
             { text: 'Overview', link: '/reference/' },
             { text: 'Project Settings', link: '/reference/project-settings' },
+            { text: 'Notification Overlay', link: '/reference/notification-overlay' },
+            { text: 'Keyboard Shortcuts', link: '/reference/keyboard-shortcuts' },
+            { text: 'Limitations', link: '/reference/limitations' }
           ]
         }
       ]

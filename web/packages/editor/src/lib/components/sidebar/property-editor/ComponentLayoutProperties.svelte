@@ -2,7 +2,6 @@
   import type { Component } from "@vesp-cloud/schema";
   import { historyStore } from "$lib/stores/history.svelte";
   import { projectStore } from "$lib/stores/project.svelte";
-  import { selectionStore } from "$lib/stores/selection.svelte";
 
   let { component } = $props<{ component: Component }>();
 
@@ -19,15 +18,6 @@
     projectStore.updateComponent(component.id, {
       size: { ...component.size, [dimension]: value },
     });
-  }
-
-  function moveToPage() {
-    if (!projectStore.isComponentNested(component.id)) return;
-    historyStore.record("Move component to page");
-    if (projectStore.moveComponentToRoot(component.id)) {
-      selectionStore.clear();
-      selectionStore.select(component.id);
-    }
   }
 </script>
 
@@ -51,11 +41,6 @@
       />
     </div>
   </div>
-  {#if projectStore.isComponentNested(component.id)}
-    <button class="move-to-page-button" onclick={moveToPage}>
-      Move out of container
-    </button>
-  {/if}
 </div>
 
 {#if component.size && component.type !== "hvac"}

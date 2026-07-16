@@ -24,6 +24,12 @@ not required for actions to work.
 
 ## OTA updates
 
+### Device screen is flickering after OTA update
+
+A proper fix is still in the works. The updates sometimes have an impact on the device stability and the screen alignment.
+This can be worked around by rebooting the device. 
+Either by unplugging it or by hitting the "reboot" button on the Home Assistant device screen.
+
 ### Updates do not appear in Home Assistant
 
 1. Open **Settings** &rarr; **System** &rarr; **Updates** in Home Assistant to

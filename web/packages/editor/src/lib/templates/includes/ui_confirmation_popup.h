@@ -46,7 +46,7 @@ class ConfirmationPopup {
                          TextAlign::CENTER, action_label_.c_str(), 300);
     }
     draw_clipped_box(it, 100, 292, 130, 52, 6,
-                     RetroColors::DIM_TEXT, RetroColors::BLACK, true);
+                     g_theme.neutral.border_color, RetroColors::BLACK, true);
     draw_clipped_box(it, 250, 292, 130, 52, 6,
                      g_theme.primary.border_color, RetroColors::DIM, true);
     it.printf(165, 318, g_theme.label.font, g_theme.label.color,

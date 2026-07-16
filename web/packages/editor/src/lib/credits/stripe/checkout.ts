@@ -4,6 +4,7 @@ import { stripeCheckoutSessions, stripeCustomers } from "@vesp-cloud/db/schema";
 import { eq } from "drizzle-orm";
 import { getPackByPriceId } from "../packs";
 import { createLogger } from "$lib/server/logger";
+import type Stripe from "stripe";
 
 export interface CreateCheckoutParams {
   userId: string;
@@ -11,6 +12,12 @@ export interface CreateCheckoutParams {
   successUrl: string;
   cancelUrl: string;
   immediatePerformanceConsent?: boolean;
+}
+
+function isMissingCustomerError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const stripeError = error as { code?: string; param?: string };
+  return stripeError.code === "resource_missing" && stripeError.param === "customer";
 }
 
 export async function createCheckoutSession(params: CreateCheckoutParams) {
@@ -44,8 +51,7 @@ export async function createCheckoutSession(params: CreateCheckoutParams) {
     logger.info(`Created Stripe customer: ${customer.id}`);
   }
 
-  const session = await stripe.checkout.sessions.create({
-    customer: stripeCustomerId,
+  const sessionParams: Stripe.Checkout.SessionCreateParams = {
     line_items: [{ price: params.priceId, quantity: 1 }],
     mode: "payment",
     success_url: params.successUrl,
@@ -60,7 +66,31 @@ export async function createCheckoutSession(params: CreateCheckoutParams) {
         : {}),
     },
     allow_promotion_codes: true,
-  });
+  };
+
+  let session: Stripe.Checkout.Session;
+  try {
+    session = await stripe.checkout.sessions.create({
+      ...sessionParams,
+      customer: stripeCustomerId,
+    });
+  } catch (error) {
+    if (!existing || !isMissingCustomerError(error)) throw error;
+
+    const customer = await stripe.customers.create({
+      metadata: { userId: params.userId },
+    });
+    await db
+      .update(stripeCustomers)
+      .set({ id: customer.id })
+      .where(eq(stripeCustomers.userId, params.userId));
+    logger.info(`Replaced missing Stripe customer ${existing.id} with ${customer.id}`);
+
+    session = await stripe.checkout.sessions.create({
+      ...sessionParams,
+      customer: customer.id,
+    });
+  }
 
   logger.info(`Checkout session created: ${session.id} for pack ${pack.priceKey}`);
 

@@ -49,8 +49,13 @@
     return horizBudget >= 28;
   });
 
-  function clippedPolygonPoints(w: number, h: number, c: number): string {
-    return `${c},0 ${w - c},0 ${w},${c} ${w},${h - c} ${w - c},${h} ${c},${h} 0,${h - c} 0,${c}`;
+  function clippedPolygonPoints(
+    w: number,
+    h: number,
+    c: number,
+    inset = 0,
+  ): string {
+    return `${c},${inset} ${w - c},${inset} ${w - inset},${c} ${w - inset},${h - c} ${w - c},${h - inset} ${c},${h - inset} ${inset},${h - c} ${inset},${c}`;
   }
 
   function glowColor(cssColor: string): string {
@@ -78,7 +83,7 @@
         transform="translate(-2, -2)"
       />
       <polygon
-        points={clippedPolygonPoints(w, h, cornerSize)}
+        points={clippedPolygonPoints(w, h, cornerSize, 0.5)}
         fill={dimFill}
         stroke={borderColor}
         stroke-width="1"

@@ -51,3 +51,5 @@ completed successfully, then reload the Updates page.
 :::
 
 [Next: connect the display to Wi-Fi →](./captive-portal)
+
+[Need help? See troubleshooting →](./troubleshooting)

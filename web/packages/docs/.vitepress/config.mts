@@ -23,7 +23,8 @@ export default defineConfig({
             { text: 'Home Assistant entities', link: '/getting-started/home-assistant' },
             { text: 'Create a project', link: '/getting-started/create-project' },
             { text: 'Build and install', link: '/getting-started/build' },
-            { text: 'Configure Wi-Fi', link: '/getting-started/captive-portal' }
+            { text: 'Configure Wi-Fi', link: '/getting-started/captive-portal' },
+            { text: 'Troubleshooting', link: '/getting-started/troubleshooting' }
           ]
         }
       ],
@@ -39,7 +40,10 @@ export default defineConfig({
             { text: 'Containers', link: '/concepts/#containers' },
             { text: 'Home Assistant connections', link: '/concepts/#home-assistant-connections' },
             { text: 'Actions and navigation', link: '/concepts/#actions-and-navigation' },
-            { text: 'Notification overlay', link: '/concepts/#notification-overlay' }
+            { text: 'Notification overlay', link: '/concepts/#notification-overlay' },
+            { text: 'Credits & Pricing', link: '/concepts/credits' },
+            { text: 'Privacy & Data', link: '/concepts/privacy' },
+            { text: 'Themes', link: '/concepts/themes' }
           ]
         }
       ],
@@ -61,6 +65,15 @@ export default defineConfig({
             { text: 'To-do list', link: '/widgets/#to-do-list' },
             { text: 'Tabs', link: '/widgets/#tabs' },
             { text: 'Conditional area', link: '/widgets/#conditional-area' }
+          ]
+        }
+      ],
+      '/reference/': [
+        {
+          text: 'Reference',
+          items: [
+            { text: 'Overview', link: '/reference/' },
+            { text: 'Project Settings', link: '/reference/project-settings' },
           ]
         }
       ]

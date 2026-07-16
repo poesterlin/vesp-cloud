@@ -24,6 +24,11 @@ editor; it is not a live connection to Home Assistant.
 
 ## Export and import entity metadata
 
+The **Metadata Exporter** page in the Home Assistant sidebar shows the current
+metadata status and provides the download button:
+
+![Home Assistant Metadata Exporter page with the Download metadata button](../imgs/integration-preview.png)
+
 1. Open the exporter page in the Home Assistant sidebar.
 2. Select **Download metadata**. Home Assistant downloads
    `ha-metadata.json`.

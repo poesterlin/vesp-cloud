@@ -31,3 +31,10 @@ After installation, connect to the temporary Wi-Fi network created by the
 display and select your home network.
 
 [Connect the display to Wi-Fi →](./captive-portal)
+
+## Having trouble?
+
+See the [Troubleshooting](./troubleshooting) page for common issues and
+solutions.
+
+[Troubleshooting →](./troubleshooting)

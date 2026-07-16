@@ -527,6 +527,22 @@
                 </p>
               </div>
             </div>
+            <div class="getting-started-step">
+              <div class="getting-started-step-num">5</div>
+              <div class="getting-started-step-body">
+                <h4>Allow Home Assistant actions</h4>
+                <p>
+                  To use buttons, switches, and other interactive widgets, open
+                  <a
+                    href="https://my.home-assistant.io/redirect/integration/?domain=esphome"
+                    target="_blank"
+                    rel="noreferrer"
+                    >the ESPHome integration</a
+                  >, select your display device, open <strong>Options</strong>,
+                  and enable <strong>Allow the device to perform Home Assistant actions</strong>.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       {/if}
@@ -1033,6 +1049,10 @@
 
   .getting-started-step-body p + p {
     margin-top: 6px;
+  }
+
+  .getting-started-step-body a {
+    color: var(--color-accent);
   }
 
   .getting-started-step-hint {

@@ -91,4 +91,10 @@ The overlay is shared by the whole project, so it only needs to be configured
 once. You can enable it while creating a project or later from **Settings →
 Notification Overlay**.
 
+## More concepts
+
+- [Credits & Pricing](./credits) — How the pay-per-build model works
+- [Privacy & Data Handling](./privacy) — What data stays local and what goes to the cloud
+- [Themes](./themes) — Retro and Modern display themes
+
 [Next: create your first project →](/getting-started/create-project)

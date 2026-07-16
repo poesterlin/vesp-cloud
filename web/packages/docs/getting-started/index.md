@@ -34,7 +34,19 @@ display and select your home network.
 
 ## Having trouble?
 
-See the [Troubleshooting](./troubleshooting) page for common issues and
-solutions.
+### Widgets or actions not working?
+
+Home Assistant blocks actions from newly added ESPHome devices by default. If
+buttons, switches, or other interactive widgets don't work:
+
+1. Go to **Settings** &rarr; **Devices & services** &rarr; **ESPHome** in Home
+   Assistant (or open
+   [ESPHome integrations](https://my.home-assistant.io/redirect/integration/?domain=esphome)
+   directly).
+2. Select your display device and open its **Options**.
+3. Enable **Allow the device to perform Home Assistant actions** and submit.
+
+See the full [Troubleshooting](./troubleshooting) page for more common issues
+and solutions.
 
 [Troubleshooting →](./troubleshooting)

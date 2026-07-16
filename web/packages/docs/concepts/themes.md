@@ -1,6 +1,6 @@
 # Themes
 
-VESP Cloud offers two display themes. Choose one from **Project Settings** to
+VESP Cloud offers two display themes. Choose one from **[Project Settings](/reference/project-settings)** to
 change the look of your entire display.
 
 ## Retro theme
@@ -31,28 +31,3 @@ A cleaner, softer look:
 | Chrome accent | Green `(0, 230, 118)` |
 
 **Style:** 8px border radius, no header borders, no shadows or corner accents.
-
-## Chrome accent color
-
-Regardless of which theme you choose, you can set a custom **chrome accent
-color** in Project Settings. This color is used for:
-
-- The digital clock display
-- The page indicator active dot
-- The detail view header title
-
-Open **Project Settings** and use the color picker under **Project Color** to
-change it. The default matches your chosen theme.
-
-## How themes affect generated firmware
-
-The selected theme is compiled into your firmware as:
-
-- A `#define UI_THEME_RETRO` flag (set to `1` for Retro, `0` for Modern)
-- A `CHROME_ACCENT_COLOR` constant with the selected accent color
-- Color constants for widget labels, headers, info backgrounds, primary
-  elements, and icons
-- Style flags for button shadows, corner accents, container corners, and header
-  borders
-
-These values are used at runtime by the C++ rendering code on the display.

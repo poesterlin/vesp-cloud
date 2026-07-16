@@ -21,7 +21,7 @@ export default defineConfig({
           text: 'Getting Started',
           items: [
             { text: 'Overview', link: '/getting-started/' },
-            { text: 'Supported Hardware', link: '/getting-started/hardware' },
+            // { text: 'Supported Hardware', link: '/getting-started/hardware' },
             { text: 'Home Assistant entities', link: '/getting-started/home-assistant' },
             { text: 'Create a project', link: '/getting-started/create-project' },
             { text: 'Build and install', link: '/getting-started/build' },

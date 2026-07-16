@@ -41,6 +41,15 @@ Either by unplugging it or by hitting the "reboot" button on the Home Assistant 
 4. The display checks for updates periodically. It may take a few minutes
    after a build finishes for the update to appear.
 
+## Check Home Assistant logs
+
+When debugging issues, inspecting Home Assistant's logs can reveal errors
+from ESPHome devices and automations. Open
+[Home Assistant logs](https://my.home-assistant.io/redirect/logs/) to go
+there directly.
+
+![Home Assistant logs showing error entries](../imgs/ha-error-logs.png)
+
 ## Build errors
 
 ### Project validation fails

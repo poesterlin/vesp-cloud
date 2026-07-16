@@ -94,8 +94,8 @@ separators, and grouping related content visually.
 Displays and controls a Home Assistant light or switch. Its status stays in sync
 with Home Assistant.
 
-Configure the label, entity binding, target device, on/off text and colors,
-icon, and optional brightness control.
+Configure the label, entity binding, target device, on/off text and colors and
+icon.
 
 ![A light switch widget bound to Home Assistant](../imgs/widgets/switch.webp)
 

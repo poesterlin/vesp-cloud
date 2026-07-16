@@ -51,6 +51,20 @@ an entity. Select the target entity and enter the action, such as
 
 ![A button configured to pause a Home Assistant media player](../imgs/widgets/button-action-example.webp)
 
+### Action confirmation
+
+Enable **Require confirmation** in the button properties when an action should
+not run immediately after a tap. This is useful for potentially disruptive or
+destructive actions, such as starting a vacuum, unlocking a door, or turning
+off a group of devices.
+
+When enabled, tapping the button opens a modal showing **Confirm action?** and
+the button's label. **Confirm** executes the configured **On Tap** action;
+**Cancel** closes the modal without running it. The modal blocks interaction
+with the rest of the display until either option is selected.
+
+![A confirmation modal shown before a button action](../imgs/widgets/button-confirm-widget.png)
+
 ### Navigation
 
 Choose **Navigation** for **On Tap** to open a detail view or move to another

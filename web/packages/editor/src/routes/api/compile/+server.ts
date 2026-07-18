@@ -1,7 +1,7 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { getAllJobs, getProjectJobs, getJobStatus, submitCompilationJob } from "$lib/utils/worker";
-import { deductCredits, CREDIT_COSTS, getBalance } from "$lib/credits";
+import { addCredits, deductCredits, CREDIT_COSTS, getBalance } from "$lib/credits";
 import { env } from "$env/dynamic/private";
 import { validateProject } from "$lib/codegen/validations";
 import { validateProjectSchema } from "$lib/server/project-schema";
@@ -26,6 +26,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   if (!locals.user) {
     return json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  let deductedAmount = 0;
+  let chargedProjectId: string | null = null;
 
   try {
     const { projectId, projectName, config, configPath, template } = await request.json();
@@ -87,6 +90,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
           { status: 402 },
         );
       }
+      deductedAmount = cost;
+      chargedProjectId = projectId;
     }
 
     const result = await submitCompilationJob(
@@ -97,9 +102,22 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       locals.user.id,
       template,
     );
+    deductedAmount = 0;
 
     return json(result);
   } catch (error: any) {
+    if (deductedAmount > 0) {
+      try {
+        await addCredits({
+          userId: locals.user.id,
+          amount: deductedAmount,
+          reason: `compile-refund-submit:${chargedProjectId ?? 'unknown'}`,
+        });
+        deductedAmount = 0;
+      } catch (refundError) {
+        console.error('Compile submission refund failed:', refundError);
+      }
+    }
     if (error.message?.includes('already have an active compilation job')) {
       return json({ error: error.message }, { status: 429 });
     }

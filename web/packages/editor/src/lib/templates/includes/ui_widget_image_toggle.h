@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui_widget_base.h"
+#include "ui_confirmation_popup.h"
 
 class ImageToggleWidget : public Widget {
  public:
@@ -34,6 +35,8 @@ class ImageToggleWidget : public Widget {
     Widget::update(now);
   }
 
+  void set_confirm_before_action(bool enable) { confirm_before_action_ = enable; }
+
   bool handle_touch(const TouchEvent &event, uint32_t now) override {
     if (event.type != TouchType::Tap) return false;
     if (loading_) return false;
@@ -44,6 +47,15 @@ class ImageToggleWidget : public Widget {
     }
 
     if (!hit_test(event.x, event.y)) return false;
+    if (confirm_before_action_) {
+      g_confirmation_popup.show(label_, [this]() { this->execute_action_(millis()); });
+      return true;
+    }
+    execute_action_(now);
+    return true;
+  }
+
+  void execute_action_(uint32_t now) {
     loading_ = true;
     loading_start_ms_ = now;
     mark_dirty();
@@ -57,7 +69,6 @@ class ImageToggleWidget : public Widget {
           mark_dirty();
           UiRedraw::trigger_display_update();
         });
-    return true;
   }
 
   void draw(display::Display &it, const UiState &state) override {
@@ -140,4 +151,5 @@ class ImageToggleWidget : public Widget {
   uint32_t loading_start_ms_ = 0;
   uint32_t loading_timeout_ms_ = 350;
   bool last_on_state_ = false;
+  bool confirm_before_action_ = false;
 };

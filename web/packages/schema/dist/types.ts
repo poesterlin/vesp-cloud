@@ -114,6 +114,7 @@ export type LightStateComponent = BaseComponent & {
   icon?: string;
   onColor?: Color;
   offColor?: Color;
+  confirmBeforeAction?: boolean;
 };
 export type HvacComponent = BaseComponent & {
   type: "hvac";

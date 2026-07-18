@@ -94,10 +94,24 @@ separators, and grouping related content visually.
 Displays and controls a Home Assistant light or switch. Its status stays in sync
 with Home Assistant.
 
-Configure the label, entity binding, target device, on/off text and colors and
+Configure the label, entity binding, target device, on/off text and colors, and
 icon.
 
 ![A light switch widget bound to Home Assistant](../imgs/widgets/switch.webp)
+
+### Action confirmation
+
+Enable **Require confirmation** in the light switch properties when toggling a
+light should not happen immediately after a tap. This is useful for lights that
+control shared spaces, exterior lighting, or other situations where an accidental
+tap could be disruptive.
+
+When enabled, tapping the light opens a modal showing **Confirm action?** and the
+light's label. **Confirm** toggles the light; **Cancel** closes the modal
+without changing its state. The modal blocks interaction with the rest of the
+display until either option is selected.
+
+![A confirmation modal shown before a light action](../imgs/widgets/button-confirm-widget.png)
 
 ## HVAC
 

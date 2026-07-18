@@ -505,7 +505,11 @@
             "showIcon": { "type": "boolean", "default": true },
             "icon": { "type": "string", "default": "lightbulb" },
             "onColor": { "$ref": "#/definitions/Color" },
-            "offColor": { "$ref": "#/definitions/Color" }
+            "offColor": { "$ref": "#/definitions/Color" },
+            "confirmBeforeAction": {
+              "type": "boolean",
+              "description": "Show a confirmation popup before toggling the light"
+            }
           },
           "required": ["type", "size"]
         }

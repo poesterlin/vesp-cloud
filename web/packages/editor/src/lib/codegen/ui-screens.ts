@@ -290,6 +290,9 @@ function generateLightWidget(c: LightStateComponent, stateVar: string,
     if (visibilityExpr) {
       out += `${indent}light_toggle_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
     }
+    if (c.confirmBeforeAction) {
+      out += `${indent}light_toggle_${idSafe}->set_confirm_before_action(true);\n`;
+    }
     out += dirtyLine(`light_toggle_${idSafe}`);
     return out;
   }
@@ -309,6 +312,9 @@ function generateLightWidget(c: LightStateComponent, stateVar: string,
     out += `${indent}auto *light_btn_${idSafe} = ${factory('ButtonWidget', `${rect(x + 10, y + 30, w - 20, h - 30)}, "${escapeCString(label)}", ${callback}, g_theme.primary`)};\n`;
     if (visibilityExpr) {
       out += `${indent}light_btn_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
+    }
+    if (c.confirmBeforeAction) {
+      out += `${indent}light_btn_${idSafe}->set_confirm_before_action(true);\n`;
     }
     out += dirtyLine(`light_btn_${idSafe}`);
   }

@@ -86,6 +86,14 @@
         onSelect={(icon) => updateProperty("icon", icon || "lightbulb")}
       />
     </div>
+    <label class="confirmation-field">
+      <input
+        type="checkbox"
+        checked={component.confirmBeforeAction ?? false}
+        onchange={(e) => updateProperty("confirmBeforeAction", e.currentTarget.checked)}
+      />
+      <span>Require confirmation</span>
+    </label>
   </div>
 {/if}
 

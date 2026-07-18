@@ -7,6 +7,8 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { validateForm } from '$lib/server/form';
 import type { Actions, PageServerLoad } from './$types';
+import { fail } from '@sveltejs/kit';
+import { consumeRateLimit } from '$lib/server/rate-limit';
 
 const renderer = new Renderer();
 
@@ -20,6 +22,15 @@ export const actions: Actions = {
       email: z.email().trim().transform((value) => value.toLowerCase()),
     }),
     async (event, form) => {
+      const rateLimit = consumeRateLimit(`password-reset:${event.getClientAddress()}`, {
+        limit: 5,
+        windowMs: 15 * 60_000,
+      });
+      if (!rateLimit.allowed) {
+        event.setHeaders({ 'Retry-After': String(rateLimit.retryAfterSeconds) });
+        return fail(429, { message: 'Too many password reset attempts. Please try again later.' });
+      }
+
       const db = getDb();
       const user = await db
         .select({

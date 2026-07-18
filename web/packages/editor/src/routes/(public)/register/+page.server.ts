@@ -9,6 +9,7 @@ import { validateForm } from '$lib/server/form';
 import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { TERMS_VERSION } from '$lib/terms';
+import { consumeRateLimit } from '$lib/server/rate-limit';
 import type { Actions, PageServerLoad } from './$types';
 
 const requireTermsAcceptance = dev || env.APP_EDITION === 'cloud';
@@ -47,6 +48,15 @@ export const actions: Actions = {
     }),
     async (event, form) => {
       const { username, password, email, acceptTerms, termsVersion, redirectTo } = form;
+
+      const rateLimit = consumeRateLimit(`register:${event.getClientAddress()}`, {
+        limit: 5,
+        windowMs: 60 * 60_000,
+      });
+      if (!rateLimit.allowed) {
+        event.setHeaders({ 'Retry-After': String(rateLimit.retryAfterSeconds) });
+        return fail(429, { message: 'Too many registration attempts. Please try again later.' });
+      }
 
       if (
         requireTermsAcceptance &&

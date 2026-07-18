@@ -6,7 +6,6 @@ import type {
   ActionBinding,
   TabContainerComponent,
   ConditionalAreaComponent,
-  ContainerComponent,
   LightStateComponent,
   TodoListComponent,
   ImageComponent,
@@ -58,13 +57,8 @@ function componentLabel(c: Component): string {
     weather: "Weather",
     calendar: "Calendar",
     todo_list: "To-Do List",
-    slider: "Slider",
-    gauge: "Gauge",
     conditional_area: "Conditional Area",
     tab_container: "Tab Container",
-    container: "Container",
-    procedural_icon: "Procedural Icon",
-    auto_layout_list: "Auto Layout List",
   };
   return typeLabels[c.type] ?? c.type;
 }
@@ -92,10 +86,7 @@ function collectAllComponents(project: Project): Component[] {
   const walk = (components: Component[]) => {
     for (const c of components) {
       result.push(c);
-      if (c.type === "container") {
-        const container = c as ContainerComponent;
-        if (container.children) walk(container.children);
-      } else if (c.type === "tab_container") {
+      if (c.type === "tab_container") {
         const tc = c as TabContainerComponent;
         for (const tab of tc.tabs) {
           walk(tab.components);

@@ -9,12 +9,7 @@ export type Component =
   | TextComponent
   | DigitalClockComponent
   | ButtonComponent
-  | SliderComponent
-  | RangeSliderComponent
-  | GaugeComponent
   | IconComponent
-  | ProceduralIconComponent
-  | ContainerComponent
   | RectangleComponent
   | ImageComponent
   | TodoListComponent
@@ -22,7 +17,6 @@ export type Component =
   | HvacComponent
   | WeatherComponent
   | CalendarComponent
-  | AutoLayoutListComponent
   | ConditionalAreaComponent
   | TabContainerComponent;
 export type TextComponent = BaseComponent & {
@@ -58,86 +52,11 @@ export type ButtonComponent = BaseComponent & {
   holdAction?: ActionBinding;
 };
 export type ActionBinding = ServiceAction | NavigationAction;
-export type SliderComponent = BaseComponent & {
-  type: "slider";
-  min?: number;
-  max?: number;
-  step?: number;
-  valueBinding?: EntityBinding;
-  onChange?: ActionBinding;
-  orientation?: "horizontal" | "vertical";
-  trackColor?: Color;
-  fillColor?: Color;
-  handleColor?: Color;
-};
-export type RangeSliderComponent = BaseComponent & {
-  type: "range_slider";
-  /**
-   * Header label displayed above the track
-   */
-  label?: string;
-  /**
-   * Unit suffix appended to values (e.g. '°', '%')
-   */
-  unit?: string;
-  /**
-   * Minimum value of the range
-   */
-  min?: number;
-  /**
-   * Maximum value of the range
-   */
-  max?: number;
-  /**
-   * Step increment between values
-   */
-  step?: number;
-  /**
-   * Initial slider value
-   */
-  value?: number;
-  /**
-   * Number of decimal places for displayed values
-   */
-  valueDecimals?: number;
-  color?: Color3;
-  valueBinding?: EntityBinding2;
-};
-export type GaugeComponent = BaseComponent & {
-  type: "gauge";
-  min: number;
-  max: number;
-  valueBinding?: EntityBinding;
-  unit?: string;
-  backgroundColor?: Color;
-  needleColor?: Color;
-  valueColor?: Color;
-  segments?: {
-    from: number;
-    to: number;
-    color: Color;
-  }[];
-};
 export type IconComponent = BaseComponent & {
   type: "icon";
   icon: string;
   color?: Color;
   scale?: number;
-};
-export type ProceduralIconComponent = BaseComponent & {
-  type: "procedural_icon";
-  iconType: "bulb" | "window" | "vacuum" | "climate";
-  stateBinding?: EntityBinding;
-  color?: Color;
-};
-export type ContainerComponent = BaseComponent & {
-  type: "container";
-  label?: string;
-  backgroundColor?: Color;
-  /**
-   * Child components rendered inside this container
-   */
-  children?: Component[];
 };
 export type RectangleComponent = BaseComponent & {
   type: "rectangle";
@@ -150,7 +69,7 @@ export type ImageComponent = BaseComponent & {
    */
   imageSource?: "static" | "ha";
   file: string;
-  imageBinding?: EntityBinding3;
+  imageBinding?: EntityBinding2;
   /**
    * Encoded format expected from the online image URL when imageBinding is used.
    */
@@ -199,7 +118,7 @@ export type LightStateComponent = BaseComponent & {
 export type HvacComponent = BaseComponent & {
   type: "hvac";
   label?: string;
-  stateBinding?: EntityBinding4;
+  stateBinding?: EntityBinding3;
   tempStep?: number;
   minTemp?: number;
   maxTemp?: number;
@@ -217,12 +136,12 @@ export type WeatherComponent = BaseComponent & {
    * today = single-day view, forecast = 3-day forecast view
    */
   mode?: "today" | "forecast";
-  stateBinding?: EntityBinding5;
+  stateBinding?: EntityBinding4;
 };
 export type CalendarComponent = BaseComponent & {
   type: "calendar";
   label?: string;
-  entityBinding?: EntityBinding6;
+  entityBinding?: EntityBinding5;
   maxItems?: number;
   scrollable?: boolean;
   /**
@@ -230,24 +149,6 @@ export type CalendarComponent = BaseComponent & {
    */
   durationDays?: number;
 };
-export type AutoLayoutListComponent = BaseComponent & {
-  type: "auto_layout_list";
-  direction?: "horizontal" | "vertical";
-  gap?: number;
-  padding?: number;
-  crossAxisAlign?: "start" | "center" | "end" | "stretch";
-  mainAxisJustify?: "start" | "center" | "end" | "space_between";
-  itemSizeMode?: "content" | "fixed";
-  itemWidth?: number;
-  itemHeight?: number;
-  /**
-   * @minItems 1
-   */
-  items: [AutoLayoutListItem, ...AutoLayoutListItem[]];
-};
-export type Condition = EntityCondition | StateCondition | TimeCondition | CompoundCondition | NotCondition;
-export type ComparisonOperator = "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "contains" | "not_contains" | "matches";
-export type LogicalOperator = "and" | "or";
 export type ConditionalAreaComponent = BaseComponent & {
   type: "conditional_area";
   variants: ConditionalVariant[];
@@ -264,6 +165,9 @@ export type ConditionalAreaComponent = BaseComponent & {
    */
   clipContent?: boolean;
 };
+export type ComparisonOperator = "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "contains" | "not_contains" | "matches";
+export type LogicalOperator = "and" | "or";
+export type Condition = EntityCondition | StateCondition | TimeCondition | CompoundCondition | NotCondition;
 export type TabContainerComponent = BaseComponent & {
   type: "tab_container";
   tabs: TabItem[];
@@ -442,55 +346,61 @@ export interface Color2 {
   b: number;
 }
 /**
- * Accent color for track fill, thumbs, and borders
- */
-export interface Color3 {
-  r: number;
-  g: number;
-  b: number;
-}
-/**
- * Home Assistant number/light brightness entity to bind the slider value to
+ * Home Assistant image/camera entity. The entity_picture attribute is used by default and loaded with online_image.
  */
 export interface EntityBinding2 {
   entityId: string;
   attribute?: string | null;
 }
 /**
- * Home Assistant image/camera entity. The entity_picture attribute is used by default and loaded with online_image.
+ * Home Assistant climate entity (climate.xxx)
  */
 export interface EntityBinding3 {
   entityId: string;
   attribute?: string | null;
 }
 /**
- * Home Assistant climate entity (climate.xxx)
+ * Home Assistant weather entity (weather.xxx). The state string is the condition (sunny, cloudy, rainy, ...); the 8 numeric attributes (temperature, dew_point, humidity, cloud_coverage, uv_index, pressure, wind_bearing, wind_speed) are read-only.
  */
 export interface EntityBinding4 {
   entityId: string;
   attribute?: string | null;
 }
 /**
- * Home Assistant weather entity (weather.xxx). The state string is the condition (sunny, cloudy, rainy, ...); the 8 numeric attributes (temperature, dew_point, humidity, cloud_coverage, uv_index, pressure, wind_bearing, wind_speed) are read-only.
+ * Home Assistant calendar entity (calendar.xxx). Events are loaded via calendar.get_events service calls.
  */
 export interface EntityBinding5 {
   entityId: string;
   attribute?: string | null;
 }
 /**
- * Home Assistant calendar entity (calendar.xxx). Events are loaded via calendar.get_events service calls.
+ * A single variant/state within a conditional area
  */
-export interface EntityBinding6 {
-  entityId: string;
-  attribute?: string | null;
-}
-export interface AutoLayoutListItem {
+export interface ConditionalVariant {
   id: string;
+  /**
+   * Human-readable name for the editor UI
+   */
   name: string;
-  condition?: Condition;
-  icon?: string;
-  color?: Color;
-  scale?: number;
+  /**
+   * When null/undefined, this is the default/fallback variant
+   */
+  condition?: EntityCondition | StateCondition | TimeCondition | CompoundCondition | NotCondition;
+  /**
+   * Higher priority variants are evaluated first
+   */
+  priority?: number;
+  /**
+   * Components rendered when this variant is active
+   */
+  components: Component[];
+  transition?: {
+    type?: "none" | "fade" | "slide";
+    /**
+     * milliseconds
+     */
+    duration?: number;
+  };
 }
 /**
  * Condition based on a Home Assistant entity state
@@ -539,35 +449,6 @@ export interface CompoundCondition {
 export interface NotCondition {
   type: "not";
   condition: Condition;
-}
-/**
- * A single variant/state within a conditional area
- */
-export interface ConditionalVariant {
-  id: string;
-  /**
-   * Human-readable name for the editor UI
-   */
-  name: string;
-  /**
-   * When null/undefined, this is the default/fallback variant
-   */
-  condition?: EntityCondition | StateCondition | TimeCondition | CompoundCondition | NotCondition;
-  /**
-   * Higher priority variants are evaluated first
-   */
-  priority?: number;
-  /**
-   * Components rendered when this variant is active
-   */
-  components: Component[];
-  transition?: {
-    type?: "none" | "fade" | "slide";
-    /**
-     * milliseconds
-     */
-    duration?: number;
-  };
 }
 /**
  * A single tab inside a tab container
@@ -625,7 +506,7 @@ export interface PageHeader {
    * Height of the header region in pixels
    */
   height: number;
-  backgroundColor?: Color4;
+  backgroundColor?: Color3;
   /**
    * Components rendered in the header region (positions relative to header origin)
    */
@@ -634,7 +515,7 @@ export interface PageHeader {
 /**
  * Background color of the header region (falls back to theme background)
  */
-export interface Color4 {
+export interface Color3 {
   r: number;
   g: number;
   b: number;

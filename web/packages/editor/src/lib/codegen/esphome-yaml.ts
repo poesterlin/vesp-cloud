@@ -1,4 +1,4 @@
-import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent, HvacComponent, WeatherComponent, CalendarComponent, RangeSliderComponent } from "@vesp-cloud/schema";
+import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent, HvacComponent, WeatherComponent, CalendarComponent } from "@vesp-cloud/schema";
 import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted, calendarEventsVarFromEntity, todoEntityIdFromComponent, toCppIdentifier, detailScreenId } from "./utils";
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
 import { ICON_FONT_ID, WEATHER_ICON_FONT_ID, getIconGlyphs, projectHasWeather } from "./mdi-icons";
@@ -369,21 +369,6 @@ function generateBindings(project: Project): string {
     if (!claimed.has(actionVar)) {
       claimed.add(actionVar);
       lines.push(`          bind_ha_string_attr("${escapeCString(entityId)}", "hvac_action", &g_ui_app.state().${actionVar});`);
-    }
-  }
-
-  for (const c of allComponents) {
-    if (c.type !== "range_slider") continue;
-    const rc = c as RangeSliderComponent;
-    const binding = rc.valueBinding;
-    if (!binding?.entityId) continue;
-    const stateVar = stateVarFromEntity(binding.entityId, binding.attribute);
-    if (claimed.has(stateVar)) continue;
-    claimed.add(stateVar);
-    if (binding.attribute) {
-      lines.push(`          bind_ha_float_attr("${escapeCString(binding.entityId)}", "${escapeCString(binding.attribute)}", &g_ui_app.state().${stateVar});`);
-    } else {
-      lines.push(`          bind_ha_float("${escapeCString(binding.entityId)}", &g_ui_app.state().${stateVar});`);
     }
   }
 
@@ -1245,7 +1230,6 @@ ${bindings ? bindings + '\n' : ''}${notificationBindings ? notificationBindings 
     - includes/ui_widget_todo.h
     - includes/ui_widget_calendar.h
     - includes/ui_widget_notification_overlay.h
-    - includes/ui_widget_range_slider.h
     - includes/ui_widget_hvac.h
     - includes/ui_widget_weather.h
     - includes/ui_widget_loading.h

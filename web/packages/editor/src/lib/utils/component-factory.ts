@@ -36,39 +36,6 @@ export function createComponent(type: string, x: number, y: number): Component {
         size: { width: 80, height: 44 },
       } as Component;
 
-    case "slider":
-      return {
-        ...base,
-        type: "slider",
-        min: 0,
-        max: 100,
-        step: 1,
-        orientation: "horizontal",
-        size: { width: 120, height: 24 },
-      } as Component;
-
-    case "range_slider":
-      return {
-        ...base,
-        type: "range_slider",
-        label: "Range",
-        min: 0,
-        max: 100,
-        step: 1,
-        value: 50,
-        valueDecimals: 1,
-        size: { width: 320, height: 96 },
-      } as Component;
-
-    case "gauge":
-      return {
-        ...base,
-        type: "gauge",
-        min: 0,
-        max: 100,
-        size: { width: 80, height: 80 },
-      } as Component;
-
     case "icon":
       return {
         ...base,
@@ -76,22 +43,6 @@ export function createComponent(type: string, x: number, y: number): Component {
         icon: "home",
         size: { width: 32, height: 32 },
         scale: 1,
-      } as Component;
-
-    case "procedural_icon":
-      return {
-        ...base,
-        type: "procedural_icon",
-        iconType: "bulb",
-        size: { width: 32, height: 32 },
-      } as Component;
-
-    case "container":
-      return {
-        ...base,
-        type: "container",
-        label: "Container",
-        size: { width: 100, height: 60 },
       } as Component;
 
     case "rectangle":
@@ -167,33 +118,6 @@ export function createComponent(type: string, x: number, y: number): Component {
         maxItems: 4,
         scrollable: false,
         durationDays: 125,
-      } as Component;
-
-    case "auto_layout_list":
-      return {
-        ...base,
-        type: "auto_layout_list",
-        size: { width: 140, height: 32 },
-        direction: "horizontal",
-        gap: 6,
-        padding: 0,
-        crossAxisAlign: "center",
-        mainAxisJustify: "start",
-        itemSizeMode: "content",
-        items: [
-          {
-            id: `auto-layout-item-${Date.now()}`,
-            name: "Item 1",
-            icon: "home",
-            scale: 1,
-          },
-          {
-            id: `auto-layout-item-${Date.now()}-2`,
-            name: "Item 2",
-            icon: "flash",
-            scale: 1,
-          },
-        ],
       } as Component;
 
     case "conditional_area":

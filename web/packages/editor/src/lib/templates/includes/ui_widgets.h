@@ -11,7 +11,6 @@
 #include "ui_widget_todo.h"
 #include "ui_widget_calendar.h"
 #include "ui_widget_notification_overlay.h"
-#include "ui_widget_range_slider.h"
 #include "ui_widget_hvac.h"
 #include "ui_widget_weather.h"
 #include "ui_widget_loading.h"

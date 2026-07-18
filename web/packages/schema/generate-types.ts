@@ -66,18 +66,13 @@ export * from "./types.js";
 export type ComponentType =
   | "text"
   | "button"
-  | "slider"
-  | "gauge"
   | "icon"
-  | "procedural_icon"
-  | "container"
   | "rectangle"
   | "image"
   | "todo_list"
   | "light_state"
   | "hvac"
   | "weather"
-  | "auto_layout_list"
   | "conditional_area"
   | "tab_container";
 
@@ -87,14 +82,6 @@ export function isTextComponent(c: Component): c is TextComponent {
 
 export function isButtonComponent(c: Component): c is ButtonComponent {
   return c.type === "button";
-}
-
-export function isSliderComponent(c: Component): c is SliderComponent {
-  return c.type === "slider";
-}
-
-export function isGaugeComponent(c: Component): c is GaugeComponent {
-  return c.type === "gauge";
 }
 
 export function isIconComponent(c: Component): c is IconComponent {
@@ -113,8 +100,6 @@ import type {
   Component,
   TextComponent,
   ButtonComponent,
-  SliderComponent,
-  GaugeComponent,
   IconComponent,
   HvacComponent,
   WeatherComponent,

@@ -321,7 +321,7 @@ describe("ConditionalAreaComponent", () => {
           components: [
             { id: "text-1", type: "text", position: { x: 0, y: 0 }, text: "Hello" },
             { id: "btn-1", type: "button", position: { x: 0, y: 20 }, size: { width: 80, height: 30 }, label: "Click" },
-            { id: "gauge-1", type: "gauge", position: { x: 100, y: 0 }, size: { width: 60, height: 60 }, min: 0, max: 100 },
+            { id: "icon-1", type: "icon", position: { x: 100, y: 0 }, size: { width: 60, height: 60 }, icon: "home" },
           ],
         },
       ],
@@ -330,7 +330,7 @@ describe("ConditionalAreaComponent", () => {
     expect(area.variants[0]?.components.length).toBe(3);
     expect(area.variants[0]?.components[0]?.type).toBe("text");
     expect(area.variants[0]?.components[1]?.type).toBe("button");
-    expect(area.variants[0]?.components[2]?.type).toBe("gauge");
+    expect(area.variants[0]?.components[2]?.type).toBe("icon");
   });
 });
 
@@ -348,62 +348,5 @@ describe("Component union includes ConditionalAreaComponent", () => {
 
     expect(components.length).toBe(2);
     expect(components[1]?.type).toBe("conditional_area");
-  });
-});
-
-describe("AutoLayoutListComponent", () => {
-  test("supports horizontal list with per-item condition", () => {
-    const list: any = {
-      id: "auto-list-1",
-      type: "auto_layout_list",
-      position: { x: 10, y: 10 },
-      size: { width: 140, height: 32 },
-      direction: "horizontal",
-      gap: 6,
-      padding: 0,
-      crossAxisAlign: "center",
-      mainAxisJustify: "start",
-      items: [
-        {
-          id: "item-1",
-          name: "Home",
-          icon: "home",
-        },
-        {
-          id: "item-2",
-          name: "Motion",
-          icon: "run",
-          condition: {
-            type: "entity",
-            entityId: "binary_sensor.motion",
-            operator: "eq",
-            value: true,
-          },
-        },
-      ],
-    };
-
-    expect(list.type).toBe("auto_layout_list");
-    expect(list.items.length).toBe(2);
-    expect(list.items[1]?.condition?.type).toBe("entity");
-  });
-
-  test("supports vertical fixed-size list", () => {
-    const list: any = {
-      id: "auto-list-2",
-      type: "auto_layout_list",
-      position: { x: 0, y: 0 },
-      size: { width: 40, height: 120 },
-      direction: "vertical",
-      itemSizeMode: "fixed",
-      itemWidth: 24,
-      itemHeight: 24,
-      items: [
-        { id: "i1", name: "One", icon: "numeric-1" },
-      ],
-    };
-
-    expect(list.direction).toBe("vertical");
-    expect(list.itemSizeMode).toBe("fixed");
   });
 });

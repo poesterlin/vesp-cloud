@@ -15,7 +15,6 @@ import type {
   HvacComponent,
   WeatherComponent,
   CalendarComponent,
-  RangeSliderComponent,
   Color,
   OnTapAction,
 } from "@vesp-cloud/schema";
@@ -419,61 +418,6 @@ function generateCalendarWidget(
   return out;
 }
 
-function generateRangeSliderWidget(
-    c: RangeSliderComponent,
-    factory: WidgetFactory,
-    indent: string,
-    offX = 0,
-    offY = 0,
-    visibilityExpr?: string,
-    dirtyBoundsExpr?: string,
-): string {
-  const x = c.position.x + offX;
-  const y = c.position.y + offY;
-  const w = c.size?.width ?? 320;
-  const h = c.size?.height ?? 96;
-  const label = c.label ?? 'RANGE';
-  const unit = c.unit ?? '';
-  const min = c.min ?? 0;
-  const max = c.max ?? 100;
-  const step = c.step ?? 1;
-  const value = c.value ?? min + (max - min) / 2;
-  const decimals = Math.max(0, Math.min(3, c.valueDecimals ?? 1));
-  const idSafe = safeCppIdentifier(c.id, 'component');
-
-  const fmtFloat = (v: number) => Number.isInteger(v) ? `${v}.0f` : `${v}f`;
-  let out = `${indent}auto *${idSafe} = ${factory('RangeSliderWidget', `${rect(x, y, w, h)}, "${escapeCString(label)}", ${fmtFloat(min)}, ${fmtFloat(max)}, ${fmtFloat(step)}, ${fmtFloat(value)}, "${escapeCString(unit)}", ${decimals}`)};\n`;
-  if (c.color) {
-    out += `${indent}${idSafe}->set_accent(${emitColor(c.color)});\n`;
-  }
-  if (c.valueBinding?.entityId) {
-    const stateVar = stateVarFromEntity(c.valueBinding.entityId, c.valueBinding.attribute ?? undefined);
-    out += `${indent}${idSafe}->bind(state.${stateVar}.ptr());\n`;
-    const entityId = c.valueBinding.entityId;
-    const domain = entityId.split('.')[0];
-    const service = `${domain}.set_value`;
-    out += `${indent}${idSafe}->on_release([entity_id = "${escapeCString(entityId)}"](float v) {\n`;
-    out += `${indent}  auto *api = esphome::api::global_api_server;\n`;
-    out += `${indent}  if (api == nullptr || !api->is_connected()) return;\n`;
-    out += `${indent}  esphome::api::HomeAssistantServiceCallAction<> call(api, false);\n`;
-    out += `${indent}  call.set_service("${escapeCString(service)}");\n`;
-    out += `${indent}  call.init_data(2);\n`;
-    out += `${indent}  call.add_data("entity_id", entity_id);\n`;
-    out += `${indent}  char val_buf[16];\n`;
-    out += `${indent}  snprintf(val_buf, sizeof(val_buf), "%f", v);\n`;
-    out += `${indent}  call.add_data("value", val_buf);\n`;
-    out += `${indent}  call.play();\n`;
-    out += `${indent}});\n`;
-  }
-  if (visibilityExpr) {
-    out += `${indent}${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
-  }
-  if (dirtyBoundsExpr) {
-    out += `${indent}${idSafe}->set_dirty_bounds(${dirtyBoundsExpr});\n`;
-  }
-  return out;
-}
-
 function generateTodoListWidget(
     c: TodoListComponent,
     itemsVar: string,
@@ -704,12 +648,8 @@ function generateComponentSetup(
     }
     case 'tab_container':
       return generateTabContainerWidget(c, screenVar, indent, visibilityExpr, offsetX, offsetY, dirtyBoundsExpr, entityTypes);
-    case 'range_slider':
-      return generateRangeSliderWidget(c as RangeSliderComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     case 'conditional_area':
       return generateConditionalAreaWidget(c, screenVar, indent, visibilityExpr, offsetX, offsetY, entityTypes);
-    default:
-      return `${indent}// TODO: component type '${c.type}' (id: ${c.id})\n`;
   }
 }
 
@@ -1047,8 +987,6 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
     }
     case 'conditional_area':
       return generateConditionalAreaNested(c, containerVar, tabIndex, indent, visibilityExpr, offsetX, offsetY, tabBgVar, entityTypes);
-    case 'range_slider':
-      return generateRangeSliderWidget(c as RangeSliderComponent, factory, indent, offsetX, offsetY, visibilityExpr, dirtyBoundsExpr);
     default:
       return `${indent}// TODO: nested ${c.type} (id: ${c.id}) in tab ${tabIndex}\n`;
   }

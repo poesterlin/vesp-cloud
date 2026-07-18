@@ -25,7 +25,6 @@
     hvac: "climate",
     weather: "weather",
     calendar: "calendar",
-    range_slider: "number",
   };
 
   let { component, updateProperty } = $props<{
@@ -36,7 +35,6 @@
   function bindingProperty(type: Component["type"]): string {
     if (type === "todo_list") return "itemsBinding";
     if (type === "calendar") return "entityBinding";
-    if (type === "range_slider") return "valueBinding";
     return "stateBinding";
   }
 
@@ -49,7 +47,7 @@
   }
 </script>
 
-{#if component.type === "todo_list" || component.type === "light_state" || component.type === "hvac" || component.type === "weather" || component.type === "calendar" || component.type === "range_slider"}
+{#if component.type === "todo_list" || component.type === "light_state" || component.type === "hvac" || component.type === "weather" || component.type === "calendar"}
   <div class="property-section">
     <div class="section-label-row">
       <div class="section-label">Entity Binding</div>

@@ -281,22 +281,3 @@ class NotificationOverlayWidget : public Widget {
   bool baseline_set_ = false;
   bool was_visible_ = false;
 };
-
-// ---------------------------------------------------------------------------
-// RangeSliderWidget
-// Single-value slider with two full visual themes: Modern and Retro.
-// Theme is determined at compile-time via UI_THEME_RETRO.
-//
-// Modern  — soft rounded track, pill fill, circular thumb with ring.
-// Retro   — clipped-corner shell, cyan/amber CRT palette, scanlines,
-//           squared thumb with corner ticks.
-//
-// Usage:
-//   auto *slider = new RangeSliderWidget(
-//       UiRect{20, 200, 440, 88}, "BRIGHTNESS",
-//       /*min=*/0.f, /*max=*/100.f, /*step=*/5.f,
-//       /*value=*/50.f, "%", /*decimals=*/0);
-//   slider->on_change([](float v) { /* live drag */ });
-//   slider->on_release([](float v) { /* commit to HA */ });
-//   slider->bind(&my_value);
-// ---------------------------------------------------------------------------

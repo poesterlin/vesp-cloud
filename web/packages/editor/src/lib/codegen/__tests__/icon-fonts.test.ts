@@ -42,7 +42,7 @@ describe("normalizeIconName", () => {
 });
 
 describe("collectProjectIconNames", () => {
-  test("collects icons from icon, button, and auto_layout_list components", () => {
+  test("collects icons from icon and button components", () => {
     const project = makeProject({
       dashboardPages: [
         {
@@ -63,23 +63,13 @@ describe("collectProjectIconNames", () => {
               size: { width: 80, height: 36 },
               icon: "home",
             },
-            {
-              id: "list",
-              type: "auto_layout_list",
-              position: { x: 0, y: 100 },
-              size: { width: 200, height: 60 },
-              items: [
-                { id: "i", name: "Item", icon: "mdi:thermometer" },
-                { id: "i2", name: "Item2", icon: "fan" },
-              ],
-            },
           ],
         },
       ],
     });
 
     const icons = collectProjectIconNames(project);
-    expect(icons).toEqual(new Set(["lightbulb", "home", "thermometer", "fan"]));
+    expect(icons).toEqual(new Set(["lightbulb", "home"]));
   });
 
   test("traverses nested conditional and tab containers", () => {

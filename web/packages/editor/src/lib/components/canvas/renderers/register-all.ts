@@ -2,12 +2,8 @@ import { registerRenderer } from './renderer-registry';
 
 import TextRenderer from './TextRenderer.svelte';
 import DigitalClockRenderer from './DigitalClockRenderer.svelte';
-import AutoLayoutListRenderer from './AutoLayoutListRenderer.svelte';
 import ButtonRenderer from './ButtonRenderer.svelte';
-import SliderRenderer from './SliderRenderer.svelte';
 import IconRenderer from './IconRenderer.svelte';
-import ProceduralIconRenderer from './ProceduralIconRenderer.svelte';
-import ContainerRenderer from './ContainerRenderer.svelte';
 import RectangleRenderer from './RectangleRenderer.svelte';
 import ImageRenderer from './ImageRenderer.svelte';
 import TodoListRenderer from './TodoListRenderer.svelte';
@@ -19,13 +15,8 @@ import ComponentRenderer from './ComponentRenderer.svelte';
 
 registerRenderer('text', TextRenderer);
 registerRenderer('digital_clock', DigitalClockRenderer);
-registerRenderer('auto_layout_list', AutoLayoutListRenderer);
 registerRenderer('button', ButtonRenderer);
-registerRenderer('slider', SliderRenderer);
-registerRenderer('range_slider', SliderRenderer);
 registerRenderer('icon', IconRenderer);
-registerRenderer('procedural_icon', ProceduralIconRenderer);
-registerRenderer('container', ContainerRenderer);
 registerRenderer('rectangle', RectangleRenderer);
 registerRenderer('image', ImageRenderer);
 registerRenderer('todo_list', TodoListRenderer);

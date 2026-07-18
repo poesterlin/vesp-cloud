@@ -1031,64 +1031,6 @@ function createProjectStore() {
       }
     },
 
-    addAutoLayoutItem(componentId: string) {
-      const component = this.getComponent(componentId) as any;
-      if (component?.type !== "auto_layout_list") return;
-
-      const newItem = {
-        id: `auto-layout-item-${Date.now()}`,
-        name: `Item ${component.items.length + 1}`,
-        icon: "home",
-        scale: 1,
-      };
-
-      component.items.push(newItem);
-      scheduleSave();
-      return newItem;
-    },
-
-    updateAutoLayoutItem(componentId: string, itemId: string, patch: Record<string, unknown>) {
-      const component = this.getComponent(componentId) as any;
-      if (component?.type !== "auto_layout_list") return;
-
-      const index = component.items.findIndex((item: any) => item.id === itemId);
-      if (index === -1) return;
-
-      component.items[index] = {
-        ...component.items[index],
-        ...patch,
-      };
-      scheduleSave();
-      return component.items[index];
-    },
-
-    deleteAutoLayoutItem(componentId: string, itemId: string) {
-      const component = this.getComponent(componentId) as any;
-      if (component?.type !== "auto_layout_list") return;
-      if (component.items.length <= 1) return;
-
-      const index = component.items.findIndex((item: any) => item.id === itemId);
-      if (index === -1) return;
-
-      component.items.splice(index, 1);
-      scheduleSave();
-    },
-
-    reorderAutoLayoutItem(componentId: string, itemId: string, direction: "up" | "down") {
-      const component = this.getComponent(componentId) as any;
-      if (component?.type !== "auto_layout_list") return;
-
-      const index = component.items.findIndex((item: any) => item.id === itemId);
-      if (index === -1) return;
-
-      const targetIndex = direction === "up" ? index - 1 : index + 1;
-      if (targetIndex < 0 || targetIndex >= component.items.length) return;
-
-      const [item] = component.items.splice(index, 1);
-      component.items.splice(targetIndex, 0, item);
-      scheduleSave();
-    },
-
     moveComponent(id: string, dx: number, dy: number) {
       if (!project) return;
       const components = viewMode === "dashboard" ? currentDashboardPage?.components : currentDetailView?.components;

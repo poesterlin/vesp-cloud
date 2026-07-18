@@ -3,16 +3,12 @@
   import TextRenderer from "./TextRenderer.svelte";
   import DigitalClockRenderer from "./DigitalClockRenderer.svelte";
   import ButtonRenderer from "./ButtonRenderer.svelte";
-  import SliderRenderer from "./SliderRenderer.svelte";
   import IconRenderer from "./IconRenderer.svelte";
-  import ProceduralIconRenderer from "./ProceduralIconRenderer.svelte";
-  import ContainerRenderer from "./ContainerRenderer.svelte";
   import RectangleRenderer from "./RectangleRenderer.svelte";
   import ImageRenderer from "./ImageRenderer.svelte";
   import ConditionalAreaRenderer from "./ConditionalAreaRenderer.svelte";
   import TabContainerRenderer from "./TabContainerRenderer.svelte";
   import TodoListRenderer from "./TodoListRenderer.svelte";
-  import AutoLayoutListRenderer from "./AutoLayoutListRenderer.svelte";
   import LightStateRenderer from "./LightStateRenderer.svelte";
   import HvacRenderer from "./HvacRenderer.svelte";
   import WeatherRenderer from "./WeatherRenderer.svelte";
@@ -30,18 +26,10 @@
   <TextRenderer {component} />
 {:else if component.type === "digital_clock"}
   <DigitalClockRenderer {component} />
-{:else if (component as any).type === "auto_layout_list"}
-  <AutoLayoutListRenderer {component} />
 {:else if component.type === "button"}
   <ButtonRenderer {component} />
-{:else if component.type === "range_slider"}
-  <SliderRenderer {component} />
 {:else if component.type === "icon"}
   <IconRenderer {component} />
-{:else if component.type === "procedural_icon"}
-  <ProceduralIconRenderer {component} />
-{:else if component.type === "container"}
-  <ContainerRenderer {component} />
 {:else if component.type === "rectangle"}
   <RectangleRenderer {component} />
 {:else if component.type === "image"}

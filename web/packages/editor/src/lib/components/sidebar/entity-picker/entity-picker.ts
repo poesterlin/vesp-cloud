@@ -23,12 +23,11 @@ export type PickerComponent = Component | {
 export function getComponentBinding(component: PickerComponent): EntityBinding | undefined {
   switch (component.type) {
     case "text": return component.textBinding;
-    case "procedural_icon": case "light_state": case "hvac": case "weather":
+    case "light_state": case "hvac": case "weather":
       return component.stateBinding;
     case "calendar": return component.entityBinding;
     case "todo_list": return component.itemsBinding;
     case "image": return component.imageBinding;
-    case "slider": case "gauge": case "range_slider": return component.valueBinding;
     default: return undefined;
   }
 }

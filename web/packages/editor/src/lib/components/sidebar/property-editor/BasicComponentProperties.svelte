@@ -156,32 +156,6 @@
   </div>
 {/if}
 
-{#if component.type === "procedural_icon"}
-  <div class="property-section">
-    <label class="section-label">Procedural Icon</label>
-    <div class="field">
-      <span class="field-label">Type</span>
-      <select
-        value={component.iconType ?? "bulb"}
-        onchange={(e) => updateProperty("iconType", e.currentTarget.value)}
-      >
-        <option value="bulb">Bulb</option>
-        <option value="window">Window</option>
-        <option value="vacuum">Vacuum</option>
-        <option value="climate">Climate</option>
-      </select>
-    </div>
-  </div>
-  <div class="property-section">
-    <label class="section-label">Styling</label>
-    <ColorPicker
-      label="Color"
-      value={component.color}
-      onUpdate={(color) => updateProperty("color", color)}
-    />
-  </div>
-{/if}
-
 {#if component.type === "rectangle"}
   <div class="property-section">
     <label class="section-label">Styling</label>

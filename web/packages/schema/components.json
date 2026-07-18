@@ -285,77 +285,6 @@
         }
       ]
     },
-    "AutoLayoutDirection": {
-      "type": "string",
-      "enum": ["horizontal", "vertical"]
-    },
-    "AutoLayoutAlign": {
-      "type": "string",
-      "enum": ["start", "center", "end", "stretch"]
-    },
-    "AutoLayoutJustify": {
-      "type": "string",
-      "enum": ["start", "center", "end", "space_between"]
-    },
-    "AutoLayoutListItem": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "condition": { "$ref": "#/definitions/Condition" },
-        "icon": { "type": "string" },
-        "color": { "$ref": "#/definitions/Color" },
-        "scale": { "type": "number", "default": 1 }
-      },
-      "required": ["id", "name"],
-      "additionalProperties": false
-    },
-    "AutoLayoutListComponent": {
-      "allOf": [
-        { "$ref": "#/definitions/BaseComponent" },
-        {
-          "type": "object",
-          "properties": {
-            "type": { "const": "auto_layout_list" },
-            "direction": {
-              "$ref": "#/definitions/AutoLayoutDirection",
-              "default": "horizontal"
-            },
-            "gap": {
-              "type": "number",
-              "minimum": 0,
-              "default": 6
-            },
-            "padding": {
-              "type": "number",
-              "minimum": 0,
-              "default": 0
-            },
-            "crossAxisAlign": {
-              "$ref": "#/definitions/AutoLayoutAlign",
-              "default": "center"
-            },
-            "mainAxisJustify": {
-              "$ref": "#/definitions/AutoLayoutJustify",
-              "default": "start"
-            },
-            "itemSizeMode": {
-              "type": "string",
-              "enum": ["content", "fixed"],
-              "default": "content"
-            },
-            "itemWidth": { "type": "number", "minimum": 1 },
-            "itemHeight": { "type": "number", "minimum": 1 },
-            "items": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/AutoLayoutListItem" },
-              "minItems": 1
-            }
-          },
-          "required": ["type", "size", "items"]
-        }
-      ]
-    },
     "OnTapAction": {
       "oneOf": [
         { "$ref": "#/definitions/ServiceAction" },
@@ -450,80 +379,6 @@
         }
       ]
     },
-    "SliderComponent": {
-      "allOf": [
-        { "$ref": "#/definitions/BaseComponent" },
-        {
-          "type": "object",
-          "properties": {
-            "type": { "const": "slider" },
-            "min": { "type": "number", "default": 0 },
-            "max": { "type": "number", "default": 100 },
-            "step": { "type": "number", "default": 1 },
-            "valueBinding": { "$ref": "#/definitions/EntityBinding" },
-            "onChange": { "$ref": "#/definitions/ActionBinding" },
-            "orientation": { "enum": ["horizontal", "vertical"], "default": "horizontal" },
-            "trackColor": { "$ref": "#/definitions/Color" },
-            "fillColor": { "$ref": "#/definitions/Color" },
-            "handleColor": { "$ref": "#/definitions/Color" }
-          },
-          "required": ["type", "size"]
-        }
-      ]
-    },
-    "RangeSliderComponent": {
-      "allOf": [
-        { "$ref": "#/definitions/BaseComponent" },
-        {
-          "type": "object",
-          "properties": {
-            "type": { "const": "range_slider" },
-            "label": { "type": "string", "description": "Header label displayed above the track" },
-            "unit": { "type": "string", "description": "Unit suffix appended to values (e.g. '°', '%')" },
-            "min": { "type": "number", "default": 0, "description": "Minimum value of the range" },
-            "max": { "type": "number", "default": 100, "description": "Maximum value of the range" },
-            "step": { "type": "number", "default": 1, "description": "Step increment between values" },
-            "value": { "type": "number", "description": "Initial slider value" },
-            "valueDecimals": { "type": "integer", "minimum": 0, "maximum": 3, "default": 1, "description": "Number of decimal places for displayed values" },
-            "color": { "$ref": "#/definitions/Color", "description": "Accent color for track fill, thumbs, and borders" },
-            "valueBinding": { "$ref": "#/definitions/EntityBinding", "description": "Home Assistant number/light brightness entity to bind the slider value to" }
-          },
-          "required": ["type", "size"]
-        }
-      ]
-    },
-    "GaugeComponent": {
-      "allOf": [
-        { "$ref": "#/definitions/BaseComponent" },
-        {
-          "type": "object",
-          "properties": {
-            "type": { "const": "gauge" },
-            "min": { "type": "number" },
-            "max": { "type": "number" },
-            "valueBinding": { "$ref": "#/definitions/EntityBinding" },
-            "unit": { "type": "string" },
-            "backgroundColor": { "$ref": "#/definitions/Color" },
-            "needleColor": { "$ref": "#/definitions/Color" },
-            "valueColor": { "$ref": "#/definitions/Color" },
-            "segments": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "from": { "type": "number" },
-                  "to": { "type": "number" },
-                  "color": { "$ref": "#/definitions/Color" }
-                },
-                "required": ["from", "to", "color"],
-                "additionalProperties": false
-              }
-            }
-          },
-          "required": ["type", "size", "min", "max"]
-        }
-      ]
-    },
     "IconComponent": {
       "allOf": [
         { "$ref": "#/definitions/BaseComponent" },
@@ -536,40 +391,6 @@
             "scale": { "type": "number", "default": 1 }
           },
           "required": ["type", "size", "icon"]
-        }
-      ]
-    },
-    "ProceduralIconComponent": {
-      "allOf": [
-        { "$ref": "#/definitions/BaseComponent" },
-        {
-          "type": "object",
-          "properties": {
-            "type": { "const": "procedural_icon" },
-            "iconType": { "enum": ["bulb", "window", "vacuum", "climate"] },
-            "stateBinding": { "$ref": "#/definitions/EntityBinding" },
-            "color": { "$ref": "#/definitions/Color" }
-          },
-          "required": ["type", "size", "iconType"]
-        }
-      ]
-    },
-    "ContainerComponent": {
-      "allOf": [
-        { "$ref": "#/definitions/BaseComponent" },
-        {
-          "type": "object",
-          "properties": {
-            "type": { "const": "container" },
-            "label": { "type": "string" },
-            "backgroundColor": { "$ref": "#/definitions/Color" },
-            "children": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/Component" },
-              "description": "Child components rendered inside this container"
-            }
-          },
-          "required": ["type", "size"]
         }
       ]
     },
@@ -778,12 +599,7 @@
         { "$ref": "#/definitions/TextComponent" },
         { "$ref": "#/definitions/DigitalClockComponent" },
         { "$ref": "#/definitions/ButtonComponent" },
-        { "$ref": "#/definitions/SliderComponent" },
-        { "$ref": "#/definitions/RangeSliderComponent" },
-        { "$ref": "#/definitions/GaugeComponent" },
         { "$ref": "#/definitions/IconComponent" },
-        { "$ref": "#/definitions/ProceduralIconComponent" },
-        { "$ref": "#/definitions/ContainerComponent" },
         { "$ref": "#/definitions/RectangleComponent" },
         { "$ref": "#/definitions/ImageComponent" },
         { "$ref": "#/definitions/TodoListComponent" },
@@ -791,7 +607,6 @@
         { "$ref": "#/definitions/HvacComponent" },
         { "$ref": "#/definitions/WeatherComponent" },
         { "$ref": "#/definitions/CalendarComponent" },
-        { "$ref": "#/definitions/AutoLayoutListComponent" },
         { "$ref": "#/definitions/ConditionalAreaComponent" },
         { "$ref": "#/definitions/TabContainerComponent" }
       ]

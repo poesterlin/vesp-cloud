@@ -1,4 +1,4 @@
-import type { TextComponent, ButtonComponent, SliderComponent, GaugeComponent, IconComponent, ProceduralIconComponent, ContainerComponent, ImageComponent, TodoListComponent, LightStateComponent, AutoLayoutListComponent, ConditionalAreaComponent, TabContainerComponent } from "@vesp-cloud/schema";
+import type { TextComponent, ButtonComponent, IconComponent, ImageComponent, TodoListComponent, LightStateComponent, ConditionalAreaComponent, TabContainerComponent } from "@vesp-cloud/schema";
 
 /**
  * Simple assertion function that throws an error if the condition is false.
@@ -26,15 +26,10 @@ export function toUpperSnakeCase(str: string): string {
 export type ComponentMap = {
   text: TextComponent;
   button: ButtonComponent;
-  slider: SliderComponent;
-  gauge: GaugeComponent;
   icon: IconComponent;
-  procedural_icon: ProceduralIconComponent;
-  container: ContainerComponent;
   image: ImageComponent;
   todo_list: TodoListComponent;
   light_state: LightStateComponent;
-  auto_layout_list: AutoLayoutListComponent;
   conditional_area: ConditionalAreaComponent;
   tab_container: TabContainerComponent;
 };

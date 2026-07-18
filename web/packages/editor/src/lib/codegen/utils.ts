@@ -5,8 +5,6 @@ import type {
   Project,
   IconComponent,
   ButtonComponent,
-  AutoLayoutListComponent,
-  AutoLayoutListItem,
   LightStateComponent,
   TodoListComponent,
   EntityBinding,
@@ -190,7 +188,7 @@ export function normalizeIconName(name: string | undefined | null): string {
  * and collect the set of normalized icon names referenced by them.
  *
  * Currently inspects: `icon`, `button.icon`, `light_state.icon`,
- * checkable `todo_list` checkbox icons, and `auto_layout_list` item icons.
+ * and checkable `todo_list` checkbox icons.
  */
 export function collectProjectIconNames(project: Project): Set<string> {
   const icons = new Set<string>();
@@ -231,11 +229,6 @@ export function collectProjectIconNames(project: Project): Set<string> {
         addIcon("weather-lightning");
         addIcon("weather-lightning-rainy");
         addIcon("weather-tornado");
-      } else if (c.type === "auto_layout_list") {
-        const list = c as AutoLayoutListComponent;
-        for (const item of list.items as AutoLayoutListItem[]) {
-          addIcon(item.icon);
-        }
       } else if (c.type === "todo_list") {
         const todo = c as TodoListComponent;
         if (todo.checkable === true) {

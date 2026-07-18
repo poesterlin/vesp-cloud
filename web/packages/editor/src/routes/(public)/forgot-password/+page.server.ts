@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { validateForm } from '$lib/server/form';
 import type { Actions, PageServerLoad } from './$types';
-import { fail } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import { consumeRateLimit } from '$lib/server/rate-limit';
 
 const renderer = new Renderer();
@@ -28,7 +28,7 @@ export const actions: Actions = {
       });
       if (!rateLimit.allowed) {
         event.setHeaders({ 'Retry-After': String(rateLimit.retryAfterSeconds) });
-        return fail(429, { message: 'Too many password reset attempts. Please try again later.' });
+        error(429, 'Too many password reset attempts. Please try again later.');
       }
 
       const db = getDb();

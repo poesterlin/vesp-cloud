@@ -3,7 +3,7 @@ import { getDb } from '@vesp-cloud/db';
 import * as table from '@vesp-cloud/db/schema';
 import { generateId, getSafeRedirectPath, normalizeEmail } from '$lib/server/util';
 import { hash } from '@node-rs/argon2';
-import { fail, redirect } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { validateForm } from '$lib/server/form';
 import { dev } from '$app/environment';
@@ -55,7 +55,7 @@ export const actions: Actions = {
       });
       if (!rateLimit.allowed) {
         event.setHeaders({ 'Retry-After': String(rateLimit.retryAfterSeconds) });
-        return fail(429, { message: 'Too many registration attempts. Please try again later.' });
+        error(429, 'Too many registration attempts. Please try again later.');
       }
 
       if (

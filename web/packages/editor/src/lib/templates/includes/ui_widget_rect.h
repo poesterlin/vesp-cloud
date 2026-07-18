@@ -13,7 +13,8 @@ class RectWidget : public Widget {
   void draw(display::Display &it, const UiState &state) override {
     (void)state;
     const UiRect r = screen_rect(rect_);
-    ui_fast_filled_rectangle(it, r.x, r.y, r.w, r.h, color_);
+    if (r.w <= 0 || r.h <= 0) return;
+    draw_clipped_box(it, r.x, r.y, r.w, r.h, 6, color_, color_, false);
   }
 
  private:

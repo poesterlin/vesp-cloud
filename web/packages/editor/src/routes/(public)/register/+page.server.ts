@@ -1,5 +1,4 @@
 import * as auth from '$lib/server/auth';
-import { ensureBalanceExists } from '$lib/credits';
 import { getDb } from '@vesp-cloud/db';
 import * as table from '@vesp-cloud/db/schema';
 import { generateId, getSafeRedirectPath, normalizeEmail } from '$lib/server/util';
@@ -68,22 +67,22 @@ export const actions: Actions = {
       });
 
       const db = getDb();
+      const sessionToken = auth.generateSessionToken();
+      const session = auth.createSessionRecord(sessionToken, userId);
       try {
-        await db.insert(table.usersTable).values({
-          id: userId,
-          email: normalizeEmail(email),
-          createdAt: new Date(),
-          lastLogin: new Date(),
-          username,
-          passwordHash,
+        await db.transaction(async (tx) => {
+          await tx.insert(table.usersTable).values({
+            id: userId,
+            email: normalizeEmail(email),
+            createdAt: new Date(),
+            lastLogin: new Date(),
+            username,
+            passwordHash,
+          });
+          await tx.insert(table.sessionTable).values(session);
+          await tx.insert(table.creditBalances).values({ userId, balance: 0 });
         });
-
-        const sessionToken = auth.generateSessionToken();
-        const session = await auth.createSession(sessionToken, userId);
         auth.setSessionTokenCookie(event, sessionToken, session.expiresAt);
-
-        await ensureBalanceExists(userId);
-
       } catch (e) {
         if (isUniqueConstraintError(e, 'user_username_unique')) {
           return fail(409, {

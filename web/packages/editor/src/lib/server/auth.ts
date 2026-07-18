@@ -14,14 +14,18 @@ export function generateSessionToken() {
   return encodeBase64url(bytes);
 }
 
-export async function createSession(token: string, userId: string) {
-  const db = getDb();
+export function createSessionRecord(token: string, userId: string): table.Session {
   const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
-  const session: table.Session = {
+  return {
     id: sessionId,
     userId,
     expiresAt: new Date(Date.now() + DAY_IN_MS * 30),
   };
+}
+
+export async function createSession(token: string, userId: string) {
+  const db = getDb();
+  const session = createSessionRecord(token, userId);
   await db.insert(table.sessionTable).values(session);
   return session;
 }

@@ -88,13 +88,12 @@
     </div>
     <div class="property-section">
       <label class="section-label">Confirmation</label>
-      {@const action = component.confirmAction ?? "none"}
       <label class="confirmation-field">
         <input
           type="radio"
           name="lightConfirmAction"
           value="none"
-          checked={action === "none"}
+          checked={(component.confirmAction ?? "none") === "none"}
           onchange={(e) => e.currentTarget.checked && updateProperty("confirmAction", "none")}
         />
         <span>No confirmation</span>
@@ -104,7 +103,7 @@
           type="radio"
           name="lightConfirmAction"
           value="on"
-          checked={action === "on"}
+          checked={(component.confirmAction ?? "none") === "on"}
           onchange={(e) => e.currentTarget.checked && updateProperty("confirmAction", "on")}
         />
         <span>Confirm when turning on</span>
@@ -114,7 +113,7 @@
           type="radio"
           name="lightConfirmAction"
           value="off"
-          checked={action === "off"}
+          checked={(component.confirmAction ?? "none") === "off"}
           onchange={(e) => e.currentTarget.checked && updateProperty("confirmAction", "off")}
         />
         <span>Confirm when turning off</span>
@@ -124,7 +123,7 @@
           type="radio"
           name="lightConfirmAction"
           value="both"
-          checked={action === "both"}
+          checked={(component.confirmAction ?? "none") === "both"}
           onchange={(e) => e.currentTarget.checked && updateProperty("confirmAction", "both")}
         />
         <span>Confirm both</span>

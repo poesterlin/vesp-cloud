@@ -86,48 +86,21 @@
         onSelect={(icon) => updateProperty("icon", icon || "lightbulb")}
       />
     </div>
-    <div class="property-section">
-      <label class="section-label">Confirmation</label>
-      <label class="confirmation-field">
-        <input
-          type="radio"
-          name="lightConfirmAction"
-          value="none"
-          checked={(component.confirmAction ?? "none") === "none"}
-          onchange={(e) => e.currentTarget.checked && updateProperty("confirmAction", "none")}
-        />
-        <span>No confirmation</span>
-      </label>
-      <label class="confirmation-field">
-        <input
-          type="radio"
-          name="lightConfirmAction"
-          value="on"
-          checked={(component.confirmAction ?? "none") === "on"}
-          onchange={(e) => e.currentTarget.checked && updateProperty("confirmAction", "on")}
-        />
-        <span>Confirm when turning on</span>
-      </label>
-      <label class="confirmation-field">
-        <input
-          type="radio"
-          name="lightConfirmAction"
-          value="off"
-          checked={(component.confirmAction ?? "none") === "off"}
-          onchange={(e) => e.currentTarget.checked && updateProperty("confirmAction", "off")}
-        />
-        <span>Confirm when turning off</span>
-      </label>
-      <label class="confirmation-field">
-        <input
-          type="radio"
-          name="lightConfirmAction"
-          value="both"
-          checked={(component.confirmAction ?? "none") === "both"}
-          onchange={(e) => e.currentTarget.checked && updateProperty("confirmAction", "both")}
-        />
-        <span>Confirm both</span>
-      </label>
+  </div>
+  <div class="property-section">
+    <label class="section-label" for="light-confirm-action">Confirmation</label>
+    <div class="field">
+      <span class="field-label">Require</span>
+      <select
+        id="light-confirm-action"
+        value={component.confirmAction ?? "none"}
+        onchange={(e) => updateProperty("confirmAction", e.currentTarget.value)}
+      >
+        <option value="none">Never</option>
+        <option value="on">When turning on</option>
+        <option value="off">When turning off</option>
+        <option value="both">Always</option>
+      </select>
     </div>
   </div>
 {/if}

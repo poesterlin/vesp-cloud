@@ -7,6 +7,8 @@ services:
       CONCURRENT_JOBS: 1
       APP_EDITION: self-hosted
       PUBLIC_BASE_URL: https://${DOMAIN}
+      PUBLIC_ANALYTICS_SCRIPT_URL: ${PUBLIC_ANALYTICS_SCRIPT_URL:-}
+      PUBLIC_ANALYTICS_WEBSITE_ID: ${PUBLIC_ANALYTICS_WEBSITE_ID:-}
       LOG_LEVEL: debug
     networks:
       - internal

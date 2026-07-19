@@ -1039,6 +1039,25 @@ packages:
   hardware: !include hardware.yaml
 ${imageYaml}${onlineImageYaml}${httpRequestYaml}${httpOtaYaml}${httpUpdateYaml}
 
+external_components:
+  - source:
+      type: local
+      path: components
+
+camera_encoder:
+  id: screen_jpeg_encoder
+  type: esp32_camera
+  quality: 90
+  buffer_size: 65536
+  buffer_expand_size: 32768
+
+framebuffer_camera:
+  id: screen_camera
+  name: "Display Screenshot"
+  display_id: main_display
+  encoder_id: screen_jpeg_encoder
+  disabled_by_default: true
+
 esphome:
 ${projectVersionYaml}
   on_boot:

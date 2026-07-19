@@ -3,6 +3,8 @@
 #include "ui_widget_base.h"
 #include "ui_confirmation_popup.h"
 
+enum class ConfirmAction : uint8_t { None = 0, On = 1, Off = 2, Both = 3 };
+
 class ImageToggleWidget : public Widget {
  public:
   const char *widget_label() const override { return "ImgToggle"; }
@@ -35,7 +37,7 @@ class ImageToggleWidget : public Widget {
     Widget::update(now);
   }
 
-  void set_confirm_before_action(bool enable) { confirm_before_action_ = enable; }
+  void set_confirm_action(ConfirmAction action) { confirm_action_ = action; }
 
   bool handle_touch(const TouchEvent &event, uint32_t now) override {
     if (event.type != TouchType::Tap) return false;
@@ -47,12 +49,20 @@ class ImageToggleWidget : public Widget {
     }
 
     if (!hit_test(event.x, event.y)) return false;
-    if (confirm_before_action_) {
+    if (should_confirm_()) {
       g_confirmation_popup.show(label_, [this]() { this->execute_action_(millis()); });
       return true;
     }
     execute_action_(now);
     return true;
+  }
+
+  bool should_confirm_() const {
+    if (confirm_action_ == ConfirmAction::None) return false;
+    if (confirm_action_ == ConfirmAction::Both) return true;
+    bool is_on = on_state_ != nullptr ? *on_state_ : false;
+    return (confirm_action_ == ConfirmAction::On && !is_on) ||
+           (confirm_action_ == ConfirmAction::Off && is_on);
   }
 
   void execute_action_(uint32_t now) {
@@ -151,5 +161,5 @@ class ImageToggleWidget : public Widget {
   uint32_t loading_start_ms_ = 0;
   uint32_t loading_timeout_ms_ = 350;
   bool last_on_state_ = false;
-  bool confirm_before_action_ = false;
+  ConfirmAction confirm_action_ = ConfirmAction::None;
 };

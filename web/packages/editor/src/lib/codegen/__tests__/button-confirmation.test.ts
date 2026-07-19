@@ -24,7 +24,7 @@ function project(confirmBeforeAction?: boolean): Project {
   };
 }
 
-function lightProject(confirmBeforeAction?: boolean): Project {
+function lightProject(confirmAction?: "none" | "on" | "off" | "both"): Project {
   const light: LightStateComponent = {
     id: "my-light",
     type: "light_state",
@@ -32,7 +32,7 @@ function lightProject(confirmBeforeAction?: boolean): Project {
     size: { width: 120, height: 44 },
     label: "Kitchen Light",
     stateBinding: { entityId: "switch.kitchen_light" },
-    confirmBeforeAction,
+    confirmAction,
   };
   return {
     name: "Light confirmation test",
@@ -64,19 +64,31 @@ describe("button action confirmation", () => {
 });
 
 describe("light_state action confirmation", () => {
-  test("enables confirmation on ImageToggleWidget", () => {
-    const output = generateUIScreensHeader(lightProject(true));
-    expect(output).toContain("light_toggle_my_light->set_confirm_before_action(true);");
+  test("emits none by default (no set_confirm_action call)", () => {
+    const output = generateUIScreensHeader(lightProject());
+    expect(output).not.toContain("set_confirm_action");
+    expect(output).toContain("auto *light_toggle_my_light =");
     expect(output).toContain("if (g_confirmation_popup.visible())");
   });
 
-  test("leaves confirmation disabled by default", () => {
-    const output = generateUIScreensHeader(lightProject());
-    expect(output).not.toContain("light_toggle_my_light->set_confirm_before_action(true);");
+  test("emits ConfirmAction::On for confirmAction=on", () => {
+    const output = generateUIScreensHeader(lightProject("on"));
+    expect(output).toContain("light_toggle_my_light->set_confirm_action(ConfirmAction::On);");
+    expect(output).not.toContain("set_confirm_before_action");
   });
 
-  test("enables confirmation on button widget when showIcon is false", () => {
-    const p = lightProject(true);
+  test("emits ConfirmAction::Off for confirmAction=off", () => {
+    const output = generateUIScreensHeader(lightProject("off"));
+    expect(output).toContain("light_toggle_my_light->set_confirm_action(ConfirmAction::Off);");
+  });
+
+  test("emits ConfirmAction::Both for confirmAction=both", () => {
+    const output = generateUIScreensHeader(lightProject("both"));
+    expect(output).toContain("light_toggle_my_light->set_confirm_action(ConfirmAction::Both);");
+  });
+
+  test("button fallback emits bool for non-none confirmAction when showIcon is false", () => {
+    const p = lightProject("both");
     const light = p.dashboardPages[0].components[0] as LightStateComponent;
     light.showIcon = false;
     const output = generateUIScreensHeader(p);

@@ -86,14 +86,50 @@
         onSelect={(icon) => updateProperty("icon", icon || "lightbulb")}
       />
     </div>
-    <label class="confirmation-field">
-      <input
-        type="checkbox"
-        checked={component.confirmBeforeAction ?? false}
-        onchange={(e) => updateProperty("confirmBeforeAction", e.currentTarget.checked)}
-      />
-      <span>Require confirmation</span>
-    </label>
+    <div class="property-section">
+      <label class="section-label">Confirmation</label>
+      {@const action = component.confirmAction ?? "none"}
+      <label class="confirmation-field">
+        <input
+          type="radio"
+          name="lightConfirmAction"
+          value="none"
+          checked={action === "none"}
+          onchange={(e) => e.currentTarget.checked && updateProperty("confirmAction", "none")}
+        />
+        <span>No confirmation</span>
+      </label>
+      <label class="confirmation-field">
+        <input
+          type="radio"
+          name="lightConfirmAction"
+          value="on"
+          checked={action === "on"}
+          onchange={(e) => e.currentTarget.checked && updateProperty("confirmAction", "on")}
+        />
+        <span>Confirm when turning on</span>
+      </label>
+      <label class="confirmation-field">
+        <input
+          type="radio"
+          name="lightConfirmAction"
+          value="off"
+          checked={action === "off"}
+          onchange={(e) => e.currentTarget.checked && updateProperty("confirmAction", "off")}
+        />
+        <span>Confirm when turning off</span>
+      </label>
+      <label class="confirmation-field">
+        <input
+          type="radio"
+          name="lightConfirmAction"
+          value="both"
+          checked={action === "both"}
+          onchange={(e) => e.currentTarget.checked && updateProperty("confirmAction", "both")}
+        />
+        <span>Confirm both</span>
+      </label>
+    </div>
   </div>
 {/if}
 

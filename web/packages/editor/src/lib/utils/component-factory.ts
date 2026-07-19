@@ -85,7 +85,7 @@ export function createComponent(type: string, x: number, y: number): Component {
         offText: "OFF",
         showIcon: true,
         showBrightnessControl: false,
-        confirmBeforeAction: false,
+        confirmAction: "none",
         size: { width: 120, height: 44 },
       } as Component;
 

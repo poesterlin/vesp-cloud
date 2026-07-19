@@ -290,8 +290,9 @@ function generateLightWidget(c: LightStateComponent, stateVar: string,
     if (visibilityExpr) {
       out += `${indent}light_toggle_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
     }
-    if (c.confirmBeforeAction) {
-      out += `${indent}light_toggle_${idSafe}->set_confirm_before_action(true);\n`;
+    if (c.confirmAction && c.confirmAction !== "none") {
+      const action = c.confirmAction.charAt(0).toUpperCase() + c.confirmAction.slice(1);
+      out += `${indent}light_toggle_${idSafe}->set_confirm_action(ConfirmAction::${action});\n`;
     }
     out += dirtyLine(`light_toggle_${idSafe}`);
     return out;
@@ -313,7 +314,7 @@ function generateLightWidget(c: LightStateComponent, stateVar: string,
     if (visibilityExpr) {
       out += `${indent}light_btn_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
     }
-    if (c.confirmBeforeAction) {
+    if (c.confirmAction && c.confirmAction !== "none") {
       out += `${indent}light_btn_${idSafe}->set_confirm_before_action(true);\n`;
     }
     out += dirtyLine(`light_btn_${idSafe}`);

@@ -1,5 +1,13 @@
 # Getting Started
 
+:::: warning A supported ESP32 display is required
+The editor creates firmware for a physical display, so you must purchase the
+supported **Guition ESP32-S3-4848S040** before you can deploy and use a project.
+Other ESP32 display boards are not supported.
+
+[Search for the supported display →](https://www.aliexpress.com/wholesale?SearchText=Guition+ESP32-S3+480x480)
+::::
+
 Import your Home Assistant entities, create a project, install it on your
 display, and connect the display to Wi-Fi.
 

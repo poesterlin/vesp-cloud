@@ -88,7 +88,7 @@
 
   .header {
     position: absolute;
-    top: 8px;
+    top: 4px;
     left: 12px;
     right: 12px;
     color: rgb(120, 128, 144);
@@ -122,7 +122,7 @@
   }
 
   .date {
-    width: 78px;
+    width: 60px;
     color: rgb(120, 128, 144);
     font-family: var(--display-font, monospace);
     font-size: var(--display-text-small, 16px);

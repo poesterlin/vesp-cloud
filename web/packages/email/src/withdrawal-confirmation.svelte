@@ -7,7 +7,7 @@
     confirmedAt,
     creditsPurchased,
     amountPaid,
-    supportEmail = 'support@vesp-cloud.com',
+    supportEmail = 'support@vesp.cloud',
   }: {
     orderId: string;
     confirmedAt: string;

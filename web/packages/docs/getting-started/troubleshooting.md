@@ -66,7 +66,7 @@ Use **Go to issue** to jump to the affected widget and correct it.
 
 ## Still having issues?
 
-Reach out to [support@vesp-cloud.com](mailto:support@vesp-cloud.com) with:
+Reach out to [support@vesp.cloud](mailto:support@vesp.cloud) with:
 
 - The project name
 - A description of what you expected and what happened

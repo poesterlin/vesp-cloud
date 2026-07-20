@@ -10,7 +10,7 @@ import type { PurchaseLookupResult } from './lookup';
 const renderer = new Renderer();
 const logger = createLogger('withdrawal');
 
-export const SUPPORT_EMAIL = 'support@vesp-cloud.com';
+export const SUPPORT_EMAIL = 'support@vesp.cloud';
 
 function isActiveWithdrawalConflict(err: unknown): boolean {
   if (!err || typeof err !== 'object') return false;

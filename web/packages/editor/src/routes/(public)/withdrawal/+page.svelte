@@ -234,7 +234,7 @@
         {#if alreadySubmitted}
           <p>
             A withdrawal request for this order has already been submitted. If you need help, contact
-            <a href="mailto:support@vesp-cloud.com">support@vesp-cloud.com</a>.
+            <a href="mailto:support@vesp.cloud">support@vesp.cloud</a>.
           </p>
         {:else}
           <p>

@@ -8,7 +8,7 @@ export const legalConfig = {
   postalCode: env.PUBLIC_LEGAL_POSTAL_CODE || required('postal code'),
   locality: env.PUBLIC_LEGAL_LOCALITY || required('city'),
   country: env.PUBLIC_LEGAL_COUNTRY || required('country'),
-  email: env.PUBLIC_LEGAL_EMAIL || 'support@vesp-cloud.com',
+  email: env.PUBLIC_LEGAL_EMAIL || 'support@vesp.cloud',
   supervisoryAuthority:
     env.PUBLIC_LEGAL_SUPERVISORY_AUTHORITY || required('competent data protection authority'),
   disputeResolution: env.PUBLIC_LEGAL_DISPUTE_RESOLUTION || '',

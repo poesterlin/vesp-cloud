@@ -12,6 +12,7 @@
   import EntityBindingProperties from "./property-editor/EntityBindingProperties.svelte";
   import HomeAssistantComponentProperties from "./property-editor/HomeAssistantComponentProperties.svelte";
   import ValidationErrors from "./property-editor/ValidationErrors.svelte";
+  import { weatherHeightForMode } from "$lib/utils/weather-layout";
   import "./property-editor/property-editor.css";
 
   const NAV_ICONS: Partial<Record<NavigationAction["type"], string>> = {
@@ -57,7 +58,19 @@
       selectedComponent.type === "calendar" ||
       selectedComponent.type === "todo_list";
 
-    if (isListComponent && key === "scrollable" && value === true) {
+    if (selectedComponent.type === "weather" && key === "mode") {
+      projectStore.updateComponent(selectedComponent.id, {
+        mode: value as "today" | "today-mini" | "forecast",
+        size: selectedComponent.size
+          ? {
+              ...selectedComponent.size,
+              height: weatherHeightForMode(
+                value as "today" | "today-mini" | "forecast",
+              ),
+            }
+          : undefined,
+      });
+    } else if (isListComponent && key === "scrollable" && value === true) {
       projectStore.updateComponent(selectedComponent.id, {
         scrollable: true,
         maxItems: undefined,

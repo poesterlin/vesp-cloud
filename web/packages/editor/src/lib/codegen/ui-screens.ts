@@ -36,6 +36,7 @@ import {
   type WidgetFactory,
 } from "./utils";
 import { HVAC_MODES, HVAC_OFF_COLOR } from "../utils/hvac-modes";
+import { weatherHeightForMode } from "../utils/weather-layout";
 import { emitConditionExpression, collectConditionEntities, type EntityTypeMap } from "./condition-expr";
 import { getMdiUtf8CEscape } from "./mdi-icons";
 import { parseTemplate } from "../utils/template-utils";
@@ -357,19 +358,19 @@ function generateWeatherWidget(c: WeatherComponent,
   const x = c.position.x + offX;
   const y = c.position.y + offY;
   const w = c.size?.width ?? 225;
-  const h = c.size?.height ?? 200;
+  const mode = c.mode ?? 'today';
+  const h = weatherHeightForMode(mode);
   const label = c.label ?? 'Weather';
   const entityId = c.stateBinding?.entityId ?? c.id;
   const base = stateVarFromEntity(entityId);
   const idSafe = safeCppIdentifier(c.id, 'component');
-  const mode = c.mode ?? 'today';
   const callback = emitTapAction(c.onTap) || '[](){}';
 
   if (mode === 'forecast') {
     const dayPtrs = (day: string) =>
       `WeatherDayPointers{state.${base}_${day}_condition.ptr(), state.${base}_${day}_temperature.ptr(), state.${base}_${day}_humidity.ptr(), state.${base}_${day}_wind_speed.ptr(), state.${base}_${day}_precipitation.ptr()}`;
 
-    let out = `${indent}auto *weather_${idSafe} = ${factory('WeatherWidget', `${rect(x, y, w, h)}, "${escapeCString(label)}", "${escapeCString(entityId)}", true, ${dayPtrs('day1')}, ${dayPtrs('day2')}, ${dayPtrs('day3')}, ${callback}`)};\n`;
+    let out = `${indent}auto *weather_${idSafe} = ${factory('WeatherWidget', `${rect(x, y, w, h)}, "${escapeCString(label)}", "${escapeCString(entityId)}", WeatherMode::Forecast, ${dayPtrs('day1')}, ${dayPtrs('day2')}, ${dayPtrs('day3')}, ${callback}`)};\n`;
     if (visibilityExpr) {
       out += `${indent}weather_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
     }
@@ -380,7 +381,8 @@ function generateWeatherWidget(c: WeatherComponent,
   }
 
   const todayPtrs = `WeatherDayPointers{state.${base}_condition.ptr(), state.${base}_temperature.ptr(), state.${base}_humidity.ptr(), state.${base}_wind_speed.ptr(), state.${base}_precipitation.ptr()}`;
-  let out = `${indent}auto *weather_${idSafe} = ${factory('WeatherWidget', `${rect(x, y, w, h)}, "${escapeCString(label)}", "${escapeCString(entityId)}", false, ${todayPtrs}, WeatherDayPointers{}, WeatherDayPointers{}, ${callback}`)};\n`;
+  const cppMode = mode === 'today-mini' ? 'WeatherMode::TodayMini' : 'WeatherMode::Today';
+  let out = `${indent}auto *weather_${idSafe} = ${factory('WeatherWidget', `${rect(x, y, w, h)}, "${escapeCString(label)}", "${escapeCString(entityId)}", ${cppMode}, ${todayPtrs}, WeatherDayPointers{}, WeatherDayPointers{}, ${callback}`)};\n`;
   if (visibilityExpr) {
     out += `${indent}weather_${idSafe}->set_visibility_condition(${visibilityExpr});\n`;
   }

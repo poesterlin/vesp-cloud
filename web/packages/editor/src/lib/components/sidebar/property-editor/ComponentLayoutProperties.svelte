@@ -56,7 +56,7 @@
             updateSize("width", parseInt(e.currentTarget.value) || 10)}
         />
       </div>
-      {#if component.type !== "light_state"}
+      {#if component.type !== "light_state" && component.type !== "weather"}
         <div class="field">
           <span class="field-label">H</span>
           <input

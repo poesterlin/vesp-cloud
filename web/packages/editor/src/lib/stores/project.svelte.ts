@@ -13,6 +13,10 @@ import { RETRO_THEME } from "../themes/retro";
 import { conditionalEditorStore } from "./conditional-editor.svelte";
 import { selectionStore } from "./selection.svelte";
 import { cloneComponentWithFreshIds } from "$lib/utils/component-clone.svelte";
+import {
+  normalizeProjectWeatherHeights,
+  normalizeWeatherComponentHeights,
+} from "$lib/utils/weather-layout";
 
 const LATEST_VERSION = "1.0.0";
 const PROJECTS_INDEX_KEY = "vesp-cloud-projects-index";
@@ -322,6 +326,7 @@ function createProjectStore() {
     // Component management
     addComponent(component: Component) {
       if (!project) return;
+      normalizeWeatherComponentHeights(component);
       if (viewMode === "dashboard" && currentDashboardPage) {
         currentDashboardPage.components.push(component);
       } else if (currentDetailView) {
@@ -333,6 +338,7 @@ function createProjectStore() {
 
     addHeaderComponent(component: Component) {
       if (!project?.pageHeader) return;
+      normalizeWeatherComponentHeights(component);
       project.pageHeader.components.push(component);
       scheduleSave();
       return component;
@@ -343,6 +349,7 @@ function createProjectStore() {
       if (parent?.type === "conditional_area") {
         const variant = parent.variants.find(v => v.id === variantId);
         if (variant) {
+          normalizeWeatherComponentHeights(component);
           variant.components.push(component);
           scheduleSave();
           return component;
@@ -355,6 +362,7 @@ function createProjectStore() {
       if (parent?.type === "tab_container") {
         const tab = parent.tabs.find((t) => t.id === tabId);
         if (tab) {
+          normalizeWeatherComponentHeights(component);
           tab.components.push(component);
           scheduleSave();
           return component;
@@ -568,6 +576,19 @@ function createProjectStore() {
     updateComponent(id: string, updates: Partial<Component>, skipSave?: boolean) {
       if (!project) return;
 
+      if (updates.position) {
+        updates.position = {
+          x: Math.round(updates.position.x),
+          y: Math.round(updates.position.y),
+        };
+      }
+      if (updates.size) {
+        updates.size = {
+          width: Math.round(updates.size.width),
+          height: Math.round(updates.size.height),
+        };
+      }
+
       const updateInComponents = (components: Component[]): boolean => {
         const idx = components.findIndex((c) => c.id === id);
         if (idx !== -1) {
@@ -577,6 +598,7 @@ function createProjectStore() {
               delete merged[key];
             }
           }
+          normalizeWeatherComponentHeights(merged as Component);
           components[idx] = merged as Component;
           return true;
         }
@@ -1129,6 +1151,7 @@ function createProjectStore() {
 
     loadFromServer(serverProject: { id: string; name: string; data: any }) {
       const parsed = serverProject.data as Project;
+      normalizeProjectWeatherHeights(parsed);
       project = parsed;
       serverProjectId = serverProject.id;
       currentDashboardPageId = parsed.dashboardPages[0]?.id ?? "";
@@ -1147,6 +1170,7 @@ function createProjectStore() {
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
+          normalizeProjectWeatherHeights(parsed as Project);
           project = parsed;
           currentDashboardPageId = parsed.dashboardPages[0]?.id ?? "";
           currentDetailViewId = null;
@@ -1204,6 +1228,7 @@ function createProjectStore() {
         const parsed = JSON.parse(json);
         if (!parsed.id || !parsed.name || !parsed.display) return false;
 
+        normalizeProjectWeatherHeights(parsed as Project);
         project = parsed;
         currentDashboardPageId = parsed.dashboardPages[0]?.id ?? "";
         currentDetailViewId = null;

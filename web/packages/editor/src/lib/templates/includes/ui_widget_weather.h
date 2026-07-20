@@ -10,13 +10,19 @@ struct WeatherDayPointers {
   const float *precipitation = nullptr;
 };
 
+enum class WeatherMode : uint8_t {
+  Today,
+  TodayMini,
+  Forecast,
+};
+
 class WeatherWidget : public Widget {
  public:
   const char *widget_label() const override { return "Weather"; }
   using Callback = std::function<void()>;
   WeatherWidget(UiRect rect, const char *label,
                 const char *entity_id,
-                bool forecast_mode = false,
+                WeatherMode mode = WeatherMode::Today,
                 WeatherDayPointers day1 = WeatherDayPointers{},
                 WeatherDayPointers day2 = WeatherDayPointers{},
                 WeatherDayPointers day3 = WeatherDayPointers{},
@@ -25,7 +31,7 @@ class WeatherWidget : public Widget {
                 Color dim_color  = Color(80, 80, 80))
       : rect_(rect), label_(label),
         entity_id_(entity_id),
-        forecast_mode_(forecast_mode),
+        mode_(mode),
         on_tap_(std::move(on_tap)),
         text_color_(text_color), dim_color_(dim_color) {
     days_[0] = day1;
@@ -47,14 +53,19 @@ class WeatherWidget : public Widget {
   void update(uint32_t now) override {
     (void)now;
     bool changed = false;
-    const int n = forecast_mode_ ? 3 : 1;
+    const int n = mode_ == WeatherMode::Forecast ? 3 : 1;
     for (int d = 0; d < n; d++) {
       const auto &dp = days_[d];
       if (dp.condition && *dp.condition != last_condition_[d]) { changed = true; }
       if (changed_value(dp.temperature, last_temperature_[d])) { changed = true; }
-      if (changed_value(dp.humidity, last_humidity_[d])) { changed = true; }
-      if (changed_value(dp.wind_speed, last_wind_speed_[d])) { changed = true; }
-      if (changed_value(dp.precipitation, last_precipitation_[d])) { changed = true; }
+      if (mode_ == WeatherMode::Today) {
+        if (changed_value(dp.humidity, last_humidity_[d])) { changed = true; }
+        if (changed_value(dp.wind_speed, last_wind_speed_[d])) { changed = true; }
+      }
+      if (mode_ != WeatherMode::TodayMini &&
+          changed_value(dp.precipitation, last_precipitation_[d])) {
+        changed = true;
+      }
     }
     if (changed) mark_dirty();
     Widget::update(now);
@@ -64,16 +75,21 @@ class WeatherWidget : public Widget {
     (void)state;
 
     const UiRect r = screen_rect(rect_);
-    const int w = r.w;
-    const int h = r.h;
 
-    if (forecast_mode_) {
-      draw_forecast(it, r);
-    } else {
-      draw_compact(it, r);
+    switch (mode_) {
+      case WeatherMode::Forecast:
+        draw_forecast(it, r);
+        break;
+      case WeatherMode::TodayMini:
+        draw_today_mini(it, r);
+        break;
+      case WeatherMode::Today:
+      default:
+        draw_today(it, r);
+        break;
     }
 
-    const int n = forecast_mode_ ? 3 : 1;
+    const int n = mode_ == WeatherMode::Forecast ? 3 : 1;
     for (int d = 0; d < n; d++) {
       if (days_[d].condition) last_condition_[d] = *days_[d].condition;
       copy_value(days_[d].temperature, last_temperature_[d]);
@@ -84,7 +100,7 @@ class WeatherWidget : public Widget {
   }
 
  private:
-  // ---- Shared layout geometry for both compact + forecast modes ----
+  // ---- Shared layout geometry for full today + forecast modes ----
   // Both views share the same outer padding, header offset, and the
   // "content top" baseline (top of body, below the header). Only the
   // content_bottom and per-element offsets differ; those are configured
@@ -105,7 +121,7 @@ class WeatherWidget : public Widget {
     l.header_row_h = 20;
     l.content_top = l.top_y + l.header_row_h;
     if (with_pill_row) {
-      // Compact: leave room for the bottom 3-pill row (48px from bottom).
+      // Full today: leave room for the bottom 3-pill row (48px from bottom).
       l.content_bottom = r.y + r.h - l.pad - 46;
       l.icon_y_offset = 14;
       l.temp_y_offset = 10;
@@ -118,38 +134,43 @@ class WeatherWidget : public Widget {
     return l;
   }
 
-  // ---- Today layout ----
-  void draw_compact(display::Display &it, const UiRect &r) {
+  void draw_shell(display::Display &it, const UiRect &r) {
+    const Color border = RetroColors::CYAN;
+    const Color bg(12, 19, 32);
+    const Color inner_border(30, 36, 45);
+    constexpr int kCorner = 8;
+    constexpr int kPad = 10;
+    constexpr int kHeaderH = 32;
+
+    draw_clipped_box(it, r.x, r.y, r.w, r.h,
+                     kCorner, border, bg, false);
+    const UiRect inner = r.inset(2);
+    draw_clipped_border(it, inner.x, inner.y, inner.w, inner.h,
+                        kCorner - 2, kCorner - 2, kCorner - 2, kCorner - 2,
+                        inner_border);
+
+    if (label_ != nullptr && label_[0] != '\0' && g_theme.label.font != nullptr) {
+      ui_print_truncated(it, r.x + kPad, r.y + 5,
+                         g_theme.label.font, text_color_,
+                         TextAlign::TOP_LEFT, label_, r.w - (kPad * 2));
+    }
+
+    const int rule_x = r.x + kPad;
+    const int rule_w = std::max(1, r.w - (kPad * 2));
+    const int rule_y = r.y + kHeaderH - 3;
+    it.horizontal_line(rule_x, rule_y, rule_w, inner_border);
+    it.horizontal_line(rule_x, rule_y,
+                       std::max(1, std::min(38, rule_w / 5)), border);
+  }
+
+  // ---- Full today layout ----
+  void draw_today(display::Display &it, const UiRect &r) {
     const int w = r.w;
     const int h = r.h;
     const WeatherLayout l = make_weather_layout_(r, /*with_pill_row=*/true);
     const auto &dp = days_[0];
     const Color accent = condition_color(dp.condition ? dp.condition->c_str() : "");
-
-#if UI_THEME_RETRO
-    const Color bg = RetroColors::VOID;
-    draw_clipped_box(it, r.x, r.y, w, h, ui_corner_radius_for_height(h), accent, bg, true);
-    draw_clipped_border(it, r.x + 2, r.y + 2, w - 4, h - 4,
-                        7, 7, 7, 7,
-                        RetroColors::DIMMER);
-    draw_scanline_overlay(it, r.x + 1, r.y + 1, w - 2, h - 2, 4,
-                          RetroColors::SCANLINE);
-    draw_corner_accent_tl(it, r.x + 4, r.y + 4, 5, RetroColors::CYAN_DIM);
-    draw_corner_accent_tr(it, r.x + w - 5, r.y + 4, 5, RetroColors::CYAN_DIM);
-    draw_corner_accent_bl(it, r.x + 4, r.y + h - 5, 5, RetroColors::CYAN_DIM);
-    draw_corner_accent_br(it, r.x + w - 5, r.y + h - 5, 5,
-                          RetroColors::CYAN_DIM);
-#else
-    const Color bg(10, 14, 22);
-    draw_clipped_box(it, r.x, r.y, w, h, ui_corner_radius_for_height(h), accent, bg, false);
-#endif
-
-    if (label_ && label_[0] && g_theme.label.font != nullptr) {
-      const int max_label_w = w - ui_spacing::md * 2;
-      ui_print_truncated(it, r.x + ui_spacing::md, r.y + 6,
-                         g_theme.label.font, dim_color_,
-                         TextAlign::TOP_LEFT, label_, max_label_w);
-    }
+    draw_shell(it, r);
 
     {
       const int cy = (l.content_top + l.content_bottom) / 2;
@@ -189,22 +210,41 @@ class WeatherWidget : public Widget {
     }
   }
 
+  // ---- Mini today layout ----
+  void draw_today_mini(display::Display &it, const UiRect &r) {
+    const auto &dp = days_[0];
+    const Color accent = condition_color(dp.condition ? dp.condition->c_str() : "");
+    draw_shell(it, r);
+
+    const int body_top = r.y + 34;
+    const int body_bottom = r.y + r.h - 8;
+    const int body_mid = (body_top + body_bottom) / 2;
+    const int group_mid = r.x + r.w / 2;
+
+    if (dp.condition && !dp.condition->empty()) {
+      draw_weather_icon(it, group_mid - 34, body_mid - 24,
+                        accent, condition_icon(dp.condition->c_str()));
+    }
+
+    if (g_theme.header.font != nullptr) {
+      if (valid_value(dp.temperature)) {
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%.1f°", *dp.temperature);
+        it.printf(group_mid + 6, body_mid, g_theme.header.font, text_color_,
+                  TextAlign::CENTER_LEFT, "%s", buf);
+      } else {
+        it.printf(group_mid + 6, body_mid, g_theme.header.font, dim_color_,
+                  TextAlign::CENTER_LEFT, "—°");
+      }
+    }
+  }
+
   // ---- Forecast layout ----
   void draw_forecast(display::Display &it, const UiRect &r) {
     const int w = r.w;
-    const int h = r.h;
     const WeatherLayout l = make_weather_layout_(r, /*with_pill_row=*/false);
 
-    const Color accent = condition_color(days_[0].condition ? days_[0].condition->c_str() : "");
-    const Color bg(10, 14, 22);
-    draw_clipped_box(it, r.x, r.y, w, h, ui_corner_radius_for_height(h), accent, bg, false);
-
-    if (label_ && label_[0] && g_theme.label.font != nullptr) {
-      const int max_label_w = w - ui_spacing::md * 2;
-      ui_print_truncated(it, r.x + ui_spacing::md, r.y + 6,
-                         g_theme.label.font, dim_color_,
-                         TextAlign::TOP_LEFT, label_, max_label_w);
-    }
+    draw_shell(it, r);
 
     const int col_gap = ui_spacing::sm;
     const int col_count = 3;
@@ -357,7 +397,7 @@ class WeatherWidget : public Widget {
   UiRect rect_;
   const char *label_;
   std::string entity_id_;
-  bool forecast_mode_ = false;
+  WeatherMode mode_ = WeatherMode::Today;
   Callback on_tap_;
   WeatherDayPointers days_[3];
   Color text_color_;

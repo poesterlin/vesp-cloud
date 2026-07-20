@@ -1,4 +1,5 @@
 import type { Component } from "@vesp-cloud/schema";
+import { WEATHER_TODAY_HEIGHT } from "./weather-layout";
 
 export function createComponent(type: string, x: number, y: number): Component {
   const id = `${type}-${Date.now()}`;
@@ -107,7 +108,7 @@ export function createComponent(type: string, x: number, y: number): Component {
         type: "weather",
         label: "Weather",
         mode: "today",
-        size: { width: 225, height: 200 },
+        size: { width: 225, height: WEATHER_TODAY_HEIGHT },
       } as Component;
 
     case "calendar":

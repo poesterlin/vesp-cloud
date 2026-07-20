@@ -126,6 +126,36 @@ describe("Weather codegen - ui-screens", () => {
     expect(header).toContain("state.weather_home_wind_speed.ptr()");
     expect(header).toContain("state.weather_home_precipitation.ptr()");
     expect(header).toContain('"weather.home"');
+    expect(header).toContain("UiRect{10, 10, 225, 200}");
+    expect(header).toContain("WeatherMode::Today");
+  });
+
+  test("generates the mini today mode with its fixed height", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "w1",
+              type: "weather",
+              mode: "today-mini",
+              position: { x: 10, y: 10 },
+              // Codegen owns the vertical height for fixed-height weather modes.
+              size: { width: 225, height: 200 },
+              stateBinding: { entityId: "weather.home" },
+            },
+          ],
+        },
+      ],
+    });
+
+    const header = generateUIScreensHeader(project);
+    expect(header).toContain("UiRect{10, 10, 225, 110}");
+    expect(header).toContain("WeatherMode::TodayMini");
+    expect(header).toContain("state.weather_home_condition.ptr()");
+    expect(header).not.toContain("weather_home_day1_condition.ptr()");
   });
 });
 

@@ -3,6 +3,7 @@
   import type { WeatherComponent } from "@vesp-cloud/schema";
   import Draggable from "../Draggable.svelte";
   import { projectStore } from "$lib/stores/project.svelte";
+  import { colorToCss } from "$lib/utils/color-utils";
   import {
     getWeatherConditionColor,
     getWeatherConditionIcon,
@@ -17,13 +18,13 @@
 
   const label = $derived(component.label?.trim() || "Weather");
   const mode = $derived(component.mode ?? "today");
-  const isRetro = $derived(projectStore.theme.id === "retro");
+  const theme = $derived(projectStore.theme);
+  const isRetro = $derived(theme.id === "retro");
+  const accentColor = $derived(colorToCss(theme.colors.accent));
+  const foregroundColor = $derived(colorToCss(theme.colors.foreground));
 
-  const dimFill = "rgb(10, 14, 22)";
-  const dimBorder = "rgb(25, 30, 40)";
   const textDim = "rgb(120, 128, 144)";
   const textWhite = "rgb(230, 240, 250)";
-  const cornerSize = 9;
 
   function iconKey(name: string): string {
     return "mdi" +
@@ -37,16 +38,13 @@
     return (mdiIcons as Record<string, unknown>)[iconKey(name)];
   }
 
-  function clippedPolygonPoints(w: number, h: number, c: number): string {
-    return `${c},0 ${w - c},0 ${w},${c} ${w},${h - c} ${w - c},${h} ${c},${h} 0,${h - c} 0,${c}`;
-  }
-
-  function glowColor(cssColor: string): string {
-    return cssColor.replace(
-      /rgb\((\d+),\s*(\d+),\s*(\d+)\)/,
-      (_, r, g, b) =>
-        `rgb(${Math.floor(+r / 4)}, ${Math.floor(+g / 4)}, ${Math.floor(+b / 4)})`,
-    );
+  function clippedPolygonPoints(
+    width: number,
+    height: number,
+    corner: number,
+    inset: number,
+  ): string {
+    return `${corner},${inset} ${width - corner},${inset} ${width - inset},${corner} ${width - inset},${height - corner} ${width - corner},${height - inset} ${corner},${height - inset} ${inset},${height - corner} ${inset},${corner}`;
   }
 
   const defaultCondition = "partlycloudy";
@@ -74,41 +72,45 @@
     {@const w = component.size.width}
     {@const h = component.size.height}
 
-    <div class="weather-wrap" class:retro={isRetro} style:width="100%" style:height="100%">
-      <svg
-        width="100%"
-        height="100%"
-        viewBox="0 0 {w} {h}"
-        preserveAspectRatio="none"
-        style:position="absolute"
-        style:inset="0"
-        style:pointer-events="none"
-      >
-        <polygon
-          points={clippedPolygonPoints(w + 6, h + 6, cornerSize + 3)}
-          fill="none"
-          stroke={glowColor(defaultConditionCss)}
-          stroke-width="3"
-          transform="translate(-3, -3)"
-        />
-        <polygon
-          points={clippedPolygonPoints(w, h, cornerSize)}
-          fill={dimFill}
-          stroke={dimBorder}
-          stroke-width="1.5"
-        />
-        <polygon
-          points={clippedPolygonPoints(w - 6, h - 6, cornerSize - 3)}
-          fill="none"
-          stroke={dimBorder}
-          stroke-width="0.75"
-          transform="translate(3, 3)"
-        />
-      </svg>
+    <div
+      class="weather-wrap"
+      class:retro={isRetro}
+      class:mini-mode={mode === "today-mini"}
+      style:width="100%"
+      style:height="100%"
+      style:--weather-accent={accentColor}
+      style:--weather-foreground={foregroundColor}
+    >
+      {#if isRetro}
+        <svg
+          class="retro-frame"
+          width="100%"
+          height="100%"
+          viewBox="0 0 {w} {h}"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <polygon
+            points={clippedPolygonPoints(w, h, 8, 0.5)}
+            fill="#0c1320"
+            stroke={accentColor}
+            stroke-width="1"
+          />
+          <polygon
+            points={clippedPolygonPoints(w, h, 8, 2.5)}
+            fill="none"
+            stroke="rgba(255, 255, 255, 0.06)"
+            stroke-width="1"
+          />
+        </svg>
+      {:else}
+        <div class="frame"></div>
+      {/if}
 
       <div class="top-row">
-        <span class="top-label" style:color={textDim}>{label}</span>
+        <span class="top-label">{label}</span>
       </div>
+      <div class="header-rule"><span></span></div>
 
       {#if mode === "forecast"}
         <div class="forecast-columns">
@@ -149,7 +151,7 @@
         {@const icol = (mdiIcons as Record<string, unknown>)[ikey]}
         {@const css = defaultConditionCss}
 
-        <div class="icon-area">
+        <div class="icon-area" class:mini={mode === "today-mini"}>
           {#if typeof icol === "string"}
             <svg viewBox="0 0 24 24" class="weather-icon" style:color={css}>
               <path d={icol} fill="currentColor" />
@@ -160,20 +162,22 @@
           <span class="temperature" style:color={textWhite}>21.4°</span>
         </div>
 
-        <div class="bottom-row">
-          <div class="attr">
-            <span class="attr-label" style:color={textDim}>Humidity</span>
-            <span class="attr-value" style:color={textWhite}>62%</span>
+        {#if mode === "today"}
+          <div class="bottom-row">
+            <div class="attr">
+              <span class="attr-label" style:color={textDim}>Humidity</span>
+              <span class="attr-value" style:color={textWhite}>62%</span>
+            </div>
+            <div class="attr">
+              <span class="attr-label" style:color={textDim}>Rain</span>
+              <span class="attr-value" style:color={textWhite}>0.4 mm</span>
+            </div>
+            <div class="attr">
+              <span class="attr-label" style:color={textDim}>Wind</span>
+              <span class="attr-value" style:color={textWhite}>3.6 m/s</span>
+            </div>
           </div>
-          <div class="attr">
-            <span class="attr-label" style:color={textDim}>Rain</span>
-            <span class="attr-value" style:color={textWhite}>0.4 mm</span>
-          </div>
-          <div class="attr">
-            <span class="attr-label" style:color={textDim}>Wind</span>
-            <span class="attr-value" style:color={textWhite}>3.6 m/s</span>
-          </div>
-        </div>
+        {/if}
       {/if}
     </div>
   {/if}
@@ -185,28 +189,81 @@
     display: flex;
     flex-direction: column;
     min-width: 120px;
-    min-height: 140px;
+    min-height: 200px;
     overflow: hidden;
+    box-sizing: border-box;
+    color: var(--weather-accent);
+    background: #0c1320;
+    border: 1px solid var(--weather-accent);
+    border-radius: 9px;
+    box-shadow:
+      inset 0 0 0 1px rgba(0, 0, 0, 0.45),
+      0 0 0 1px color-mix(in srgb, var(--weather-accent) 15%, transparent);
+  }
+
+  .weather-wrap.mini-mode {
+    min-height: 110px;
+  }
+
+  .weather-wrap.retro {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .retro-frame {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .frame {
+    position: absolute;
+    inset: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 7px;
+    pointer-events: none;
+    z-index: 2;
   }
 
   .top-row {
     position: absolute;
-    top: 12px;
-    left: 15px;
-    right: 15px;
+    top: 0;
+    left: 11px;
+    right: 11px;
     display: flex;
     align-items: center;
-    height: 18px;
+    height: 30px;
   }
 
   .top-label {
+    color: var(--weather-foreground);
     font-family: var(--display-font, monospace);
-    font-size: 13px;
-    font-weight: 600;
+    font-size: var(--display-text-small, 16px);
+    font-weight: 400;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+  }
+
+  .header-rule {
+    position: absolute;
+    top: 29px;
+    left: 10px;
+    right: 10px;
+    height: 1px;
+    background: rgba(120, 128, 144, 0.22);
+  }
+
+  .header-rule span {
+    display: block;
+    width: min(38px, 22%);
+    height: 1px;
+    background: var(--weather-accent);
+    box-shadow: 0 0 4px color-mix(in srgb, var(--weather-accent) 45%, transparent);
   }
 
   /* Today mode */
@@ -221,6 +278,13 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
+  }
+
+  .icon-area.mini {
+    top: 34px;
+    bottom: 8px;
+    flex-direction: row;
+    gap: 14px;
   }
 
   .weather-icon {

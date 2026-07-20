@@ -114,6 +114,9 @@ export type LightStateComponent = BaseComponent & {
   icon?: string;
   onColor?: Color;
   offColor?: Color;
+  /**
+   * Show confirmation popup before toggling: none, on, off, or both
+   */
   confirmAction?: "none" | "on" | "off" | "both";
 };
 export type HvacComponent = BaseComponent & {
@@ -134,9 +137,9 @@ export type WeatherComponent = BaseComponent & {
   type: "weather";
   label?: string;
   /**
-   * today = single-day view, forecast = 3-day forecast view
+   * today = full single-day view, today-mini = compact condition and temperature view, forecast = 3-day forecast view
    */
-  mode?: "today" | "forecast";
+  mode?: "today" | "today-mini" | "forecast";
   stateBinding?: EntityBinding4;
 };
 export type CalendarComponent = BaseComponent & {

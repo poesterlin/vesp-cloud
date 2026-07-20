@@ -554,9 +554,9 @@
             "label": { "type": "string" },
             "mode": {
               "type": "string",
-              "enum": ["today", "forecast"],
+              "enum": ["today", "today-mini", "forecast"],
               "default": "today",
-              "description": "today = single-day view, forecast = 3-day forecast view"
+              "description": "today = full single-day view, today-mini = compact condition and temperature view, forecast = 3-day forecast view"
             },
             "stateBinding": {
               "$ref": "#/definitions/EntityBinding",

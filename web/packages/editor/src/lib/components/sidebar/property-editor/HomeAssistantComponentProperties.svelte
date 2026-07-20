@@ -182,7 +182,8 @@
         value={component.mode ?? "today"}
         onchange={(e) => updateProperty("mode", e.currentTarget.value)}
       >
-        <option value="today">Today</option>
+        <option value="today">Today (detailed)</option>
+        <option value="today-mini">Today</option>
         <option value="forecast">Forecast (3-day)</option>
       </select>
     </div>

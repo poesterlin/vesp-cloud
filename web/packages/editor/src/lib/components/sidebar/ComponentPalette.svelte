@@ -55,7 +55,7 @@
     },
     {
       type: "light_state",
-      label: "Light",
+      label: "Switch",
       icon: mdiLightbulbOutline,
       description: "Visual on/off indicator for lights or switches",
     },

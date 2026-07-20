@@ -487,7 +487,9 @@
               <div class="getting-started-step-body">
                 <h4>Build the firmware</h4>
                 <p>
-                  Click <strong>"Update Display"</strong> below to compile your
+                  Click <strong>{buildCount === 0
+                      ? '"Build Firmware"'
+                      : '"Update Display"'}</strong> below to compile your
                   project into firmware. This typically takes 1–2 minutes. When
                   it finishes, the build appears in the history below with a
                   <strong>Flash</strong> button.
@@ -558,7 +560,7 @@
           <svg viewBox="0 0 24 24" aria-hidden="true" class="icon">
             <path d={mdiIcons.mdiWrench} />
           </svg>
-          Update Display
+          {buildCount === 0 ? "Build Firmware" : "Update Display"}
         </button>
       {:else}
         <button class="new-build-btn" disabled> Building… </button>
@@ -574,6 +576,7 @@
 
 {#if showConfirmModal}
   <ConfirmCompileModal
+    lastSavedData={data.project}
     onConfirm={handleConfirmBuild}
     onCancel={() => (showConfirmModal = false)}
   />

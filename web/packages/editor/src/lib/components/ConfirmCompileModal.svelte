@@ -1,13 +1,15 @@
 <script lang="ts">
   import { page } from "$app/state";
+  import ChangeSummary from "$lib/components/ChangeSummary.svelte";
 
   interface Props {
     flow?: "new" | "update" | null;
+    lastSavedData: unknown;
     onConfirm: () => void;
     onCancel: () => void;
   }
 
-  let { onConfirm, onCancel }: Props = $props();
+  let { lastSavedData, onConfirm, onCancel }: Props = $props();
 
   let creditBalance = $state<number | null>(null);
   let balanceLoading = $state(true);
@@ -54,6 +56,8 @@
 
     <div class="modal-body">
       <p class="description">{description}</p>
+
+      <ChangeSummary {lastSavedData} />
 
       {#if isCloud}
         <div class="cost-row">
@@ -156,6 +160,12 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-lg);
+    max-height: min(70vh, 560px);
+    overflow-y: auto;
+  }
+
+  .modal-body :global(.change-summary) {
+    margin-bottom: 0;
   }
 
   .description {

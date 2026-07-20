@@ -233,7 +233,7 @@
     <p class="empty-state">Loading builds...</p>
   {:else if jobs.length === 0 && !isCompiling}
     <p class="empty-state">
-      No builds yet. Click "Update Display" to compile your project.
+      No builds yet. Click "Build Firmware" to compile your project.
     </p>
   {:else}
     <div class="builds-list">

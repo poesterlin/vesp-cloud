@@ -2,6 +2,12 @@
 
 Common issues and how to fix them.
 
+## Images don't load
+
+Home Assistant only reports images as relative URLs. The display infers the host to be `https://homeassistant.local:8123`. However this depends highly on how you have your instance deployed. This can be configured to your Home Assistant base URL in the project settings. [See Project Settings](/reference/project-settings).
+
+![The Home Assistant Base URL setting used to resolve relative image URLs](../imgs/widgets/image-url-settings.webp)
+
 ## Some widgets or actions don't work
 
 Home Assistant blocks actions from newly added ESPHome devices until you

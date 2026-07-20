@@ -18,11 +18,14 @@
   import { createComponent } from "$lib/utils/component-factory";
   import { sortComponentsForRender } from "$lib/utils/component-layering";
   import { track } from "$lib/analytics";
+  import {
+    cloneComponent,
+    cloneComponentWithFreshIds,
+  } from "$lib/utils/component-clone.svelte";
 
   let canvasEl: HTMLDivElement | undefined = $state();
-  let clipboardComponent = $state<{
-    component: Component;
-    context: ComponentContext;
+  let clipboardComponents = $state<{
+    items: Array<{ component: Component; context: ComponentContext }>;
     pasteCount: number;
     pasteTargetVersionAtCopy: number;
   } | null>(null);
@@ -106,56 +109,6 @@
 
   type ComponentContext = CanvasPasteTarget;
 
-  function generateId(prefix: string): string {
-    return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
-  }
-
-  function cloneComponent(component: Component): Component {
-    return structuredClone($state.snapshot(component)) as Component;
-  }
-
-  function cloneComponentWithFreshIds(component: Component): Component {
-    const clone = cloneComponent(component);
-
-    const rewriteIds = (target: Component) => {
-      target.id = generateId(target.type);
-
-      if (target.type === "conditional_area") {
-        const variantIdMap = new Map<string, string>();
-        for (const variant of target.variants) {
-          const nextVariantId = generateId("variant");
-          variantIdMap.set(variant.id, nextVariantId);
-          variant.id = nextVariantId;
-          for (const child of variant.components) {
-            rewriteIds(child);
-          }
-        }
-        if (target.defaultVariantId) {
-          target.defaultVariantId =
-            variantIdMap.get(target.defaultVariantId) ??
-            target.defaultVariantId;
-        }
-      } else if (target.type === "tab_container") {
-        const tabIdMap = new Map<string, string>();
-        for (const tab of target.tabs) {
-          const nextTabId = generateId("tab");
-          tabIdMap.set(tab.id, nextTabId);
-          tab.id = nextTabId;
-          for (const child of tab.components) {
-            rewriteIds(child);
-          }
-        }
-        if (target.defaultTabId) {
-          target.defaultTabId =
-            tabIdMap.get(target.defaultTabId) ?? target.defaultTabId;
-        }
-      }
-    };
-
-    rewriteIds(clone);
-    return clone;
-  }
-
   function findComponentContext(componentId: string): ComponentContext | null {
     const search = (
       components: Component[],
@@ -222,9 +175,9 @@
     const explicitTarget = getValidatedPasteTarget();
     if (
       explicitTarget &&
-      clipboardComponent &&
+      clipboardComponents &&
       canvasPasteTargetStore.version >
-        clipboardComponent.pasteTargetVersionAtCopy
+        clipboardComponents.pasteTargetVersionAtCopy
     ) {
       return explicitTarget;
     }
@@ -238,7 +191,9 @@
       // it beside the original instead of nesting it into itself.
       if (
         selected?.type === "tab_container" &&
-        selected.id !== clipboardComponent?.component.id
+        !clipboardComponents?.items.some(
+          (item) => item.component.id === selected.id,
+        )
       ) {
         const tabId =
           conditionalEditorStore.getActiveTab(
@@ -251,7 +206,9 @@
       }
       if (
         selected?.type === "conditional_area" &&
-        selected.id !== clipboardComponent?.component.id
+        !clipboardComponents?.items.some(
+          (item) => item.component.id === selected.id,
+        )
       ) {
         const variantId =
           conditionalEditorStore.getActiveVariant(
@@ -269,7 +226,7 @@
       }
     }
 
-    return explicitTarget ?? clipboardComponent?.context ?? null;
+    return explicitTarget ?? clipboardComponents?.items[0]?.context ?? null;
   }
 
   function clampPositionForContext(
@@ -440,18 +397,31 @@
       e.key.toLowerCase() === "c" &&
       !isFormInput
     ) {
-      if (!selectionStore.firstSelectedId) return;
-      const source = projectStore.getComponent(selectionStore.firstSelectedId);
-      if (!source) return;
-
-      const context = findComponentContext(source.id);
-      if (!context) return;
+      const selectedIds = selectionStore.selectedIds;
+      const selectedDescendantIds = new Set(
+        projectStore
+          .getVisibleComponentLayoutBounds()
+          .filter(
+            ({ id, ancestorIds }) =>
+              selectedIds.has(id) &&
+              ancestorIds.some((ancestorId) => selectedIds.has(ancestorId)),
+          )
+          .map(({ id }) => id),
+      );
+      const items = [...selectedIds].flatMap((id) => {
+        if (selectedDescendantIds.has(id)) return [];
+        const source = projectStore.getComponent(id);
+        const context = source ? findComponentContext(id) : null;
+        return source && context
+          ? [{ component: cloneComponent(source), context }]
+          : [];
+      });
+      if (items.length === 0) return;
 
       e.preventDefault();
-      canvasPasteTargetStore.set(context);
-      clipboardComponent = {
-        component: cloneComponent(source),
-        context,
+      canvasPasteTargetStore.set(items[0].context);
+      clipboardComponents = {
+        items,
         pasteCount: 0,
         pasteTargetVersionAtCopy: canvasPasteTargetStore.version,
       };
@@ -463,32 +433,40 @@
       e.key.toLowerCase() === "v" &&
       !isFormInput
     ) {
-      if (!clipboardComponent) return;
+      if (!clipboardComponents) return;
       const destinationContext = resolvePasteContext();
       if (!destinationContext) return;
 
       e.preventDefault();
 
-      const duplicate = cloneComponentWithFreshIds(
-        clipboardComponent.component,
+      const offsetStep = 12 * (clipboardComponents.pasteCount + 1);
+      historyStore.record(
+        clipboardComponents.items.length === 1
+          ? "Paste component"
+          : "Paste components",
       );
-      const offsetStep = 12 * (clipboardComponent.pasteCount + 1);
-      duplicate.position = clampPositionForContext(
-        {
-          x: duplicate.position.x + offsetStep,
-          y: duplicate.position.y + offsetStep,
-        },
-        destinationContext,
-        duplicate,
-      );
-
-      historyStore.record("Paste component");
-      const inserted = insertComponentAtContext(duplicate, destinationContext);
-      if (inserted) {
-        selectionStore.select(inserted.id);
-        clipboardComponent = {
-          ...clipboardComponent,
-          pasteCount: clipboardComponent.pasteCount + 1,
+      const insertedIds: string[] = [];
+      for (const item of clipboardComponents.items) {
+        const duplicate = cloneComponentWithFreshIds(item.component);
+        duplicate.position = clampPositionForContext(
+          {
+            x: duplicate.position.x + offsetStep,
+            y: duplicate.position.y + offsetStep,
+          },
+          destinationContext,
+          duplicate,
+        );
+        const inserted = insertComponentAtContext(
+          duplicate,
+          destinationContext,
+        );
+        if (inserted) insertedIds.push(inserted.id);
+      }
+      if (insertedIds.length > 0) {
+        selectionStore.selectMultiple(insertedIds);
+        clipboardComponents = {
+          ...clipboardComponents,
+          pasteCount: clipboardComponents.pasteCount + 1,
         };
       }
       return;

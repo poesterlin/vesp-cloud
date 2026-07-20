@@ -11,8 +11,9 @@ elements).
 | **Delete** / **Backspace** | Delete selected component(s) |
 | **Arrow keys** | Nudge selected component(s) by 1&nbsp;px |
 | **Shift** + **Arrow keys** | Nudge selected component(s) by 10&nbsp;px |
-| **Ctrl** + **C** | Copy selected component to clipboard |
-| **Ctrl** + **V** | Paste component with 12&nbsp;px offset |
+| **Alt** + drag | Duplicate the selected component(s) and drag the duplicates |
+| **Ctrl** + **C** | Copy selected component(s) to clipboard |
+| **Ctrl** + **V** | Paste copied component(s) with a 12&nbsp;px offset |
 | **Ctrl** + **Z** | Undo |
 | **Ctrl** + **Shift** + **Z** | Redo |
 | **Ctrl** + **Y** | Redo (alternative) |

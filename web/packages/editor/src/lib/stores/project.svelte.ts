@@ -12,6 +12,7 @@ import type {
 import { RETRO_THEME } from "../themes/retro";
 import { conditionalEditorStore } from "./conditional-editor.svelte";
 import { selectionStore } from "./selection.svelte";
+import { cloneComponentWithFreshIds } from "$lib/utils/component-clone.svelte";
 
 const LATEST_VERSION = "1.0.0";
 const PROJECTS_INDEX_KEY = "vesp-cloud-projects-index";
@@ -614,6 +615,44 @@ function createProjectStore() {
         this.updateComponent(id, u, true);
       }
       scheduleSave();
+    },
+
+    duplicateComponents(ids: Iterable<string>): Component[] {
+      if (!project) return [];
+
+      const requestedIds = new Set(ids);
+      const duplicates: Component[] = [];
+
+      const duplicateInTree = (components: Component[]) => {
+        // Work from the original length so newly appended clones are never
+        // visited again during this operation.
+        const originalComponents = components.slice();
+        for (const component of originalComponents) {
+          if (requestedIds.has(component.id)) {
+            const duplicate = cloneComponentWithFreshIds(component);
+            components.push(duplicate);
+            duplicates.push(duplicate);
+            // A selected container already carries cloned descendants. Avoid
+            // creating a second copy if a child was selected as well.
+            continue;
+          }
+
+          if (component.type === "conditional_area") {
+            for (const variant of component.variants) {
+              duplicateInTree(variant.components);
+            }
+          } else if (component.type === "tab_container") {
+            for (const tab of component.tabs) {
+              duplicateInTree(tab.components);
+            }
+          }
+        }
+      };
+
+      duplicateInTree(activeComponents);
+      if (project.pageHeader) duplicateInTree(project.pageHeader.components);
+      if (duplicates.length > 0) scheduleSave();
+      return duplicates;
     },
 
     deleteComponent(id: string) {

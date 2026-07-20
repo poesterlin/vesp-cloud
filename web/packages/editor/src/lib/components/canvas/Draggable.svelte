@@ -57,17 +57,30 @@
       }
     }
 
-    if (wasSelected && selectionStore.selectedCount > 1) {
+    let dragIds = [...selectionStore.selectedIds];
+    if (e.altKey) {
+      historyStore.record(
+        dragIds.length > 1
+          ? "Duplicate and move components"
+          : "Duplicate and move component",
+      );
+      const duplicates = projectStore.duplicateComponents(dragIds);
+      if (duplicates.length === 0) return;
+      dragIds = duplicates.map((duplicate) => duplicate.id);
+      selectionStore.selectMultiple(dragIds);
+    }
+
+    if (dragIds.length > 1 || e.altKey) {
       multiSelectDrag = true;
       const positions = new Map<string, { x: number; y: number }>();
-      for (const id of selectionStore.selectedIds) {
+      for (const id of dragIds) {
         const comp = projectStore.getComponent(id);
         if (comp) {
           positions.set(id, { x: comp.position.x, y: comp.position.y });
         }
       }
       multiSelectStartPositions = positions;
-      historyStore.record("Move components");
+      if (!e.altKey) historyStore.record("Move components");
     } else {
       historyStore.record("Move component");
     }

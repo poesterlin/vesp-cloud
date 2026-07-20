@@ -86,11 +86,40 @@ function emitState(c: StateCondition): string {
   return emitComparison(lhs, c.operator, c.value);
 }
 
-function emitTime(_c: TimeCondition): string {
-  // Time-of-day evaluation requires a runtime time source which is not wired
-  // up in the current architecture. Treat as always-true so the variant remains
-  // a visible fallback rather than silently hiding content.
-  return "true";
+function timeToMinutes(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const match = /^(?:[01]?\d|2[0-3]):[0-5]\d$/.exec(value);
+  if (!match) return undefined;
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours! * 60 + minutes!;
+}
+
+function emitTime(c: TimeCondition): string {
+  const after = timeToMinutes(c.after);
+  const before = timeToMinutes(c.before);
+
+  // Invalid/empty ranges are rejected by validation. Keep code generation
+  // fail-safe as well: an invalid condition must not unexpectedly show a
+  // variant in firmware generated without running validation first.
+  if ((c.after && after === undefined) || (c.before && before === undefined)) return "false";
+  if (after === undefined && before === undefined) return "false";
+
+  let rangeExpression: string;
+  if (after !== undefined && before !== undefined) {
+    // Equal endpoints represent the full day. When the start is later than
+    // the end, the range crosses midnight (for example 22:00-06:00).
+    if (after === before) rangeExpression = "true";
+    else if (after < before) rangeExpression = `(ui_time_minutes >= ${after} && ui_time_minutes < ${before})`;
+    else rangeExpression = `(ui_time_minutes >= ${after} || ui_time_minutes < ${before})`;
+  } else if (after !== undefined) {
+    rangeExpression = `ui_time_minutes >= ${after}`;
+  } else {
+    rangeExpression = `ui_time_minutes < ${before}`;
+  }
+
+  // base.yaml provides sntp_time and applies the project's configured
+  // timezone. Do not select a timed variant until SNTP has synchronized.
+  return `([&]() { auto ui_time_now = sntp_time->now(); if (!ui_time_now.is_valid()) return false; const int ui_time_minutes = ui_time_now.hour * 60 + ui_time_now.minute; return ${rangeExpression}; }())`;
 }
 
 function emitCompound(c: CompoundCondition, entityTypes?: EntityTypeMap): string {

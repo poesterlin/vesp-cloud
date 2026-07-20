@@ -173,23 +173,22 @@
   {#if condition?.type === "time"}
     <div class="condition-subform">
       <div class="field">
-        <span class="field-label">After</span>
+        <span class="field-label">Start</span>
         <input
-          type="text"
-          placeholder="HH:MM"
+          type="time"
           value={condition.after ?? ""}
           oninput={(e) => onUpdate({ ...condition, after: e.currentTarget.value })}
         />
       </div>
       <div class="field">
-        <span class="field-label">Before</span>
+        <span class="field-label">End</span>
         <input
-          type="text"
-          placeholder="HH:MM"
+          type="time"
           value={condition.before ?? ""}
           oninput={(e) => onUpdate({ ...condition, before: e.currentTarget.value })}
         />
       </div>
+      <p class="field-help">The start is included and the end is excluded. A later start than end spans midnight.</p>
     </div>
   {/if}
 
@@ -257,6 +256,13 @@
     flex: 1;
     min-width: 0;
     font-size: 12px;
+  }
+
+  .field-help {
+    margin: 0;
+    font-size: 11px;
+    color: var(--color-text-muted);
+    line-height: 1.35;
   }
 
   .suggestion-row {

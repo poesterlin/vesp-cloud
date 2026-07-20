@@ -499,3 +499,43 @@ describe("validateActionTargets", () => {
     expect(warning?.message).toContain("no action configured");
   });
 });
+
+describe("time range conditions", () => {
+  function projectWithTime(after?: string, before?: string): Project {
+    return makeProject({
+      dashboardPages: [{
+        id: "p1",
+        name: "Home",
+        components: [{
+          id: "ca_time",
+          type: "conditional_area",
+          position: { x: 0, y: 0 },
+          size: { width: 100, height: 100 },
+          variants: [{
+            id: "timed",
+            name: "Timed",
+            condition: { type: "time", after, before },
+            components: [],
+          }],
+        }],
+      }],
+    });
+  }
+
+  test("accepts normal, overnight, and open-ended ranges", () => {
+    expect(validateProject(projectWithTime("08:00", "20:00"))).toEqual([]);
+    expect(validateProject(projectWithTime("22:00", "06:00"))).toEqual([]);
+    expect(validateProject(projectWithTime("08:00"))).toEqual([]);
+  });
+
+  test("rejects empty and malformed ranges", () => {
+    expect(validateProject(projectWithTime())).toEqual([
+      expect.objectContaining({ message: "condition time range needs a start or end time", componentId: "ca_time" }),
+    ]);
+    const malformed = validateProject(projectWithTime("24:00", "9:75"));
+    expect(malformed.map((error) => error.message)).toEqual([
+      "condition start time must use HH:MM (00:00-23:59)",
+      "condition end time must use HH:MM (00:00-23:59)",
+    ]);
+  });
+});

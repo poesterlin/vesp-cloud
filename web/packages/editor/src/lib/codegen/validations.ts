@@ -17,6 +17,7 @@ import type {
   Condition,
   EntityCondition,
   StateCondition,
+  TimeCondition,
   CompoundCondition,
   NotCondition,
 } from "@vesp-cloud/schema";
@@ -119,6 +120,7 @@ const HA_SERVICE_RE = /^[a-z_]+\.[a-z0-9_]+$/;
 const HA_ATTRIBUTE_RE = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
 const HA_DEVICE_ID_RE = /^[A-Za-z0-9_-]+$/;
 const TIMEZONE_RE = /^[A-Za-z_][A-Za-z0-9_+\/-]*$/;
+const TIME_OF_DAY_RE = /^(?:[01]?\d|2[0-3]):[0-5]\d$/;
 const IMAGE_RESIZE_RE = /^\d+x\d+$/;
 const URL_RE = /^https?:\/\/[^\s"'<>]+$/;
 
@@ -168,6 +170,19 @@ function validateCondition(condition: Condition | undefined, component: Componen
     } else if (c.type === 'state') {
       const state = c as StateCondition;
       errors.push(...validatePattern(state.variable, CPP_IDENTIFIER_RE, `${field} state variable must be a safe C++ identifier`, component, field));
+    } else if (c.type === 'time') {
+      const time = c as TimeCondition;
+      if (!time.after && !time.before) {
+        errors.push({
+          type: 'error',
+          message: `${field} time range needs a start or end time`,
+          componentId: component.id,
+          componentLabel: componentLabel(component),
+          field,
+        });
+      }
+      errors.push(...validatePattern(time.after, TIME_OF_DAY_RE, `${field} start time must use HH:MM (00:00-23:59)`, component, field));
+      errors.push(...validatePattern(time.before, TIME_OF_DAY_RE, `${field} end time must use HH:MM (00:00-23:59)`, component, field));
     }
   });
   return errors;

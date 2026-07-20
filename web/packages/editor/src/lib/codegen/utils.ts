@@ -162,6 +162,37 @@ export interface ScreenDescriptor {
 
 export type WidgetFactory = (typeName: string, args: string) => string;
 
+export interface RoundedRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export function roundRect(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): RoundedRect {
+  return {
+    x: Math.round(x),
+    y: Math.round(y),
+    width: Math.round(width),
+    height: Math.round(height),
+  };
+}
+
+export function emitUiRect(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): string {
+  const rect = roundRect(x, y, width, height);
+  return `UiRect{${rect.x}, ${rect.y}, ${rect.width}, ${rect.height}}`;
+}
+
 // Default icon font size used when a component does not specify size.
 // Kept in sync with `ICON_FONT_SIZE` in mdi-icons.ts so codegen and YAML
 // reference the same font id.

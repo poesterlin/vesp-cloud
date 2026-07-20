@@ -61,7 +61,13 @@ describe("fast runtime image firmware integration", () => {
 
     expect(installer).toContain('PATCH_DIR / "png_decoder.cpp"');
     expect(installer).toContain('PATCH_DIR / "png_decoder.h"');
-    expect(installer).toContain('["pre:{PATCH_DIR / "patch-pngle.py"}"]');
+    expect(installer).toContain('png_legacy_option in codegen');
+    expect(installer).toContain(
+      "codegen.replace(png_legacy_option, png_list_option, 1)",
+    );
+    expect(installer).toContain(
+      'cg.add_platformio_option("extra_scripts", ["{png_patch_script}"])',
+    );
     expect(header).toContain("target_x_for_source_boundary_");
     expect(decoder).toContain("get_decode_buffer()");
     expect(decoder).toContain("!this->image_->has_transparency()");

@@ -1,5 +1,5 @@
 import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent, HvacComponent, WeatherComponent, CalendarComponent } from "@vesp-cloud/schema";
-import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted, calendarEventsVarFromEntity, todoEntityIdFromComponent, toCppIdentifier, detailScreenId } from "./utils";
+import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted, calendarEventsVarFromEntity, todoEntityIdFromComponent, toCppIdentifier, detailScreenId, roundRect } from "./utils";
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
 import { ICON_FONT_ID, WEATHER_ICON_FONT_ID, getIconGlyphs, projectHasWeather } from "./mdi-icons";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
@@ -80,7 +80,13 @@ function collectImageComponents(project: Project): ImageComponent[] {
 }
 
 function imageResize(c: ImageComponent): string {
-  const sizeResize = `${c.size?.width ?? 100}x${c.size?.height ?? 100}`;
+  const { width, height } = roundRect(
+    c.position.x,
+    c.position.y,
+    c.size?.width ?? 100,
+    c.size?.height ?? 100,
+  );
+  const sizeResize = `${width}x${height}`;
   if (!c.resize || c.resize === "100x100") return sizeResize;
   return c.resize;
 }
@@ -133,10 +139,12 @@ function generateOnlineImagesYAML(project: Project, imageScreenMap: Map<string, 
     const preferFallbackId = `${primaryId}_prefer_fallback`;
     const pendingFetchId = `${primaryId}_pending_fetch`;
     const screenId = imageScreenMap.get(c.id) ?? "Home";
-    const x = c.position.x;
-    const y = c.position.y;
-    const w = c.size?.width ?? 100;
-    const h = c.size?.height ?? 100;
+    const { x, y, width: w, height: h } = roundRect(
+      c.position.x,
+      c.position.y,
+      c.size?.width ?? 100,
+      c.size?.height ?? 100,
+    );
     lines.push(`  - url: "http://127.0.0.1/"`);
     lines.push(`    id: ${primaryId}`);
     lines.push(`    format: ${primaryFormat}`);

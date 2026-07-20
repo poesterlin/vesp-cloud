@@ -31,6 +31,7 @@ import {
   imageIdFromComponentId,
   imageFallbackIdFromComponentId,
   safeCppIdentifier,
+  emitUiRect as rect,
   type ScreenDescriptor,
   type WidgetFactory,
 } from "./utils";
@@ -174,10 +175,6 @@ function hasDigitalClockInComponents(components: Component[]): boolean {
 
 const TAB_BAR_HEIGHT = 36;
 const HEADER_RENDER_HEIGHT = 49;
-
-function rect(x: number, y: number, w: number, h: number): string {
-  return `UiRect{${Math.round(x)}, ${Math.round(y)}, ${Math.round(w)}, ${Math.round(h)}}`;
-}
 
 function cppLineCommentText(s: string): string {
   return s.replace(/[\r\n]/g, ' ');

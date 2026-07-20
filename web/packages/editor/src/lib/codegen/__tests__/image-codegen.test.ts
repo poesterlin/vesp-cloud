@@ -170,6 +170,33 @@ describe("image component codegen", () => {
     expect(yaml).not.toContain("resize: 100x100");
   });
 
+  test("rounds fractional online-image geometry for generated YAML and C++", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Page",
+          components: [
+            {
+              id: "fractional-image",
+              type: "image",
+              position: { x: 50.25, y: 29.75 },
+              size: { width: 311, height: 161.5 },
+              file: "images/fallback.png",
+              image_type: "RGB565",
+              imageBinding: { entityId: "image.album_art" },
+            },
+          ],
+        },
+      ],
+    });
+
+    const yaml = generateESPHomeYAML(project);
+    expect(yaml).toContain("resize: 311x162");
+    expect(yaml).toContain("UiDirtyRect{50, 30, 311, 162}");
+    expect(yaml).not.toContain("161.5");
+  });
+
   test("resolves relative HA image URLs when HA base URL is configured", () => {
     const project = makeProject({
       secrets: { homeAssistantBaseUrl: "http://homeassistant.local:8123" },

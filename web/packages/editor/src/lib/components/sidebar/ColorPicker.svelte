@@ -10,6 +10,12 @@
 
   const MERGED_PALETTE = [
     { name: "Ink Black", hex: "#001219" },
+    { name: "Charcoal", hex: "#20232a" },
+    { name: "Midnight Navy", hex: "#0b132b" },
+    { name: "Deep Slate", hex: "#293b47" },
+    { name: "Deep Cerulean", hex: "#164e63" },
+    { name: "Deep Teal", hex: "#003b46" },
+    { name: "Deep Seaweed", hex: "#24594a" },
     { name: "Blue Slate", hex: "#577590" },
     { name: "Cerulean", hex: "#277da1" },
     { name: "Dark Teal", hex: "#005f73" },
@@ -19,7 +25,6 @@
     { name: "Pearl Aqua", hex: "#94d2bd" },
     { name: "Wheat", hex: "#e9d8a6" },
     { name: "Tuscan Sun", hex: "#f9c74f" },
-    { name: "Carrot Orange", hex: "#f8961e" },
     { name: "Golden Orange", hex: "#ee9b00" },
     { name: "Pumpkin Spice", hex: "#f3722c" },
     { name: "Atomic Tangerine", hex: "#f9844a" },

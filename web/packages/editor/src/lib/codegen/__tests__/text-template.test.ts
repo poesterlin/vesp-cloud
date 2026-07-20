@@ -99,6 +99,29 @@ describe("text component template codegen", () => {
     expect(out).toContain("colored_lbl->set_color(Color(155, 34, 38));");
   });
 
+  test("dark picker colors are preserved in generated C++", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "home",
+          name: "Home",
+          components: [
+            {
+              id: "midnight_label",
+              type: "text",
+              position: { x: 10, y: 10 },
+              text: "Midnight",
+              color: { r: 11, g: 19, b: 43 },
+            },
+          ],
+        },
+      ],
+    });
+
+    const out = generateUIScreensHeader(project);
+    expect(out).toContain("midnight_label->set_color(Color(11, 19, 43));");
+  });
+
   test("text color emits set_color for nested tab labels", () => {
     const project = makeProject({
       dashboardPages: [

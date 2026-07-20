@@ -285,6 +285,27 @@
           </p>
         </div>
 
+        <a
+          class="getting-started-link"
+          href="https://docs.vesp.cloud/getting-started/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span>
+            <strong>Follow the complete Getting Started Guide</strong>
+            <small>Hardware setup, flashing, WiFi, and Home Assistant</small>
+          </span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M5 12H19M14 7L19 12L14 17"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </a>
+
         <div class="flash-cards">
           <div class="flash-card">
             <div class="flash-card-num">1</div>
@@ -311,6 +332,40 @@
                 The device will restart and create a WiFi hotspot. Connect to it
                 and enter your WiFi credentials.
               </p>
+            </div>
+          </div>
+          <div class="flash-card">
+            <div class="flash-card-num">4</div>
+            <div class="flash-card-body">
+              <h4>Enable Home Assistant actions</h4>
+              <p>
+                Home Assistant blocks actions from newly added ESPHome devices
+                by default. If buttons, switches, or other interactive widgets
+                do not work:
+              </p>
+              <ol>
+                <li>
+                  Go to <strong>Settings</strong> →
+                  <strong>Devices &amp; services</strong> →
+                  <strong>ESPHome</strong>, or open
+                  <a
+                    href="https://my.home-assistant.io/redirect/integration/?domain=esphome"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >ESPHome integrations</a
+                  > directly.
+                </li>
+                <li>
+                  Select your display device and open its
+                  <strong>Options</strong>.
+                </li>
+                <li>
+                  Enable
+                  <strong
+                    >Allow the device to perform Home Assistant actions</strong
+                  > and submit.
+                </li>
+              </ol>
             </div>
           </div>
         </div>
@@ -835,6 +890,43 @@
     line-height: 1.5;
   }
 
+  .getting-started-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    color: white;
+    background: var(--color-accent);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+
+  .getting-started-link:hover {
+    background: var(--color-accent-hover);
+  }
+
+  .getting-started-link span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .getting-started-link strong {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .getting-started-link small {
+    font-size: 12px;
+    opacity: 0.8;
+  }
+
+  .getting-started-link svg {
+    flex-shrink: 0;
+  }
+
   .flash-cards {
     display: flex;
     flex-direction: column;
@@ -876,6 +968,22 @@
     font-size: 12px;
     color: var(--color-text-secondary);
     line-height: 1.5;
+  }
+
+  .flash-card-body ol {
+    margin: var(--spacing-sm) 0 0;
+    padding-left: 18px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+
+  .flash-card-body li + li {
+    margin-top: 4px;
+  }
+
+  .flash-card-body a {
+    color: var(--color-accent);
   }
 
   .install-btn {

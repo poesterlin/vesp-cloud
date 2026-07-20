@@ -36,6 +36,21 @@ export function otaBinKey(jobId: string): string {
   return `builds/${jobId}.ota.bin`;
 }
 
+export function feedbackAttachmentKey(userId: string, feedbackId: string, extension: string): string {
+  const safeUserId = userId.replace(/[^a-zA-Z0-9_-]/g, '_');
+  return `feedback/${safeUserId}/${feedbackId}.${extension}`;
+}
+
+export async function uploadFeedbackAttachment(key: string, data: ArrayBuffer, type: string): Promise<void> {
+  await ensureS3().write(key, data, { type });
+}
+
+export async function deleteFeedbackAttachment(key: string): Promise<void> {
+  try {
+    await ensureS3().delete(key);
+  } catch {}
+}
+
 export async function uploadBinary(jobId: string, data: Buffer): Promise<void> {
   const client = ensureS3();
   await client.write(binKey(jobId), data, { type: "application/octet-stream" });

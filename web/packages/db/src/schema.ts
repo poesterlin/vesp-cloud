@@ -195,6 +195,10 @@ export const feedbackEntries = pgTable('feedback_entry', {
     .notNull()
     .references(() => usersTable.id, fullCascade),
   message: text('message').notNull(),
+  attachmentKey: text('attachment_key'),
+  attachmentName: text('attachment_name'),
+  attachmentType: varchar('attachment_type', { length: 50 }),
+  attachmentSize: integer('attachment_size'),
   adminReply: text('admin_reply'),
   repliedAt: timestamp('replied_at', { withTimezone: true, mode: 'date' }),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),

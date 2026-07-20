@@ -36,6 +36,12 @@
         </td>
         <td>
           <div class="text-cell">{entry.message}</div>
+          {#if entry.attachmentName}
+            <a class="attachment" href={`/feedback/${entry.id}/attachment`} target="_blank" rel="noopener">
+              <img src={`/feedback/${entry.id}/attachment`} alt={`Attachment: ${entry.attachmentName}`} loading="lazy" />
+              <span>{entry.attachmentName}</span>
+            </a>
+          {/if}
         </td>
         <td>
           {#if entry.adminReply}
@@ -94,6 +100,24 @@
     max-width: 420px;
     white-space: pre-wrap;
     word-break: break-word;
+  }
+
+  .attachment {
+    display: block;
+    width: fit-content;
+    margin-top: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .attachment img {
+    display: block;
+    max-width: 320px;
+    max-height: 240px;
+    object-fit: contain;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 4px;
   }
 
   .reply-form {

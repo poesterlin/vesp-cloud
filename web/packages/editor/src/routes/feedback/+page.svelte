@@ -23,7 +23,7 @@
       Back to Projects
     </a>
     <h1>Feedback</h1>
-    <p>Send us ideas, bugs, or requests.</p>
+    <p>Send us ideas, bugs, or requests. A picture of the problem is often helpful.</p>
   </header>
 
   <section class="panel">
@@ -35,7 +35,7 @@
       <div class="notice success">Feedback sent successfully.</div>
     {/if}
 
-    <form method="POST" action="?/submit" class="composer">
+    <form method="POST" action="?/submit" enctype="multipart/form-data" class="composer">
       <textarea
         id="message"
         name="message"
@@ -45,8 +45,25 @@
         placeholder="What could be better?"
         required
       ></textarea>
+      <label class="attachment-field" for="attachment">
+        <span>Attach a picture <small>(optional, JPEG/PNG/WebP, up to 8 MB)</small></span>
+        <input id="attachment" name="attachment" type="file" accept="image/jpeg,image/png,image/webp" />
+      </label>
       <button type="submit" class="primary">Send Feedback</button>
     </form>
+  </section>
+
+  <section class="panel screenshot-help">
+    <h2>Take a device screenshot in Home Assistant</h2>
+    <p>The generated firmware exposes a <strong>Display Screenshot</strong> camera, but keeps it disabled by default.</p>
+    <ol>
+      <li>In Home Assistant, open <strong>Settings → Devices &amp; services</strong>.</li>
+      <li>Open the <strong>ESPHome</strong> integration and select your display device.</li>
+      <li>Expand the entities that are not shown and select <strong>Display Screenshot</strong>.</li>
+      <li>Open its settings (cogwheel), turn on <strong>Enable</strong>, and select <strong>Update</strong>.</li>
+      <li>Wait about 30 seconds, open the camera entity, and save its current image to attach here.</li>
+    </ol>
+    <p class="hint">The screenshot is captured on demand. Keeping the camera disabled when you do not need it avoids unnecessary device work.</p>
   </section>
 
   <section class="panel">
@@ -60,6 +77,12 @@
           <article class="entry">
             <div class="meta">Sent {formatDate(entry.createdAt)}</div>
             <p class="message">{entry.message}</p>
+            {#if entry.attachmentName}
+              <a class="attachment" href={`/feedback/${entry.id}/attachment`} target="_blank" rel="noopener">
+                <img src={`/feedback/${entry.id}/attachment`} alt={`Attachment: ${entry.attachmentName}`} loading="lazy" />
+                <span>{entry.attachmentName}</span>
+              </a>
+            {/if}
 
             {#if entry.adminReply}
               <div class="reply">
@@ -133,6 +156,16 @@
     color: #fff;
     padding: 0.7rem 0.8rem;
   }
+
+  .attachment-field { display: grid; gap: 0.4rem; color: var(--color-text-secondary); font-size: 0.9rem; }
+  .attachment-field small, .hint { color: var(--color-text-muted); }
+  input[type='file'] { max-width: 100%; }
+  .screenshot-help p, .screenshot-help ol { color: var(--color-text-secondary); line-height: 1.55; }
+  .screenshot-help ol { padding-left: 1.3rem; }
+  .screenshot-help li + li { margin-top: 0.3rem; }
+  .hint { font-size: 0.84rem; margin-top: 0.75rem; }
+  .attachment { display: block; width: fit-content; max-width: 100%; margin-top: 0.7rem; color: var(--color-text-secondary); font-size: 0.82rem; }
+  .attachment img { display: block; max-width: min(100%, 420px); max-height: 320px; object-fit: contain; border-radius: 0.55rem; border: 1px solid rgba(255, 255, 255, 0.12); margin-bottom: 0.3rem; }
 
   .primary {
     width: fit-content;

@@ -262,7 +262,11 @@ ${observableFields}
     if (online_images_expected <= 0) { loading_done = true; return false; }
     const int done = online_images_completed + online_images_failed;
     if (done >= online_images_expected) { loading_done = true; return false; }
-    return (millis() - image_bootstrap_started_at) < ONLINE_IMAGE_BOOTSTRAP_TIMEOUT_MS;
+    if (millis() - image_bootstrap_started_at >= ONLINE_IMAGE_BOOTSTRAP_TIMEOUT_MS) {
+      loading_done = true;
+      return false;
+    }
+    return true;
   }
 
   mutable bool loading_done = false;

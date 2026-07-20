@@ -37,14 +37,16 @@
     if (pathname === "/impressum") {
       return {
         title: "vESP.cloud — Impressum",
-        description: "Provider identification and legal contact information for vESP.cloud.",
+        description:
+          "Provider identification and legal contact information for vESP.cloud.",
       };
     }
 
     if (pathname === "/privacy") {
       return {
         title: "vESP.cloud — Privacy Policy",
-        description: "Information about how vESP.cloud processes personal data.",
+        description:
+          "Information about how vESP.cloud processes personal data.",
       };
     }
 
@@ -63,7 +65,14 @@
   }
 
   function isIndexablePath(pathname: string) {
-    return pathname === "/intro" || pathname === "/home-assistant-entity-export" || pathname === "/terms" || pathname === "/impressum" || pathname === "/privacy" || pathname === "/withdrawal";
+    return (
+      pathname === "/intro" ||
+      pathname === "/home-assistant-entity-export" ||
+      pathname === "/terms" ||
+      pathname === "/impressum" ||
+      pathname === "/privacy" ||
+      pathname === "/withdrawal"
+    );
   }
 
   const seo = $derived(getSeoForPath(page.url.pathname));
@@ -87,7 +96,10 @@
   {/if}
   <title>{seo.title}</title>
   <meta name="description" content={seo.description} />
-  <meta name="robots" content={indexable ? "index, follow" : "noindex, nofollow"} />
+  <meta
+    name="robots"
+    content={indexable ? "index, follow" : "noindex, nofollow"}
+  />
   <link rel="canonical" href={canonicalUrl} />
 
   <meta property="og:site_name" content={SITE_NAME} />
@@ -118,8 +130,8 @@
 <style>
   .legal-footer {
     position: fixed;
-    right: 0.75rem;
-    bottom: 0.65rem;
+    bottom: -0.25rem;
+    right: 0.05rem;
     z-index: 900;
     padding: 0.35rem 0.55rem;
     border: 1px solid rgba(255, 255, 255, 0.12);

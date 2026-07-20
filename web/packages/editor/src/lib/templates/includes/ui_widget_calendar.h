@@ -11,7 +11,7 @@ class CalendarListWidget : public Widget {
                      const char *label = "Calendar",
                      const char *entity_id = "",
                      int max_items = 4,
-                     int row_height = 40,
+                     int row_height = 46,
                      bool scrollable = false,
                      Callback on_tap = nullptr,
                      Color text_color = RetroColors::WHITE,
@@ -84,20 +84,29 @@ class CalendarListWidget : public Widget {
   void draw(display::Display &it, const UiState &state) override {
     (void)state;
     const UiRect r = screen_rect(rect_);
-    const Color border(25, 30, 40);
-    const Color bg(10, 14, 22);
+    const Color border = RetroColors::CYAN;
+    const Color bg(12, 19, 32);
+    const Color inner_border(30, 36, 45);
     draw_clipped_box(it, r.x, r.y, r.w, r.h,
-                     ui_corner_radius_for_height(r.h), border, bg, false);
+                     kCorner, border, bg, false);
     const UiRect inner = r.inset(2);
     draw_clipped_border(it, inner.x, inner.y, inner.w, inner.h,
-                        6, 6, 6, 6, Color(30, 36, 45));
+                        kCorner - 2, kCorner - 2, kCorner - 2, kCorner - 2,
+                        inner_border);
 
     if (label_ != nullptr && label_[0] != '\0' && g_theme.label.font != nullptr) {
       const int max_label_w = r.w - (kPad * 2);
-      ui_print_truncated(it, r.x + kPad, r.y + 6,
-                         g_theme.label.font, dim_color_,
+      ui_print_truncated(it, r.x + kPad, r.y + 5,
+                         g_theme.label.font, text_color_,
                          TextAlign::TOP_LEFT, label_, max_label_w);
     }
+
+    const int rule_x = r.x + kPad;
+    const int rule_w = std::max(1, r.w - (kPad * 2));
+    const int rule_y = r.y + kHeaderH - 3;
+    it.horizontal_line(rule_x, rule_y, rule_w, inner_border);
+    it.horizontal_line(rule_x, rule_y,
+                       std::max(1, std::min(38, rule_w / 5)), border);
 
     if (events_raw_ == nullptr || events_raw_->empty() || *events_raw_ == "NO EVENTS") {
       draw_empty(it, r);
@@ -127,9 +136,11 @@ class CalendarListWidget : public Widget {
     }
 
     const int max_rows_by_height = available_h > 0 ? (available_h / row_height_) : 0;
-    const int row_limit = max_rows_by_height < max_items_ ? max_rows_by_height : max_items_;
     const int start_index = scrollable_ ? (scroll_offset_ / row_height_) : 0;
     const int pixel_offset = scrollable_ ? (scroll_offset_ % row_height_) : 0;
+    const int row_limit = scrollable_
+        ? max_rows_by_height + (pixel_offset > 0 ? 1 : 0)
+        : std::min(max_rows_by_height, max_items_);
 
     int drawn = 0;
     const int body_top = r.y + kHeaderH;
@@ -139,30 +150,39 @@ class CalendarListWidget : public Widget {
       if (y + row_height_ < body_top) continue;
       if (y > r.y + r.h - 2) break;
 
-      const int row_y = y + 2;
-      const int row_h = row_height_ - 4;
       const int row_x = r.x + kPad;
       const int row_w = r.w - (kPad * 2);
-
-      ui_fast_filled_rectangle(it, row_x, row_y, row_w, row_h, Color(18, 22, 32));
-      it.rectangle(row_x, row_y, row_w, row_h, Color(35, 40, 55));
-
-      const std::string date_text = row.start.empty() ? "--" : ui_format_date_display(row.start);
-      const bool date_includes_day = date_text.find(' ') != std::string::npos;
-      const int date_w = date_includes_day ? 110 : 78;
-      const int date_x = row_x + 6;
-      const int date_mid_y = row_y + row_h / 2;
-      if (g_theme.label.font != nullptr) {
-        ui_print_truncated(it, date_x, date_mid_y, g_theme.label.font,
-                           dim_color_, TextAlign::CENTER_LEFT,
-                           date_text, date_w);
+      if (drawn > 0) {
+#if UI_THEME_RETRO
+        draw_dashed_hline(it, row_x, row_x + row_w, y,
+                          RetroColors::DARK_GRAY, 3, 3);
+#else
+        it.horizontal_line(row_x, y, std::max(1, row_w),
+                           RetroColors::DIMMER);
+#endif
       }
 
-      const int text_x = date_x + date_w + 6;
-      const int text_w = row_x + row_w - text_x - 6;
+      const std::string date_text = row.start.empty() ? "--" : ui_format_date_display(row.start);
+      const int date_x = row_x + 2;
+      const int date_mid_y = y + row_height_ / 2;
+      auto *date_font = g_theme.weather_tiny.font != nullptr
+          ? g_theme.weather_tiny.font
+          : g_theme.label.font;
+      if (date_font != nullptr) {
+        ui_print_truncated(it, date_x, date_mid_y, date_font,
+                           border, TextAlign::CENTER_LEFT,
+                           date_text, kDateW);
+      }
+
+      const int divider_x = date_x + kDateW + 5;
+      it.line(divider_x, y + 7, divider_x,
+              y + row_height_ - 7, RetroColors::CYAN_DIM);
+
+      const int text_x = divider_x + 10;
+      const int text_w = row_x + row_w - text_x - 2;
       const bool has_location = !row.location.empty();
-      const int summary_y = has_location ? (row_y + 6) : (row_y + row_h / 2);
-      const int location_y = row_y + row_h - 6;
+      const int summary_y = has_location ? (y + 6) : date_mid_y;
+      const int location_y = y + row_height_ - 6;
       auto *location_font = g_theme.weather_tiny.font ? g_theme.weather_tiny.font : g_theme.label.font;
       if (g_theme.label.font != nullptr) {
         ui_print_truncated(it, text_x, summary_y, g_theme.label.font,
@@ -194,11 +214,14 @@ class CalendarListWidget : public Widget {
     std::string location;
   };
 
-  static constexpr int kPad = ui_spacing::md;
-  static constexpr int kHeaderH = 28;
+  static constexpr int kPad = 10;
+  static constexpr int kHeaderH = 32;
+  static constexpr int kBottomPad = 6;
+  static constexpr int kCorner = 8;
+  static constexpr int kDateW = 44;
 
   int content_height() const {
-    const int h = rect_.h - kHeaderH - 4;
+    const int h = rect_.h - kHeaderH - kBottomPad;
     return h > 0 ? h : 0;
   }
 
@@ -266,7 +289,7 @@ class CalendarListWidget : public Widget {
   const std::string *events_raw_ = nullptr;
   const char *label_ = nullptr;
   int max_items_ = 4;
-  int row_height_ = 30;
+  int row_height_ = 46;
   bool scrollable_ = false;
   Callback on_tap_;
   Color text_color_;

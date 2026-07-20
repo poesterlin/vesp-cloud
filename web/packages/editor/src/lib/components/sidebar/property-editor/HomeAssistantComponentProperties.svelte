@@ -14,19 +14,29 @@
   <div class="property-section">
     <label class="section-label">To-Do List</label>
     <div class="field">
-      <span class="field-label">Rows</span>
+      <span class="field-label">Scrollable</span>
       <input
-        type="number"
-        min="1"
-        max="10"
-        value={component.maxItems ?? 4}
-        oninput={(e) =>
-          updateProperty(
-            "maxItems",
-            Math.max(1, Math.min(10, parseInt(e.currentTarget.value) || 4)),
-          )}
+        type="checkbox"
+        checked={component.scrollable === true}
+        onchange={(e) => updateProperty("scrollable", e.currentTarget.checked)}
       />
     </div>
+    {#if component.scrollable !== true}
+      <div class="field">
+        <span class="field-label">Rows</span>
+        <input
+          type="number"
+          min="1"
+          max="10"
+          value={component.maxItems ?? 4}
+          oninput={(e) =>
+            updateProperty(
+              "maxItems",
+              Math.max(1, Math.min(10, parseInt(e.currentTarget.value) || 4)),
+            )}
+        />
+      </div>
+    {/if}
     <div class="field">
       <span class="field-label">Row Height</span>
       <input
@@ -39,14 +49,6 @@
             "rowHeight",
             Math.max(20, Math.min(80, parseInt(e.currentTarget.value) || 30)),
           )}
-      />
-    </div>
-    <div class="field">
-      <span class="field-label">Scrollable</span>
-      <input
-        type="checkbox"
-        checked={component.scrollable === true}
-        onchange={(e) => updateProperty("scrollable", e.currentTarget.checked)}
       />
     </div>
     <div class="field">
@@ -199,19 +201,29 @@
       />
     </div>
     <div class="field">
-      <span class="field-label">Rows</span>
+      <span class="field-label">Scrollable</span>
       <input
-        type="number"
-        min="1"
-        max="10"
-        value={component.maxItems ?? 4}
-        oninput={(e) =>
-          updateProperty(
-            "maxItems",
-            Math.max(1, Math.min(10, parseInt(e.currentTarget.value) || 4)),
-          )}
+        type="checkbox"
+        checked={component.scrollable === true}
+        onchange={(e) => updateProperty("scrollable", e.currentTarget.checked)}
       />
     </div>
+    {#if component.scrollable !== true}
+      <div class="field">
+        <span class="field-label">Rows</span>
+        <input
+          type="number"
+          min="1"
+          max="10"
+          value={component.maxItems ?? 4}
+          oninput={(e) =>
+            updateProperty(
+              "maxItems",
+              Math.max(1, Math.min(10, parseInt(e.currentTarget.value) || 4)),
+            )}
+        />
+      </div>
+    {/if}
     <div class="field">
       <span class="field-label">Show Days</span>
       <input
@@ -223,14 +235,6 @@
             "durationDays",
             Math.max(0, parseInt(e.currentTarget.value) || 0),
           )}
-      />
-    </div>
-    <div class="field">
-      <span class="field-label">Scrollable</span>
-      <input
-        type="checkbox"
-        checked={component.scrollable === true}
-        onchange={(e) => updateProperty("scrollable", e.currentTarget.checked)}
       />
     </div>
   </div>

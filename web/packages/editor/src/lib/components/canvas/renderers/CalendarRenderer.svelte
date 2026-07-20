@@ -2,6 +2,7 @@
   import type { Component } from "@vesp-cloud/schema";
   import Draggable from "../Draggable.svelte";
   import { projectStore } from "$lib/stores/project.svelte";
+  import { colorToCss } from "$lib/utils/color-utils";
 
   type CalendarComponent = Extract<Component, { type: "calendar" }>;
 
@@ -13,9 +14,16 @@
 
   const label = $derived(component.label?.trim() || "Calendar");
   const maxItems = $derived(Math.max(1, Math.min(10, component.maxItems ?? 4)));
-  const rowHeight = 40;
+  const rowHeight = 46;
+  const headerHeight = 32;
+  const bottomPadding = 6;
   const isScrollable = $derived(component.scrollable === true);
-  const isRetro = $derived(projectStore.theme.id === "retro");
+  const theme = $derived(projectStore.theme);
+  const isRetro = $derived(theme.id === "retro");
+  const accentColor = $derived(colorToCss(theme.colors.accent));
+  const foregroundColor = $derived(colorToCss(theme.colors.foreground));
+  const componentWidth = $derived(component.size?.width ?? 225);
+  const componentHeight = $derived(component.size?.height ?? 180);
 
   const previewRows = $derived([
     { start: "2026-07-03", summary: "Trash Collection", location: "Front Curb" },
@@ -28,24 +36,72 @@
 
   const rows = $derived.by(() => {
     if (isScrollable) return previewRows;
-    return previewRows.slice(0, maxItems);
+    const rowsThatFit = Math.max(
+      1,
+      Math.floor((componentHeight - headerHeight - bottomPadding) / rowHeight),
+    );
+    return previewRows.slice(0, Math.min(maxItems, rowsThatFit));
   });
 
   function shortDate(v: string): string {
     if (v.length >= 10 && v[4] === "-" && v[7] === "-") return v.slice(5, 10);
     return v;
   }
+
+  function clippedPolygonPoints(
+    width: number,
+    height: number,
+    corner: number,
+    inset: number,
+  ): string {
+    return `${corner},${inset} ${width - corner},${inset} ${width - inset},${corner} ${width - inset},${height - corner} ${width - corner},${height - inset} ${corner},${height - inset} ${inset},${height - corner} ${inset},${corner}`;
+  }
 </script>
 
 <Draggable {component}>
   {#if component.size}
-    <div class="calendar" class:scrollable={isScrollable} class:retro={isRetro} style:width="100%" style:height="100%">
-      <div class="frame"></div>
-      <div class="header">{label}</div>
-      <div class="rows" style:top="28px">
+    <div
+      class="calendar"
+      class:retro={isRetro}
+      style:width="100%"
+      style:height="100%"
+      style:--calendar-accent={accentColor}
+      style:--calendar-foreground={foregroundColor}
+    >
+      {#if isRetro}
+        <svg
+          class="retro-frame"
+          width="100%"
+          height="100%"
+          viewBox="0 0 {componentWidth} {componentHeight}"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <polygon
+            points={clippedPolygonPoints(componentWidth, componentHeight, 8, 0.5)}
+            fill="#0c1320"
+            stroke={accentColor}
+            stroke-width="1"
+          />
+          <polygon
+            points={clippedPolygonPoints(componentWidth, componentHeight, 8, 2.5)}
+            fill="none"
+            stroke="rgba(255, 255, 255, 0.06)"
+            stroke-width="1"
+          />
+        </svg>
+      {:else}
+        <div class="frame"></div>
+      {/if}
+      <div class="header">
+        <span class="title">{label}</span>
+      </div>
+      <div class="header-rule"><span></span></div>
+      <div class="rows" class:scrollable={isScrollable} style:top="{headerHeight}px">
         {#each rows as row, i (row.start + row.summary + i)}
           <div class="row" style:height="{rowHeight}px">
             <div class="date">{shortDate(row.start)}</div>
+            <div class="divider"></div>
             <div class="content">
               <div class="summary" title={row.summary}>{row.summary}</div>
               {#if row.location}
@@ -64,70 +120,131 @@
     position: relative;
     overflow: hidden;
     box-sizing: border-box;
-    background: rgb(10, 14, 22);
-    border: 1px solid rgb(25, 30, 40);
-    border-radius: 8px;
-  }
-
-  .calendar.scrollable {
-    overflow-y: auto;
+    color: var(--calendar-accent);
+    background: #0c1320;
+    border: 1px solid var(--calendar-accent);
+    border-radius: 9px;
+    box-shadow:
+      inset 0 0 0 1px rgba(0, 0, 0, 0.45),
+      0 0 0 1px color-mix(in srgb, var(--calendar-accent) 15%, transparent);
   }
 
   .calendar.retro {
+    background: transparent;
+    border: 0;
     border-radius: 0;
-    clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+    box-shadow: none;
+  }
+
+  .retro-frame {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
   }
 
   .frame {
     position: absolute;
     inset: 2px;
-    border: 1px solid rgb(30, 36, 45);
-    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 7px;
     pointer-events: none;
+    z-index: 2;
   }
 
   .header {
     position: absolute;
-    top: 4px;
-    left: 12px;
-    right: 12px;
-    color: rgb(120, 128, 144);
+    top: 0;
+    left: 11px;
+    right: 11px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: var(--calendar-foreground);
     font-family: var(--display-font, monospace);
     font-size: var(--display-text-small, 16px);
     font-weight: 400;
+    line-height: 1;
+  }
+
+  .title {
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
+  .header-rule {
+    position: absolute;
+    top: 29px;
+    left: 10px;
+    right: 10px;
+    height: 1px;
+    background: rgba(120, 128, 144, 0.22);
+  }
+
+  .header-rule span {
+    display: block;
+    width: min(38px, 22%);
+    height: 1px;
+    background: var(--calendar-accent);
+    box-shadow: 0 0 4px color-mix(in srgb, var(--calendar-accent) 45%, transparent);
+  }
+
   .rows {
     position: absolute;
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
+    left: 10px;
+    right: 10px;
+    bottom: 6px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    overflow: hidden;
+  }
+
+  .rows.scrollable {
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .rows.scrollable::-webkit-scrollbar {
+    display: none;
   }
 
   .row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: rgb(18, 22, 32);
-    border: 1px solid rgb(35, 40, 55);
-    border-radius: 0;
-    padding: 3px 6px;
+    gap: 7px;
+    flex: 0 0 auto;
+    padding: 4px 2px;
     box-sizing: border-box;
   }
 
+  .row + .row {
+    border-top: 1px solid rgba(120, 128, 144, 0.22);
+  }
+
+  .retro .row + .row {
+    border-top-style: dashed;
+  }
+
   .date {
-    width: 60px;
-    color: rgb(120, 128, 144);
+    width: 44px;
+    color: var(--calendar-accent);
     font-family: var(--display-font, monospace);
-    font-size: var(--display-text-small, 16px);
+    font-size: var(--display-text-weather-tiny, 11px);
     font-weight: 400;
+    letter-spacing: 0.03em;
     flex-shrink: 0;
+    opacity: 0.82;
+  }
+
+  .divider {
+    align-self: stretch;
+    width: 1px;
+    margin: 3px 1px;
+    background: color-mix(in srgb, var(--calendar-accent) 32%, transparent);
   }
 
   .content {
@@ -138,7 +255,7 @@
   }
 
   .summary {
-    color: rgb(230, 240, 250);
+    color: var(--calendar-foreground);
     font-family: var(--display-font, monospace);
     font-size: var(--display-text-small, 16px);
     line-height: 1.1;
@@ -148,7 +265,7 @@
   }
 
   .location {
-    color: rgb(120, 128, 144);
+    color: color-mix(in srgb, var(--calendar-foreground) 52%, transparent);
     font-family: var(--display-font, monospace);
     font-size: var(--display-text-weather-tiny, 11px);
     line-height: 1.1;

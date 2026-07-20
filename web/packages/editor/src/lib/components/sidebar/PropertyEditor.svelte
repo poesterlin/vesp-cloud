@@ -53,7 +53,23 @@
   function updateProperty(key: string, value: unknown) {
     if (!selectedComponent) return;
     historyStore.record(`Update ${key}`);
-    projectStore.updateComponent(selectedComponent.id, { [key]: value });
+    const isListComponent =
+      selectedComponent.type === "calendar" ||
+      selectedComponent.type === "todo_list";
+
+    if (isListComponent && key === "scrollable" && value === true) {
+      projectStore.updateComponent(selectedComponent.id, {
+        scrollable: true,
+        maxItems: undefined,
+      });
+    } else if (isListComponent && key === "maxItems") {
+      projectStore.updateComponent(selectedComponent.id, {
+        maxItems: value as number,
+        scrollable: false,
+      });
+    } else {
+      projectStore.updateComponent(selectedComponent.id, { [key]: value });
+    }
 
     if (key !== "onTap") return;
     if (value && typeof value === "object" && "type" in value) {

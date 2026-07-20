@@ -1,9 +1,18 @@
 <script lang="ts">
   import * as mdiIcons from '@mdi/js';
   import type { PageProps } from './$types';
+  import { track } from '$lib/analytics';
 
   let { data, form }: PageProps = $props();
   const entries = $derived(data?.entries ?? []);
+  let trackedSuccess = $state(false);
+
+  $effect(() => {
+    if (form?.success && !trackedSuccess) {
+      trackedSuccess = true;
+      track('feedback_submitted');
+    }
+  });
 
   function formatDate(value: string) {
     return new Date(value).toLocaleString();

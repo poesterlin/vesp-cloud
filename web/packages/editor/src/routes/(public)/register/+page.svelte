@@ -2,6 +2,7 @@
   import { enhance } from '$app/forms';
   import { page } from '$app/state';
   import { TERMS_VERSION } from '$lib/terms';
+  import { track } from '$lib/analytics';
 
   let { form, data } = $props();
 
@@ -32,7 +33,7 @@
       <div class="error-message" role="alert">Please correct the highlighted fields.</div>
     {/if}
 
-    <form method="POST" action="?/register" use:enhance>
+    <form method="POST" action="?/register" use:enhance onsubmit={() => track('auth_registration_submitted')}>
       <input type="hidden" name="redirectTo" value={redirectParam} />
 
       <div class="field">

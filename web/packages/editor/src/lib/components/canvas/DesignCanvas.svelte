@@ -17,6 +17,7 @@
   import PageIndicator from "./PageIndicator.svelte";
   import { createComponent } from "$lib/utils/component-factory";
   import { sortComponentsForRender } from "$lib/utils/component-layering";
+  import { track } from "$lib/analytics";
 
   let canvasEl: HTMLDivElement | undefined = $state();
   let clipboardComponent = $state<{
@@ -345,6 +346,10 @@
     const newComponent = createComponent(componentType, x, y);
     projectStore.addComponent(newComponent);
     selectionStore.select(newComponent.id);
+    track("component_added", {
+      component_type: componentType,
+      surface: projectStore.viewMode,
+    });
   }
 
   function handleDragOver(e: DragEvent) {

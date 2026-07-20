@@ -11,6 +11,7 @@
   import CreateProjectModal from "$lib/components/CreateProjectModal.svelte";
   import type { CreateProjectConfig } from "$lib/components/CreateProjectModal.svelte";
   import logo1024 from "@vesp-cloud/assets/logo-1024x1024.webp";
+  import { track } from "$lib/analytics";
 
   let { data } = $props();
   type ProjectSummary = {
@@ -58,12 +59,15 @@
       const success = homeAssistantStore.importFromJson(text);
       if (success) {
         haImportSuccess = true;
+        track("ha_metadata_imported", { outcome: "success" });
         setTimeout(() => (haImportSuccess = false), 3000);
       } else {
         haImportError = "Invalid HomeAssistant dump format";
+        track("ha_metadata_imported", { outcome: "invalid" });
       }
     } catch {
       haImportError = "Failed to read file";
+      track("ha_metadata_imported", { outcome: "read_error" });
     }
 
     input.value = "";
@@ -119,6 +123,10 @@
     showModal = false;
 
     if (newProject) {
+      track("project_created", {
+        notification_overlay: Boolean(config.notificationOverlay),
+        timezone_configured: Boolean(config.timezone),
+      });
       await goto(`/project/${newProject.id}`);
     }
   }

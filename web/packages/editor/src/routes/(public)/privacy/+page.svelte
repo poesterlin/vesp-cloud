@@ -19,7 +19,7 @@
     <a href="/" class="legal-document__back">Back to App</a>
     <p class="legal-document__eyebrow">Data protection</p>
     <h1>Privacy Policy</h1>
-    <p>Information pursuant to Articles 12–14 GDPR · Last updated July 16, 2026</p>
+    <p>Information pursuant to Articles 12–14 GDPR · Last updated July 20, 2026</p>
   </header>
 
   <main class="legal-document__content">
@@ -159,14 +159,50 @@
       <p>
         The GDPR legal bases are Article 6(1)(b) for storage required to provide the requested service
         and Article 6(1)(f) for secure session handling and user-interface continuity. Storage or access
-        on your device is additionally assessed under § 25 TDDDG. If optional analytics, marketing or
-        other non-essential storage is introduced, it will not be activated without any consent that
-        applicable law requires.
+        on your device is additionally assessed under § 25 TDDDG. The anonymized analytics described
+        below does not set cookies or store an analytics identifier on your device. If marketing or
+        other non-essential browser storage is introduced, it will not be activated without any consent
+        that applicable law requires.
       </p>
     </section>
 
     <section>
-      <h2>7. Payments, credits and withdrawals</h2>
+      <h2>7. Anonymized usage analytics</h2>
+      <p>
+        We use Umami to understand how the service is found and which product features are useful. The
+        analytics integration is configured without analytics cookies, advertising identifiers,
+        cross-site tracking or user profiles. Search parameters and URL fragments are excluded from
+        page-view collection so editor parameters are not included in analytics.
+      </p>
+      <p>
+        We collect aggregated page views and technical usage information such as the visited route,
+        referrer, approximate country, device type, operating system, browser and session duration. We
+        also record selected product events, including account-form submissions, project creation,
+        Home Assistant metadata-import outcomes, component types added to a project, firmware build
+        starts, outcomes and duration, project-file downloads, opening the device-installation flow,
+        checkout starts and successful returns, and successful feedback submissions.
+      </p>
+      <p>
+        Analytics events do not contain usernames, email addresses, account or project IDs, project
+        names, Home Assistant entity IDs, imported Home Assistant metadata, URLs entered into a project,
+        file names, feedback text or payment details. The analytics web server necessarily receives
+        connection data such as an IP address and user agent when your browser sends a request. Umami
+        uses this information to produce non-identifying statistics; it is not included as a directly
+        identifying value in the analytics reports or combined with account data by vESP.cloud.
+      </p>
+      <p>
+        The intended legal basis is Article 6(1)(f) GDPR. Our legitimate interests are measuring the
+        reach and usability of the service, identifying unsuccessful user journeys, prioritising product
+        improvements and operating the service economically. You may object to this processing at any
+        time by contacting <a href={`mailto:${legalConfig.email}`}>{legalConfig.email}</a>. Browser
+        privacy or content-blocking tools can also prevent the analytics request. Further information
+        about the software is available in
+        <a href="https://umami.is/privacy" rel="external">Umami's privacy information</a>.
+      </p>
+    </section>
+
+    <section>
+      <h2>8. Payments, credits and withdrawals</h2>
       <p>
         Credit purchases are processed through Stripe. We process an internal user ID, Stripe customer
         and checkout IDs, selected price, payment status, amount, currency, credit balance and history,
@@ -188,7 +224,7 @@
     </section>
 
     <section>
-      <h2>8. Transactional email, support and feedback</h2>
+      <h2>9. Transactional email, support and feedback</h2>
       <p>
         We use the email address associated with your account to send registration, account-recovery
         and withdrawal messages. When email delivery is configured, the recipient address, sender,
@@ -205,7 +241,7 @@
     </section>
 
     <section>
-      <h2>9. Error monitoring and external deployment component</h2>
+      <h2>10. Error monitoring and external deployment component</h2>
       <p>
         Error monitoring uses a self-hosted Sentry backend operated by the controller. It processes
         technical error, trace and request information needed to diagnose failures. Error data is not
@@ -223,10 +259,11 @@
     </section>
 
     <section>
-      <h2>10. Recipients and international transfers</h2>
+      <h2>11. Recipients and international transfers</h2>
       <p>
         Personal data is disclosed only where necessary to Cloudflare for public connectivity and
-        security, Resend for transactional email, Stripe for payments, professional advisers, or public
+        security, Resend for transactional email, Stripe for payments, the configured Umami analytics
+        operator where it is not operated directly by the controller, professional advisers, or public
         authorities where disclosure is legally required. The application server, database, MinIO
         storage and Sentry backend are self-hosted by the controller rather than operated by separate
         SaaS providers. Processors are contractually bound in accordance with Article 28 GDPR where
@@ -242,7 +279,7 @@
     </section>
 
     <section>
-      <h2>11. Retention and deletion</h2>
+      <h2>12. Retention and deletion</h2>
       <ul>
         <li>Account, session and project data is generally kept while your account remains active.</li>
         <li>Expired password-reset tokens and sessions are removed according to operational schedules.</li>
@@ -254,6 +291,11 @@
         <li>
           Security-relevant records may be retained separately for longer where necessary to investigate
           an incident or establish, exercise or defend legal claims.
+        </li>
+        <li>
+          Aggregated Umami analytics records are retained for the configured analytics retention period
+          and are then deleted or anonymized. They are not linked to an account-deletion workflow because
+          vESP.cloud does not attach account or project identifiers to analytics events.
         </li>
         <li>
           Build files, compiler records, support messages and error-monitoring events are retained only
@@ -271,7 +313,7 @@
     </section>
 
     <section>
-      <h2>12. Your rights</h2>
+      <h2>13. Your rights</h2>
       <p>Subject to the legal requirements, you have the right to:</p>
       <ul>
         <li>request access to and a copy of your personal data;</li>
@@ -288,7 +330,7 @@
     </section>
 
     <section>
-      <h2>13. Right to complain</h2>
+      <h2>14. Right to complain</h2>
       <p>
         You may lodge a complaint with a data protection supervisory authority, in particular in the
         EU Member State of your habitual residence, place of work or the place of the alleged
@@ -300,7 +342,7 @@
     </section>
 
     <section>
-      <h2>14. Automated decision-making</h2>
+      <h2>15. Automated decision-making</h2>
       <p>
         We do not use solely automated decision-making, including profiling, that produces legal or
         similarly significant effects within the meaning of Article 22 GDPR.
@@ -308,7 +350,7 @@
     </section>
 
     <section>
-      <h2>15. Changes to this notice</h2>
+      <h2>16. Changes to this notice</h2>
       <p>
         We may update this notice when the service, providers or legal requirements change. The current
         version and its revision date will remain available at this URL.

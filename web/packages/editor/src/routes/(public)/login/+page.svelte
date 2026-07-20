@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
+  import { track } from '$lib/analytics';
 
   let { form } = $props();
 
@@ -19,7 +20,7 @@
       <div class="error-message">{form.message}</div>
     {/if}
 
-    <form method="POST" action="?/login">
+    <form method="POST" action="?/login" onsubmit={() => track('auth_login_submitted')}>
       <input type="hidden" name="redirectTo" value={redirectParam} />
 
       <div class="field">

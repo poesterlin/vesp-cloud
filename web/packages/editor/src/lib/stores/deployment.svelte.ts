@@ -1,6 +1,7 @@
 import { projectStore } from "$lib/stores/project.svelte";
 import { assert } from "$lib/utils";
 import type { ValidationError } from "$lib/codegen/validations";
+import { track } from "$lib/analytics";
 
 interface DeploymentState {
   step: "idle" | "compiling" | "ready" | "flash" | "publish" | "done";
@@ -102,6 +103,7 @@ function createDeploymentStore() {
     state.progress = 0;
     state.status = "Submitting build...";
     state.step = "compiling";
+    track("build_started", { flow: flowType ?? "manual" });
 
     try {
       const response = await fetch("/api/compile", {
@@ -130,6 +132,9 @@ function createDeploymentStore() {
       state.error = err.message;
       state.compiling = false;
       stopProgressTimer();
+      track("build_failed", {
+        stage: state.validationErrors.length > 0 ? "validation" : "submission",
+      });
     }
   }
 
@@ -145,18 +150,26 @@ function createDeploymentStore() {
         } else if (job.status === "running") {
           state.status = "Compiling firmware...";
         } else if (job.status === "completed") {
+          const durationSeconds = compileStartedAt
+            ? Math.round((Date.now() - compileStartedAt) / 1000)
+            : 0;
           stopProgressTimer();
           state.progress = 100;
           state.status = "Build complete!";
           state.compiling = false;
           state.manifestUrl = `/api/manifest/${jobId}`;
           state.step = "ready";
+          track("build_completed", {
+            flow: state.flow ?? "manual",
+            duration_seconds: durationSeconds,
+          });
           publishBuild(jobId);
           return;
         } else if (job.status === "failed") {
           stopProgressTimer();
           state.error = job.error || "Compilation failed";
           state.compiling = false;
+          track("build_failed", { stage: "compilation" });
           return;
         }
 

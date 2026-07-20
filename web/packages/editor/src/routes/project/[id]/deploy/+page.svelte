@@ -18,6 +18,7 @@
   import * as mdiIcons from "@mdi/js";
   import JSZip from "jszip";
   import { onMount } from "svelte";
+  import { track } from "$lib/analytics";
 
   const TEMPLATE_PREFIX = "../../../../lib/templates/";
   const staticTemplates = import.meta.glob("../../../../lib/templates/**/*", {
@@ -60,6 +61,7 @@
     deploymentStore.state.jobId = jobId;
     deploymentStore.state.manifestUrl = `/api/manifest/${jobId}`;
     flashJobId = jobId;
+    track("device_install_started", { web_serial_supported: supportsWebSerial });
   }
 
   function handleExitFlash() {
@@ -124,6 +126,10 @@
       a.download = `${fileName}.zip`;
       a.click();
       URL.revokeObjectURL(url);
+      track("project_files_downloaded", {
+        dashboard_pages: project.dashboardPages.length,
+        detail_views: project.detailViews.length,
+      });
     } catch (err) {
       console.error("Failed to download project zip:", err);
     }

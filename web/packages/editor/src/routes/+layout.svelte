@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from "$app/state";
+  import { env } from "$env/dynamic/public";
   import "../app.css";
 
   let { children, data } = $props();
@@ -69,9 +70,21 @@
   const indexable = $derived(isIndexablePath(page.url.pathname));
   const canonicalUrl = $derived(`${page.url.origin}${page.url.pathname}`);
   const ogImageUrl = $derived(`${page.url.origin}/display.jpg`);
+  const analyticsEnabled = $derived(
+    Boolean(env.PUBLIC_ANALYTICS_SCRIPT_URL && env.PUBLIC_ANALYTICS_WEBSITE_ID),
+  );
 </script>
 
 <svelte:head>
+  {#if analyticsEnabled}
+    <script
+      defer
+      src={env.PUBLIC_ANALYTICS_SCRIPT_URL}
+      data-website-id={env.PUBLIC_ANALYTICS_WEBSITE_ID}
+      data-exclude-search="true"
+      data-exclude-hash="true"
+    ></script>
+  {/if}
   <title>{seo.title}</title>
   <meta name="description" content={seo.description} />
   <meta name="robots" content={indexable ? "index, follow" : "noindex, nofollow"} />

@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as mdiIcons from "@mdi/js";
+  import { track } from "$lib/analytics";
   let { data } = $props();
 
   const balance = $derived(data.balance);
@@ -10,6 +11,10 @@
 
   $effect(() => {
     if (!checkoutStatus) return;
+
+    if (checkoutStatus === "success") {
+      track("checkout_completed", { outcome: "success" });
+    }
 
     const id = setTimeout(() => (checkoutStatus = null), 6000);
     history.replaceState({}, "", "/credits");
@@ -40,6 +45,7 @@
 
     purchasing = pack.priceKey;
     error = null;
+    track("checkout_started", { pack: pack.priceKey });
 
     try {
       const res = await fetch("/api/stripe/checkout", {

@@ -57,8 +57,7 @@
 
 {#snippet bindingChip(binding: EntityBinding, extraClass = "")}<span
     class="binding-value {extraClass}"
-    title={bindingTitle(binding)}
-    >{getBindingDisplay(binding, getEntity)}</span
+    title={bindingTitle(binding)}>{getBindingDisplay(binding, getEntity)}</span
   >{/snippet}
 
 <Draggable {component}>
@@ -113,8 +112,9 @@
     display: inline-flex;
     align-items: baseline;
     gap: 2px;
-    color: var(--color-accent, #4a9eff);
     font-weight: 500;
+    text-decoration: underline;
+    text-decoration-style: dotted;
   }
 
   .binding-icon {

@@ -239,7 +239,7 @@
               >
               <span class="price">&sim;{fmt(20)}</span>
               <a
-                href="https://youtu.be/youtube-video-id"
+                href="https://youtu.be/WDWVjb6fvms"
                 target="_blank"
                 class="demo-link"
               >
@@ -520,7 +520,7 @@
           Go to Dashboard
         </a>
         <a
-          href="https://youtu.be/youtube-video-id"
+          href="https://youtu.be/WDWVjb6fvms"
           target="_blank"
           class="tutorial-link"
         >

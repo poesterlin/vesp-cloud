@@ -76,7 +76,7 @@
               <span class="hardware-description">ESP32-S3 with integrated touch display, USB-C, and Wi-Fi connectivity</span>
               <span class="hardware-price">&sim;€20</span>
               <a
-                href="https://youtu.be/youtube-video-id"
+                href="https://youtu.be/WDWVjb6fvms"
                 target="_blank"
                 class="link demo-link"
               >
@@ -196,7 +196,7 @@
 
     <div class="onboarding-footer">
       <a
-        href="https://youtu.be/youtube-video-id"
+        href="https://youtu.be/WDWVjb6fvms"
         target="_blank"
         class="tutorial-link"
       >

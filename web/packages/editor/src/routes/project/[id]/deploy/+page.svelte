@@ -13,6 +13,7 @@
   import { validateProject } from "$lib/codegen/validations";
   import BuildHistory from "$lib/components/BuildHistory.svelte";
   import ConfirmCompileModal from "$lib/components/ConfirmCompileModal.svelte";
+  import DownloadProjectModal from "$lib/components/DownloadProjectModal.svelte";
   import { deploymentStore } from "$lib/stores/deployment.svelte";
   import { projectStore } from "$lib/stores/project.svelte";
   import * as mdiIcons from "@mdi/js";
@@ -30,6 +31,7 @@
   let { data } = $props();
 
   let showConfirmModal = $state(false);
+  let showDownloadModal = $state(false);
   let flashJobId = $state<string | null>(null);
   let supportsWebSerial = $state(true);
   let buildCount = $state<number | null>(null);
@@ -55,6 +57,11 @@
   function handleConfirmBuild() {
     showConfirmModal = false;
     deploymentStore.compile();
+  }
+
+  function handleConfirmDownload() {
+    showDownloadModal = false;
+    handleDownloadProject();
   }
 
   function handleFlash(jobId: string) {
@@ -205,7 +212,7 @@
     <h1>Deploy</h1>
     <div class="header-actions">
       {#if !flashJobId}
-        <button class="download-link" onclick={handleDownloadProject}>
+        <button class="download-link" onclick={() => (showDownloadModal = true)}>
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
             <path
               d="M8 2V10M8 10L5 7M8 10L11 7"

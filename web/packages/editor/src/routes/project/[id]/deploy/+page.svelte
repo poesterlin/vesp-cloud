@@ -637,6 +637,13 @@
   />
 {/if}
 
+{#if showDownloadModal}
+  <DownloadProjectModal
+    onConfirm={handleConfirmDownload}
+    onCancel={() => (showDownloadModal = false)}
+  />
+{/if}
+
 <style>
   .deploy-page {
     display: flex;

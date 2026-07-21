@@ -4,6 +4,7 @@
   let { data } = $props();
 
   const balance = $derived(data.balance);
+  const buildsAreFree = $derived(data.creditCosts?.compile === 0);
   let checkoutStatus = $state<string | null>(data.checkoutStatus);
   let purchasing = $state<string | null>(null);
   let error = $state<string | null>(null);
@@ -124,8 +125,21 @@
     <section class="balance-card">
       <div class="balance-label">Available Credits</div>
       <div class="balance-amount">{balance}</div>
-      <div class="balance-sub">1 credit = 1 firmware build</div>
+      {#if buildsAreFree}
+        <div class="balance-sub free">Cloud builds are currently free — no credits are deducted.</div>
+      {:else}
+        <div class="balance-sub">1 credit = 1 firmware build</div>
+      {/if}
     </section>
+
+    {#if buildsAreFree}
+      <section class="free-trial-banner">
+        <svg width="20" height="20" viewBox="0 0 24 24">
+          <path d={mdiIcons.mdiGift} />
+        </svg>
+        <span><strong>Cloud builds are free for the first 30 days.</strong> Credits will be required after the trial period. Stock up now at no risk.</span>
+      </section>
+    {/if}
 
     <section>
       <h1>Buy Build Credits</h1>
@@ -284,6 +298,35 @@
   .balance-sub {
     color: var(--color-text-muted);
     font-size: 0.86rem;
+  }
+
+  .balance-sub.free {
+    color: #4ade80;
+    font-weight: 500;
+  }
+
+  .free-trial-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 0.75rem;
+    background: rgba(250, 204, 21, 0.1);
+    border: 1px solid rgba(250, 204, 21, 0.25);
+    color: #fde047;
+    font-size: 0.93rem;
+    line-height: 1.5;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .free-trial-banner svg {
+    flex-shrink: 0;
+    fill: #facc15;
+  }
+
+  .free-trial-banner strong {
+    color: #facc15;
   }
 
   h1 {

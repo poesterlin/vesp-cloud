@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import ChangeSummary from "$lib/components/ChangeSummary.svelte";
+  import { CREDIT_COSTS } from "$lib/credits";
 
   interface Props {
     flow?: "new" | "update" | null;
@@ -14,17 +15,18 @@
   let creditBalance = $state<number | null>(null);
   let balanceLoading = $state(true);
   const isCloud = page.data.isCloud;
-  const cost = 1;
+  const cost = CREDIT_COSTS.compile;
+  const isFree = $derived(cost === 0);
 
   let title = $derived("Build Firmware");
   let description = $derived(
     "This compiles one firmware image. After the build finishes, you can choose USB install, OTA publish, or download the binary.",
   );
 
-  let canAfford = $derived(!isCloud || (creditBalance !== null && creditBalance >= cost));
+  let canAfford = $derived(!isCloud || isFree || (creditBalance !== null && creditBalance >= cost));
 
   $effect(() => {
-    if (isCloud) loadBalance();
+    if (isCloud && !isFree) loadBalance();
     else balanceLoading = false;
   });
 
@@ -62,26 +64,32 @@
       {#if isCloud}
         <div class="cost-row">
           <span class="cost-label">Cost</span>
-          <span class="cost-value">{cost} credit</span>
-        </div>
-        <div class="cost-row">
-          <span class="cost-label">Your balance</span>
-          {#if balanceLoading}
-            <span class="cost-value loading">Loading...</span>
+          {#if isFree}
+            <span class="cost-value free">Free</span>
           {:else}
-            <span class="cost-value" class:low={!canAfford}>
-              {creditBalance !== null ? `${creditBalance} credits` : "Unavailable"}
-            </span>
+            <span class="cost-value">{cost} credit</span>
           {/if}
         </div>
+        {#if !isFree}
+          <div class="cost-row">
+            <span class="cost-label">Your balance</span>
+            {#if balanceLoading}
+              <span class="cost-value loading">Loading...</span>
+            {:else}
+              <span class="cost-value" class:low={!canAfford}>
+                {creditBalance !== null ? `${creditBalance} credits` : "Unavailable"}
+              </span>
+            {/if}
+          </div>
 
-        {#if !canAfford}
-          <a href="/credits" class="warning">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M12 9V13M12 17H12.01M10.29 3.86L1.82 18C1.64 18.3 1.55 18.65 1.55 19C1.55 20.1 2.45 21 3.55 21H20.45C21.55 21 22.45 20.1 22.45 19C22.45 18.65 22.36 18.3 22.18 18L13.71 3.86C13.32 3.18 12.69 2.81 12 2.81C11.31 2.81 10.68 3.18 10.29 3.86Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span>Insufficient credits. Add credits before compiling.</span>
-          </a>
+          {#if !canAfford}
+            <a href="/credits" class="warning">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 9V13M12 17H12.01M10.29 3.86L1.82 18C1.64 18.3 1.55 18.65 1.55 19C1.55 20.1 2.45 21 3.55 21H20.45C21.55 21 22.45 20.1 22.45 19C22.45 18.65 22.36 18.3 22.18 18L13.71 3.86C13.32 3.18 12.69 2.81 12 2.81C11.31 2.81 10.68 3.18 10.29 3.86Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Insufficient credits. Add credits before compiling.</span>
+            </a>
+          {/if}
         {/if}
       {/if}
     </div>
@@ -189,6 +197,11 @@
   .cost-value {
     color: var(--color-text-primary);
     font-weight: 500;
+  }
+
+  .cost-value.free {
+    color: #4ade80;
+    font-weight: 600;
   }
 
   .cost-value.low {

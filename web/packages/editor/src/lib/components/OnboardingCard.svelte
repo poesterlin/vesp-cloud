@@ -3,6 +3,9 @@
   import { cubicOut } from "svelte/easing";
   import { onMount } from "svelte";
   import * as mdiIcons from "@mdi/js";
+  import { CREDIT_COSTS } from "$lib/credits";
+
+  const buildsAreFree = $derived(CREDIT_COSTS.compile === 0);
 
   interface Props {
     onDismiss: () => void;
@@ -123,9 +126,12 @@
                 <h4>Cloud Builds &amp; OTA Updates</h4>
               </div>
               <p>
-                Design your dashboard, click build, and flash wirelessly. <br> <strong
-                  >1 credit per build</strong
-                >
+                Design your dashboard, click build, and flash wirelessly. <br>
+                {#if buildsAreFree}
+                  <strong>Free for the first 30 days</strong>
+                {:else}
+                  <strong>1 credit per build</strong>
+                {/if}
                 the most convenient way.
                 <a href="/credits" class="link"> Get Credits </a>
               </p>

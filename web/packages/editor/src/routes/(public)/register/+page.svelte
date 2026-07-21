@@ -57,22 +57,6 @@
       </div>
 
       <div class="field">
-        <label for="email">Email</label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          autocomplete="email"
-          aria-invalid={fieldError('email') ? 'true' : undefined}
-          aria-describedby={fieldError('email') ? 'email-error' : undefined}
-        />
-        {#if fieldError('email')}
-          <p id="email-error" class="field-error">{fieldError('email')}</p>
-        {/if}
-      </div>
-
-      <div class="field">
         <label for="password">Password</label>
         <div class="password-input">
           <input
@@ -108,6 +92,8 @@
           <li class:met={/[0-9]/.test(password)}>At least one number</li>
         </ul>
       </div>
+
+      <p class="recovery-hint">Email is optional. Without an email, account recovery is not available.</p>
 
       {#if data.showCloudLegalPages}
         <label class="legal-consent" class:invalid={fieldError('acceptTerms')}>
@@ -309,6 +295,12 @@
 
   .field-error {
     color: #ff7373;
+  }
+
+  .recovery-hint {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
   }
 
   .requirements {

@@ -77,21 +77,23 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
     if (IS_CLOUD) {
       const cost = CREDIT_COSTS.compile;
-      const result = await deductCredits({
-        userId: locals.user.id,
-        amount: cost,
-        reason: `compile:${projectId}`,
-      });
+      if (cost > 0) {
+        const result = await deductCredits({
+          userId: locals.user.id,
+          amount: cost,
+          reason: `compile:${projectId}`,
+        });
 
-      if (!result.success) {
-        const balance = await getBalance(locals.user.id);
-        return json(
-          { error: `Insufficient credits. Cost: ${cost}, balance: ${balance}` },
-          { status: 402 },
-        );
+        if (!result.success) {
+          const balance = await getBalance(locals.user.id);
+          return json(
+            { error: `Insufficient credits. Cost: ${cost}, balance: ${balance}` },
+            { status: 402 },
+          );
+        }
+        deductedAmount = cost;
+        chargedProjectId = projectId;
       }
-      deductedAmount = cost;
-      chargedProjectId = projectId;
     }
 
     const result = await submitCompilationJob(

@@ -238,24 +238,16 @@
                 connectivity</span
               >
               <span class="price">&sim;{fmt(20)}</span>
-              <a
-                href="https://youtu.be/WDWVjb6fvms"
-                target="_blank"
-                class="demo-link"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" class="icon">
-                  <path d={mdiIcons.mdiYoutube} />
-                </svg>
-                Display demo
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  class="icon ext-icon"
+              <div class="video-wrapper">
+                <iframe
+                  src="https://www.youtube-nocookie.com/embed/WDWVjb6fvms"
+                  title="vESP.cloud display demo"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                  loading="lazy"
                 >
-                  <path d={mdiIcons.mdiOpenInNew} />
-                </svg>
-              </a>
+                </iframe>
+              </div>
             </div>
           </div>
         </div>
@@ -750,6 +742,8 @@
   }
 
   .hardware-info {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
@@ -803,23 +797,23 @@
     flex-shrink: 0;
   }
 
-  .demo-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.95rem;
-    color: var(--color-text-secondary);
-    text-decoration: none;
-    margin-top: 0.25rem;
+  .video-wrapper {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%;
+    margin-top: 0.5rem;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: #000;
   }
 
-  .demo-link:hover {
-    color: #ff0000;
-  }
-
-  .demo-link:hover .ext-icon {
-    opacity: 1;
-    color: #ff0000;
+  .video-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
   }
 
   .photo-grid {

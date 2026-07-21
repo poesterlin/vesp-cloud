@@ -74,7 +74,7 @@
               </a>
               <span class="hardware-specs">480 &times; 480 pixel display</span>
               <span class="hardware-description">ESP32-S3 with integrated touch display, USB-C, and Wi-Fi connectivity</span>
-              <span class="hardware-price">&sim;€20</span>
+              <span class="hardware-price">&sim;€25</span>
               <a
                 href="https://youtu.be/WDWVjb6fvms"
                 target="_blank"

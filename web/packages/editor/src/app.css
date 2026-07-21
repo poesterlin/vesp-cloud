@@ -235,6 +235,17 @@ button.primary:hover {
   font-size: 1.05rem;
 }
 
+.legal-document__content .legal-document__language {
+  margin: 0.75rem 0 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #35c8d0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .legal-document__content p,
 .legal-document__content li,
 .legal-document__content dd,

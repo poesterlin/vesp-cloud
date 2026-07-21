@@ -12,6 +12,7 @@ export const legalConfig = {
   supervisoryAuthority:
     env.PUBLIC_LEGAL_SUPERVISORY_AUTHORITY || required('competent data protection authority'),
   disputeResolution: env.PUBLIC_LEGAL_DISPUTE_RESOLUTION || '',
+  taxId: env.PUBLIC_LEGAL_TAX_ID || '',
 };
 
 export function isMissingLegalValue(value: string): boolean {

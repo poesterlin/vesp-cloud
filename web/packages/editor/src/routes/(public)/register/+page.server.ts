@@ -1,7 +1,7 @@
 import * as auth from '$lib/server/auth';
 import { getDb } from '@vesp-cloud/db';
 import * as table from '@vesp-cloud/db/schema';
-import { generateId, getSafeRedirectPath, normalizeEmail } from '$lib/server/util';
+import { generateId, getSafeRedirectPath } from '$lib/server/util';
 import { hash } from '@node-rs/argon2';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
@@ -36,7 +36,7 @@ export const actions: Actions = {
       username: z.string().trim()
         .min(3, 'Username must be at least 3 characters')
         .max(31, 'Username must be 31 characters or fewer'),
-      email: z.email('Enter a valid email address').trim().transform((value) => value.toLowerCase()),
+      email: z.string().email('Enter a valid email address').trim().transform((value) => value.toLowerCase()).optional().nullable(),
       password: z.string()
         .min(8, 'Password must be at least 8 characters')
         .max(255, 'Password must be 255 characters or fewer')
@@ -83,7 +83,7 @@ export const actions: Actions = {
         await db.transaction(async (tx) => {
           await tx.insert(table.usersTable).values({
             id: userId,
-            email: normalizeEmail(email),
+            email: email ?? null,
             createdAt: new Date(),
             lastLogin: new Date(),
             username,
@@ -97,12 +97,6 @@ export const actions: Actions = {
         if (isUniqueConstraintError(e, 'user_username_unique')) {
           return fail(409, {
             errors: [{ path: ['username'], message: 'Username is already taken' }],
-            message: 'Please correct the highlighted field',
-          });
-        }
-        if (isUniqueConstraintError(e, 'user_email_unique')) {
-          return fail(409, {
-            errors: [{ path: ['email'], message: 'An account already uses this email address' }],
             message: 'Please correct the highlighted field',
           });
         }

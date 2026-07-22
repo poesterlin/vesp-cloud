@@ -15,6 +15,7 @@
   import weatherDisplayModern from "@vesp-cloud/assets/imgs/examples/weather-display-modern.png";
 
   let { data } = $props();
+  const buildsAreFree = $derived(data.creditCosts.compile === 0);
   type GalleryMode = 0 | 1 | 2;
 
   let galleryMode = $state<GalleryMode>(0);
@@ -339,9 +340,13 @@
                 <h3>Cloud Builds &amp; OTA Updates</h3>
               </div>
               <p>
-                Design your dashboard, click build, and flash wirelessly. <strong
-                  >1 credit per build</strong
-                > &mdash; the most convenient way.
+                Design your dashboard, click build, and flash wirelessly.
+                {#if buildsAreFree}
+                  <strong>Free for the first 30 days</strong>
+                {:else}
+                  <strong>1 credit per build</strong>
+                {/if}
+                &mdash; the most convenient way.
               </p>
             </div>
           </div>
@@ -356,6 +361,14 @@
         </div>
         <div class="block-content">
           <h2>Pricing</h2>
+          {#if buildsAreFree}
+            <div class="free-trial-banner">
+              <svg width="22" height="22" viewBox="0 0 24 24" class="icon">
+                <path d={mdiIcons.mdiGift} />
+              </svg>
+              <span><strong>Cloud builds are free for the first 30 days!</strong> Credits will be required after the trial period.</span>
+            </div>
+          {/if}
           <div class="free-export-callout">
             <svg width="22" height="22" viewBox="0 0 24 24" class="icon">
               <path d={mdiIcons.mdiCheckCircleOutline} />
@@ -1014,6 +1027,28 @@
 
   .free-export-callout strong {
     color: #86efac;
+  }
+
+  .free-trial-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 0.75rem;
+    background: rgba(250, 204, 21, 0.1);
+    border: 1px solid rgba(250, 204, 21, 0.25);
+    color: #fde047;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .free-trial-banner > .icon {
+    flex: 0 0 22px;
+  }
+
+  .free-trial-banner strong {
+    color: #facc15;
   }
 
   .pricing-grid {

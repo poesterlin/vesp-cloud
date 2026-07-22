@@ -14,13 +14,6 @@ import { AddressValidationEmail, Renderer, toPlainText } from "@vesp-cloud/email
 
 const renderer = new Renderer();
 
-function isEmailUniqueConstraintError(error: unknown) {
-  if (!error || typeof error !== "object") return false;
-  const code = "code" in error ? (error as { code?: unknown }).code : undefined;
-  const constraint = "constraint" in error ? (error as { constraint?: unknown }).constraint : undefined;
-  return code === "23505" && typeof constraint === "string" && constraint.includes("user_email_unique");
-}
-
 export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user) {
     return {
@@ -62,7 +55,7 @@ export const actions: Actions = {
           .where(eq(table.usersTable.id, event.locals.user.id))
           .then((rows) => rows.at(0)?.email);
 
-        if (!currentEmail) return fail(404, { emailError: "Account not found." });
+        if (currentEmail === undefined) return fail(404, { emailError: "Account not found." });
         if (currentEmail === form.email) {
           return { emailMessage: "Your email address is unchanged." };
         }
@@ -77,9 +70,6 @@ export const actions: Actions = {
             .where(eq(table.emailVerificationTokens.userId, event.locals.user!.id));
         });
       } catch (error) {
-        if (isEmailUniqueConstraintError(error)) {
-          return fail(409, { emailError: "An account already uses this email address." });
-        }
         console.error("Email update failed:", error);
         return fail(500, { emailError: "Could not update your email address." });
       }
@@ -107,6 +97,7 @@ export const actions: Actions = {
       .then((rows) => rows.at(0));
 
     if (!user) return fail(404, { verificationError: "Account not found." });
+    if (!user.email) return fail(400, { verificationError: "No email address on file. Please set one first." });
     if (user.emailVerifiedAt) return { verificationMessage: "Your email address is already verified." };
 
     try {

@@ -3,15 +3,25 @@
   import { page } from '$app/state';
   import { TERMS_VERSION } from '$lib/terms';
   import { track } from '$lib/analytics';
+  import { fade } from 'svelte/transition';
 
   let { form, data } = $props();
 
+  let username = $state('');
   let password = $state('');
   let showPassword = $state(false);
 
   const redirectParam = $derived(page.url.searchParams.get('redirect') || '');
   const validationErrors = $derived((form?.errors ?? []) as Array<{ path?: PropertyKey[]; message: string }>);
   const hasValidationErrors = $derived(validationErrors.length > 0);
+  const hasValidCredentials = $derived(
+    username.trim().length >= 3 &&
+      username.trim().length <= 31 &&
+      password.length >= 8 &&
+      password.length <= 255 &&
+      /[a-zA-Z]/.test(password) &&
+      /[0-9]/.test(password)
+  );
 
   function fieldError(field: string): string | undefined {
     return validationErrors.find((issue) => issue.path?.[0] === field)?.message;
@@ -46,6 +56,7 @@
           minlength="3"
           maxlength="31"
           autocomplete="username"
+          bind:value={username}
           aria-invalid={fieldError('username') ? 'true' : undefined}
           aria-describedby={fieldError('username') ? 'username-error' : 'username-help'}
         />
@@ -93,7 +104,27 @@
         </ul>
       </div>
 
-      <p class="recovery-hint">Email is optional. Without an email, account recovery is not available.</p>
+      {#if hasValidCredentials || fieldError('email')}
+        <div class="field" transition:fade={{ duration: 250 }}>
+          <label for="email">Email <span class="optional">Optional</span></label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            aria-invalid={fieldError('email') ? 'true' : undefined}
+            aria-describedby={fieldError('email') ? 'email-error' : 'email-help'}
+          />
+          {#if fieldError('email')}
+            <p id="email-error" class="field-error">{fieldError('email')}</p>
+          {:else}
+            <p id="email-help" class="recovery-hint">
+              Email is optional. Without an email, account recovery is not available. You can add
+              one later in account settings.
+            </p>
+          {/if}
+        </div>
+      {/if}
 
       {#if data.showCloudLegalPages}
         <label class="legal-consent" class:invalid={fieldError('acceptTerms')}>
@@ -231,6 +262,21 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--color-text-secondary);
+  }
+
+  .field label .optional {
+    display: inline-block;
+    margin-left: 0.35rem;
+    padding: 0.15rem 0.4rem;
+    border: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+    color: var(--color-accent);
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   .field input {

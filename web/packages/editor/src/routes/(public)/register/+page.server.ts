@@ -36,7 +36,10 @@ export const actions: Actions = {
       username: z.string().trim()
         .min(3, 'Username must be at least 3 characters')
         .max(31, 'Username must be 31 characters or fewer'),
-      email: z.string().email('Enter a valid email address').trim().transform((value) => value.toLowerCase()).optional().nullable(),
+      email: z.preprocess(
+        (value) => typeof value === 'string' && value.trim() === '' ? undefined : value,
+        z.string().trim().email('Enter a valid email address').transform((value) => value.toLowerCase()).optional().nullable()
+      ),
       password: z.string()
         .min(8, 'Password must be at least 8 characters')
         .max(255, 'Password must be 255 characters or fewer')

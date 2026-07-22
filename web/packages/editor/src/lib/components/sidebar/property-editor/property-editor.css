@@ -101,7 +101,7 @@
 .property-editor select {
   flex: 1;
   min-width: 0;
-  height: 30px;
+  height: 35px;
   padding: var(--spacing-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);

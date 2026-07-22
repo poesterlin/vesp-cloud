@@ -199,6 +199,32 @@ describe("Weather codegen - esphome-yaml", () => {
     expect(yaml).not.toContain("bind_ha_float_attr(\"weather.home\"");
   });
 
+  test("uses an ESPHome-safe script ID for today-mini mode", () => {
+    const project = makeProject({
+      dashboardPages: [
+        {
+          id: "p1",
+          name: "Home",
+          components: [
+            {
+              id: "w1",
+              type: "weather",
+              mode: "today-mini",
+              position: { x: 10, y: 10 },
+              size: { width: 225, height: 110 },
+              stateBinding: { entityId: "weather.home" },
+            },
+          ],
+        },
+      ],
+    });
+
+    const yaml = generateESPHomeYAML(project);
+    expect(yaml).toContain("id: _weather_fetch_weather_home_today_mini");
+    expect(yaml).toContain("script.execute: _weather_fetch_weather_home_today_mini");
+    expect(yaml).not.toContain("_weather_fetch_weather_home_today-mini");
+  });
+
   test("generates 3-day forecast parsing for forecast mode", () => {
     const project = makeProject({
       dashboardPages: [

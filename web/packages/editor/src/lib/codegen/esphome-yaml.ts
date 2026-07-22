@@ -1,5 +1,5 @@
 import type { EntityBinding, Project, LightStateComponent, StateField, TodoListComponent, TextComponent, ImageComponent, HvacComponent, WeatherComponent, CalendarComponent } from "@vesp-cloud/schema";
-import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted, calendarEventsVarFromEntity, todoEntityIdFromComponent, toCppIdentifier, detailScreenId, roundRect } from "./utils";
+import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectProjectIconNames, todoItemsVarFromBinding, todoItemsVarFromTodoEntity, textBindingVar, bindingKey, imageIdFromComponentId, imageFallbackIdFromComponentId, escapeCString, escapeYAMLDoubleQuoted, calendarEventsVarFromEntity, todoEntityIdFromComponent, toCppIdentifier, safeCppIdentifier, detailScreenId, roundRect } from "./utils";
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
 import { ICON_FONT_ID, WEATHER_ICON_FONT_ID, getIconGlyphs, projectHasWeather } from "./mdi-icons";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
@@ -551,7 +551,7 @@ function generateWeatherForecastIntervals(project: Project): { intervals: string
 
     const escapedId = escapeCString(entityId);
     const base = stateVarFromEntity(entityId);
-    const scriptId = `_weather_fetch_${base}_${mode}`;
+    const scriptId = `_weather_fetch_${base}_${safeCppIdentifier(mode, 'mode')}`;
     scriptIds.push(scriptId);
 
     if (mode === 'forecast') {

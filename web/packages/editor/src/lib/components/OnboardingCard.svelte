@@ -3,7 +3,7 @@
   import { cubicOut } from "svelte/easing";
   import { onMount } from "svelte";
   import * as mdiIcons from "@mdi/js";
-  import { CREDIT_COSTS } from "$lib/credits";
+  import { CREDIT_COSTS } from "$lib/credits/costs";
 
   const buildsAreFree = $derived(CREDIT_COSTS.compile === 0);
 

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import ChangeSummary from "$lib/components/ChangeSummary.svelte";
-  import { CREDIT_COSTS } from "$lib/credits";
+  import { CREDIT_COSTS } from "$lib/credits/costs";
 
   interface Props {
     flow?: "new" | "update" | null;

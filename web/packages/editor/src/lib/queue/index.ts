@@ -35,7 +35,6 @@ export class CompilationQueue extends EventEmitter {
   private queue: CompilationJob[] = [];
   private jobs: Map<string, CompilationJob> = new Map();
   private isStopped = false;
-  private pythonSitePackages = '';
   private consecutiveFailures = 0;
   private circuitOpenAt: number | null = null;
   private cpuSlotFree: boolean[] = [];
@@ -72,7 +71,6 @@ export class CompilationQueue extends EventEmitter {
 
   private static buildCompileEnv(options: {
     venvPath: string;
-    pythonSitePackages: string;
     coreDir: string;
     buildCacheDir: string;
     ccacheDir: string;
@@ -83,7 +81,6 @@ export class CompilationQueue extends EventEmitter {
     const compileEnv: Record<string, string> = {
       PATH: `${options.venvPath}/bin:${env.PATH ?? '/usr/local/bin:/usr/bin:/bin'}`,
       VIRTUAL_ENV: options.venvPath,
-      PYTHONPATH: options.pythonSitePackages || `${options.venvPath}/lib/python3.12/site-packages`,
       HOME: options.tempDir,
       TMPDIR: options.tempDir,
       USER: 'esphome',
@@ -128,26 +125,9 @@ export class CompilationQueue extends EventEmitter {
     this.cpuSlotFree = Array(this.maxWorkers).fill(true);
     console.log(`   ${cpuCount} CPUs → ${this.coresPerSlot} cores per slot (${this.maxWorkers} slots)`);
 
-    await this.resolvePythonSitePackages();
     await this.reconcileJobsOnStartup();
     await this.loadPendingJobsFromDb();
     this.processQueue();
-  }
-
-  private async resolvePythonSitePackages(): Promise<void> {
-    const venvPath = process.env.ESPHOME_VENV;
-    if (!venvPath) return;
-    try {
-      const libDir = join(venvPath, 'lib');
-      const entries = await fs.readdir(libDir);
-      const pythonDir = entries.find((e) => e.startsWith('python'));
-      if (pythonDir) {
-        this.pythonSitePackages = join(libDir, pythonDir, 'site-packages');
-        console.log(`Resolved Python site-packages: ${this.pythonSitePackages}`);
-      }
-    } catch {
-      console.warn('Could not resolve Python site-packages, using fallback');
-    }
   }
 
   async stop(): Promise<void> {
@@ -443,7 +423,6 @@ export class CompilationQueue extends EventEmitter {
 
       const buildEnv = CompilationQueue.buildCompileEnv({
         venvPath,
-        pythonSitePackages: this.pythonSitePackages,
         coreDir,
         buildCacheDir,
         ccacheDir,

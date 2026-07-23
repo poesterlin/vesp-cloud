@@ -41,6 +41,9 @@ describe("fast runtime image firmware integration", () => {
       );
       expect(source).not.toContain("ENV ESPHOME_ESP_IDF_PREFIX=/data/idf");
     }
+
+    const queue = readEditorFile("src/lib/queue/index.ts");
+    expect(queue).not.toContain("PYTHONPATH:");
   });
 
   test("precompiles the complete image toolchain from one shared fixture", () => {

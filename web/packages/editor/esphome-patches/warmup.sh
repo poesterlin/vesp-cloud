@@ -43,13 +43,15 @@ display:
     model: SSD1306 128x64
 
 # Pull JPEGDEC, esp-dsp and pngle into the baked PlatformIO/component caches.
-online_image:
-  - url: https://example.invalid/warmup.jpg
+image:
+  - platform: online_image
+    url: https://example.invalid/warmup.jpg
     id: warmup_jpeg
     format: jpeg
     type: RGB565
     resize: 364x222
-  - url: https://example.invalid/warmup.png
+  - platform: online_image
+    url: https://example.invalid/warmup.png
     id: warmup_png
     format: png
     type: RGB565

@@ -44,7 +44,7 @@ describe("fast runtime image firmware integration", () => {
     const installer = readEditorFile("esphome-patches/apply-fast-jpeg.py");
     const decoder = readEditorFile("esphome-patches/jpeg_decoder.cpp");
 
-    expect(installer).toContain('EXPECTED_ESPHOME_VERSION = "2026.5.2"');
+    expect(installer).toContain('EXPECTED_ESPHOME_VERSION = "2026.7.1"');
     expect(installer).toContain('cg.add_build_flag("-DARDUINO_ARCH_ESP32")');
     expect(installer).toContain('cg.add_build_flag("-DARDUINO_ESP32S3_DEV")');
     expect(decoder).toContain("JPEG_SCALE_EIGHTH");
@@ -61,13 +61,7 @@ describe("fast runtime image firmware integration", () => {
 
     expect(installer).toContain('PATCH_DIR / "png_decoder.cpp"');
     expect(installer).toContain('PATCH_DIR / "png_decoder.h"');
-    expect(installer).toContain('png_legacy_option in codegen');
-    expect(installer).toContain(
-      "codegen.replace(png_legacy_option, png_list_option, 1)",
-    );
-    expect(installer).toContain(
-      'cg.add_platformio_option("extra_scripts", ["{png_patch_script}"])',
-    );
+    expect(installer).toContain('cg.add_platformio_option("extra_scripts"');
     expect(header).toContain("target_x_for_source_boundary_");
     expect(decoder).toContain("get_decode_buffer()");
     expect(decoder).toContain("!this->image_->has_transparency()");
@@ -75,7 +69,21 @@ describe("fast runtime image firmware integration", () => {
     expect(decoder).toContain("this->draw(x, y, width, height, Color(");
     expect(decoder).toContain('"Fast RGB565: source=%" PRIu32');
     expect(decoder).toContain("pngle_set_draw_boundaries");
+    expect(decoder).toContain("#ifdef VESP_PATCHED_PNGLE");
     expect(pnglePatch).toContain("skip color conversion and callbacks");
     expect(pnglePatch).toContain("continue;");
+    expect(pnglePatch).toContain('env.Append(CPPDEFINES=["VESP_PATCHED_PNGLE"])');
+  });
+
+  test("patches the final ST7701S class with narrow framebuffer access", () => {
+    const installer = readEditorFile("esphome-patches/apply-fast-jpeg.py");
+    const camera = readEditorFile(
+      "src/lib/templates/components/framebuffer_camera/framebuffer_camera.cpp",
+    );
+
+    expect(installer).toContain('ST7701S_HEADER = (');
+    expect(installer).toContain('get_framebuffer(void **buffer)');
+    expect(camera).toContain("panel->get_framebuffer(&framebuffer)");
+    expect(camera).not.toContain("ST7701SFramebufferAccess");
   });
 });

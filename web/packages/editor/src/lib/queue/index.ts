@@ -92,6 +92,7 @@ export class CompilationQueue extends EventEmitter {
       PLATFORMIO_SETTING_ENABLE_TELEMETRY: 'false',
       PLATFORMIO_CORE_DIR: options.coreDir,
       PLATFORMIO_BUILD_CACHE_DIR: options.buildCacheDir,
+      ESPHOME_ESP_IDF_PREFIX: env.ESPHOME_ESP_IDF_PREFIX || '/tmp/esphome-idf',
       IDF_CCACHE_ENABLE: '1',
       CCACHE_DIR: options.ccacheDir,
       CCACHE_BASEDIR: '/tmp/esphome-builds',
@@ -490,7 +491,10 @@ export class CompilationQueue extends EventEmitter {
         if (code === 0) {
           const uploadStart = Date.now();
           const deviceName = sanitizeDeviceName(job.projectName);
+          const buildRoot = join(tempDir, '.esphome', 'build', deviceName);
+          const nativeDir = join(buildRoot, 'build');
           const pioDir = join(tempDir, '.esphome', 'build', deviceName, '.pioenvs', deviceName);
+          const artifactDirs = [nativeDir, pioDir];
           const candidates = [
             { name: 'firmware.ota.bin', upload: (data: Buffer) => uploadOtaBinary(job.id, data) },
             { name: 'firmware.bin', upload: (data: Buffer) => uploadOtaBinary(job.id, data) },
@@ -502,9 +506,21 @@ export class CompilationQueue extends EventEmitter {
           let uploadError = '';
           await Promise.all(
             candidates.map(async ({ name, upload }) => {
-              const binPath = join(pioDir, name);
               try {
-                await fs.access(binPath);
+                let binPath: string | undefined;
+                for (const artifactDir of artifactDirs) {
+                  const candidatePath = join(artifactDir, name);
+                  try {
+                    await fs.access(candidatePath);
+                    binPath = candidatePath;
+                    break;
+                  } catch {
+                    // Try the next build backend's artifact directory.
+                  }
+                }
+                if (!binPath) {
+                  throw new Error(`${name} not found in ${artifactDirs.join(', ')}`);
+                }
                 const data = await fs.readFile(binPath);
                 await upload(data);
                 if (name === 'firmware.ota.bin' || name === 'firmware.bin') otaUploaded = true;
@@ -517,15 +533,22 @@ export class CompilationQueue extends EventEmitter {
           );
           timings.uploadMs = Date.now() - uploadStart;
           if (!otaUploaded) {
-            const files = await fs.readdir(pioDir).catch(() => []);
+            const files = (
+              await Promise.all(
+                artifactDirs.map(async (dir) => ({
+                  dir,
+                  files: await fs.readdir(dir).catch(() => []),
+                })),
+              )
+            ).flatMap(({ dir, files }) => files.map((file) => `${dir}/${file}`));
             await this.handleJobResult(job.id, {
               error: CompilationQueue.buildFailureError(
                 USER_VISIBLE_COMPILE_ERROR,
                 uploadError,
-                `Files in ${pioDir}: ${files.join(', ')}`,
+                `Build artifacts: ${files.join(', ')}`,
               ),
             });
-            logger.warn(`No OTA firmware binary found in ${pioDir}. Files: ${files.join(', ')}. Error: ${uploadError}`);
+            logger.warn(`No OTA firmware binary found. Files: ${files.join(', ')}. Error: ${uploadError}`);
             logger.info(
               `phase timings: templateCopy=${CompilationQueue.formatDurationMs(timings.templateCopyMs)} configPrep=${CompilationQueue.formatDurationMs(timings.configPrepMs)} compile=${CompilationQueue.formatDurationMs(timings.compileMs)} upload=${CompilationQueue.formatDurationMs(timings.uploadMs)} total=${CompilationQueue.formatDurationMs(Date.now() - timings.startedAt)}`,
             );

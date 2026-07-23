@@ -6,7 +6,7 @@ from pathlib import Path
 import shutil
 
 
-EXPECTED_ESPHOME_VERSION = "2026.5.2"
+EXPECTED_ESPHOME_VERSION = "2026.7.1"
 PACKAGE_VERSION = version("esphome")
 
 if PACKAGE_VERSION != EXPECTED_ESPHOME_VERSION:
@@ -25,6 +25,9 @@ PNG_DECODER = RUNTIME_IMAGE_DIR / "png_decoder.cpp"
 PNG_DECODER_HEADER = RUNTIME_IMAGE_DIR / "png_decoder.h"
 RUNTIME_IMAGE_HEADER = RUNTIME_IMAGE_DIR / "runtime_image.h"
 RUNTIME_IMAGE_CODEGEN = RUNTIME_IMAGE_DIR / "__init__.py"
+ST7701S_HEADER = (
+    Path(esphome.__file__).resolve().parent / "components" / "st7701s" / "st7701s.h"
+)
 
 if not all(
     path.is_file()
@@ -34,6 +37,7 @@ if not all(
         PNG_DECODER_HEADER,
         RUNTIME_IMAGE_HEADER,
         RUNTIME_IMAGE_CODEGEN,
+        ST7701S_HEADER,
     )
 ):
     raise SystemExit(f"ESPHome runtime_image sources not found under {RUNTIME_IMAGE_DIR}")
@@ -91,4 +95,24 @@ if "patch-pngle.py" not in codegen:
     codegen = codegen.replace(png_anchor, png_patch_option, 1)
 RUNTIME_IMAGE_CODEGEN.write_text(codegen)
 
-print(f"Installed fast JPEG and PNG decoders into ESPHome {PACKAGE_VERSION}")
+# ESPHome 2026.7 made ST7701S final, so the framebuffer camera can no longer
+# use its former layout-only subclass to expose the protected RGB panel handle.
+# Add a narrow accessor instead of weakening the class or relying on layout
+# casts. The project-owned component uses this only to take screen snapshots.
+st7701s_header = ST7701S_HEADER.read_text()
+st7701s_anchor = """  int get_width() override { return this->width_; }
+  int get_height() override { return this->height_; }
+"""
+st7701s_replacement = st7701s_anchor + """  esp_err_t get_framebuffer(void **buffer) {
+    if (this->handle_ == nullptr) return ESP_ERR_INVALID_STATE;
+    return esp_lcd_rgb_panel_get_frame_buffer(this->handle_, 1, buffer);
+  }
+"""
+if "get_framebuffer(void **buffer)" not in st7701s_header:
+    if st7701s_anchor not in st7701s_header:
+        raise SystemExit("ESPHome st7701s.h layout changed; refusing a partial patch")
+    ST7701S_HEADER.write_text(
+        st7701s_header.replace(st7701s_anchor, st7701s_replacement, 1)
+    )
+
+print(f"Installed VESP runtime patches into ESPHome {PACKAGE_VERSION}")

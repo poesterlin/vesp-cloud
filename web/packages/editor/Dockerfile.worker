@@ -39,7 +39,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     python3-venv && \
     rm -rf /var/lib/apt/lists/*
 
-ARG ESPHOME_VERSION=2026.5.2
+ARG ESPHOME_VERSION=2026.7.1
 RUN python3 -m venv /opt/esphome-venv
 RUN /opt/esphome-venv/bin/pip install --upgrade pip
 RUN /opt/esphome-venv/bin/pip install "esphome==${ESPHOME_VERSION}"
@@ -47,7 +47,7 @@ COPY packages/editor/esphome-patches /opt/esphome-patches
 RUN /opt/esphome-venv/bin/python /opt/esphome-patches/apply-fast-jpeg.py
 RUN /opt/esphome-venv/bin/python -m compileall -q /opt/esphome-venv
 
-RUN mkdir -p /data/platformio /data/pio-build-cache /data/ccache
+RUN mkdir -p /data/idf /data/platformio /data/pio-build-cache /data/ccache
 
 ENV CCACHE_DIR=/data/ccache
 ENV CCACHE_BASEDIR=/tmp/esphome-builds
@@ -57,6 +57,7 @@ ENV CCACHE_MAXSIZE=10G
 ENV CCACHE_COMPRESS=true
 ENV CCACHE_COMPRESSLEVEL=1
 ENV IDF_CCACHE_ENABLE=1
+ENV ESPHOME_ESP_IDF_PREFIX=/data/idf
 ENV PLATFORMIO_BUILD_CACHE_DIR=/data/pio-build-cache
 ENV PLATFORMIO_CORE_DIR=/data/platformio
 RUN /bin/sh /opt/esphome-patches/warmup.sh
@@ -70,6 +71,7 @@ ENV NODE_ENV=production
 ENV COMPILER_MODE=external
 ENV CONCURRENT_JOBS=2
 ENV ESPHOME_VENV=/opt/esphome-venv
+ENV ESPHOME_ESP_IDF_PREFIX=/data/idf
 ENV PLATFORMIO_CORE_DIR=/data/platformio
 ENV PLATFORMIO_BUILD_CACHE_DIR=/data/pio-build-cache
 

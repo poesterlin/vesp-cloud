@@ -13,16 +13,6 @@ namespace esphome::framebuffer_camera {
 
 static const char *const TAG = "framebuffer_camera";
 
-// ESPHome does not currently expose the ST7701S framebuffer. This layout-only
-// adapter adds no fields; it only makes the protected panel handle available.
-class ST7701SFramebufferAccess : public st7701s::ST7701S {
- public:
-  esp_err_t get_framebuffer(void **buffer) {
-    if (this->handle_ == nullptr) return ESP_ERR_INVALID_STATE;
-    return esp_lcd_rgb_panel_get_frame_buffer(this->handle_, 1, buffer);
-  }
-};
-
 void FramebufferCamera::setup() {
   if (this->display_ == nullptr || this->encoder_ == nullptr) {
     ESP_LOGE(TAG, "Display or JPEG encoder is not configured");
@@ -130,8 +120,7 @@ void FramebufferCamera::capture_task(void *arg) {
 }
 
 void FramebufferCamera::capture_() {
-  auto *panel = static_cast<ST7701SFramebufferAccess *>(
-      static_cast<st7701s::ST7701S *>(this->display_));
+  auto *panel = static_cast<st7701s::ST7701S *>(this->display_);
   void *framebuffer = nullptr;
   if (panel->get_framebuffer(&framebuffer) != ESP_OK || framebuffer == nullptr) {
     this->capture_failed_ = true;

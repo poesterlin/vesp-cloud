@@ -112,7 +112,7 @@ function buildImageScreenMap(project: Project): Map<string, string> {
   return map;
 }
 
-function generateStaticImagesYAML(project: Project): string {
+function generateStaticImageEntries(project: Project): string[] {
   const lines: string[] = [];
   for (const c of collectImageComponents(project)) {
     if (isHomeAssistantImage(c)) continue;
@@ -125,10 +125,10 @@ function generateStaticImagesYAML(project: Project): string {
     if (c.dither) lines.push(`    dither: ${c.dither}`);
     if (c.byte_order) lines.push(`    byte_order: ${c.byte_order}`);
   }
-  return lines.length > 0 ? `\nimage:\n${lines.join('\n')}\n` : '';
+  return lines;
 }
 
-function generateOnlineImagesYAML(project: Project, imageScreenMap: Map<string, string>): string {
+function generateOnlineImageEntries(project: Project, imageScreenMap: Map<string, string>): string[] {
   const lines: string[] = [];
   for (const c of collectImageComponents(project)) {
     if (!isHomeAssistantImage(c) || !c.imageBinding?.entityId) continue;
@@ -145,7 +145,8 @@ function generateOnlineImagesYAML(project: Project, imageScreenMap: Map<string, 
       c.size?.width ?? 100,
       c.size?.height ?? 100,
     );
-    lines.push(`  - url: "http://127.0.0.1/"`);
+    lines.push(`  - platform: online_image`);
+    lines.push(`    url: "http://127.0.0.1/"`);
     lines.push(`    id: ${primaryId}`);
     lines.push(`    format: ${primaryFormat}`);
     lines.push(`    type: ${c.image_type}`);
@@ -180,7 +181,8 @@ function generateOnlineImagesYAML(project: Project, imageScreenMap: Map<string, 
     lines.push(`              g_ui_app.state().image_fetches_in_flight--;`);
     lines.push(`            id(${pendingFetchId}) = true;`);
 
-    lines.push(`  - url: "http://127.0.0.1/"`);
+    lines.push(`  - platform: online_image`);
+    lines.push(`    url: "http://127.0.0.1/"`);
     lines.push(`    id: ${fallbackId}`);
     lines.push(`    format: ${fallbackFormat}`);
     lines.push(`    type: ${c.image_type}`);
@@ -223,7 +225,7 @@ function generateOnlineImagesYAML(project: Project, imageScreenMap: Map<string, 
     lines.push(`              }`);
     lines.push(`            }`);
   }
-  return lines.length > 0 ? `\nonline_image:\n${lines.join('\n')}\n` : '';
+  return lines;
 }
 
 function generateOnlineImageFormatGlobals(project: Project): string {
@@ -943,8 +945,13 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   const weatherIconFontAssignment = projectHasWeather(project)
     ? `\n          g_theme.weather_icon.font = id(${WEATHER_ICON_FONT_ID});`
     : '';
-  const imageYaml = generateStaticImagesYAML(project);
-  const onlineImageYaml = generateOnlineImagesYAML(project, imageScreenMap);
+  const imageEntries = [
+    ...generateStaticImageEntries(project),
+    ...generateOnlineImageEntries(project, imageScreenMap),
+  ];
+  const imageYaml = imageEntries.length > 0
+    ? `\nimage:\n${imageEntries.join('\n')}\n`
+    : '';
   const onlineImageFormatGlobals = generateOnlineImageFormatGlobals(project);
   const fetchPump = generateFetchPump(project, imageScreenMap);
   const httpRequestYaml = httpRequestEnabled
@@ -1045,7 +1052,7 @@ packages:
   base: !include base.yaml
   fonts: !include fonts.yaml
   hardware: !include hardware.yaml
-${imageYaml}${onlineImageYaml}${httpRequestYaml}${httpOtaYaml}${httpUpdateYaml}
+${imageYaml}${httpRequestYaml}${httpOtaYaml}${httpUpdateYaml}
 
 external_components:
   - source:

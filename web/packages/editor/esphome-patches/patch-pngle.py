@@ -119,3 +119,5 @@ if "pngle_set_draw_boundaries" not in source:
     header = header.replace(header_anchor, header_replacement, 1)
     source_path.write_text(source)
     header_path.write_text(header)
+
+env.Append(CPPDEFINES=["VESP_PATCHED_PNGLE"])

@@ -32,9 +32,9 @@ export type JobStatus = {
 };
 
 /** Average build duration used to pace the deploy progress bar. */
-const AVG_BUILD_MS = 270_000;
+const AVG_BUILD_MS = 90_000;
 const PROGRESS_START = 10;
-const PROGRESS_CAP = 85;
+const PROGRESS_CAP = 95;
 
 function createDeploymentStore() {
   let state = $state<DeploymentState>({

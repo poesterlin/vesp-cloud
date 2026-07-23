@@ -13,6 +13,7 @@
   import vacuumDisplayModern from "@vesp-cloud/assets/imgs/examples/vacuum-display-modern.png";
   import weatherDisplay from "@vesp-cloud/assets/imgs/examples/weather-display.png";
   import weatherDisplayModern from "@vesp-cloud/assets/imgs/examples/weather-display-modern.png";
+  import { CODEGEN_SAFE_HTTP_URL_RE } from "$lib/codegen/url-safety";
 
   interface Props {
     onClose: () => void;
@@ -107,6 +108,48 @@
   let homeAssistantBaseUrl = $state(
     projectStore.project?.secrets?.homeAssistantBaseUrl ?? "",
   );
+  let homeAssistantBaseUrlTouched = $state(false);
+  const homeAssistantBaseUrlNeedsScheme = $derived(
+    !!homeAssistantBaseUrl.trim() &&
+      !/^[a-z][a-z\d+.-]*:\/\//i.test(homeAssistantBaseUrl.trim()),
+  );
+
+  const homeAssistantBaseUrlError = $derived.by(() => {
+    const rawValue = homeAssistantBaseUrl.trim();
+    if (!rawValue) return "";
+    if (/^[a-z][a-z\d+.-]*:\/\//i.test(rawValue) && !/^https?:\/\//i.test(rawValue)) {
+      return "Use http:// or https:// for this address.";
+    }
+    const value = homeAssistantBaseUrlNeedsScheme ? `http://${rawValue}` : rawValue;
+    if (!CODEGEN_SAFE_HTTP_URL_RE.test(value)) {
+      return "Use a URL without spaces, quotes, or backslashes.";
+    }
+    try {
+      const url = new URL(value);
+      if (!url.hostname) return "Enter a complete Home Assistant address.";
+      if (url.username || url.password) {
+        return "Do not include a username or password in this address.";
+      }
+      if (url.search || url.hash) {
+        return "Remove the query string or fragment from this address.";
+      }
+    } catch {
+      return "Enter a valid Home Assistant address.";
+    }
+    return "";
+  });
+
+  function normalizeHomeAssistantBaseUrl() {
+    let value = homeAssistantBaseUrl.trim();
+    if (value && !/^[a-z][a-z\d+.-]*:\/\//i.test(value)) {
+      value = `http://${value}`;
+    }
+    value = value
+      .replace(/^https?:\/\//i, (scheme) => scheme.toLowerCase())
+      .replace(/\/+$/, "");
+    homeAssistantBaseUrl = value;
+    homeAssistantBaseUrlTouched = true;
+  }
 
   let timezone = $state(projectStore.project?.timezone ?? "");
 
@@ -115,6 +158,8 @@
 
   async function handleSave() {
     if (settingsSaving) return;
+    normalizeHomeAssistantBaseUrl();
+    if (homeAssistantBaseUrlError) return;
     settingsSaving = true;
 
     const theme = {
@@ -260,17 +305,39 @@
       <h3>Home Assistant</h3>
       <p class="section-hint">
         Optional. Used only to resolve relative image URLs from Home Assistant
-        entities, such as <code>/api/image_proxy/...</code>.
+        entities. Use the same address you enter in your browser, including its
+        port when applicable.
       </p>
 
-      <div class="field">
+      <div class="field" class:invalid={homeAssistantBaseUrlTouched && homeAssistantBaseUrlError}>
         <label for="ha-base-url">Home Assistant Base URL</label>
         <input
           id="ha-base-url"
           type="url"
+          inputmode="url"
+          autocomplete="url"
+          spellcheck="false"
           bind:value={homeAssistantBaseUrl}
           placeholder="http://homeassistant.local:8123"
+          aria-describedby="ha-base-url-help"
+          aria-invalid={homeAssistantBaseUrlTouched && !!homeAssistantBaseUrlError}
+          oninput={() => (homeAssistantBaseUrlTouched = true)}
+          onblur={normalizeHomeAssistantBaseUrl}
         />
+        <span
+          id="ha-base-url-help"
+          class:error-text={homeAssistantBaseUrlTouched && !!homeAssistantBaseUrlError}
+          class="field-help"
+        >
+          {#if homeAssistantBaseUrlTouched && homeAssistantBaseUrlError}
+            {homeAssistantBaseUrlError}
+          {:else if homeAssistantBaseUrlNeedsScheme}
+            This will be saved as <code>http://{homeAssistantBaseUrl.trim()}</code>.
+          {:else}
+            Example: <code>http://homeassistant.local:8123</code>. A missing
+            scheme is added automatically.
+          {/if}
+        </span>
       </div>
     </section>
 
@@ -342,7 +409,11 @@
 
   <footer>
     <button class="secondary" onclick={onClose} disabled={settingsSaving}>Cancel</button>
-    <button class="primary" onclick={handleSave} disabled={settingsSaving || settingsSaved}>
+    <button
+      class="primary"
+      onclick={handleSave}
+      disabled={settingsSaving || settingsSaved || !!homeAssistantBaseUrlError}
+    >
       {#if settingsSaving}
         <span class="spinner"></span>
         Saving…
@@ -425,6 +496,21 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     color: var(--color-text-primary);
+  }
+
+  .field.invalid input {
+    border-color: #f44336;
+  }
+
+  .field-help {
+    min-height: 1.2em;
+    color: var(--color-text-muted);
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .field-help.error-text {
+    color: #f44336;
   }
 
   .theme-grid {

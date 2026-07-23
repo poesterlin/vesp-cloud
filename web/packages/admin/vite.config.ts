@@ -8,7 +8,5 @@ export default defineConfig({
     sveltekit()
   ],
   server: {
-    port: 5174,
-    host: true,
   },
 });

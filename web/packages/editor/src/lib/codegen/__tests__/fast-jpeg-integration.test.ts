@@ -30,6 +30,19 @@ describe("fast runtime image firmware integration", () => {
     }
   });
 
+  test("isolates the native IDF environment by ESPHome version", () => {
+    for (const dockerfile of ["Dockerfile", "Dockerfile.worker"]) {
+      const source = readEditorFile(dockerfile);
+
+      expect(source).toContain("ARG ESPHOME_VERSION=2026.7.1");
+      expect(source).toContain("ENV ESPHOME_VERSION=${ESPHOME_VERSION}");
+      expect(source).toContain(
+        "ENV ESPHOME_ESP_IDF_PREFIX=/data/esphome/${ESPHOME_VERSION}/idf",
+      );
+      expect(source).not.toContain("ENV ESPHOME_ESP_IDF_PREFIX=/data/idf");
+    }
+  });
+
   test("precompiles the complete image toolchain from one shared fixture", () => {
     const warmup = readEditorFile("esphome-patches/warmup.sh");
 

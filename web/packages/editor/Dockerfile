@@ -1,9 +1,12 @@
 # syntax=docker/dockerfile:1.7
 ARG BUN_VERSION=1.3.13
+ARG ESPHOME_VERSION=2026.7.1
 FROM oven/bun:${BUN_VERSION} AS builder
 
 ARG DOMAIN
+ARG ESPHOME_VERSION
 ENV DOMAIN=${DOMAIN}
+ENV ESPHOME_VERSION=${ESPHOME_VERSION}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -18,7 +21,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     rm -rf /var/lib/apt/lists/*
 
 # Create Python virtual environment and install ESPHome (pinned version for cache stability)
-ARG ESPHOME_VERSION=2026.7.1
 RUN python3 -m venv /opt/esphome-venv
 RUN /opt/esphome-venv/bin/pip install --upgrade pip
 RUN /opt/esphome-venv/bin/pip install "esphome==${ESPHOME_VERSION}"
@@ -33,7 +35,7 @@ RUN /opt/esphome-venv/bin/python /opt/esphome-patches/apply-fast-jpeg.py
 RUN /opt/esphome-venv/bin/python -m compileall -q /opt/esphome-venv
 
 # Create shared cache directories
-RUN mkdir -p /data/idf /data/platformio /data/pio-build-cache /data/ccache
+RUN mkdir -p "/data/esphome/${ESPHOME_VERSION}/idf" /data/platformio /data/pio-build-cache /data/ccache
 
 # Golden pre-warm: compile a minimal config matching the real target (esp32s3 + esp-idf).
 # This bakes toolchains, dependency packages, framework objects, and ccache entries
@@ -46,7 +48,7 @@ ENV CCACHE_MAXSIZE=10G
 ENV CCACHE_COMPRESS=true
 ENV CCACHE_COMPRESSLEVEL=1
 ENV IDF_CCACHE_ENABLE=1
-ENV ESPHOME_ESP_IDF_PREFIX=/data/idf
+ENV ESPHOME_ESP_IDF_PREFIX=/data/esphome/${ESPHOME_VERSION}/idf
 ENV PLATFORMIO_BUILD_CACHE_DIR=/data/pio-build-cache
 ENV PLATFORMIO_CORE_DIR=/data/platformio
 RUN /bin/sh /opt/esphome-patches/warmup.sh
@@ -81,6 +83,9 @@ RUN bun install --production --frozen-lockfile
 # Production image
 FROM oven/bun:${BUN_VERSION}
 
+ARG ESPHOME_VERSION
+ENV ESPHOME_VERSION=${ESPHOME_VERSION}
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -113,7 +118,7 @@ ENV PLATFORMIO_BUILD_CACHE_DIR=/data/pio-build-cache
 
 # ccache configuration
 ENV IDF_CCACHE_ENABLE=1
-ENV ESPHOME_ESP_IDF_PREFIX=/data/idf
+ENV ESPHOME_ESP_IDF_PREFIX=/data/esphome/${ESPHOME_VERSION}/idf
 ENV CCACHE_DIR=/data/ccache
 ENV CCACHE_BASEDIR=/tmp/esphome-builds
 ENV CCACHE_NOHASHDIR=true

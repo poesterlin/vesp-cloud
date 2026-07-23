@@ -17,3 +17,14 @@ export function ensureS3(): S3Client {
   });
   return s3;
 }
+
+export async function getBinarySize(jobId: string): Promise<number | null> {
+  try {
+    const client = ensureS3();
+    const file = client.file(`builds/${jobId}.bin`);
+    const stat = await file.stat();
+    return stat.size;
+  } catch {
+    return null;
+  }
+}

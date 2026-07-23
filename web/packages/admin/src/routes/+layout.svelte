@@ -16,6 +16,7 @@
     <h1 class="logo">ESPHome Admin</h1>
     <a href="/" class:active={isActive('/')}>Dashboard</a>
     <a href="/users" class:active={isActivePrefix('/users')}>Users</a>
+    <a href="/projects" class:active={isActivePrefix('/projects')}>Projects</a>
     <a href="/jobs" class:active={isActivePrefix('/jobs')}>Jobs</a>
     <a href="/withdrawals" class:active={isActivePrefix('/withdrawals')}>Withdrawals</a>
     <a href="/feedback" class:active={isActivePrefix('/feedback')}>Feedback</a>

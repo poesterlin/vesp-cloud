@@ -24,6 +24,12 @@ function project(confirmBeforeAction?: boolean): Project {
   };
 }
 
+function navigationProject(): Project {
+  const p = project(true);
+  p.dashboardPages[0].components[0].onTap = { type: "NEXT_PAGE" };
+  return p;
+}
+
 function lightProject(confirmAction?: "none" | "on" | "off" | "both"): Project {
   const light: LightStateComponent = {
     id: "my-light",
@@ -56,6 +62,12 @@ describe("button action confirmation", () => {
 
   test("leaves confirmation disabled by default", () => {
     expect(generateUIScreensHeader(project())).not.toContain("set_confirm_before_action");
+  });
+
+  test("never confirms navigation actions, even when the stored flag is true", () => {
+    expect(generateUIScreensHeader(navigationProject())).not.toContain(
+      "set_confirm_before_action",
+    );
   });
 
   test("includes the confirmation popup firmware header", () => {

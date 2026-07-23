@@ -247,6 +247,10 @@ function emitTapAction(action: OnTapAction | undefined): string {
   return '';
 }
 
+function isNavigationAction(action: OnTapAction | undefined): boolean {
+  return action !== undefined && action.type !== 'SERVICE_CALL';
+}
+
 function emitLightToggleAction(c: LightStateComponent): string {
   const explicit = emitTapAction(c.onTap);
   if (explicit) return explicit;
@@ -613,10 +617,11 @@ function generateComponentSetup(
     }
     case 'button': {
       const label = c.label ?? '';
-      const callback = emitTapAction(c.onTap ?? c.pressAction);
+      const action = c.onTap ?? c.pressAction;
+      const callback = emitTapAction(action);
       const bounds = rect(c.position.x + offsetX, c.position.y + offsetY, c.size?.width ?? 80, c.size?.height ?? 36);
       let out = `${indent}auto *${idSafe} = ${factory('ButtonWidget', `${bounds}, "${escapeCString(label)}", ${callback || '[](){}'}, g_theme.primary`)};${visLine}${dirtyLine}\n`;
-      if (c.confirmBeforeAction) out += `${indent}${idSafe}->set_confirm_before_action(true);\n`;
+      if (c.confirmBeforeAction && !isNavigationAction(action)) out += `${indent}${idSafe}->set_confirm_before_action(true);\n`;
       out += emitButtonBorderColor(c, idSafe, indent);
       const iconGlyph = c.icon ? getMdiUtf8CEscape(c.icon) : null;
       if (iconGlyph) {
@@ -933,15 +938,17 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
     }
     case 'button': {
       const label = c.label ?? '';
-      const callback = emitTapAction(c.onTap ?? c.pressAction);
+      const action = c.onTap ?? c.pressAction;
+      const callback = emitTapAction(action);
       const wargs = `${rect(x, y, w, h)}, "${escapeCString(label)}", ${callback || '[](){}'}, g_theme.primary`;
       const iconGlyph = c.icon ? getMdiUtf8CEscape(c.icon) : null;
-      if (visibilityExpr || iconGlyph || dirtyBoundsExpr || c.borderColor || c.confirmBeforeAction) {
+      const requiresConfirmation = c.confirmBeforeAction && !isNavigationAction(action);
+      if (visibilityExpr || iconGlyph || dirtyBoundsExpr || c.borderColor || requiresConfirmation) {
         let out = `${indent}auto *${idSafe} = ${factory('ButtonWidget', wargs)};`;
         if (visibilityExpr) out += `\n${indent}${idSafe}->set_visibility_condition(${visibilityExpr});`;
         if (dirtyBoundsExpr) out += `\n${indent}${idSafe}->set_dirty_bounds(${dirtyBoundsExpr});`;
         if (iconGlyph) out += `\n${indent}${idSafe}->set_icon("${iconGlyph}", &g_theme.icon);`;
-        if (c.confirmBeforeAction) out += `\n${indent}${idSafe}->set_confirm_before_action(true);`;
+        if (requiresConfirmation) out += `\n${indent}${idSafe}->set_confirm_before_action(true);`;
         out += emitButtonBorderColor(c, idSafe, indent);
         return `${out}\n`;
       }

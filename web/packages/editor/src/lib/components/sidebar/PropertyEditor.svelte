@@ -1,5 +1,9 @@
 <script lang="ts">
-  import type { NavigationAction } from "@vesp-cloud/schema";
+  import type {
+    ButtonComponent,
+    LightStateComponent,
+    NavigationAction,
+  } from "@vesp-cloud/schema";
   import { historyStore } from "$lib/stores/history.svelte";
   import { projectStore } from "$lib/stores/project.svelte";
   import { selectionStore } from "$lib/stores/selection.svelte";
@@ -89,6 +93,11 @@
       if (value.type === "SERVICE_CALL") return;
       const action = value as NavigationAction;
       const component = selectedComponent as { id: string; icon?: string };
+      if (selectedComponent.type === "button") {
+        projectStore.updateComponent(selectedComponent.id, {
+          confirmBeforeAction: undefined,
+        });
+      }
       if (!component.icon) {
         const icon = NAV_ICONS[action.type];
         if (icon) projectStore.updateComponent(component.id, { icon });
@@ -107,6 +116,73 @@
       onDragEnd: undefined,
       ...clearedGestureActions(),
     });
+  }
+
+  function convertButtonAndLight() {
+    if (!selectedComponent) return;
+
+    if (selectedComponent.type === "button") {
+      const button = selectedComponent as ButtonComponent;
+      const action = button.onTap ?? button.pressAction;
+      const entityId =
+        action?.type === "SERVICE_CALL" ? action.target?.entityId : undefined;
+      historyStore.record("Convert button to light switch");
+      projectStore.updateComponent(button.id, {
+        type: "light_state",
+        label: button.label ?? "Light",
+        icon: button.icon ?? "lightbulb",
+        stateBinding: entityId ? { entityId } : undefined,
+        showIcon: true,
+        showBrightnessControl: false,
+        onText: "ON",
+        offText: "OFF",
+        confirmAction: button.confirmBeforeAction ? "both" : "none",
+        onTap: undefined,
+        onHold: undefined,
+        onDragStart: undefined,
+        onDragEnd: undefined,
+        pressAction: undefined,
+        holdAction: undefined,
+        backgroundColor: undefined,
+        foregroundColor: undefined,
+        borderColor: undefined,
+        checkedBackgroundColor: undefined,
+        checkedForegroundColor: undefined,
+        confirmBeforeAction: undefined,
+      } as Partial<LightStateComponent>);
+      return;
+    }
+
+    if (selectedComponent.type === "light_state") {
+      const light = selectedComponent as LightStateComponent;
+      const entityId = light.stateBinding?.entityId;
+      historyStore.record("Convert light switch to button");
+      projectStore.updateComponent(light.id, {
+        type: "button",
+        label: light.label ?? "Button",
+        icon: light.icon,
+        onTap: entityId
+          ? {
+              type: "SERVICE_CALL",
+              service: "homeassistant.toggle",
+              target: { entityId },
+            }
+          : undefined,
+        confirmBeforeAction:
+          light.confirmAction !== undefined && light.confirmAction !== "none",
+        backgroundColor: light.offColor,
+        checkedBackgroundColor: light.onColor,
+        stateBinding: undefined,
+        targetDevice: undefined,
+        showBrightnessControl: undefined,
+        onText: undefined,
+        offText: undefined,
+        showIcon: undefined,
+        onColor: undefined,
+        offColor: undefined,
+        confirmAction: undefined,
+      } as Partial<ButtonComponent>);
+    }
   }
 </script>
 
@@ -138,6 +214,22 @@
           action={selectedComponent.onTap}
           onUpdate={(action) => updateProperty("onTap", action)}
         />
+      </div>
+    {/if}
+
+    {#if selectedComponent.type === "button" || selectedComponent.type === "light_state"}
+      <div class="property-section">
+        <details class="advanced-details">
+          <summary class="advanced-summary">Advanced</summary>
+          <p class="advanced-note">
+            Changes the component type while preserving compatible settings.
+          </p>
+          <button class="conversion-button" type="button" onclick={convertButtonAndLight}>
+            Convert to {selectedComponent.type === "button"
+              ? "Switch"
+              : "Button"}
+          </button>
+        </details>
       </div>
     {/if}
   {:else}

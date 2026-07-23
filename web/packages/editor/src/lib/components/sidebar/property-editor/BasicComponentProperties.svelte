@@ -19,6 +19,12 @@
     return "static";
   });
 
+  const buttonHasNavigationAction = $derived(
+    component.type === "button" &&
+      (component.onTap ?? component.pressAction)?.type !== "SERVICE_CALL" &&
+      (component.onTap ?? component.pressAction) !== undefined,
+  );
+
   function updateTextContent(text: string) {
     historyStore.record("Update text content");
     projectStore.updateComponent(component.id, {
@@ -116,14 +122,16 @@
         onSelect={(icon) => updateProperty("icon", icon)}
       />
     </div>
-    <label class="confirmation-field">
-      <input
-        type="checkbox"
-        checked={component.confirmBeforeAction ?? false}
-        onchange={(e) => updateProperty("confirmBeforeAction", e.currentTarget.checked)}
-      />
-      <span>Require confirmation</span>
-    </label>
+    {#if !buttonHasNavigationAction}
+      <label class="confirmation-field">
+        <input
+          type="checkbox"
+          checked={component.confirmBeforeAction ?? false}
+          onchange={(e) => updateProperty("confirmBeforeAction", e.currentTarget.checked)}
+        />
+        <span>Require confirmation</span>
+      </label>
+    {/if}
   </div>
   <div class="property-section">
     <label class="section-label">Styling</label>

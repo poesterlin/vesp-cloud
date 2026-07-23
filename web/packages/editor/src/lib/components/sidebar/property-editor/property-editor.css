@@ -300,3 +300,20 @@
   font-size: 11px;
   line-height: 1.4;
 }
+
+.property-editor .conversion-button {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border: 1px dashed var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.property-editor .conversion-button:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}

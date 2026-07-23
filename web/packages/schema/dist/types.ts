@@ -64,12 +64,7 @@ export type RectangleComponent = BaseComponent & {
 };
 export type ImageComponent = BaseComponent & {
   type: "image";
-  /**
-   * Whether the image comes from a static ESPHome image entry or a Home Assistant image/camera entity.
-   */
-  imageSource?: "static" | "ha";
-  file: string;
-  imageBinding?: EntityBinding2;
+  imageBinding: EntityBinding2;
   /**
    * Encoded format expected from the online image URL when imageBinding is used.
    */

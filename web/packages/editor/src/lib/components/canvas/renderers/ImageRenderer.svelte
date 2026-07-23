@@ -26,35 +26,7 @@
   const imageWidth = $derived(component.size?.width ?? 100);
   const imageHeight = $derived(component.size?.height ?? 100);
 
-  const imageUrl = $derived.by(() => {
-    if (component.imageBinding?.entityId) {
-      return `ha:${component.imageBinding.entityId}`;
-    }
-    // Attempt to parse mdi:icon-name or https://... for display
-    if (
-      component.file.startsWith("mdi:") ||
-      component.file.startsWith("mdil:")
-    ) {
-      // Basic MDI icon display - requires a font-awesome or similar setup
-      // For now, just show text representation
-      return component.file;
-    } else if (
-      component.file.startsWith("http://") ||
-      component.file.startsWith("https://")
-    ) {
-      return component.file; // Could be used in an an <img> tag
-    }
-    return "/placeholder_image.png";
-  });
-
-  const placeholderSource = $derived(
-    imageUrl.startsWith("ha:") ? "HOME ASSISTANT" : "IMAGE",
-  );
-  const placeholderLabel = $derived(
-    imageUrl.startsWith("ha:")
-      ? imageUrl.slice(3)
-      : component.file || "No image selected",
-  );
+  const entityId = $derived(component.imageBinding?.entityId ?? "");
 </script>
 
 <Draggable {component}>
@@ -70,41 +42,18 @@
     style:justify-content="center"
     style:overflow="hidden"
   >
-    {#if imageUrl.startsWith("ha:")}
-      <div class="image-placeholder" style:color={fgColor} title={imageUrl}>
-        <div class="placeholder-grid"></div>
-        <svg class="placeholder-icon" viewBox="0 0 64 64" aria-hidden="true">
-          <rect x="9" y="11" width="46" height="42" rx="3"></rect>
-          <circle cx="22" cy="24" r="5"></circle>
-          <path d="M13 47l13-13 9 9 6-6 10 10"></path>
-        </svg>
-        <div class="placeholder-copy">
-          <span class="placeholder-source">{placeholderSource}</span>
-          <span class="placeholder-label">{placeholderLabel}</span>
-        </div>
+    <div class="image-placeholder" style:color={fgColor} title={entityId}>
+      <div class="placeholder-grid"></div>
+      <svg class="placeholder-icon" viewBox="0 0 64 64" aria-hidden="true">
+        <rect x="9" y="11" width="46" height="42" rx="3"></rect>
+        <circle cx="22" cy="24" r="5"></circle>
+        <path d="M13 47l13-13 9 9 6-6 10 10"></path>
+      </svg>
+      <div class="placeholder-copy">
+        <span class="placeholder-source">HOME ASSISTANT</span>
+        <span class="placeholder-label">{entityId || "No entity selected"}</span>
       </div>
-    {:else if imageUrl.startsWith("mdi:") || imageUrl.startsWith("mdil:")}
-      <span class="image-text" style:font-size="24px" style:color={fgColor} title={imageUrl}>{imageUrl}</span>
-    {:else if imageUrl.startsWith("http://") || imageUrl.startsWith("https://")}
-      <img
-        src={imageUrl}
-        alt="preview"
-        style="max-width: 100%; max-height: 100%; object-fit: contain;"
-      />
-    {:else}
-      <div class="image-placeholder" style:color={fgColor} title={component.file}>
-        <div class="placeholder-grid"></div>
-        <svg class="placeholder-icon" viewBox="0 0 64 64" aria-hidden="true">
-          <rect x="9" y="11" width="46" height="42" rx="3"></rect>
-          <circle cx="22" cy="24" r="5"></circle>
-          <path d="M13 47l13-13 9 9 6-6 10 10"></path>
-        </svg>
-        <div class="placeholder-copy">
-          <span class="placeholder-source">{placeholderSource}</span>
-          <span class="placeholder-label">{placeholderLabel}</span>
-        </div>
-      </div>
-    {/if}
+    </div>
   </div>
 </Draggable>
 
@@ -113,14 +62,6 @@
     box-sizing: border-box;
     position: relative;
     user-select: none;
-  }
-
-  .image-text {
-    max-width: 100%;
-    padding: 0 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .image-placeholder {

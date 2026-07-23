@@ -58,8 +58,7 @@ export function createComponent(type: string, x: number, y: number): Component {
       return {
         ...base,
         type: "image",
-        imageSource: "ha",
-        file: "images/image.png",
+        imageBinding: { entityId: "" },
         image_type: "RGB565",
         onlineFormat: "png",
         size: { width: 100, height: 100 },

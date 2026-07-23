@@ -12,13 +12,6 @@
     updateProperty: (key: string, value: unknown) => void;
   }>();
 
-  const imageSource = $derived.by<"static" | "ha">(() => {
-    if (component.type !== "image") return "static";
-    if (component.imageSource) return component.imageSource;
-    if (component.imageBinding?.entityId) return "ha";
-    return "static";
-  });
-
   const buttonHasNavigationAction = $derived(
     component.type === "button" &&
       (component.onTap ?? component.pressAction)?.type !== "SERVICE_CALL" &&
@@ -33,21 +26,6 @@
     });
   }
 
-  function updateImageSource(source: "static" | "ha") {
-    if (component.type !== "image") return;
-    historyStore.record("Update image source");
-    if (source === "static") {
-      projectStore.updateComponent(component.id, {
-        imageSource: "static",
-        imageBinding: undefined,
-      });
-      return;
-    }
-    projectStore.updateComponent(component.id, {
-      imageSource: "ha",
-      file: "",
-    });
-  }
 </script>
 
 {#if component.type === "text"}
@@ -178,44 +156,15 @@
 {#if component.type === "image"}
   <div class="property-section">
     <div class="section-label">Image</div>
-    <div class="field">
-      <span class="field-label">Source</span>
-      <select
-        value={imageSource}
-        onchange={(e) => {
-          if (e.currentTarget.value === "ha") {
-            updateImageSource("ha");
-          } else {
-            updateImageSource("static");
-          }
-        }}
-      >
-        <option value="static">Static file / URL</option>
-        <option value="ha">Home Assistant entity</option>
-      </select>
+    <div class="field-group">
+      <label class="group-label">Home Assistant Image</label>
+      <EntityPicker
+        preselectedDomain="image"
+        component={component}
+        onUpdate={(binding) => updateProperty("imageBinding", binding)}
+      />
+      <br />
     </div>
-
-    {#if imageSource === "ha"}
-      <div class="field-group">
-        <label class="group-label">Home Assistant Image</label>
-        <EntityPicker
-          preselectedDomain="image"
-          component={component}
-          onUpdate={(binding) => updateProperty("imageBinding", binding)}
-        />
-        <br />
-      </div>
-    {:else}
-      <div class="field">
-        <span class="field-label">File</span>
-        <input
-          type="text"
-          value={component.file ?? ""}
-          placeholder="images/photo.png"
-          oninput={(e) => updateProperty("file", e.currentTarget.value)}
-        />
-      </div>
-    {/if}
 
     <details class="advanced-details">
       <summary class="advanced-summary">Advanced</summary>

@@ -482,9 +482,8 @@ function generateImageWidget(
   const idSafe = safeCppIdentifier(c.id, 'component');
   const imageId = imageIdFromComponentId(c.id);
   const fallbackImageId = imageFallbackIdFromComponentId(c.id);
-  const isHaImage = c.imageSource === "ha" || (c.imageSource == null && !!c.imageBinding?.entityId);
   const bounds = rect(x, y, w, h);
-  const ctorArgs = isHaImage ? `${bounds}, id(${imageId}), id(${fallbackImageId})` : `${bounds}, id(${imageId})`;
+  const ctorArgs = `${bounds}, id(${imageId}), id(${fallbackImageId})`;
   let out = `${indent}auto *${idSafe} = ${factory('ImageWidget', ctorArgs)};\n`;
   const bgColor = c.backgroundColor ? emitColor(c.backgroundColor) : defaultBgColor;
   if (bgColor) {

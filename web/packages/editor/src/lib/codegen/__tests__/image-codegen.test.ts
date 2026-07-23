@@ -4,6 +4,7 @@ import type { Project } from "@vesp-cloud/schema";
 import { generateESPHomeYAML } from "../esphome-yaml";
 import { generateSecretsYAML } from "../secrets";
 import { generateUIScreensHeader } from "../ui-screens";
+import { validateProject } from "../validations";
 
 function makeProject(overrides: Partial<Project> = {}): Project {
   return {
@@ -28,7 +29,7 @@ describe("image component codegen", () => {
               type: "image",
               position: { x: 12, y: 34 },
               size: { width: 96, height: 96 },
-              file: "images/album.png",
+              imageBinding: { entityId: "image.album_art" },
               image_type: "RGB565",
             },
           ],
@@ -82,7 +83,7 @@ describe("image component codegen", () => {
     expect(out).not.toContain("83.5");
   });
 
-  test("emits static image YAML when no HA binding is set", () => {
+  test("requires a Home Assistant image binding", () => {
     const project = makeProject({
       dashboardPages: [
         {
@@ -94,19 +95,20 @@ describe("image component codegen", () => {
               type: "image",
               position: { x: 0, y: 0 },
               size: { width: 80, height: 40 },
-              file: "images/logo.png",
               image_type: "RGB565",
             },
           ],
         },
       ],
-    });
+    } as Project);
 
-    const yaml = generateESPHomeYAML(project);
-    expect(yaml).toContain("image:");
-    expect(yaml).toContain('file: "images/logo.png"');
-    expect(yaml).toContain("id: img_logo");
-    expect(yaml).not.toContain("online_image:");
+    expect(validateProject(project)).toContainEqual(
+      expect.objectContaining({
+        type: "error",
+        componentId: "logo",
+        message: "Needs an entity binding for Home Assistant image",
+      }),
+    );
   });
 
   test("emits online image YAML and HA binding for imageBinding", () => {
@@ -121,7 +123,6 @@ describe("image component codegen", () => {
               type: "image",
               position: { x: 0, y: 0 },
               size: { width: 120, height: 120 },
-              file: "images/fallback.png",
               image_type: "RGB565",
               onlineFormat: "jpeg",
               imageBinding: { entityId: "image.album_art" },
@@ -156,7 +157,6 @@ describe("image component codegen", () => {
               type: "image",
               position: { x: 0, y: 0 },
               size: { width: 72, height: 64 },
-              file: "images/fallback.png",
               image_type: "RGB565",
               imageBinding: { entityId: "image.album_art" },
               resize: "100x100",
@@ -183,7 +183,6 @@ describe("image component codegen", () => {
               type: "image",
               position: { x: 50.25, y: 29.75 },
               size: { width: 311, height: 161.5 },
-              file: "images/fallback.png",
               image_type: "RGB565",
               imageBinding: { entityId: "image.album_art" },
             },
@@ -211,7 +210,6 @@ describe("image component codegen", () => {
               type: "image",
               position: { x: 0, y: 0 },
               size: { width: 120, height: 120 },
-              file: "images/fallback.png",
               image_type: "RGB565",
               imageBinding: { entityId: "image.album_art" },
             },
@@ -227,6 +225,38 @@ describe("image component codegen", () => {
     expect(yaml).toContain('url = ha_base_url + url;');
     expect(yaml.indexOf('const std::string ha_base_url')).toBeLessThan(yaml.indexOf('auto bind_ha_image_url'));
     expect(secrets).toContain('home_assistant_base_url: "http://homeassistant.local:8123"');
+  });
+
+  test("rejects unsafe HA base URL substitutions inside codegen", () => {
+    const image = {
+      id: "album-art",
+      type: "image" as const,
+      position: { x: 0, y: 0 },
+      size: { width: 120, height: 120 },
+      image_type: "RGB565" as const,
+      imageBinding: { entityId: "image.album_art" },
+    };
+
+    for (const homeAssistantBaseUrl of [
+      "http://homeassistant.local:8123\\",
+      'http://homeassistant.local:8123/"breakout',
+      "http://home assistant.local:8123",
+    ]) {
+      const project = makeProject({
+        secrets: { homeAssistantBaseUrl },
+        dashboardPages: [{ id: "p1", name: "Page", components: [image] }],
+      });
+
+      expect(() => generateESPHomeYAML(project)).toThrow(
+        "Home Assistant base URL must be a codegen-safe HTTP(S) URL",
+      );
+      expect(validateProject(project)).toContainEqual(
+        expect.objectContaining({
+          type: "error",
+          message: "Home Assistant base URL must be an HTTP(S) URL",
+        }),
+      );
+    }
   });
 
   test("emits HTTP firmware update entity when firmware URL is configured", () => {

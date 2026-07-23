@@ -22,6 +22,7 @@ import type {
   NotCondition,
 } from "@vesp-cloud/schema";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
+import { CODEGEN_SAFE_HTTP_URL_RE } from "./url-safety";
 
 export interface ValidationError {
   type: "error" | "warning";
@@ -122,7 +123,6 @@ const HA_DEVICE_ID_RE = /^[A-Za-z0-9_-]+$/;
 const TIMEZONE_RE = /^[A-Za-z_][A-Za-z0-9_+\/-]*$/;
 const TIME_OF_DAY_RE = /^(?:[01]?\d|2[0-3]):[0-5]\d$/;
 const IMAGE_RESIZE_RE = /^\d+x\d+$/;
-const URL_RE = /^https?:\/\/[^\s"'<>]+$/;
 
 function validatePattern(
   value: string | undefined | null,
@@ -192,8 +192,8 @@ function validateCodegenSafeStrings(project: Project): ValidationError[] {
   const errors: ValidationError[] = [];
 
   errors.push(...validatePattern(project.timezone, TIMEZONE_RE, 'Timezone must be an IANA-like identifier'));
-  errors.push(...validatePattern(project.secrets?.firmwareUpdateUrl, URL_RE, 'Firmware update URL must be an HTTP(S) URL'));
-  errors.push(...validatePattern(project.secrets?.homeAssistantBaseUrl, URL_RE, 'Home Assistant base URL must be an HTTP(S) URL'));
+  errors.push(...validatePattern(project.secrets?.firmwareUpdateUrl, CODEGEN_SAFE_HTTP_URL_RE, 'Firmware update URL must be an HTTP(S) URL'));
+  errors.push(...validatePattern(project.secrets?.homeAssistantBaseUrl, CODEGEN_SAFE_HTTP_URL_RE, 'Home Assistant base URL must be an HTTP(S) URL'));
 
   const stateFieldNames = new Set<string>();
   for (const field of project.state?.fields ?? []) {
@@ -430,7 +430,7 @@ function validateImageHaBinding(project: Project): ValidationError[] {
   for (const c of components) {
     if (c.type !== "image") continue;
     const img = c as ImageComponent;
-    if (img.imageSource === "ha" && !img.imageBinding?.entityId) {
+    if (!img.imageBinding?.entityId) {
       errors.push({
         type: "error" as const,
         message: `Needs an entity binding for Home Assistant image`,

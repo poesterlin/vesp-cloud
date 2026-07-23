@@ -3,6 +3,7 @@ import { sanitizeDeviceName, stateVarFromEntity, collectAllComponents, collectPr
 import { collectConditionEntities, type ConditionEntityType } from "./condition-expr";
 import { ICON_FONT_ID, WEATHER_ICON_FONT_ID, getIconGlyphs, projectHasWeather } from "./mdi-icons";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
+import { assertCodegenSafeHttpUrl } from "./url-safety";
 
 /**
  * Collect every EntityBinding referenced by a text component. The source
@@ -91,10 +92,6 @@ function imageResize(c: ImageComponent): string {
   return c.resize;
 }
 
-function isHomeAssistantImage(c: ImageComponent): boolean {
-  return c.imageSource === "ha" || (c.imageSource == null && !!c.imageBinding?.entityId);
-}
-
 function buildImageScreenMap(project: Project): Map<string, string> {
   const map = new Map<string, string>();
   for (const page of project.dashboardPages) {
@@ -112,26 +109,10 @@ function buildImageScreenMap(project: Project): Map<string, string> {
   return map;
 }
 
-function generateStaticImageEntries(project: Project): string[] {
-  const lines: string[] = [];
-  for (const c of collectImageComponents(project)) {
-    if (isHomeAssistantImage(c)) continue;
-    lines.push(`  - file: "${escapeYAMLDoubleQuoted(c.file)}"`);
-    lines.push(`    id: ${imageIdFromComponentId(c.id)}`);
-    lines.push(`    type: ${c.image_type}`);
-    lines.push(`    resize: ${imageResize(c)}`);
-    if (c.transparency) lines.push(`    transparency: ${c.transparency}`);
-    if (c.invert_alpha != null) lines.push(`    invert_alpha: ${c.invert_alpha}`);
-    if (c.dither) lines.push(`    dither: ${c.dither}`);
-    if (c.byte_order) lines.push(`    byte_order: ${c.byte_order}`);
-  }
-  return lines;
-}
-
 function generateOnlineImageEntries(project: Project, imageScreenMap: Map<string, string>): string[] {
   const lines: string[] = [];
   for (const c of collectImageComponents(project)) {
-    if (!isHomeAssistantImage(c) || !c.imageBinding?.entityId) continue;
+    if (!c.imageBinding?.entityId) continue;
     const primaryFormat = c.onlineFormat === "jpeg" ? "jpeg" : "png";
     const fallbackFormat = primaryFormat === "jpeg" ? "png" : "jpeg";
     const primaryId = imageIdFromComponentId(c.id);
@@ -231,7 +212,7 @@ function generateOnlineImageEntries(project: Project, imageScreenMap: Map<string
 function generateOnlineImageFormatGlobals(project: Project): string {
   const lines: string[] = [];
   for (const c of collectImageComponents(project)) {
-    if (!isHomeAssistantImage(c) || !c.imageBinding?.entityId) continue;
+    if (!c.imageBinding?.entityId) continue;
     const imgId = imageIdFromComponentId(c.id);
     lines.push(`  - id: ${imgId}_prefer_fallback`);
     lines.push(`    type: bool`);
@@ -246,9 +227,7 @@ function generateOnlineImageFormatGlobals(project: Project): string {
 }
 
 function generateFetchPump(project: Project, imageScreenMap: Map<string, string>): string {
-  const images = collectImageComponents(project).filter(
-    c => isHomeAssistantImage(c) && !!c.imageBinding?.entityId
-  );
+  const images = collectImageComponents(project).filter(c => !!c.imageBinding?.entityId);
   if (images.length === 0) return '';
 
   const lines: string[] = [];
@@ -315,11 +294,11 @@ function generateFetchPump(project: Project, imageScreenMap: Map<string, string>
 }
 
 function hasOnlineImages(project: Project): boolean {
-  return collectImageComponents(project).some(c => isHomeAssistantImage(c) && !!c.imageBinding?.entityId);
+  return collectImageComponents(project).some(c => !!c.imageBinding?.entityId);
 }
 
 function countOnlineImages(project: Project): number {
-  return collectImageComponents(project).filter(c => isHomeAssistantImage(c) && !!c.imageBinding?.entityId).length;
+  return collectImageComponents(project).filter(c => !!c.imageBinding?.entityId).length;
 }
 
 const BINDER_BY_TYPE: Record<string, string> = {
@@ -443,7 +422,6 @@ function generateBindings(project: Project): string {
   for (const c of allComponents) {
     if (c.type !== "image") continue;
     const ic = c as ImageComponent;
-    if (!isHomeAssistantImage(ic)) continue;
     const entityId = ic.imageBinding?.entityId;
     if (!entityId) continue;
     const attribute = ic.imageBinding?.attribute ?? "entity_picture";
@@ -924,6 +902,12 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   const onlineImageCount = countOnlineImages(project);
   const imageScreenMap = buildImageScreenMap(project);
   const homeAssistantBaseUrlEnabled = onlineImagesEnabled && !!project.secrets?.homeAssistantBaseUrl;
+  if (homeAssistantBaseUrlEnabled) {
+    assertCodegenSafeHttpUrl(
+      project.secrets!.homeAssistantBaseUrl!,
+      "Home Assistant base URL",
+    );
+  }
   const httpOtaEnabled = !!(project.secrets?.firmwareUpdateUrl);
   const httpRequestEnabled = onlineImagesEnabled || httpOtaEnabled;
   const bindings = generateBindings(project);
@@ -945,10 +929,7 @@ export function generateESPHomeYAML(project: Project, firmwareVersion?: string):
   const weatherIconFontAssignment = projectHasWeather(project)
     ? `\n          g_theme.weather_icon.font = id(${WEATHER_ICON_FONT_ID});`
     : '';
-  const imageEntries = [
-    ...generateStaticImageEntries(project),
-    ...generateOnlineImageEntries(project, imageScreenMap),
-  ];
+  const imageEntries = generateOnlineImageEntries(project, imageScreenMap);
   const imageYaml = imageEntries.length > 0
     ? `\nimage:\n${imageEntries.join('\n')}\n`
     : '';

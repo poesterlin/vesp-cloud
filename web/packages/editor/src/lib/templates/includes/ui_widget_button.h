@@ -14,6 +14,7 @@ class ButtonWidget : public Widget {
   UiRect bounds() const override { return screen_rect(rect_); }
 
   void set_confirm_before_action(bool enabled) { confirm_before_action_ = enabled; }
+  void set_allow_offline_action(bool enabled) { allow_offline_action_ = enabled; }
 
   // Configure an optional icon glyph drawn above the label using the
   // provided text style (typically `g_theme.icon` so the MDI font is used).
@@ -26,6 +27,16 @@ class ButtonWidget : public Widget {
   void set_border_color(Color c) {
     border_color_override_ = c;
     has_border_color_override_ = true;
+    mark_dirty();
+  }
+  void set_background_color(Color c) {
+    background_color_override_ = c;
+    has_background_color_override_ = true;
+    mark_dirty();
+  }
+  void set_foreground_color(Color c) {
+    foreground_color_override_ = c;
+    has_foreground_color_override_ = true;
     mark_dirty();
   }
 
@@ -42,7 +53,9 @@ class ButtonWidget : public Widget {
     if (loading_) return false;
     
     // Safety: Don't trigger if API is not connected to avoid crashes
-    if (esphome::api::global_api_server == nullptr || !esphome::api::global_api_server->is_connected()) {
+    if (!allow_offline_action_ &&
+        (esphome::api::global_api_server == nullptr ||
+         !esphome::api::global_api_server->is_connected())) {
       return false;
     }
 
@@ -79,12 +92,13 @@ class ButtonWidget : public Widget {
 
     auto *f = style_->font;
     auto bc = has_border_color_override_ ? border_color_override_ : style_->border_color;
-    auto tc = style_->text_color;
+    auto tc = has_foreground_color_override_ ? foreground_color_override_ : style_->text_color;
+    auto fill = has_background_color_override_ ? background_color_override_ : RetroColors::DIM;
 
     const UiRect r = screen_rect(rect_);
     const int c = ui_corner_radius_for_height(r.h);
     draw_clipped_box(it, r.x, r.y, r.w, r.h,
-                     c, bc, RetroColors::DIM, true);
+                     c, bc, fill, true);
 
 #if UI_THEME_RETRO
     // Small instrument-panel details make even plain text buttons feel like
@@ -192,11 +206,16 @@ class ButtonWidget : public Widget {
   const char *label_;
   Callback callback_;
   const Theme::ButtonStyle *style_ = nullptr;
+  Color background_color_override_{0, 0, 0};
+  Color foreground_color_override_{0, 0, 0};
+  bool has_background_color_override_ = false;
+  bool has_foreground_color_override_ = false;
   const char *icon_glyph_ = nullptr;
   const Theme::TextStyle *icon_style_ = nullptr;
   Color border_color_override_{0, 0, 0};
   bool has_border_color_override_ = false;
   bool confirm_before_action_ = false;
+  bool allow_offline_action_ = false;
   bool loading_ = false;
   uint32_t loading_start_ms_ = 0;
   uint32_t loading_timeout_ms_ = 350;

@@ -8,7 +8,7 @@ import { eq, desc, inArray, and, asc } from 'drizzle-orm';
 import type { CompilationJob, NewCompilationJob } from '@vesp-cloud/db/schema';
 
 import type { Project } from '@vesp-cloud/schema';
-import { generateESPHomeYAML, generateUITypesHeader, generateUIStateHeader, generateUIThemeHeader, generateUIScreensHeader, generateFontsYAML } from '$lib/codegen/esphome';
+import { canFallbackToGeneratedUi, compileUiManifest, generateEmbeddedUiManifestHeader, generateESPHomeYAML, generateRuntimeESPHomeYAML, generateRuntimeUITypesHeader, generateUITypesHeader, generateUIStateHeader, generateUIThemeHeader, generateUIScreensHeader, generateFontsYAML } from '$lib/codegen/esphome';
 import { generateSecretsYAML } from '$lib/codegen/secrets';
 import { validateProject } from '$lib/codegen/validations';
 import { sanitizeDeviceName } from '$lib/codegen/utils';
@@ -387,18 +387,36 @@ export class CompilationQueue extends EventEmitter {
         throw new Error(`Project validation failed: ${messages}`);
       }
 
-      await Promise.all([
-        fs.writeFile(join(tempDir, 'includes', 'ui_types.h'), generateUITypesHeader(project)),
-        fs.writeFile(join(tempDir, 'includes', 'ui_state.h'), generateUIStateHeader(project)),
+      const runtimeManifest = compileUiManifest(project);
+      const generatedHeaders: Promise<void>[] = [
         fs.writeFile(join(tempDir, 'includes', 'ui_theme.h'), generateUIThemeHeader(project)),
-        fs.writeFile(join(tempDir, 'includes', 'ui_screens.h'), generateUIScreensHeader(project)),
-      ]);
+      ];
+      if (runtimeManifest.ok) {
+        generatedHeaders.push(
+          fs.writeFile(join(tempDir, 'includes', 'ui_manifest.h'), generateEmbeddedUiManifestHeader(runtimeManifest.bytes)),
+          fs.writeFile(join(tempDir, 'includes', 'ui_types.h'), generateRuntimeUITypesHeader()),
+        );
+      } else if (canFallbackToGeneratedUi(runtimeManifest)) {
+        generatedHeaders.push(
+          fs.writeFile(join(tempDir, 'includes', 'ui_types.h'), generateUITypesHeader(project)),
+          fs.writeFile(join(tempDir, 'includes', 'ui_state.h'), generateUIStateHeader(project)),
+          fs.writeFile(join(tempDir, 'includes', 'ui_screens.h'), generateUIScreensHeader(project)),
+        );
+      } else {
+        const messages = runtimeManifest.errors
+          .map((diagnostic) => `[${diagnostic.code}] ${diagnostic.message}`)
+          .join('; ');
+        throw new Error(`Runtime UI manifest failed: ${messages}`);
+      }
+      await Promise.all(generatedHeaders);
 
       const fontsPath = join(tempDir, 'fonts.yaml');
       const baseFontsYaml = await fs.readFile(fontsPath, 'utf-8');
       await fs.writeFile(fontsPath, generateFontsYAML(project, baseFontsYaml));
 
-      const esphomeYaml = generateESPHomeYAML(project, job.id);
+      const esphomeYaml = runtimeManifest.ok
+        ? generateRuntimeESPHomeYAML(project, job.id)
+        : generateESPHomeYAML(project, job.id);
       const secretsYaml = generateSecretsYAML(project);
       await Promise.all([
         fs.writeFile(configFile, esphomeYaml),

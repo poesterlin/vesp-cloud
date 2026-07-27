@@ -3,7 +3,14 @@
 #include "esphome.h"
 #include "ui_invalidation.h"
 #include "ui_types.h"
+#ifdef VESPUI_RUNTIME
+#include "ui_widget_rect.h"
+#include "ui_widget_label.h"
+#include "ui_widget_icon.h"
+#include "ui_widget_button.h"
+#else
 #include "ui_widgets.h"
+#endif
 #include <memory>
 #include <vector>
 

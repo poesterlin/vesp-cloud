@@ -2,6 +2,11 @@
   import { goto } from "$app/navigation";
   import {
     generateESPHomeYAML,
+    generateRuntimeESPHomeYAML,
+    canFallbackToGeneratedUi,
+    compileUiManifest,
+    generateEmbeddedUiManifestHeader,
+    generateRuntimeUITypesHeader,
     generateFontsYAML,
     generateUIScreensHeader,
     generateUIStateHeader,
@@ -119,11 +124,24 @@
         return;
       }
 
-      zip.file("includes/ui_types.h", generateUITypesHeader(project));
-      zip.file("includes/ui_state.h", generateUIStateHeader(project));
-      zip.file("includes/ui_screens.h", generateUIScreensHeader(project));
       zip.file("includes/ui_theme.h", generateUIThemeHeader(project));
-      zip.file(`${fileName}.yaml`, generateESPHomeYAML(project));
+      const runtimeManifest = compileUiManifest(project);
+      if (runtimeManifest.ok) {
+        zip.file("includes/ui_manifest.h", generateEmbeddedUiManifestHeader(runtimeManifest.bytes));
+        zip.file("includes/ui_types.h", generateRuntimeUITypesHeader());
+        zip.file(`${fileName}.yaml`, generateRuntimeESPHomeYAML(project));
+      } else if (canFallbackToGeneratedUi(runtimeManifest)) {
+        zip.file("includes/ui_types.h", generateUITypesHeader(project));
+        zip.file("includes/ui_state.h", generateUIStateHeader(project));
+        zip.file("includes/ui_screens.h", generateUIScreensHeader(project));
+        zip.file(`${fileName}.yaml`, generateESPHomeYAML(project));
+      } else {
+        const messages = runtimeManifest.errors
+          .map((diagnostic) => `[${diagnostic.code}] ${diagnostic.message}`)
+          .join("\n");
+        deploymentStore.state.error = `Runtime UI manifest failed:\n${messages}`;
+        return;
+      }
 
       const content = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(content);

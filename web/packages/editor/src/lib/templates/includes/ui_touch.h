@@ -1,6 +1,10 @@
 #pragma once
 
+#ifdef VESPUI_RUNTIME
+#include "ui_runtime_app.h"
+#else
 #include "ui_app.h"
+#endif
 #include "ui_types.h"
 
 class BasicTouchHandler {

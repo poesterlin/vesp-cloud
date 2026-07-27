@@ -1,8 +1,14 @@
 import {
   generateESPHomeYAML,
+  generateRuntimeESPHomeYAML,
+  canFallbackToGeneratedUi,
+  compileUiManifest,
+  generateEmbeddedUiManifestHeader,
+  generateRuntimeUITypesHeader,
   generateFontsYAML,
   generateUIScreensHeader,
   generateUIStateHeader,
+  generateUIThemeHeader,
   generateUITypesHeader,
 } from '$lib/codegen/esphome';
 import { validateProject } from '$lib/codegen/validations';
@@ -62,6 +68,7 @@ export const GET: RequestHandler = async ({ locals, params }) => {
     }
 
     zip.file('fonts.yaml', generateFontsYAML(sanitizedProject, baseFontsYaml));
+    zip.file('includes/ui_theme.h', generateUIThemeHeader(sanitizedProject));
 
     const validationErrors = validateProject(sanitizedProject);
     if (validationErrors.length > 0) {
@@ -69,10 +76,22 @@ export const GET: RequestHandler = async ({ locals, params }) => {
       return json({ error: `Project validation failed: ${messages}` }, { status: 400 });
     }
 
-    zip.file('includes/ui_types.h', generateUITypesHeader(sanitizedProject));
-    zip.file('includes/ui_state.h', generateUIStateHeader(sanitizedProject));
-    zip.file('includes/ui_screens.h', generateUIScreensHeader(sanitizedProject));
-    zip.file(`${fileName}.yaml`, generateESPHomeYAML(sanitizedProject));
+    const runtimeManifest = compileUiManifest(sanitizedProject);
+    if (runtimeManifest.ok) {
+      zip.file('includes/ui_manifest.h', generateEmbeddedUiManifestHeader(runtimeManifest.bytes));
+      zip.file('includes/ui_types.h', generateRuntimeUITypesHeader());
+      zip.file(`${fileName}.yaml`, generateRuntimeESPHomeYAML(sanitizedProject));
+    } else if (canFallbackToGeneratedUi(runtimeManifest)) {
+      zip.file('includes/ui_types.h', generateUITypesHeader(sanitizedProject));
+      zip.file('includes/ui_state.h', generateUIStateHeader(sanitizedProject));
+      zip.file('includes/ui_screens.h', generateUIScreensHeader(sanitizedProject));
+      zip.file(`${fileName}.yaml`, generateESPHomeYAML(sanitizedProject));
+    } else {
+      const messages = runtimeManifest.errors
+        .map((diagnostic) => `[${diagnostic.code}] ${diagnostic.message}`)
+        .join('; ');
+      return json({ error: `Runtime UI manifest failed: ${messages}` }, { status: 400 });
+    }
 
     const content = await zip.generateAsync({ type: 'arraybuffer' });
     const byteLength = content.byteLength;

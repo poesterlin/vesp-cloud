@@ -19,7 +19,7 @@ if ! command -v docker &> /dev/null; then
   handle_error "Docker is not installed. Please install docker."
 fi
 
-if ! command -v docker compose &> /dev/null; then
+if ! docker compose version &> /dev/null; then
   handle_error "Docker compose is not installed. Please install docker compose."
 fi
 
@@ -56,11 +56,21 @@ fi
 if ! git diff --quiet HEAD origin/"$BRANCH"; then
   echo "Remote changes detected, updating..."
   git reset --hard origin/"$BRANCH" || handle_error "Failed to reset to remote."
-  docker compose up -d --build || handle_error "Failed to run docker compose up."
+  docker compose up -d --build --wait || handle_error "Failed to deploy a healthy application."
   echo "Removing superseded Docker images..."
   docker image prune -f || echo "Warning: Failed to prune Docker images."
 else
-  echo "No remote changes detected, skipping update."
+  echo "No remote changes detected."
+  read -r -p "Do you want to restart or start the existing stack? (y/n): " restart_choice
+  case "$restart_choice" in
+    [yY]*)
+      echo "Restarting the existing stack..."
+      docker compose up -d --force-recreate --wait || handle_error "Failed to restart the stack."
+      ;;
+    *)
+      echo "Leaving the existing stack unchanged."
+      ;;
+  esac
 fi
 
 # Re-apply stashed changes if they were stashed

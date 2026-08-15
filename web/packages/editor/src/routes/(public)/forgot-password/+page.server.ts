@@ -42,7 +42,7 @@ export const actions: Actions = {
         .where(eq(table.usersTable.email, form.email))
         .then((rows) => rows.at(0));
 
-      if (user) {
+      if (user?.email) {
         const { token } = await createPasswordResetToken(user.id);
         const resetUrl = new URL('/reset-password', getPasswordResetBaseUrl(event.url.origin));
         resetUrl.searchParams.set('token', token);

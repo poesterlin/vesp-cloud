@@ -18,6 +18,7 @@
   import BuildHistory from "$lib/components/BuildHistory.svelte";
   import ConfirmCompileModal from "$lib/components/ConfirmCompileModal.svelte";
   import DownloadProjectModal from "$lib/components/DownloadProjectModal.svelte";
+  import FeedbackPromptModal from "$lib/components/FeedbackPromptModal.svelte";
   import { deploymentStore } from "$lib/stores/deployment.svelte";
   import { projectStore } from "$lib/stores/project.svelte";
   import * as mdiIcons from "@mdi/js";
@@ -39,6 +40,10 @@
   let flashJobId = $state<string | null>(null);
   let supportsWebSerial = $state(true);
   let buildCount = $state<number | null>(null);
+  let showFeedbackPrompt = $state(false);
+
+  const FEEDBACK_PROMPT_STORAGE_KEY = "vesp-feedback-prompt-shown-at";
+  const FEEDBACK_PROMPT_COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
 
   onMount(() => {
     supportsWebSerial = "serial" in navigator;
@@ -61,6 +66,17 @@
   function handleConfirmBuild() {
     showConfirmModal = false;
     deploymentStore.compile();
+    maybeShowFeedbackPrompt();
+  }
+
+  function maybeShowFeedbackPrompt() {
+    if (data.hasSubmittedFeedback || typeof localStorage === "undefined") return;
+
+    const lastShown = Number(localStorage.getItem(FEEDBACK_PROMPT_STORAGE_KEY));
+    if (Number.isFinite(lastShown) && Date.now() - lastShown < FEEDBACK_PROMPT_COOLDOWN_MS) return;
+
+    localStorage.setItem(FEEDBACK_PROMPT_STORAGE_KEY, String(Date.now()));
+    showFeedbackPrompt = true;
   }
 
   function handleConfirmDownload() {
@@ -666,6 +682,10 @@
     onConfirm={handleConfirmDownload}
     onCancel={() => (showDownloadModal = false)}
   />
+{/if}
+
+{#if showFeedbackPrompt}
+  <FeedbackPromptModal onClose={() => (showFeedbackPrompt = false)} />
 {/if}
 
 <style>

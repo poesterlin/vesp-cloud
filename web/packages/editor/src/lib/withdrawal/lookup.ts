@@ -197,7 +197,7 @@ export async function lookupPurchase(
   return {
     stripeSessionId: normalizedSessionId,
     userId: row.user.id,
-    email: row.user.email,
+    email: row.user.email ?? normalizedEmail,
     creditsPurchased,
     amountPaid,
     amountPaidCents: row.transaction.amountPaidCents,

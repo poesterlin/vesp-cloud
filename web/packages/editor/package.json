@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bunx --bun vite dev",
+    "dev": "bun x --bun vite dev",
     "worker": "bun run src/worker.ts",
-    "build": "bunx --bun vite build",
+    "build": "bun x --bun vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -49,7 +49,7 @@
     "eslint-plugin-svelte": "^3.15.2",
     "svelte": "^5.54.0",
     "svelte-check": "^4.4.5",
-    "typescript": "^7.0.0",
+    "typescript": "^5.9.3",
     "vite": "^8.0.10"
   }
 }

@@ -35,19 +35,26 @@ src/lib/
 │   ├── utils.ts           — C++ identifier helpers, traversal
 │   ├── validations.ts     — Project validation rules
 │   └── __tests__/         — Test suite (bun test)
-├── templates/         — C++ template headers
-│   └── includes/          — 11 header files used by generated firmware
-│       ├── ui_widgets.h       — Widget classes (INCLUDES TodoPreviewWidget)
-│       ├── ui_app.h           — UiApp singleton
-│       ├── ui_screen_base.h   — Screen + GenericScreen
-│       ├── ui_scrollable_detail.h — ScrollableDetailScreen
-│       ├── ui_tab_container.h — TabContainerWidget
-│       ├── ui_chrome.h        — Header/DetailHeader/PageIndicator
-│       ├── ui_invalidation.h  — Dirty-rect system
-│       ├── ui_redraw.h        — Display update bridge
-│       ├── ui_renderer.h      — Main render hook
-│       ├── ui_retro.h         — Colors + drawing primitives
-│       └── ui_touch.h         — BasicTouchHandler
+├── templates/         — C++ template headers + static firmware YAML
+│   ├── includes/          — Header files used by generated firmware
+│   │   ├── ui_config.h        — GENERATED screen dims (written by bundlers)
+│   │   ├── ui_widgets.h       — Widget classes (INCLUDES TodoPreviewWidget)
+│   │   ├── ui_app.h           — UiApp singleton
+│   │   ├── ui_screen_base.h   — Screen + GenericScreen
+│   │   ├── ui_scrollable_detail.h — ScrollableDetailScreen
+│   │   ├── ui_tab_container.h — TabContainerWidget
+│   │   ├── ui_chrome.h        — Header/DetailHeader/PageIndicator
+│   │   ├── ui_invalidation.h  — Dirty-rect system
+│   │   ├── ui_redraw.h        — Display update bridge
+│   │   ├── ui_renderer.h      — Main render hook
+│   │   ├── ui_retro.h         — Colors + drawing primitives
+│   │   ├── ui_input.h         — Input dispatcher (touch + rotary encoder)
+│   │   └── ui_touch.h         — Touch gesture synthesizer (feeds UiInput)
+│   └── components/        — Vendored ESPHome external components
+│       └── chsc5816/          — CHSC5816 touch driver (T-Encoder-Pro)
+├── codegen/device-profiles.ts — Device profile registry: typed header +
+│                             raw hardware.yaml body per target board
+│                             (Guition 4848S040, LILYGO T-Encoder-Pro)
 ├── components/        — Svelte UI (canvas, sidebar, toolbar)
 ├── stores/            — Svelte 5 rune stores (project, selection, history, HA entities)
 ├── utils/             — Shared utilities (color, fonts, component factory)

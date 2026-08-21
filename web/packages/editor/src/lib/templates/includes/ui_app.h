@@ -43,6 +43,31 @@ class UiApp {
     (void)screens_.handle_touch(event, now, state_);
   }
 
+  // Rotary encoder navigation (wayfinder ticket 04). One detent: +1
+  // clockwise / -1 anticlockwise.
+  //
+  // Semantics:
+  //  1. An open scrollable surface consumes the step first (clamped at
+  //     both ends -- rotation never wraps a detail view into a page
+  //     switch).
+  //  2. Otherwise, on the Home screen, rotation rotates dashboard pages
+  //     with wrap-around (knob semantics).
+  //  3. Everywhere else the step is a no-op.
+  void on_encoder_step(int delta) {
+    init();
+    if (delta == 0) return;
+    if (screens_.current()->scroll_by(delta)) return;
+    if (screens_.current_id() == UiScreenId::Home && state_.home_total_pages > 1) {
+      const int pages = state_.home_total_pages;
+      int next = (state_.home_page_index + delta) % pages;
+      if (next < 0) next += pages;
+      if (next != state_.home_page_index) {
+        state_.home_page_index = next;
+        UiInvalidation::request_full();
+      }
+    }
+  }
+
   void update(uint32_t now) {
     init();
     screens_.update(now, state_);

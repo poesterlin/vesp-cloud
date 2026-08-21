@@ -9,6 +9,7 @@
     generateUITypesHeader,
   } from "$lib/codegen/esphome";
   import { generateSecretsYAML } from "$lib/codegen/secrets";
+  import { generateHardwareYAML, generateUIConfigHeader } from "$lib/codegen/device-profiles";
   import { validateProject } from "$lib/codegen/validations";
   import BuildHistory from "$lib/components/BuildHistory.svelte";
   import ConfirmCompileModal from "$lib/components/ConfirmCompileModal.svelte";
@@ -120,6 +121,7 @@
       }
 
       zip.file("fonts.yaml", generateFontsYAML(project, baseFontsYaml));
+      zip.file("hardware.yaml", generateHardwareYAML(project));
       zip.file(
         "secrets.yaml",
         generateSecretsYAML(project, { includeOtaSecrets: false }),
@@ -135,6 +137,7 @@
         return;
       }
 
+      zip.file("includes/ui_config.h", generateUIConfigHeader(project));
       zip.file("includes/ui_types.h", generateUITypesHeader(project));
       zip.file("includes/ui_state.h", generateUIStateHeader(project));
       zip.file("includes/ui_screens.h", generateUIScreensHeader(project));
@@ -653,7 +656,7 @@
 
 {#if showConfirmModal}
   <ConfirmCompileModal
-    lastSavedData={data.project}
+    lastSavedData={data.lastSavedData}
     onConfirm={handleConfirmBuild}
     onCancel={() => (showConfirmModal = false)}
   />

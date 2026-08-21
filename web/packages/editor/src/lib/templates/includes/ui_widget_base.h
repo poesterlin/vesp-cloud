@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ui_config.h"
 #include "ui_rendering_utils.h"
 
 class Widget {
@@ -31,7 +32,7 @@ class Widget {
   // rectangle override this to return their rect_; widgets that paint
   // outside a single box can return a conservative superset. Default is
   // the full screen, which means "I might be anywhere -> always redraw me".
-  virtual UiRect bounds() const { return UiRect{0, 0, 480, 480}; }
+  virtual UiRect bounds() const { return UiRect{0, 0, kUiScreenWidth, kUiScreenHeight}; }
 
   // Keep painting, invalidation, and interaction geometry separate. Most
   // widgets use the same rectangle for all three, while containers can widen

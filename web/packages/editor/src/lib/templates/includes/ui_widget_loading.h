@@ -1,11 +1,12 @@
 #pragma once
 
+#include "ui_config.h"
 #include "ui_widget_base.h"
 
 class LoadingWidget : public Widget {
  public:
   const char *widget_label() const override { return "Loading"; }
-  UiRect bounds() const override { return UiRect{0, 0, 480, 480}; }
+  UiRect bounds() const override { return UiRect{0, 0, kUiScreenWidth, kUiScreenHeight}; }
 
   bool is_visible(const UiState &state) const override {
     loading_visible_ = state.should_show_loading();

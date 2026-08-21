@@ -1,5 +1,6 @@
 #pragma once
-#include "esphome.h"
+
+#include "ui_config.h"#include "esphome.h"
 #include "ui_state.h"
 #include "ui_widgets.h"
 #include "ui_retro.h"
@@ -24,7 +25,7 @@ class PageIndicatorWidget : public Widget {
       : y_(y), dot_spacing_(dot_spacing), radius_active_(radius_active), radius_inactive_(radius_inactive) {}
 
   UiRect bounds() const override {
-    return UiRect{0, y_ - radius_active_ - 2, 480, 2 * (radius_active_ + 2)};
+    return UiRect{0, y_ - radius_active_ - 2, kUiScreenWidth, 2 * (radius_active_ + 2)};
   }
 
   void draw(display::Display& it, const UiState& state) override {
@@ -97,7 +98,7 @@ class HeaderWidget : public Widget {
     mark_dirty();
   }
 
-  UiRect bounds() const override { return UiRect{0, 0, 480, 49}; }
+  UiRect bounds() const override { return UiRect{0, 0, kUiScreenWidth, 49}; }
   bool is_top_widget() const override { return true; }
 
   void update(uint32_t now) override {
@@ -136,11 +137,11 @@ class HeaderWidget : public Widget {
     (void)state;
 
     // Header background - blank the retro background in this zone
-    ui_fast_filled_rectangle(it, 0, 0, 480, 49, RetroColors::VOID);
+    ui_fast_filled_rectangle(it, 0, 0, kUiScreenWidth, 49, RetroColors::VOID);
 
     // Left/right frame lines
-    it.line(0, 0, 0, 480, RetroColors::DARK);
-    it.line(479, 0, 479, 480, RetroColors::DARK);
+    it.line(0, 0, 0, kUiScreenHeight, RetroColors::DARK);
+    it.line(kUiScreenWidth - 1, 0, kUiScreenWidth - 1, kUiScreenHeight, RetroColors::DARK);
 
     const bool t_active = timer_active_ ? *timer_active_ : false;
     const int t_rem = timer_remaining_ ? *timer_remaining_ : 0;
@@ -233,7 +234,7 @@ class DetailHeaderWidget : public Widget {
                      const char* title, std::function<void()> back_callback)
       : title_font_(title_font), btn_font_(btn_font), title_(title), back_callback_(back_callback) {}
 
-  UiRect bounds() const override { return UiRect{0, 0, 480, 50}; }
+  UiRect bounds() const override { return UiRect{0, 0, kUiScreenWidth, 50}; }
   bool is_top_widget() const override { return true; }
 
   void set_title(const char* title) {
@@ -255,12 +256,12 @@ class DetailHeaderWidget : public Widget {
 
   void draw(display::Display& it, const UiState& state) override {
     (void)state;
-    ui_fast_filled_rectangle(it, 0, 0, 480, 50, RetroColors::VOID);
-    it.line(0, 49, 480, 49, RetroColors::DIMMER);
-    it.line(0, 50, 480, 50, RetroColors::DARK);
+    ui_fast_filled_rectangle(it, 0, 0, kUiScreenWidth, 50, RetroColors::VOID);
+    it.line(0, 49, kUiScreenWidth, 49, RetroColors::DIMMER);
+    it.line(0, 50, kUiScreenWidth, 50, RetroColors::DARK);
 
-    it.line(0, 0, 0, 480, RetroColors::DARK);
-    it.line(479, 0, 479, 480, RetroColors::DARK);
+    it.line(0, 0, 0, kUiScreenHeight, RetroColors::DARK);
+    it.line(kUiScreenWidth - 1, 0, kUiScreenWidth - 1, kUiScreenHeight, RetroColors::DARK);
 
     // Back button — filled clipped box with drawn chevron
     const int bx = 14, by = 6, bw = 52, bh = 38;

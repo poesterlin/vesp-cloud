@@ -1,6 +1,7 @@
 #pragma once
 
 #include "esphome.h"
+#include "ui_config.h"
 #include "ui_invalidation.h"
 #include "ui_types.h"
 #include "ui_widgets.h"
@@ -18,6 +19,13 @@ class Screen {
   virtual void update(uint32_t now, const UiState &state) = 0;
   virtual bool handle_touch(const TouchEvent &event, uint32_t now, const UiState &state) = 0;
   virtual void draw(display::Display &it, const UiState &state) = 0;
+
+  // Relative scrolling (rotary encoder). Returns true when the screen has
+  // an active scrollable surface and consumed the step -- including when
+  // already clamped at the requested end, so encoder rotation never falls
+  // through to other navigation while a detail view is open. delta > 0
+  // scrolls toward the end of the content.
+  virtual bool scroll_by(int delta) { return false; }
 
   // If true, the screen's draw() is responsible for painting every pixel
   // (or knowingly accepts leftover content from the previous frame). When set,
@@ -44,6 +52,24 @@ class GenericScreen : public Screen {
     scroll_area_h_ = h;
     max_scroll_ = scroll_enabled_ ? (content_h - h) : 0;
     if (max_scroll_ < 0) max_scroll_ = 0;
+  }
+
+  // Encoder-driven scrolling: same viewport invalidation as the drag
+  // path, but no gesture state. Consumes the step even when clamped.
+  bool scroll_by(int delta) override {
+    if (!scroll_enabled_ || delta == 0) return scroll_enabled_;
+    int next = scroll_y_ - delta;
+    if (next > 0) next = 0;
+    if (next < -max_scroll_) next = -max_scroll_;
+    if (next != scroll_y_) {
+      scroll_y_ = next;
+      apply_scroll_offsets();
+      scroll_dirty_ = true;
+      UiInvalidation::request_rect(
+          UiDirtyRect{scroll_area_x_, scroll_area_y_, scroll_area_w_, scroll_area_h_},
+          "screen:encoder_scroll");
+    }
+    return true;
   }
 
   template<typename T, typename... Args>
@@ -207,7 +233,7 @@ class GenericScreen : public Screen {
   }
 
   std::vector<std::unique_ptr<Widget>> widgets_;
-  static constexpr int kScreenWidth = 480;
+  static constexpr int kScreenWidth = UI_SCREEN_WIDTH;
   bool scroll_enabled_ = false;
   bool dragging_scroll_ = false;
   bool scroll_dirty_ = false;
@@ -216,6 +242,6 @@ class GenericScreen : public Screen {
   int scroll_area_x_ = 0;
   int scroll_area_w_ = kScreenWidth;
   int scroll_area_y_ = 0;
-  int scroll_area_h_ = 480;
+  int scroll_area_h_ = UI_SCREEN_HEIGHT;
   int max_scroll_ = 0;
 };

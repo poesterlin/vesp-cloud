@@ -1,8 +1,12 @@
 #pragma once
 
-#include "ui_app.h"
+#include "ui_input.h"
 #include "ui_types.h"
 
+// Touch gesture synthesizer. Converts the raw touch stream coming from
+// the generated YAML touchscreen lambdas into gesture events and hands
+// them to the UiInput dispatcher (wayfinder ticket 04). All actual
+// navigation dispatch happens there.
 class BasicTouchHandler {
  public:
   static void handle_raw_touch(int x, int y, bool touched) {
@@ -39,7 +43,6 @@ class BasicTouchHandler {
         .dx = x - start_x,
         .dy = y - start_y,
     };
-    g_ui_app.touch_activity();
-    g_ui_app.on_touch_event(event);
+    UiInput::dispatch_touch(event);
   }
 };

@@ -14,6 +14,7 @@
   import weatherDisplay from "@vesp-cloud/assets/imgs/examples/weather-display.png";
   import weatherDisplayModern from "@vesp-cloud/assets/imgs/examples/weather-display-modern.png";
   import { CODEGEN_SAFE_HTTP_URL_RE } from "$lib/codegen/url-safety";
+  import { resolveProjectDeviceProfile } from "$lib/codegen/device-profiles";
 
   interface Props {
     onClose: () => void;
@@ -109,6 +110,11 @@
     projectStore.project?.secrets?.homeAssistantBaseUrl ?? "",
   );
   let homeAssistantBaseUrlTouched = $state(false);
+  const deviceProfile = $derived(
+    projectStore.project
+      ? resolveProjectDeviceProfile(projectStore.project)
+      : null,
+  );
   const homeAssistantBaseUrlNeedsScheme = $derived(
     !!homeAssistantBaseUrl.trim() &&
       !/^[a-z][a-z\d+.-]*:\/\//i.test(homeAssistantBaseUrl.trim()),
@@ -243,10 +249,20 @@
 
     <section>
       <h3>Display Hardware</h3>
-      <p class="section-hint">
-        Guition ESP32-S3-4848S040 &mdash; 480 &times; 480 RGB (ST7701S + GT911
-        Touch)
-      </p>
+      {#if deviceProfile}
+        <p class="section-hint">
+          {deviceProfile.label} &mdash; {deviceProfile.description}
+          {#if deviceProfile.hasEncoder}
+            <br />Rotary encoder supported: rotate switches dashboard pages,
+            scrolls open detail views.
+          {/if}
+        </p>
+      {:else}
+        <p class="section-hint">
+          Guition ESP32-S3-4848S040 &mdash; 480 &times; 480 RGB (ST7701S + GT911
+          Touch)
+        </p>
+      {/if}
     </section>
 
     <section>

@@ -17,8 +17,15 @@ import {
   normalizeProjectWeatherHeights,
   normalizeWeatherComponentHeights,
 } from "$lib/utils/weather-layout";
+import {
+  LATEST_PROJECT_VERSION,
+  migrateProjectSchema,
+} from "$lib/utils/project-migration";
+import {
+  DEFAULT_DEVICE_ID,
+  getDeviceProfile,
+} from "$lib/codegen/device-profiles";
 
-const LATEST_VERSION = "1.0.0";
 const PROJECTS_INDEX_KEY = "vesp-cloud-projects-index";
 const PROJECT_PREFIX = "vesp-cloud-project-";
 const TAB_HEADER_HEIGHT = 36;
@@ -28,7 +35,9 @@ const SAVE_DEBOUNCE_MS = 1500;
 
 export type ProjectConfig = {
   display?: Partial<DisplayConfig>,
-  theme?: Theme
+  theme?: Theme,
+  /** Device profile id; display dimensions derive from the profile. */
+  device?: string
 };
 
 export type ComponentLayoutBounds = {
@@ -296,6 +305,9 @@ function createProjectStore() {
     // Page Header management
     enablePageHeader(height: number = HEADER_RENDER_HEIGHT) {
       if (!project) return;
+      // Circular devices emit no page header at all (ticket 05) -- the
+      // page indicator at the bottom is the only generated chrome.
+      if (getDeviceProfile(project.device).shape === "circle") return;
       const safeHeight = effectiveHeaderHeight(height);
       const defaultTimeComponent: Component = {
         id: `text-header-${Date.now()}`,
@@ -1115,16 +1127,18 @@ function createProjectStore() {
     async saveNow() { await immediateSave(); },
 
     async createNewProject(name: string, config?: ProjectConfig): Promise<Project> {
+      const profile = getDeviceProfile(config?.device);
       const display = {
-        width: config?.display?.width ?? 480,
-        height: config?.display?.height ?? 480,
+        width: config?.display?.width ?? profile.width,
+        height: config?.display?.height ?? profile.height,
       } as DisplayConfig;
 
       const newProject: Project = {
         id: crypto.randomUUID(),
-        version: LATEST_VERSION,
+        version: LATEST_PROJECT_VERSION,
         name,
         theme: config?.theme ?? RETRO_THEME,
+        device: profile.id,
         display,
         dashboardPages: [{ id: "page-1", name: "Home", components: [] }],
         detailViews: [],
@@ -1152,8 +1166,19 @@ function createProjectStore() {
     loadFromServer(serverProject: { id: string; name: string; data: any }) {
       const parsed = serverProject.data as Project;
       normalizeProjectWeatherHeights(parsed);
+      const migration = migrateProjectSchema(parsed);
       project = parsed;
       serverProjectId = serverProject.id;
+      // Immediate write-back (ticket 06): migrated projects persist right
+      // away so stored data converges to the current schema on first open.
+      if (migration.changed) {
+        void saveToServer().catch((e) => console.error("Migration write-back failed", e));
+      }
+      if (migration.fromFuture) {
+        console.warn(
+          `Project "${parsed.name}" uses schema version ${parsed.version}, which is newer than this editor supports (${LATEST_PROJECT_VERSION}). Opening as-is.`,
+        );
+      }
       currentDashboardPageId = parsed.dashboardPages[0]?.id ?? "";
       currentDetailViewId = null;
       viewMode = "dashboard";
@@ -1171,6 +1196,7 @@ function createProjectStore() {
         try {
           const parsed = JSON.parse(saved);
           normalizeProjectWeatherHeights(parsed as Project);
+          migrateProjectSchema(parsed);
           project = parsed;
           currentDashboardPageId = parsed.dashboardPages[0]?.id ?? "";
           currentDetailViewId = null;
@@ -1229,6 +1255,7 @@ function createProjectStore() {
         if (!parsed.id || !parsed.name || !parsed.display) return false;
 
         normalizeProjectWeatherHeights(parsed as Project);
+        migrateProjectSchema(parsed);
         project = parsed;
         currentDashboardPageId = parsed.dashboardPages[0]?.id ?? "";
         currentDetailViewId = null;

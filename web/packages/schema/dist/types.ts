@@ -189,6 +189,10 @@ export interface Project {
   name: string;
   theme?: Theme;
   display: DisplayConfig;
+  /**
+   * Target device profile id from the codegen device registry (e.g. guition-esp32-s3-4848s040). Absent means the legacy default device (guition-esp32-s3-4848s040).
+   */
+  device?: string;
   state?: StateConfig;
   dashboardPages: Page[];
   detailViews: DetailView[];

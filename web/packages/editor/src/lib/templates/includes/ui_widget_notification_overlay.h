@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ui_config.h"
 #include "ui_widget_base.h"
 
 class NotificationOverlayWidget : public Widget {
@@ -8,7 +9,7 @@ class NotificationOverlayWidget : public Widget {
   NotificationOverlayWidget(const std::string *title, const std::string *body,
                             const std::string *severity,
                             const std::string *dismissed,
-                            int display_w = 480, int display_h = 480)
+                            int display_w = kUiScreenWidth, int display_h = kUiScreenHeight)
       : title_(title), body_(body), severity_(severity),
         dismissed_(dismissed), display_w_(display_w), display_h_(display_h) {}
 

@@ -23,6 +23,7 @@ import type {
 } from "@vesp-cloud/schema";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
 import { CODEGEN_SAFE_HTTP_URL_RE } from "./url-safety";
+import { DEVICE_PROFILES, tryGetDeviceProfile } from "./device-profiles";
 
 export interface ValidationError {
   type: "error" | "warning";
@@ -68,6 +69,7 @@ function componentLabel(c: Component): string {
 export type ValidationRule = (project: Project) => ValidationError[];
 
 const RULES: ValidationRule[] = [
+  validateDeviceProfile,
   validateCodegenSafeStrings,
   validateActionTargets,
   validateLightStateBinding,
@@ -80,6 +82,38 @@ const RULES: ValidationRule[] = [
 
 export function validateProject(project: Project): ValidationError[] {
   return RULES.flatMap((rule) => rule(project));
+}
+
+/**
+ * Device profile rule (wayfinder ticket 03): an unknown device id is a
+ * hard error -- the project cannot compile until fixed. Absent id is the
+ * legacy default device. Display dimensions must match the profile so
+ * generated layout code and the editor canvas agree.
+ */
+function validateDeviceProfile(project: Project): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const known = DEVICE_PROFILES.map((p) => p.id).join(", ");
+
+  if (project.device) {
+    const profile = tryGetDeviceProfile(project.device);
+    if (!profile) {
+      errors.push({
+        type: "error",
+        message: `Unknown device "${project.device}". Known devices: ${known}.`,
+        field: "device",
+      });
+      return errors;
+    }
+    if (project.display.width !== profile.width || project.display.height !== profile.height) {
+      errors.push({
+        type: "error",
+        message: `Display size ${project.display.width}x${project.display.height} does not match device "${profile.label}" (${profile.width}x${profile.height}).`,
+        field: "device",
+      });
+    }
+  }
+
+  return errors;
 }
 
 function collectAllComponents(project: Project): Component[] {

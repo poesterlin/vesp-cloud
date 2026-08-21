@@ -1,3 +1,11 @@
+# Device-neutral base configuration.
+#
+# Everything board-specific lives in the active device profile's
+# hardware.yaml (see lib/codegen/device-profiles.ts): display/touch buses,
+# backlight, per-board build overrides, and the ota: block (whose
+# automation hooks may reference profile-owned entities like a PWM
+# backlight light). Profiles MUST define an ota: - platform: esphome
+# entry; base deliberately does not.
 esphome:
   name: ${device_name}
   on_boot:
@@ -9,11 +17,6 @@ esphome:
               esp_sleep_enable_timer_wakeup(100000);
               esp_deep_sleep_start();
             }
-    - priority: 800
-      then:
-        - light.turn_on:
-            id: display_backlight
-            brightness: 100%
 
 esp32:
   variant: esp32s3
@@ -90,17 +93,6 @@ logger:
 
 api:
   reboot_timeout: 15min
-
-ota:
-  - platform: esphome
-    on_begin:
-      then:
-        - light.turn_off: display_backlight
-    on_error:
-      then:
-        - light.turn_on:
-            id: display_backlight
-            brightness: 100%
 
 time:
   - platform: sntp

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ui_config.h"
 #include "esphome.h"
 #include "ui_retro.h"
 #include "ui_app.h"
@@ -44,7 +45,7 @@ inline void ui_fast_filled_rectangle(display::Display &it, int x, int y, int w, 
     }
   }
 
-  static constexpr int FILL_BUF_COLS = 480;
+  static constexpr int FILL_BUF_COLS = UI_SCREEN_WIDTH;
   static constexpr int FILL_BUF_ROWS = 64;
   static constexpr int FILL_BUF_PIXELS = FILL_BUF_COLS * FILL_BUF_ROWS;
 

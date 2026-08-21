@@ -111,7 +111,7 @@
 
   async function handleCreateProject(config: CreateProjectConfig) {
     const newProject = await projectStore.createNewProject(config.name, {
-      display: { width: 480, height: 480 },
+      device: config.deviceId,
     });
 
     projectStore.updateProject({

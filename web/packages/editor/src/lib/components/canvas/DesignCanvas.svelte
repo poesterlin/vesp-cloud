@@ -6,6 +6,7 @@
   import { snapStore } from "$lib/stores/snap.svelte";
   import { conditionalEditorStore } from "$lib/stores/conditional-editor.svelte";
   import { canvasZoomStore } from "$lib/stores/canvas-zoom.svelte";
+  import { resolveProjectDeviceProfile } from "$lib/codegen/device-profiles";
   import {
     canvasPasteTargetStore,
     type CanvasPasteTarget,
@@ -47,6 +48,11 @@
     projectStore.viewMode === "dashboard" && !!projectStore.pageHeader,
   );
   const isRetro = $derived(projectStore.theme.id === "retro");
+  const deviceShape = $derived(
+    projectStore.project
+      ? resolveProjectDeviceProfile(projectStore.project).shape
+      : "rect",
+  );
 
   function hasDigitalClockInComponents(components: Component[]): boolean {
     for (const component of components) {
@@ -495,6 +501,10 @@
   style:height="{canvasHeight}px"
   style:zoom={canvasZoomStore.level}
 >
+  {#if deviceShape === "circle"}
+    <div class="circle-mask" aria-hidden="true"></div>
+  {/if}
+
   {#if projectStore.viewMode === "detail" && projectStore.currentDetailView}
     <DetailHeader
       title={projectStore.currentDetailView.title}
@@ -646,5 +656,21 @@
   .snap-line.horizontal {
     height: 0px;
     border-top: 1px dashed #ff4a8b;
+  }  /* Advisory circular-display mask (ticket 05): darkens the corners a
+     round panel physically clips. Purely visual -- widgets in the zone
+     stay fully selectable/movable. */
+  .circle-mask {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 40;
+    background: radial-gradient(
+      circle closest-side at 50% 50%,
+      transparent 98%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 9999px transparent;
   }
+
 </style>

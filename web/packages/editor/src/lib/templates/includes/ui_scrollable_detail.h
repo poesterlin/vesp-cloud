@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ui_config.h"
 #include "esphome.h"
 #include "ui_types.h"
 #include "ui_state.h"
@@ -82,7 +83,7 @@ class ScrollableDetailScreen : public Screen {
       scroll_y_ = new_y;
       fast_scroll_ = (scroll_y_ != 0 && scroll_y_ != -max_scroll_);
       UiInvalidation::request_rect(
-          UiDirtyRect{0, content_y_, 480, content_area_h_}, "detail:scroll");
+          UiDirtyRect{0, content_y_, kUiScreenWidth, content_area_h_}, "detail:scroll");
       return true;
     }
 
@@ -92,7 +93,7 @@ class ScrollableDetailScreen : public Screen {
         return false;
       }
       UiInvalidation::request_rect(
-          UiDirtyRect{0, content_y_, 480, content_area_h_}, "detail:scroll-end");
+          UiDirtyRect{0, content_y_, kUiScreenWidth, content_area_h_}, "detail:scroll-end");
       return true;
     }
 
@@ -154,17 +155,17 @@ class ScrollableDetailScreen : public Screen {
     if (!need_content_bg) {
       for (int i = 0; i < UiInvalidation::dirty_count(); i++) {
         const auto &r = UiInvalidation::dirty_rect(i);
-        if (r.x <= 0 && r.x + r.w >= 480 &&
-            r.y <= content_y_ && r.y + r.h >= 480) {
+        if (r.x <= 0 && r.x + r.w >= kUiScreenWidth &&
+            r.y <= content_y_ && r.y + r.h >= kUiScreenHeight) {
           need_content_bg = true;
           break;
         }
       }
     }
     if (need_content_bg) {
-      ui_fast_filled_rectangle(it, 0, content_y_, 480, 480 - content_y_, RetroColors::VOID);
+      ui_fast_filled_rectangle(it, 0, content_y_, kUiScreenWidth, kUiScreenHeight - content_y_, RetroColors::VOID);
       // Decorative border between header and content
-      it.line(0, content_y_, 480, content_y_, RetroColors::DIMMER);
+      it.line(0, content_y_, kUiScreenWidth, content_y_, RetroColors::DIMMER);
     }
 
     for (size_t i = 0; i < entries_.size(); i++) {
@@ -242,8 +243,8 @@ class ScrollableDetailScreen : public Screen {
   void exit() override {}
 
  private:
-  UiRect header_space() const { return {0, 0, 480, 50}; }
-  UiRect content_space() const { return {0, content_y_, 480, content_area_h_}; }
+  UiRect header_space() const { return {0, 0, kUiScreenWidth, 50}; }
+  UiRect content_space() const { return {0, content_y_, kUiScreenWidth, content_area_h_}; }
 
   const char *title_;
   esphome::font::Font *title_font_;

@@ -4,6 +4,7 @@ import { collectConditionEntities, type ConditionEntityType } from "./condition-
 import { ICON_FONT_ID, WEATHER_ICON_FONT_ID, getIconGlyphs, projectHasWeather } from "./mdi-icons";
 import { extractBindings, parseTemplate } from "../utils/template-utils";
 import { assertCodegenSafeHttpUrl } from "./url-safety";
+import { resolveProjectDeviceProfile, type DeviceProfile } from "./device-profiles";
 
 /**
  * Collect every EntityBinding referenced by a text component. The source
@@ -891,10 +892,112 @@ ${fetchBlocks.join('\n')}
 ${flagSetters.join('\n')}`;
 }
 
+/**
+ * Touchscreen stanza for the project's device profile. The gesture
+ * synthesis itself lives in C++ (BasicTouchHandler -> UiInput); only the
+ * platform wiring differs between boards.
+ */
+function generateTouchscreenYAML(profile: DeviceProfile): string {
+  const t = profile.touch;
+  const interval = t.updateIntervalMs ?? 16;
+  const options: string[] = [
+    "touchscreen:",
+    `  platform: ${t.platform}`,
+    `  id: touch_panel`,
+    `  i2c_id: ${t.i2cId}`,
+    `  display: main_display`,
+  ];
+  if (t.updateIntervalMs !== null && t.updateIntervalMs !== undefined) {
+    options.push(`  update_interval: ${interval}ms`);
+  }
+  if (t.resetPin !== undefined) options.push(`  reset_pin: GPIO${t.resetPin}`);
+  if (t.interruptPin !== undefined) options.push(`  interrupt_pin: GPIO${t.interruptPin}`);
+  if (t.address !== undefined) options.push(`  address: 0x${t.address.toString(16).toUpperCase().padStart(2, "0")}`);
+  return `${options.join("\n")}
+  on_touch:
+    - lambda: |-
+        id(touch_last_x) = touch.x;
+        id(touch_last_y) = touch.y;
+        BasicTouchHandler::handle_raw_touch(touch.x, touch.y, true);
+        if (UiInvalidation::needs_redraw()) {
+          id(main_display).update();
+        }
+  on_update:
+    - lambda: |-
+        for (auto &t : touches) {
+          id(touch_last_x) = t.x;
+          id(touch_last_y) = t.y;
+          BasicTouchHandler::handle_raw_touch(t.x, t.y, true);
+        }
+        if (UiInvalidation::needs_redraw()) {
+          id(main_display).update();
+        }
+  on_release:
+    - lambda: |-
+        BasicTouchHandler::handle_raw_touch(id(touch_last_x), id(touch_last_y), false);
+        if (UiInvalidation::needs_redraw()) {
+          id(main_display).update();
+        }`;
+}
+
+/**
+ * Rotary encoder input block (rotation). Emitted only for profiles that
+ * declare an encoder; calls into the C++ input dispatcher directly, then
+ * pumps a display update when the step dirtied something.
+ */
+function generateEncoderYAML(profile: DeviceProfile): string {
+  if (!profile.hasEncoder || !profile.encoder) return "";
+  const { pinA, pinB } = profile.encoder;
+  const pin = (n: number) => `      number: GPIO${n}
+      mode:
+        input: true
+        pullup: true`;
+  return `sensor:
+  - platform: rotary_encoder
+    id: nav_encoder
+    internal: true
+    publish_initial_value: false
+    pin_a:
+${pin(pinA)}
+    pin_b:
+${pin(pinB)}
+    on_clockwise:
+      - lambda: |-
+          UiInput::encoder_step(1);
+          if (UiInvalidation::needs_redraw()) {
+            id(main_display).update();
+          }
+    on_anticlockwise:
+      - lambda: |-
+          UiInput::encoder_step(-1);
+          if (UiInvalidation::needs_redraw()) {
+            id(main_display).update();
+          }`;
+}
+
+/** Encoder push button fragment appended to the binary_sensor section. */
+function generateEncoderPushYAML(profile: DeviceProfile): string {
+  if (!profile.hasEncoder || !profile.encoder) return "";
+  const { push } = profile.encoder;
+  return `
+  - platform: gpio
+    pin:
+      number: GPIO${push}
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+      ignore_strapping_warning: true
+    id: encoder_push
+    on_press:
+      - lambda: UiInput::encoder_push();`;
+}
+
 export function generateESPHomeYAML(project: Project, firmwareVersion?: string): string {
   const deviceName = sanitizeDeviceName(project.name);
   const friendlyName = escapeYAMLDoubleQuoted(project.name);
   const timezone = escapeYAMLDoubleQuoted(project.timezone || "UTC");
+  const profile = resolveProjectDeviceProfile(project);
   const projectVersionYaml = firmwareVersion
     ? `\n  project:\n    name: "esphome_designer.${deviceName}"\n    version: "${firmwareVersion}"`
     : '';
@@ -953,23 +1056,23 @@ ota:
             // The g_ota_in_progress flag short-circuits every subsequent
             // display update to render_ota_splash() until the new
             // firmware reboots the device.
+            ${profile.hasBacklightLight ? "// Backlight: kept on (dimmed) via light.turn_on below." : ""}
             g_ota_font = id(font_medium);
             g_ota_in_progress = true;
             UiRedraw::request_full();
-            id(main_display).update();
+            id(main_display).update();${profile.hasBacklightLight ? `
         - light.turn_on:
             id: display_backlight
-            brightness: 30%
+            brightness: 30%` : ""}
     on_error:
       then:
         - lambda: |-
             g_ota_in_progress = false;
             UiRedraw::request_full();
-            id(main_display).update();
+            id(main_display).update();${profile.hasBacklightLight ? `
         - light.turn_on:
             id: display_backlight
-            brightness: 100%
-`
+            brightness: 100%` : ""}`
     : '';
   const httpUpdateYaml = httpOtaEnabled
     ? `\nupdate:\n  - platform: http_request\n    name: Firmware Update\n    source: !secret firmware_manifest_url\n`
@@ -1024,6 +1127,29 @@ ${relativeImageHandling}
             }`
     : '';
 
+  // Device-profile-driven sections. The screenshot pipeline (JPEG encoder +
+  // framebuffer camera) requires a display driver the framebuffer_camera
+  // component can patch (ST7701S today); profiles without it ship without
+  // screenshots.
+  const screenshotYaml = profile.supportsScreenshot
+    ? `camera_encoder:
+  id: screen_jpeg_encoder
+  type: esp32_camera
+  quality: 90
+  buffer_size: 65536
+  buffer_expand_size: 32768
+
+framebuffer_camera:
+  id: screen_camera
+  name: "Display Screenshot"
+  display_id: main_display
+  encoder_id: screen_jpeg_encoder
+  disabled_by_default: true`
+    : '';
+  const touchYaml = generateTouchscreenYAML(profile);
+  const encoderYaml = generateEncoderYAML(profile);
+  const encoderPushYaml = generateEncoderPushYAML(profile);
+
   return `substitutions:
   device_name: ${deviceName}
   friendly_name: "${friendlyName}"
@@ -1039,21 +1165,7 @@ external_components:
   - source:
       type: local
       path: components
-
-camera_encoder:
-  id: screen_jpeg_encoder
-  type: esp32_camera
-  quality: 90
-  buffer_size: 65536
-  buffer_expand_size: 32768
-
-framebuffer_camera:
-  id: screen_camera
-  name: "Display Screenshot"
-  display_id: main_display
-  encoder_id: screen_jpeg_encoder
-  disabled_by_default: true
-
+${screenshotYaml ? `\n${screenshotYaml}\n` : ''}
 esphome:
 ${projectVersionYaml}
   on_boot:
@@ -1227,6 +1339,7 @@ ${hasCalendarEntityRefetch ? `
           };
 ` : ''}
 ${bindings ? bindings + '\n' : ''}${notificationBindings ? notificationBindings + '\n' : ''}  includes:
+    - includes/ui_config.h
     - includes/ui_theme.h
     - includes/ui_types.h
     - includes/ui_state.h
@@ -1253,6 +1366,7 @@ ${bindings ? bindings + '\n' : ''}${notificationBindings ? notificationBindings 
     - includes/ui_screen_base.h
     - includes/ui_screens.h
     - includes/ui_app.h
+    - includes/ui_input.h
     - includes/ui_touch.h
     - includes/ui_renderer.h
     - includes/ui_retro.h
@@ -1272,36 +1386,7 @@ ${onlineImageFormatGlobals}
 ${todoRefetchGlobals ? '\n' + todoRefetchGlobals : ''}
 ${calendarRefetchGlobals ? '\n' + calendarRefetchGlobals : ''}
 
-touchscreen:
-  platform: gt911
-  id: touch_gt911
-  i2c_id: touch_i2c
-  display: main_display
-  update_interval: 16ms
-  on_touch:
-    - lambda: |-
-        id(touch_last_x) = touch.x;
-        id(touch_last_y) = touch.y;
-        BasicTouchHandler::handle_raw_touch(touch.x, touch.y, true);
-        if (UiInvalidation::needs_redraw()) {
-          id(main_display).update();
-        }
-  on_update:
-    - lambda: |-
-        for (auto &t : touches) {
-          id(touch_last_x) = t.x;
-          id(touch_last_y) = t.y;
-          BasicTouchHandler::handle_raw_touch(t.x, t.y, true);
-        }
-        if (UiInvalidation::needs_redraw()) {
-          id(main_display).update();
-        }
-  on_release:
-    - lambda: |-
-        BasicTouchHandler::handle_raw_touch(id(touch_last_x), id(touch_last_y), false);
-        if (UiInvalidation::needs_redraw()) {
-          id(main_display).update();
-        }
+${touchYaml}${encoderYaml ? '\n' + encoderYaml : ''}
 
 interval:
   - interval: 50ms
@@ -1385,7 +1470,7 @@ binary_sensor:
     entity_id: sun.sun
     id: _ha_state_flag
     internal: true
-
+${encoderPushYaml}
 button:
   - platform: restart
     name: "Reboot Device"

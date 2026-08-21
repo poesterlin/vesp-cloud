@@ -3,11 +3,13 @@
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import TimezoneEditor from "$lib/components/TimezoneEditor.svelte";
+  import { DEVICE_PROFILES, DEFAULT_DEVICE_ID } from "$lib/codegen/device-profiles";
 
   export interface CreateProjectConfig {
     name: string;
     timezone: string;
     notificationOverlay: NotificationOverlayConfig;
+    deviceId: string;
   }
 
   interface Props {
@@ -25,6 +27,7 @@
 
   let step = $state<"name" | "timezone" | "notifications">("name");
   let projectName = $state("");
+  let deviceId = $state<string>(DEFAULT_DEVICE_ID);
 
   let notificationOverlayEnabled = $state(false);
   let notificationTitleEntityId = $state(defaultNotificationOverlay.titleEntityId);
@@ -64,6 +67,7 @@
       name: projectName.trim(),
       timezone,
       notificationOverlay,
+      deviceId,
     });
   }
 </script>
@@ -109,9 +113,22 @@
 
         <div class="field">
           <label>Display Hardware</label>
-          <p class="hardware-info">
-            Guition ESP32-S3-4848S040 &mdash; 480 &times; 480 RGB (ST7701S + GT911 Touch)
-          </p>
+          <div class="device-grid" role="radiogroup" aria-label="Target device">
+            {#each DEVICE_PROFILES as profile (profile.id)}
+              <button
+                type="button"
+                class="device-card {deviceId === profile.id ? 'selected' : ''}"
+                role="radio"
+                aria-checked={deviceId === profile.id}
+                onclick={() => (deviceId = profile.id)}
+              >
+                <span class="device-shape {profile.shape}"></span>
+                <span class="device-label">{profile.label}</span>
+                <span class="device-desc">{profile.description}</span>
+              </button>
+            {/each}
+          </div>
+          <p class="hardware-hint">Fixed after creation &mdash; projects cannot be moved between devices.</p>
         </div>
 
         <footer>
@@ -367,6 +384,67 @@ input_select:
     color: var(--color-text-secondary);
     font-size: 0.9rem;
     margin: 0;
+  }
+
+  .device-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+  }
+
+  .device-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.9rem 0.6rem;
+    background: #1e1e1e;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 120ms ease, background 120ms ease;
+  }
+
+  .device-card:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+
+  .device-card.selected {
+    border-color: var(--color-accent);
+    background: rgba(var(--color-accent-rgb, 255 255 255), 0.06);
+  }
+
+  .device-shape {
+    width: 34px;
+    height: 34px;
+    border: 2px solid var(--color-text-secondary);
+    display: inline-block;
+  }
+
+  .device-shape.rect {
+    border-radius: 4px;
+  }
+
+  .device-shape.circle {
+    border-radius: 50%;
+  }
+
+  .device-label {
+    font-weight: 600;
+    font-size: 0.88rem;
+  }
+
+  .device-desc {
+    color: var(--color-text-secondary);
+    font-size: 0.78rem;
+  }
+
+  .hardware-hint {
+    color: var(--color-text-secondary);
+    font-size: 0.78rem;
+    margin: 0.5rem 0 0;
   }
 
   .checkbox-row {

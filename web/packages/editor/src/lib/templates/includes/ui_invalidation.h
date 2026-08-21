@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ui_config.h"
 #include <algorithm>
 
 constexpr int UI_MAX_IMAGES_PER_FRAME = 2;
@@ -14,8 +15,8 @@ struct UiDirtyRect {
 class UiInvalidation {
  public:
   static constexpr int MAX_DIRTY_RECTS = 16;
-  static constexpr int SCREEN_WIDTH = 480;
-  static constexpr int SCREEN_HEIGHT = 480;
+  static constexpr int SCREEN_WIDTH = UI_SCREEN_WIDTH;
+  static constexpr int SCREEN_HEIGHT = UI_SCREEN_HEIGHT;
   static constexpr int MERGE_AREA_PENALTY = 512;
 
   static uint32_t frame() { return frame_count_; }

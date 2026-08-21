@@ -15,7 +15,8 @@
 
   function tryDiff(prevConfig: Project) {
     const current = projectStore.project;
-    if (!current) return false;
+    if (!current?.dashboardPages || !prevConfig?.dashboardPages) return false;
+    if (!current.detailViews || !prevConfig.detailViews) return false;
     changes = diffProject(current, prevConfig);
     return true;
   }

@@ -8,7 +8,7 @@ import { eq, desc, inArray, and, asc } from 'drizzle-orm';
 import type { CompilationJob, NewCompilationJob } from '@vesp-cloud/db/schema';
 
 import type { Project } from '@vesp-cloud/schema';
-import { generateESPHomeYAML, generateUITypesHeader, generateUIStateHeader, generateUIThemeHeader, generateUIScreensHeader, generateFontsYAML } from '$lib/codegen/esphome';
+import { generateESPHomeYAML, generateUITypesHeader, generateUIStateHeader, generateUIThemeHeader, generateUIScreensHeader, generateFontsYAML, generateHardwareYAML, generateUIConfigHeader } from '$lib/codegen/esphome';
 import { generateSecretsYAML } from '$lib/codegen/secrets';
 import { validateProject } from '$lib/codegen/validations';
 import { sanitizeDeviceName } from '$lib/codegen/utils';
@@ -388,10 +388,12 @@ export class CompilationQueue extends EventEmitter {
       }
 
       await Promise.all([
+        fs.writeFile(join(tempDir, 'includes', 'ui_config.h'), generateUIConfigHeader(project)),
         fs.writeFile(join(tempDir, 'includes', 'ui_types.h'), generateUITypesHeader(project)),
         fs.writeFile(join(tempDir, 'includes', 'ui_state.h'), generateUIStateHeader(project)),
         fs.writeFile(join(tempDir, 'includes', 'ui_theme.h'), generateUIThemeHeader(project)),
         fs.writeFile(join(tempDir, 'includes', 'ui_screens.h'), generateUIScreensHeader(project)),
+        fs.writeFile(join(tempDir, 'hardware.yaml'), generateHardwareYAML(project)),
       ]);
 
       const fontsPath = join(tempDir, 'fonts.yaml');

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ui_config.h"
 #include "esphome.h"
 #include "ui_theme.h"
 
@@ -316,7 +317,7 @@ inline void draw_grid_background(display::Display &it, int x, int y, int w, int 
 // ============================================================================
 inline void draw_retro_background(display::Display &it) {
 #if UI_THEME_RETRO
-  const int W = 480, H = 480;
+  const int W = kUiScreenWidth, H = kUiScreenHeight;
 
   ui_fast_fill(it, RetroColors::VOID);
   draw_grid_background(it, 0, 0, W, H, 20, RetroColors::GRID_LINE);

@@ -576,9 +576,8 @@
     position: relative;
     border: 2px solid var(--color-border);
     border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 0 0 12px #090c12, 0 24px 60px 16px rgba(0, 0, 0, 0.5);
     background: #1a1a1a;
-    outline: 30px solid black;
 
     /* Match the generated bitmap font sizes from templates/fonts.yaml. */
     --display-text-tiny: 12px;
@@ -624,11 +623,11 @@
 
   .size-indicator {
     position: absolute;
-    bottom: -24px;
+    bottom: -38px;
     left: 50%;
     transform: translateX(-50%);
     font-size: 11px;
-    color: var(--color-text-muted);
+    color: var(--color-text-secondary);
     white-space: nowrap;
   }
 

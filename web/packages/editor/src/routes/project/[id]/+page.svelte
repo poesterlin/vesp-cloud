@@ -122,6 +122,7 @@
 
   <div class="editor-container">
     <aside class="sidebar left">
+      <div class="panel-heading"><span>Workspace</span><span class="panel-caption">Build your display</span></div>
       <ViewTypeSelector />
       {#if projectStore.viewMode === 'dashboard'}
         <DashboardPageList />
@@ -137,6 +138,7 @@
     </main>
 
     <aside class="sidebar right">
+      <div class="panel-heading"><span>Inspector</span><span class="panel-caption">{selectionStore.hasSelection ? `${selectionStore.selectedCount} selected` : 'Select a component'}</span></div>
       <PropertyEditor />
     </aside>
   </div>
@@ -161,10 +163,19 @@
 
   <style>
     .editor-container {
+      --color-bg-primary: #11151d;
+      --color-bg-secondary: #191f2a;
+      --color-bg-tertiary: #222b38;
+      --color-border: #303b4c;
+      --color-text-muted: #94a0b4;
       display: flex;
       flex: 1;
       overflow: hidden;
+      min-height: 0;
     }
+
+    .panel-heading { display: flex; flex-direction: column; gap: 4px; padding: 18px 16px; border-bottom: 1px solid var(--color-border); font-size: 13px; font-weight: 600; }
+    .panel-caption { font-size: 11px; font-weight: 400; color: var(--color-text-secondary); }
 
     .sidebar {
       background: var(--color-bg-secondary);
@@ -175,18 +186,20 @@
     }
 
     .sidebar.left {
-      width: 280px;
+      width: 264px;
+      flex-shrink: 0;
       border-right: 1px solid var(--color-border);
     }
 
     .sidebar.right {
-      width: 315px;
+      width: 320px;
+      flex-shrink: 0;
       border-left: 1px solid var(--color-border);
     }
 
     .separator {
       height: 1px;
-      background: #333;
+      background: var(--color-border);
       margin: 8px 0;
     }
 
@@ -196,8 +209,17 @@
       align-items: center;
       justify-content: center;
       background: var(--color-bg-primary);
+      background-image: radial-gradient(circle, #354054 1px, transparent 1px);
+      background-size: 20px 20px;
       overflow: auto;
-      padding: var(--spacing-lg);
+      padding: 64px;
+      min-width: 0;
+    }
+
+    @media (max-width: 1100px) {
+      .sidebar.left { width: 220px; }
+      .sidebar.right { width: 280px; }
+      .canvas-area { justify-content: flex-start; padding: 48px; }
     }
 
     .modal-overlay {

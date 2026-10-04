@@ -30,6 +30,7 @@
     <input
       type="text"
       class="project-name"
+      aria-label="Project name"
       value={projectStore.project?.name ?? ""}
       oninput={(e: Event) =>
         projectStore.updateProject({
@@ -82,6 +83,7 @@
             parseFloat((e.target as HTMLInputElement).value),
           )}
         class="zoom-slider"
+        aria-label="Canvas zoom"
       />
       <span class="zoom-label">{canvasZoomStore.level.toFixed(2)}x</span>
     </div>
@@ -90,6 +92,7 @@
       onclick={() => historyStore.undo()}
       disabled={!historyStore.canUndo}
       title="Undo (Ctrl+Z)"
+      aria-label="Undo"
     >
       <svg width="16" height="16" viewBox="0 0 24 24" class="icon">
         <path d={mdiIcons.mdiUndo} />
@@ -99,6 +102,7 @@
       onclick={() => historyStore.redo()}
       disabled={!historyStore.canRedo}
       title="Redo (Ctrl+Y)"
+      aria-label="Redo"
     >
       <svg width="16" height="16" viewBox="0 0 24 24" class="icon">
         <path d={mdiIcons.mdiRedo} />
@@ -126,7 +130,12 @@
     padding: var(--spacing-sm) var(--spacing-md);
     background: var(--color-bg-secondary);
     border-bottom: 1px solid var(--color-border);
-    height: 48px;
+    min-height: 64px;
+    height: auto;
+    flex-shrink: 0;
+    gap: 16px;
+    background: #191f2a;
+    border-color: #303b4c;
   }
 
   .toolbar-left,
@@ -137,6 +146,7 @@
   }
 
   .toolbar-center {
+    min-width: 0;
     flex: 1;
     display: flex;
     justify-content: center;
@@ -205,7 +215,9 @@
     font-size: 14px;
     font-weight: 500;
     padding: var(--spacing-xs) var(--spacing-md);
-    min-width: 200px;
+    min-width: 80px;
+    width: 100%;
+    max-width: 260px;
     border-radius: var(--radius-sm);
   }
 
@@ -243,6 +255,8 @@
   }
 
   .export-link {
+    min-height: 36px;
+    box-shadow: 0 3px 12px #4a9eff25;
     font-size: 12px;
     padding: var(--spacing-xs) var(--spacing-sm);
     border-radius: var(--radius-sm);
@@ -254,6 +268,12 @@
 
   .export-link:hover {
     background: var(--color-accent-hover);
+  }
+
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+  @media (max-width: 1100px) {
+    .settings-btn span { display: none; }
+    .toolbar-right { gap: 4px; }
   }
 
   .icon {

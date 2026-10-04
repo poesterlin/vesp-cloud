@@ -1,4 +1,8 @@
 <script lang="ts">
+  import { projectStore } from '$lib/stores/project.svelte';
+  import { selectionStore } from '$lib/stores/selection.svelte';
+  import { historyStore } from '$lib/stores/history.svelte';
+  import { createComponent } from '$lib/utils/component-factory';
   import {
     mdiFormatText,
     mdiClockOutline,
@@ -103,6 +107,19 @@
     },
   ];
 
+  let query = $state('');
+  const filteredComponents = $derived(components.filter((component) =>
+    `${component.label} ${component.description}`.toLowerCase().includes(query.trim().toLowerCase()),
+  ));
+
+  function addComponent(type: string) {
+    const component = createComponent(type, 24, 24);
+    if (!component) return;
+    historyStore.record(`Add ${type}`);
+    projectStore.addComponent(component);
+    selectionStore.select(component.id);
+  }
+
   function handleDragStart(e: DragEvent, type: string) {
     if (e.dataTransfer) {
       e.dataTransfer.setData("component-type", type);
@@ -113,15 +130,17 @@
 
 <div class="palette">
   <h3>Components</h3>
+  <input class="component-search" type="search" bind:value={query} placeholder="Search components…" aria-label="Search components" />
 
   <div class="component-list">
-    {#each components as comp (comp.type)}
-      <div
+    {#each filteredComponents as comp (comp.type)}
+      <button
+        type="button"
         class="palette-item"
         draggable="true"
         ondragstart={(e) => handleDragStart(e, comp.type)}
-        role="button"
-        tabindex="0"
+        onclick={() => addComponent(comp.type)}
+        title={`Click to add ${comp.label}, or drag onto the canvas`}
       >
         <span class="item-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
@@ -132,12 +151,14 @@
           <span class="item-label">{comp.label}</span>
           <span class="item-desc">{comp.description}</span>
         </div>
-      </div>
+      </button>
+    {:else}
+      <p class="empty-search">No components match “{query}”. Try another search.</p>
     {/each}
   </div>
 
   <div class="help-text">
-    Drag components onto the canvas to add them.
+    Click to add, or drag onto the canvas.
   </div>
 </div>
 
@@ -145,6 +166,17 @@
   .palette {
     padding: var(--spacing-md);
   }
+
+  .component-search {
+    width: 100%;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--color-bg-primary);
+  }
+
+  .empty-search { color: var(--color-text-secondary); font-size: 12px; padding: 16px 0; }
+  .palette-item:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
   h3 {
     font-size: 12px;
@@ -169,6 +201,9 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     cursor: grab;
+    width: 100%;
+    text-align: left;
+    color: var(--color-text-primary);
     transition: all var(--transition-fast);
   }
 
@@ -182,6 +217,7 @@
   }
 
   .item-icon {
+    flex-shrink: 0;
     width: 28px;
     height: 28px;
     display: flex;
@@ -210,7 +246,7 @@
 
   .item-desc {
     font-size: 11px;
-    color: var(--color-text-muted);
+    color: var(--color-text-secondary);
   }
 
   .help-text {

@@ -44,7 +44,7 @@ import { parseTemplate } from "../utils/template-utils";
 const fontMap: Record<string, string> = {
   small: 'g_theme.label',
   medium: 'g_theme.header',
-  large: 'g_theme.header',
+  large: 'g_theme.label_large',
 };
 
 const textAlignMap: Record<NonNullable<TextComponent['align']>, string> = {
@@ -157,9 +157,12 @@ function emitColor(c: Color): string {
   return `Color(${c.r}, ${c.g}, ${c.b})`;
 }
 
-function emitButtonBorderColor(c: ButtonComponent, idSafe: string, indent: string): string {
-  if (!c.borderColor) return '';
-  return `${indent}${idSafe}->set_border_color(${emitColor(c.borderColor)});\n`;
+function emitButtonColors(c: ButtonComponent, idSafe: string, indent: string): string {
+  let out = '';
+  if (c.borderColor) out += `${indent}${idSafe}->set_border_color(${emitColor(c.borderColor)});\n`;
+  if (c.backgroundColor) out += `${indent}${idSafe}->set_background_color(${emitColor(c.backgroundColor)});\n`;
+  if (c.foregroundColor) out += `${indent}${idSafe}->set_foreground_color(${emitColor(c.foregroundColor)});\n`;
+  return out;
 }
 
 function hasDigitalClockInComponents(components: Component[]): boolean {
@@ -621,7 +624,7 @@ function generateComponentSetup(
       const bounds = rect(c.position.x + offsetX, c.position.y + offsetY, c.size?.width ?? 80, c.size?.height ?? 36);
       let out = `${indent}auto *${idSafe} = ${factory('ButtonWidget', `${bounds}, "${escapeCString(label)}", ${callback || '[](){}'}, g_theme.primary`)};${visLine}${dirtyLine}\n`;
       if (c.confirmBeforeAction && !isNavigationAction(action)) out += `${indent}${idSafe}->set_confirm_before_action(true);\n`;
-      out += emitButtonBorderColor(c, idSafe, indent);
+      out += emitButtonColors(c, idSafe, indent);
       const iconGlyph = c.icon ? getMdiUtf8CEscape(c.icon) : null;
       if (iconGlyph) {
         out += `${indent}${idSafe}->set_icon("${iconGlyph}", &g_theme.icon);\n`;
@@ -942,13 +945,13 @@ function generateNestedComponent(c: Component, containerVar: string, tabIndex: n
       const wargs = `${rect(x, y, w, h)}, "${escapeCString(label)}", ${callback || '[](){}'}, g_theme.primary`;
       const iconGlyph = c.icon ? getMdiUtf8CEscape(c.icon) : null;
       const requiresConfirmation = c.confirmBeforeAction && !isNavigationAction(action);
-      if (visibilityExpr || iconGlyph || dirtyBoundsExpr || c.borderColor || requiresConfirmation) {
+      if (visibilityExpr || iconGlyph || dirtyBoundsExpr || c.borderColor || c.backgroundColor || c.foregroundColor || requiresConfirmation) {
         let out = `${indent}auto *${idSafe} = ${factory('ButtonWidget', wargs)};`;
         if (visibilityExpr) out += `\n${indent}${idSafe}->set_visibility_condition(${visibilityExpr});`;
         if (dirtyBoundsExpr) out += `\n${indent}${idSafe}->set_dirty_bounds(${dirtyBoundsExpr});`;
         if (iconGlyph) out += `\n${indent}${idSafe}->set_icon("${iconGlyph}", &g_theme.icon);`;
         if (requiresConfirmation) out += `\n${indent}${idSafe}->set_confirm_before_action(true);`;
-        out += emitButtonBorderColor(c, idSafe, indent);
+        out += emitButtonColors(c, idSafe, indent);
         return `${out}\n`;
       }
       return `${indent}${factory('ButtonWidget', wargs)};\n`;

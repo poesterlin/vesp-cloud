@@ -11,7 +11,10 @@
 #include "ui_redraw.h"
 
 #include <cstring>
+#include <vector>
+#ifndef USE_HOST
 #include <esp_heap_caps.h>
+#endif
 
 // 480 cols x 64 rows of RGB565 = 60 KiB. Lives in internal DRAM so the LCD
 // driver's PSRAM->framebuffer copy isn't competing with itself on the PSRAM bus.
@@ -21,6 +24,7 @@ inline void ui_fast_filled_rectangle(display::Display &it, int x, int y, int w, 
   if (w <= 0 || h <= 0) {
     return;
   }
+
 
   // This path writes pixels straight to the panel via draw_pixels_at(), which
   // bypasses the display's clipping region. Higher-level callers (scroll
@@ -48,6 +52,15 @@ inline void ui_fast_filled_rectangle(display::Display &it, int x, int y, int w, 
     }
   }
 
+#ifdef USE_HOST
+  // SDL_UpdateTexture per pixel is prohibitively slow for large fills. Use the
+  // desktop display's native little-endian RGB565 bulk transfer instead.
+  static std::vector<uint16_t> pixels;
+  pixels.assign(static_cast<size_t>(w) * h, display::ColorUtil::color_to_565(color));
+  it.draw_pixels_at(x, y, w, h, reinterpret_cast<const uint8_t *>(pixels.data()),
+                   display::COLOR_ORDER_RGB, display::COLOR_BITNESS_565, false, 0, 0, 0);
+  return;
+#else
   static constexpr int FILL_BUF_COLS = 480;
   static constexpr int FILL_BUF_ROWS = 64;
   static constexpr int FILL_BUF_PIXELS = FILL_BUF_COLS * FILL_BUF_ROWS;
@@ -97,6 +110,7 @@ inline void ui_fast_filled_rectangle(display::Display &it, int x, int y, int w, 
     cy += rows;
     remaining -= rows;
   }
+#endif
 }
 
 inline void ui_fast_fill(display::Display &it, Color color) { ui_fast_filled_rectangle(it, 0, 0, it.get_width(), it.get_height(), color); }

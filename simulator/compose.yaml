@@ -1,0 +1,28 @@
+services:
+  simulator:
+    build: .
+    restart: unless-stopped
+    init: true
+    ports: []
+    expose: ["6080"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:6080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks: [default, traefik_web]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vesp-runtime-simulator.rule=Host(`${SIMULATOR_DOMAIN}`) && PathPrefix(`/simulator`)"
+      - "traefik.http.routers.vesp-runtime-simulator.middlewares=vesp-runtime-simulator-prefix"
+      - "traefik.http.middlewares.vesp-runtime-simulator-prefix.stripprefix.prefixes=/simulator"
+      - "traefik.http.services.vesp-runtime-simulator.loadbalancer.server.port=6080"
+      - "traefik.http.routers.vesp-runtime-simulator-controls.rule=Host(`${SIMULATOR_DOMAIN}`) && PathPrefix(`/simulator/api/`)"
+      - "traefik.http.routers.vesp-runtime-simulator-controls.priority=200"
+      - "traefik.http.routers.vesp-runtime-simulator-controls.service=vesp-runtime-simulator"
+      - "traefik.http.routers.vesp-runtime-simulator-controls.middlewares=vesp-runtime-simulator-prefix,vesp-runtime-simulator-limit"
+      - "traefik.http.middlewares.vesp-runtime-simulator-limit.buffering.maxRequestBodyBytes=4096"
+networks:
+  traefik_web:
+    external: true

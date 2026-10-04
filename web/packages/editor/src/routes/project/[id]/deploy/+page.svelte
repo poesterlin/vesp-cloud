@@ -1,20 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import {
-    generateESPHomeYAML,
-    generateRuntimeESPHomeYAML,
-    canFallbackToGeneratedUi,
-    compileUiManifest,
-    generateEmbeddedUiManifestHeader,
-    generateRuntimeUITypesHeader,
-    generateFontsYAML,
-    generateUIScreensHeader,
-    generateUIStateHeader,
-    generateUIThemeHeader,
-    generateUITypesHeader,
-  } from "$lib/codegen/esphome";
-  import { generateSecretsYAML } from "$lib/codegen/secrets";
-  import { validateProject } from "$lib/codegen/validations";
+  import ManifestDeployment from "$lib/components/ManifestDeployment.svelte";
   import BuildHistory from "$lib/components/BuildHistory.svelte";
   import ConfirmCompileModal from "$lib/components/ConfirmCompileModal.svelte";
   import DownloadProjectModal from "$lib/components/DownloadProjectModal.svelte";
@@ -22,16 +8,8 @@
   import { deploymentStore } from "$lib/stores/deployment.svelte";
   import { projectStore } from "$lib/stores/project.svelte";
   import * as mdiIcons from "@mdi/js";
-  import JSZip from "jszip";
   import { onMount } from "svelte";
   import { track } from "$lib/analytics";
-
-  const TEMPLATE_PREFIX = "../../../../lib/templates/";
-  const staticTemplates = import.meta.glob("../../../../lib/templates/**/*", {
-    query: "?raw",
-    import: "default",
-    eager: true,
-  }) as Record<string, string>;
 
   let { data } = $props();
 
@@ -41,6 +19,11 @@
   let supportsWebSerial = $state(true);
   let buildCount = $state<number | null>(null);
   let showFeedbackPrompt = $state(false);
+  let downloadingFiles = $state(false);
+  let downloadError = $state("");
+  let reportedBoot = $state<{ projectId: string; confirmed: boolean } | null>(null);
+  const hasConfirmedRuntime = $derived(reportedBoot?.projectId === data.project.id
+    ? reportedBoot.confirmed : data.uiDeployment.installationConfirmed);
 
   const FEEDBACK_PROMPT_STORAGE_KEY = "vesp-feedback-prompt-shown-at";
   const FEEDBACK_PROMPT_COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
@@ -49,7 +32,7 @@
     supportsWebSerial = "serial" in navigator;
 
     if (data.project) {
-      projectStore.loadFromServer(data.project);
+      projectStore.loadFromServer(data.project, { initializeHeader: false });
     }
 
     deploymentStore.reset();
@@ -97,81 +80,32 @@
   }
 
   async function handleDownloadProject() {
-    if (!projectStore.project) return;
+    if (!projectStore.project || downloadingFiles) return;
+    downloadingFiles = true;
+    downloadError = "";
     try {
-      const zip = new JSZip();
-      const fileName = projectStore.project.name
-        .toLowerCase()
-        .replace(/\s+/g, "-");
-
-      const project = {
-        ...projectStore.project,
-        secrets: {
-          ...projectStore.project.secrets,
-          firmwareUpdateUrl: undefined,
-        },
-      };
-
-      let baseFontsYaml = "";
-      for (const [key, content] of Object.entries(staticTemplates)) {
-        const relativePath = key.startsWith(TEMPLATE_PREFIX)
-          ? key.slice(TEMPLATE_PREFIX.length)
-          : key;
-        if (relativePath === "fonts.yaml") {
-          baseFontsYaml = content;
-          continue;
-        }
-        zip.file(relativePath, content);
+      await projectStore.saveNow();
+      const response = await fetch(`/api/projects/${data.project.id}/firmware-export`, { method: "POST" });
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.message || result.error || "Failed to export project");
       }
-
-      zip.file("fonts.yaml", generateFontsYAML(project, baseFontsYaml));
-      zip.file(
-        "secrets.yaml",
-        generateSecretsYAML(project, { includeOtaSecrets: false }),
-      );
-
-      const validationErrors = validateProject(project);
-      if (validationErrors.length > 0) {
-        const messages = validationErrors
-          .map((e) => `[${e.type}] ${e.message}`)
-          .join("\n");
-        deploymentStore.state.error = `Project validation failed:\n${messages}`;
-        deploymentStore.state.validationErrors = validationErrors;
-        return;
-      }
-
-      zip.file("includes/ui_theme.h", generateUIThemeHeader(project));
-      const runtimeManifest = compileUiManifest(project);
-      if (runtimeManifest.ok) {
-        zip.file("includes/ui_manifest.h", generateEmbeddedUiManifestHeader(runtimeManifest.bytes));
-        zip.file("includes/ui_types.h", generateRuntimeUITypesHeader());
-        zip.file(`${fileName}.yaml`, generateRuntimeESPHomeYAML(project));
-      } else if (canFallbackToGeneratedUi(runtimeManifest)) {
-        zip.file("includes/ui_types.h", generateUITypesHeader(project));
-        zip.file("includes/ui_state.h", generateUIStateHeader(project));
-        zip.file("includes/ui_screens.h", generateUIScreensHeader(project));
-        zip.file(`${fileName}.yaml`, generateESPHomeYAML(project));
-      } else {
-        const messages = runtimeManifest.errors
-          .map((diagnostic) => `[${diagnostic.code}] ${diagnostic.message}`)
-          .join("\n");
-        deploymentStore.state.error = `Runtime UI manifest failed:\n${messages}`;
-        return;
-      }
-
-      const content = await zip.generateAsync({ type: "blob" });
+      const content = await response.blob();
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${fileName}.zip`;
+      a.download = `${projectStore.project.name.toLowerCase().replace(/[^a-z0-9_-]+/g, "-")}.zip`;
       a.click();
       URL.revokeObjectURL(url);
       track("project_files_downloaded", {
-        dashboard_pages: project.dashboardPages.length,
-        detail_views: project.detailViews.length,
+        dashboard_pages: projectStore.project.dashboardPages.length,
+        detail_views: projectStore.project.detailViews.length,
       });
     } catch (err) {
+      downloadError = err instanceof Error ? err.message : "Failed to export project";
       console.error("Failed to download project zip:", err);
+    } finally {
+      downloadingFiles = false;
     }
   }
 
@@ -245,7 +179,7 @@
     <h1>Deploy</h1>
     <div class="header-actions">
       {#if !flashJobId}
-        <button class="download-link" onclick={() => (showDownloadModal = true)}>
+        <button class="download-link" disabled={downloadingFiles} onclick={() => (showDownloadModal = true)}>
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
             <path
               d="M8 2V10M8 10L5 7M8 10L11 7"
@@ -262,11 +196,23 @@
               stroke-linejoin="round"
             />
           </svg>
-          Download files
+          {downloadingFiles ? "Preparing files…" : "Download files"}
         </button>
       {/if}
     </div>
   </header>
+
+  {#if downloadError}
+    <div class="error-banner" role="alert"><div class="error-banner-content">Project export failed: {downloadError}</div></div>
+  {/if}
+
+  {#if !flashJobId}
+    {#key data.project.id}
+    <ManifestDeployment projectId={data.project.id} initial={data.uiDeployment}
+      onBuildFirmware={handleNewBuild} building={deploymentStore.state.compiling}
+      onStatusChange={(status) => (reportedBoot = { projectId: data.project.id, confirmed: status.installationConfirmed })} />
+    {/key}
+  {/if}
 
   {#if deploymentStore.state.step === "compiling" && deploymentStore.state.error}
     {@const id = deploymentStore.state.validationErrors[0]?.componentId}
@@ -501,10 +447,10 @@
             </svg>
           </div>
           <div class="info-card-text">
-            <h4>Auto Updates</h4>
+            <h4>Firmware updates</h4>
             <p>
-              Already-running devices update automatically over WiFi via Home
-              Assistant. No USB connection needed.
+              Install firmware resource updates over WiFi through Home Assistant
+              when supported. Compatible layout updates apply after a restart.
             </p>
             <a
               class="ota-check-link"
@@ -541,7 +487,7 @@
         </div>
       </div>
 
-      {#if buildCount !== null && buildCount < 2}
+      {#if !hasConfirmedRuntime && buildCount !== null && buildCount < 2}
         <div class="getting-started">
           <h2 class="getting-started-title">
             First build - getting it on your device
@@ -582,9 +528,7 @@
               <div class="getting-started-step-body">
                 <h4>Build the firmware</h4>
                 <p>
-                  Click <strong>{buildCount === 0
-                      ? '"Build Firmware"'
-                      : '"Update Display"'}</strong> below to compile your
+                  Click <strong>"Build firmware"</strong> to compile your
                   project into firmware. This typically takes 1–2 minutes. When
                   it finishes, the build appears in the history below with a
                   <strong>Flash</strong> button.
@@ -625,8 +569,10 @@
                   and enter your home WiFi credentials when prompted.
                 </p>
                 <p class="getting-started-step-hint">
-                  After this initial setup, all future firmware updates arrive
-                  automatically over WiFi — no USB cable needed again.
+                  For compatible layout edits, use <strong>Publish layout</strong>
+                  and restart the device. Firmware resource changes require a
+                  new build, installed over USB or through Home Assistant’s
+                  Firmware Update entity when available.
                 </p>
               </div>
             </div>
@@ -655,7 +601,7 @@
           <svg viewBox="0 0 24 24" aria-hidden="true" class="icon">
             <path d={mdiIcons.mdiWrench} />
           </svg>
-          {buildCount === 0 ? "Build Firmware" : "Update Display"}
+           Build firmware
         </button>
       {:else}
         <button class="new-build-btn" disabled> Building… </button>

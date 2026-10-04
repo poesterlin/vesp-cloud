@@ -326,6 +326,7 @@ struct Theme {
   TextStyle header       = {nullptr, RetroColors::CYAN, TextAlign::TOP_LEFT};
   TextStyle header_large = {nullptr, RetroColors::CYAN, TextAlign::TOP_LEFT};
   TextStyle label        = {nullptr, RetroColors::LIGHT, TextAlign::TOP_LEFT};
+  TextStyle label_large  = {nullptr, RetroColors::CYAN, TextAlign::TOP_LEFT};
   TextStyle weather_tiny = {nullptr, RetroColors::LIGHT, TextAlign::TOP_LEFT};
   TextStyle icon         = {nullptr, RetroColors::WHITE, TextAlign::CENTER};
   TextStyle weather_icon = {nullptr, RetroColors::WHITE, TextAlign::CENTER};
@@ -408,4 +409,3 @@ inline void ui_draw_data_pill(display::Display &it, int x, int y, int w, int h,
               TextAlign::TOP_CENTER, "—");
   }
 }
-

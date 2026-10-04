@@ -5,6 +5,7 @@ import { env } from '$env/dynamic/private';
 import { getDb } from '@vesp-cloud/db';
 import { feedbackEntries } from '@vesp-cloud/db/schema';
 import { eq } from 'drizzle-orm';
+import { loadUiDeployment } from '$lib/server/ui-manifests';
 
 const IS_CLOUD = env.APP_EDITION === 'cloud';
 
@@ -27,6 +28,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		},
 		lastSavedData: row.lastSavedData ?? null,
 		activeJob,
+		uiDeployment: await loadUiDeployment(row.id),
 		hasSubmittedFeedback: feedback.length > 0,
 	};
 };

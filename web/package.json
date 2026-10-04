@@ -21,7 +21,8 @@
     "test:watch": "bun run --filter @vesp-cloud/editor test:watch",
     "test:codegen": "bun run --filter @vesp-cloud/editor test:codegen",
     "db:generate": "cd packages/editor && bun run db:generate",
-    "db:push": "cd packages/editor && bun run db:push"
+    "db:push": "cd packages/editor && bun run db:push",
+    "db:migrate:ui": "bun run --filter @vesp-cloud/editor db:migrate:ui"
   },
   "devDependencies": {
     "@mdi/js": "7.4.47",

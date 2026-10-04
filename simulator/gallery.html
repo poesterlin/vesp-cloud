@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>vESP — Widget screenshots</title>
+  <link rel="stylesheet" href="./style.css">
+  <style>
+    a{color:#70bcff} .gallery{max-width:1100px;margin:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px}figure{margin:0;padding:14px;background:#151d2a;border:1px solid #2b384c;border-radius:10px}figure img{width:100%;height:auto;aspect-ratio:1;image-rendering:pixelated;border-radius:6px}figcaption{padding-top:12px;font-weight:600}figcaption p{font-weight:400}.intro{max-width:1100px;margin:0 auto 24px}
+  </style>
+</head>
+<body>
+  <header><div><h1>Production widget gallery</h1><p>Actual C++ widgets · native 480 × 480 screenshots</p></div><a href="./">Open simulator →</a></header>
+  <div class="intro"><p>Captured from the ESPHome SDL simulator with local fixture data. Open an image for its full-resolution PNG. Clock and loading captures show a moment in time.</p><p><a href="./screenshots/contact-sheet.png">View combined contact sheet</a></p></div>
+  <div class="gallery" id="gallery"></div>
+  <script>
+    const pages = [
+      ['Basics','Text, rectangle, button, icon, light-state toggle and digital clock'],
+      ['Lists','Todo list and calendar list'],
+      ['Climate','HVAC, compact weather and forecast'],
+      ['Containers','Tab container and conditional area'],
+      ['Notification','Notification overlay'],
+      ['Loading','Loading animation'],
+      ['Image and detail header','Static RGB565 image and back header'],
+      ['Weather today','Full weather widget'],
+      ['Page header','Dashboard header'],
+    ];
+    pages.forEach(([title,description],index)=>{
+      const figure=document.createElement('figure'),link=document.createElement('a'),image=document.createElement('img'),caption=document.createElement('figcaption'),detail=document.createElement('p');
+      link.href=`./screenshots/${String(index+1).padStart(2,'0')}-gallery-${index}.png`;
+      image.src=link.href;image.alt=description;image.width=480;image.height=480;image.loading='lazy';link.append(image);
+      caption.textContent=title;detail.textContent=description;caption.append(detail);figure.append(link,caption);document.getElementById('gallery').append(figure);
+    });
+  </script>
+</body>
+</html>

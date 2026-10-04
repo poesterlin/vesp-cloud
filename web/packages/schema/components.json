@@ -747,6 +747,14 @@
           "type": "string",
           "description": "Firmware update URL for OTA via HTTP (auto-populated from server)"
         },
+        "uiManifestUrl": {
+          "type": "string",
+          "description": "Optional binary VESPUI manifest URL fetched once at boot; validated bytes are cached for offline reboot"
+        },
+        "uiManifestReportUrl": {
+          "type": "string",
+          "description": "Optional boot-result endpoint automatically configured by vESP.cloud"
+        },
         "homeAssistantBaseUrl": {
           "type": "string",
           "description": "Optional base URL used to resolve relative Home Assistant entity_picture URLs"

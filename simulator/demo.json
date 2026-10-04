@@ -1,0 +1,26 @@
+{
+  "name": "Runtime Simulator",
+  "display": { "width": 480, "height": 480 },
+  "dashboardPages": [{
+    "id": "home", "name": "Home", "backgroundColor": { "r": 15, "g": 23, "b": 35 },
+    "components": [
+      { "id": "title", "type": "text", "position": { "x": 28, "y": 28 }, "size": { "width": 420, "height": 28 }, "text": "vESP / RUNTIME LAB", "color": { "r": 84, "g": 192, "b": 255 } },
+      { "id": "intro", "type": "text", "position": { "x": 28, "y": 65 }, "size": { "width": 420, "height": 28 }, "text": "Real firmware widgets. Mock HA state." },
+      { "id": "card", "type": "rectangle", "position": { "x": 24, "y": 116 }, "size": { "width": 432, "height": 160 }, "backgroundColor": { "r": 25, "g": 38, "b": 55 } },
+      { "id": "light-label", "type": "text", "position": { "x": 44, "y": 135 }, "size": { "width": 240, "height": 28 }, "text": "Living room light" },
+      { "id": "light-state", "type": "text", "position": { "x": 44, "y": 175 }, "size": { "width": 160, "height": 28 }, "textBinding": { "entityId": "light.demo" }, "color": { "r": 104, "g": 218, "b": 174 } },
+      { "id": "light-toggle", "type": "button", "position": { "x": 270, "y": 166 }, "size": { "width": 160, "height": 64 }, "label": "Toggle light", "backgroundColor": { "r": 28, "g": 74, "b": 108 }, "onTap": { "type": "SERVICE_CALL", "service": "light.toggle", "target": { "entityId": "light.demo" } } },
+      { "id": "visible-label", "type": "text", "position": { "x": 44, "y": 236 }, "size": { "width": 350, "height": 28 }, "text": "Light is on / conditional label", "visibleWhen": { "entityId": "light.demo" }, "color": { "r": 104, "g": 218, "b": 174 } },
+      { "id": "details", "type": "button", "position": { "x": 24, "y": 310 }, "size": { "width": 432, "height": 64 }, "label": "Open detail screen", "backgroundColor": { "r": 35, "g": 49, "b": 70 }, "onTap": { "type": "OPEN_DETAIL", "targetId": "detail" } },
+      { "id": "footer", "type": "text", "position": { "x": 28, "y": 410 }, "size": { "width": 424, "height": 44 }, "text": "Tap buttons to test touch + partial redraws", "color": { "r": 150, "g": 163, "b": 184 } }
+    ]
+  }],
+  "detailViews": [{
+    "id": "detail", "title": "Detail", "height": 480,
+    "components": [
+      { "id": "detail-title", "type": "text", "position": { "x": 28, "y": 35 }, "size": { "width": 420, "height": 28 }, "text": "DETAIL SCREEN / NAVIGATION WORKS", "color": { "r": 84, "g": 192, "b": 255 } },
+      { "id": "detail-state", "type": "text", "position": { "x": 28, "y": 105 }, "size": { "width": 420, "height": 28 }, "textBinding": { "entityId": "light.demo" } },
+      { "id": "back", "type": "button", "position": { "x": 24, "y": 310 }, "size": { "width": 432, "height": 64 }, "label": "Back to dashboard", "onTap": { "type": "GO_BACK" } }
+    ]
+  }]
+}

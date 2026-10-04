@@ -26,6 +26,16 @@ export function generateSecretsYAML(project: Project, options: GenerateSecretsOp
   lines.push(`# ============================================`);
   lines.push(``);
 
+  if (project.secrets?.uiManifestUrl) {
+    lines.push(`# Binary UI manifest fetched once per reboot (runtime firmware only)`);
+    lines.push(`ui_manifest_url: "${escapeYAMLDoubleQuoted(project.secrets.uiManifestUrl)}"`);
+    lines.push(``);
+  }
+  if (project.secrets?.uiManifestReportUrl) {
+    lines.push(`ui_manifest_report_url: "${escapeYAMLDoubleQuoted(project.secrets.uiManifestReportUrl)}"`);
+    lines.push(``);
+  }
+
   if (includeOtaSecrets) {
     // Firmware update URL (for OTA via HTTP)
     lines.push(`# Firmware Update URL (auto-populated when project is published)`);

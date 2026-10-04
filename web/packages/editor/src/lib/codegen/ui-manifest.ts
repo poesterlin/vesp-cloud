@@ -9,6 +9,7 @@ import type {
   TextComponent,
 } from "@vesp-cloud/schema";
 import { getMdiCodepoint } from "./mdi-icons";
+import { parseTemplate } from "../utils/template-utils";
 
 export interface ManifestDiagnostic {
   code: string;
@@ -17,7 +18,7 @@ export interface ManifestDiagnostic {
 }
 
 export interface UiManifestMetadata {
-  formatVersion: 1;
+  formatVersion: 2;
   byteLength: number;
   stringCount: number;
   stateBindingCount: number;
@@ -70,12 +71,22 @@ function rgb(
   return color ? [color.r, color.g, color.b] as const : fallback;
 }
 
-/** Compile the deliberately small VESPUI v1 proof-of-concept subset. */
+/** Compile the supported VESPUI v2 runtime subset. */
 export function compileUiManifest(project: Project): CompileUiManifestResult {
   const errors: ManifestDiagnostic[] = [];
   const warnings: ManifestDiagnostic[] = [];
-  if (project.pageHeader?.components.length) {
+  // Match the production ButtonWidget defaults in ui_retro.h. Manifest colors
+  // are explicit RGB values, so theme-dependent defaults must be resolved here.
+  const buttonBackground: readonly [number, number, number] = project.theme?.id === 'retro' ? [25, 30, 40] : [30, 36, 45];
+  const buttonForeground: readonly [number, number, number] = project.theme?.id === 'retro' ? [230, 240, 250] : [240, 246, 252];
+  if (project.pageHeader) {
     errors.push({ code: "UNSUPPORTED_PAGE_HEADER", message: "Page headers are outside the proof-of-concept subset", path: "pageHeader" });
+  }
+  if (project.display.width !== 480 || project.display.height !== 480) {
+    errors.push({ code: "UNSUPPORTED_DISPLAY", message: "Runtime firmware currently requires a 480x480 display" });
+  }
+  if (project.detailViews.some((view) => (view.height ?? 480) > 480)) {
+    errors.push({ code: "UNSUPPORTED_SCROLLING", message: "Scrollable detail views require the generated UI" });
   }
   if (project.notificationOverlay && project.notificationOverlay.enabled !== false) {
     errors.push({ code: "UNSUPPORTED_NOTIFICATION_OVERLAY", message: "Notification overlays are outside the proof-of-concept subset", path: "notificationOverlay" });
@@ -140,6 +151,9 @@ export function compileUiManifest(project: Project): CompileUiManifestResult {
       if (target == null) errors.push({ code: "BAD_SCREEN_TARGET", message: `Unknown screen '${value.targetId ?? ""}'`, path });
       action = { kind: ActionKind.Navigate, first: target ?? NONE16, second: NONE16 };
     } else {
+      if ((value.type === "NEXT_PAGE" || value.type === "PREV_PAGE") && project.detailViews.length > 0) {
+        errors.push({ code: "UNSUPPORTED_PAGE_NAVIGATION", message: "Page cycling with detail views requires the generated UI", path });
+      }
       const kind = value.type === "GO_BACK" ? ActionKind.Back : value.type === "NEXT_PAGE" ? ActionKind.Next : ActionKind.Previous;
       action = { kind, first: NONE16, second: NONE16 };
     }
@@ -164,6 +178,8 @@ export function compileUiManifest(project: Project): CompileUiManifestResult {
     x: number; y: number; w: number; h: number; condition: number;
     content: number; bg: readonly [number, number, number]; fg: readonly [number, number, number];
     binding: number; action: number;
+    fontSize: number; align: number;
+    textParts: Array<{ kind: number; index: number }>;
   };
   const widgets: Widget[] = [];
   screens.forEach((screen, screenIndex) => {
@@ -171,6 +187,9 @@ export function compileUiManifest(project: Project): CompileUiManifestResult {
       Number(b.type === "rectangle") - Number(a.type === "rectangle"));
     ordered.forEach((component, index) => {
       const path = `screens[${screenIndex}].components[${index}]`;
+      if (component.loadingBinding) {
+        errors.push({ code: "UNSUPPORTED_LOADING_BINDING", message: "Loading bindings require the generated UI", path });
+      }
       if (!["text", "rectangle", "button", "icon"].includes(component.type)) {
         errors.push({ code: "UNSUPPORTED_WIDGET", message: `Widget '${component.type}' is outside the proof-of-concept subset`, path });
         return;
@@ -193,11 +212,33 @@ export function compileUiManifest(project: Project): CompileUiManifestResult {
       let bg: readonly [number, number, number] = [0, 0, 0];
       let fg: readonly [number, number, number] = [255, 255, 255];
       let stateBinding = NONE8;
+      let fontSize = 0;
+      let align = 0;
+      let textParts: Array<{ kind: number; index: number }> = [];
       switch (component.type) {
         case "text": {
           const text = component as TextComponent;
-          if ((text.text ?? "").includes("{{")) {
-            errors.push({ code: "UNSUPPORTED_TEXT_TEMPLATE", message: "Runtime text templates are outside the proof-of-concept subset; use textBinding", path });
+          fontSize = text.fontSize === "large" ? 2 : text.fontSize === "medium" ? 1 : 0;
+          align = text.align === "right" ? 2 : text.align === "center" ? 1 : 0;
+          bg = rgb(screen.color, rgb(project.theme?.colors.background, [0, 0, 0]));
+          // Match generated labels: erase with the last fully containing
+          // rectangle's color, preserving the surface behind changing text.
+          for (const background of screen.components) {
+            if (background.type !== "rectangle") continue;
+            const backgroundSize = background.size ?? { width: 100, height: 40 };
+            if (component.position.x >= background.position.x && component.position.y >= background.position.y &&
+                component.position.x + size.width <= background.position.x + backgroundSize.width &&
+                component.position.y + size.height <= background.position.y + backgroundSize.height) {
+              bg = rgb(background.backgroundColor, [0, 0, 0]);
+            }
+          }
+          const segments = parseTemplate(text.text ?? "");
+          if (segments.some((segment) => segment.type === "binding") || text.textBinding) {
+            textParts = segments.flatMap((segment) => segment.type === "binding"
+              ? [{ kind: 1, index: binding(segment.value, `${path}.text`) }]
+              : segment.value ? [{ kind: 0, index: intern(segment.value) }] : []);
+            if (text.textBinding) textParts.push({ kind: 1, index: binding(text.textBinding, `${path}.textBinding`) });
+            if (textParts.length > 32) errors.push({ code: "LIMIT_TEXT_PARTS", message: "Runtime labels support at most 32 text segments", path });
           }
           kind = WidgetKind.Text; content = intern(text.text ?? "");
           fg = rgb(text.color, fg); stateBinding = binding(text.textBinding, `${path}.textBinding`);
@@ -210,12 +251,18 @@ export function compileUiManifest(project: Project): CompileUiManifestResult {
         }
         case "button": {
           const button = component as ButtonComponent;
+          if (button.icon || button.borderColor || button.checkedBackgroundColor || button.checkedForegroundColor || button.confirmBeforeAction) {
+            errors.push({ code: "UNSUPPORTED_BUTTON_STYLE", message: "Button icons, custom borders, checked colors and confirmation require the generated UI", path });
+          }
           kind = WidgetKind.Button; content = intern(button.label ?? "");
-          bg = rgb(button.backgroundColor, [30, 30, 30]); fg = rgb(button.foregroundColor, fg);
+          bg = rgb(button.backgroundColor, buttonBackground); fg = rgb(button.foregroundColor, buttonForeground);
           break;
         }
         case "icon": {
           const icon = component as IconComponent;
+          if (icon.scale != null && icon.scale !== 1) {
+            errors.push({ code: "UNSUPPORTED_ICON_SCALE", message: "Scaled icons require the generated UI", path });
+          }
           const codepoint = getMdiCodepoint(icon.icon);
           if (!codepoint) {
             errors.push({ code: "UNKNOWN_ICON", message: `Unknown icon '${icon.icon}'`, path });
@@ -233,7 +280,7 @@ export function compileUiManifest(project: Project): CompileUiManifestResult {
         id: intern(component.id), screen: screenIndex, kind, flags: component.visible === false ? 0 : 1,
         x: component.position.x, y: component.position.y, w: size.width, h: size.height,
         condition: addCondition(component.visibleWhen, `${path}.visibleWhen`), content, bg, fg,
-        binding: stateBinding,
+        binding: stateBinding, fontSize, align, textParts,
         action: addAction(
           component.type === "button" ? component.pressAction ?? component.onTap : component.onTap,
           `${path}.onTap`,
@@ -255,8 +302,13 @@ export function compileUiManifest(project: Project): CompileUiManifestResult {
   }));
   const payload = new Writer();
   const encoder = new TextEncoder();
-  strings.forEach((value) => {
-    const utf8 = encoder.encode(value);
+  const encodedStrings = strings.map((value) => encoder.encode(value));
+  // Bound string writes before spreading bytes or truncating u16 lengths.
+  if (encodedStrings.some((value) => value.length > LIMITS.bytes) ||
+      encodedStrings.reduce((total, value) => total + value.length + 5, 16) > LIMITS.bytes) {
+    return { ok: false, errors: [{ code: "LIMIT_BYTES", message: `Manifest strings exceed ${LIMITS.bytes} bytes` }] };
+  }
+  encodedStrings.forEach((utf8) => {
     const body = new Writer(); body.u16(utf8.length); body.raw(utf8);
     payload.record(RecordType.String, body);
   });
@@ -269,12 +321,15 @@ export function compileUiManifest(project: Project): CompileUiManifestResult {
     b.u16(value.id); b.u8(value.screen); b.u8(value.kind); b.u8(value.flags);
     b.i16(value.x); b.i16(value.y); b.i16(value.w); b.i16(value.h);
     b.u8(value.condition); b.u16(value.content); b.raw(value.bg); b.raw(value.fg); b.u8(value.binding); b.u8(value.action);
+    b.u8(value.fontSize); b.u8(value.align);
+    b.u8(value.textParts.length);
+    value.textParts.forEach((part) => { b.u8(part.kind); b.u16(part.index); });
     payload.record(RecordType.Widget, b);
   });
   const body = payload.finish();
   const output = new Writer();
   output.raw(new TextEncoder().encode("VESPUI"));
-  output.u16(1);
+  output.u16(2);
   output.u32(body.length);
   output.u32(0); // reserved
   output.raw(body);
@@ -283,7 +338,7 @@ export function compileUiManifest(project: Project): CompileUiManifestResult {
   return {
     ok: true, bytes, warnings,
     metadata: {
-      formatVersion: 1, byteLength: bytes.length, stringCount: strings.length,
+      formatVersion: 2, byteLength: bytes.length, stringCount: strings.length,
       stateBindingCount: bindings.length, screenCount: screens.length, widgetCount: widgets.length,
       actionCount: actions.length, conditionCount: conditions.length,
     },

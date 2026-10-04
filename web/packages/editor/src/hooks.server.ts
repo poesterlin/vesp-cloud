@@ -121,8 +121,12 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 const handleCacheHeaders: Handle = async ({ event, resolve }) => {
   const response = await resolve(event);
   const isLoggedIn = event.locals.user !== null;
+  const isUiDeviceApi = event.url.pathname.startsWith('/api/firmware/') && /\/ui-(manifest|status)$/.test(event.url.pathname);
 
-  if (isLoggedIn || dev) {
+  if (isUiDeviceApi) {
+    // Failed boot fetches must not remain cached after a layout is published.
+    response.headers.set('Cache-Control', 'no-store');
+  } else if (isLoggedIn || dev) {
     response.headers.set("Cache-Control", "private, no-store, max-age=0");
     response.headers.set("Vary", "Cookie");
   } else if (isPublicRoute(event.route.id) && !response.headers.has("Cache-Control")) {

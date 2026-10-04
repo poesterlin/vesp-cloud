@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui_runtime_manifest.h"
+#include "ui_boot_manifest.h"
 #include "ui_screen_base.h"
 #include "ui_widget_rect.h"
 #include "ui_widget_label.h"
@@ -17,6 +18,7 @@ namespace vespui {
 // Adapters supplied once by generic firmware. No project-specific C++ is
 // needed: the manifest supplies entity IDs, services, and screen IDs.
 struct RuntimeContext {
+  BootManifestSource boot_manifest_source;
   using StateSink = std::function<void(const std::string &)>;
   std::function<void(const std::string &, const std::string &, StateSink)> subscribe_state;
   std::function<void(const std::string &, const std::string &)> call_service;
@@ -31,7 +33,9 @@ class RuntimeUi {
       return false;
     }
     Manifest next;
-    if (!Reader::parse(bytes, size, next, error)) return false;
+    if (!read_boot_manifest(bytes, size, context.boot_manifest_source, next,
+                            external_manifest_, source_error_, error, &fingerprint_)) return false;
+    context.boot_manifest_source = {};  // Release boot-only adapter captures.
     manifest_ = std::move(next);
     context_ = std::move(context);
     screens_.clear();
@@ -78,6 +82,9 @@ class RuntimeUi {
   ::Screen *current_screen() { return screens_[current_].get(); }
   const Manifest &manifest() const { return manifest_; }
   size_t current_screen_id() const { return current_; }
+  bool uses_external_manifest() const { return external_manifest_; }
+  const std::string &boot_source_error() const { return source_error_; }
+  uint64_t manifest_fingerprint() const { return fingerprint_; }
 
  private:
   const char *string_or_empty(uint16_t index) const {
@@ -101,11 +108,16 @@ class RuntimeUi {
         base = screen->emplace_widget<RectWidget>(rect, bg);
         break;
       case WidgetKind::Text: {
-        auto *label = screen->emplace_widget<LabelWidget>(rect, string_or_empty(record.content), g_theme.label);
+        const auto &style = record.font_size == 2 ? g_theme.label_large :
+                            record.font_size == 1 ? g_theme.header : g_theme.label;
+        auto *label = screen->emplace_widget<LabelWidget>(rect, string_or_empty(record.content), style);
         label->set_color(fg);
-        if (record.binding != kNone8) {
-          label->bind_text_fn([this, binding = record.binding]() {
-            return manifest_.bindings[binding].value;
+        label->set_bg_color(bg);
+        label->set_align(record.align == 2 ? TextAlign::TOP_RIGHT :
+                         record.align == 1 ? TextAlign::TOP_CENTER : TextAlign::TOP_LEFT);
+        if (record.binding != kNone8 || !record.text_parts.empty()) {
+          label->bind_text_fn([this, text_record = &record]() {
+            return manifest_.text_value(*text_record);
           });
         }
         base = label;
@@ -117,6 +129,10 @@ class RuntimeUi {
             [this, action = record.action]() { dispatch(action); }, g_theme.primary);
         button->set_background_color(bg);
         button->set_foreground_color(fg);
+#ifdef VESPUI_SIMULATOR
+        // Simulator actions use an isolated mock service adapter.
+        button->set_allow_offline_action(true);
+#endif
         if (record.action != kNone8 &&
             record.action < manifest_.actions.size() &&
             manifest_.actions[record.action].kind != ActionKind::Service) {
@@ -139,7 +155,11 @@ class RuntimeUi {
   void navigate(size_t target, bool remember = true) {
     if (target >= screens_.size() || target == current_) return;
     screens_[current_]->exit();
-    if (remember) history_.push_back(current_);
+    if (remember) {
+      // Navigation must not grow the device heap indefinitely.
+      if (history_.size() >= 16) history_.erase(history_.begin());
+      history_.push_back(current_);
+    }
     current_ = target;
     screens_[current_]->enter();
     screens_[current_]->layout();
@@ -179,6 +199,9 @@ class RuntimeUi {
   std::vector<size_t> history_;
   size_t current_ = 0;
   bool loaded_ = false;
+  bool external_manifest_ = false;
+  std::string source_error_;
+  uint64_t fingerprint_ = 0;
 };
 
 }  // namespace vespui

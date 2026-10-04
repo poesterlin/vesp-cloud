@@ -1,0 +1,127 @@
+{
+  "build": "retro",
+  "capturedAt": "2026-10-04T10:02:58.424119+00:00",
+  "width": 480,
+  "height": 480,
+  "captures": [
+    {
+      "page": 0,
+      "id": "gallery-0",
+      "name": "Basics",
+      "file": "01-gallery-0.png"
+    },
+    {
+      "page": 0,
+      "id": "gallery-0-light-off",
+      "name": "Basics-light-off",
+      "file": "01-gallery-0-light-off.png"
+    },
+    {
+      "page": 0,
+      "id": "gallery-0-light-on-restored",
+      "name": "Basics-light-on-restored",
+      "file": "01-gallery-0-light-on-restored.png"
+    },
+    {
+      "page": 0,
+      "id": "gallery-0-confirmation",
+      "name": "Basics-confirmation",
+      "file": "01-gallery-0-confirmation.png"
+    },
+    {
+      "page": 0,
+      "id": "gallery-0-confirmation-cancelled",
+      "name": "Basics-confirmation-cancelled",
+      "file": "01-gallery-0-confirmation-cancelled.png"
+    },
+    {
+      "page": 1,
+      "id": "gallery-1",
+      "name": "Lists",
+      "file": "02-gallery-1.png"
+    },
+    {
+      "page": 1,
+      "id": "gallery-1-todo-scrolled",
+      "name": "Lists-todo-scrolled",
+      "file": "02-gallery-1-todo-scrolled.png"
+    },
+    {
+      "page": 2,
+      "id": "gallery-2",
+      "name": "Climate",
+      "file": "03-gallery-2.png"
+    },
+    {
+      "page": 3,
+      "id": "gallery-3",
+      "name": "Containers",
+      "file": "04-gallery-3.png"
+    },
+    {
+      "page": 3,
+      "id": "gallery-3-second-tab",
+      "name": "Containers-second-tab",
+      "file": "04-gallery-3-second-tab.png"
+    },
+    {
+      "page": 3,
+      "id": "gallery-3-first-tab-restored",
+      "name": "Containers-first-tab-restored",
+      "file": "04-gallery-3-first-tab-restored.png"
+    },
+    {
+      "page": 3,
+      "id": "gallery-3-conditional-off",
+      "name": "Containers-conditional-off",
+      "file": "04-gallery-3-conditional-off.png"
+    },
+    {
+      "page": 3,
+      "id": "gallery-3-conditional-on-restored",
+      "name": "Containers-conditional-on-restored",
+      "file": "04-gallery-3-conditional-on-restored.png"
+    },
+    {
+      "page": 4,
+      "id": "gallery-4",
+      "name": "Notification",
+      "file": "05-gallery-4.png"
+    },
+    {
+      "page": 4,
+      "id": "gallery-4-dismissed",
+      "name": "Notification-dismissed",
+      "file": "05-gallery-4-dismissed.png"
+    },
+    {
+      "page": 5,
+      "id": "gallery-5",
+      "name": "Loading",
+      "file": "06-gallery-5.png"
+    },
+    {
+      "page": 6,
+      "id": "gallery-6",
+      "name": "Image and detail header",
+      "file": "07-gallery-6.png"
+    },
+    {
+      "page": 7,
+      "id": "gallery-7",
+      "name": "Weather today",
+      "file": "08-gallery-7.png"
+    },
+    {
+      "page": 8,
+      "id": "gallery-8",
+      "name": "Page header",
+      "file": "09-gallery-8.png"
+    }
+  ],
+  "theme": "retro",
+  "deterministic": true,
+  "renderer": "gallery",
+  "image": "vesp-regression-retro",
+  "imageId": "sha256:d0001682e2b8f56efb44de911f720c41d956c716b6966e1866aa411062a832ca"
+}

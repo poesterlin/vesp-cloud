@@ -1149,7 +1149,7 @@ function createProjectStore() {
       return newProject;
     },
 
-    loadFromServer(serverProject: { id: string; name: string; data: any }) {
+    loadFromServer(serverProject: { id: string; name: string; data: any }, options: { initializeHeader?: boolean } = {}) {
       const parsed = serverProject.data as Project;
       normalizeProjectWeatherHeights(parsed);
       project = parsed;
@@ -1158,7 +1158,7 @@ function createProjectStore() {
       currentDetailViewId = null;
       viewMode = "dashboard";
       selectionStore.clear();
-      if (!project.pageHeader) {
+      if (!project.pageHeader && options.initializeHeader !== false) {
         this.enablePageHeader();
       }
     },

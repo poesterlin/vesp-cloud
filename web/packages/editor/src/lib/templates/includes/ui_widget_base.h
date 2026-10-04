@@ -63,10 +63,10 @@ class Widget {
     it.end_clipping();
   }
 
-  // Draw a widget once, clipped to the union of the current damage that
-  // intersects it. This keeps small animated/state regions from repainting an
-  // entire large widget while avoiding repeated draw() calls when several
-  // dirty rectangles touch the same widget.
+  // Background erasers must preserve gaps between disjoint damage rectangles:
+  // filling their bounding union would erase foreground widgets which are not
+  // dirty and therefore will not be repainted. Foreground widgets draw once to
+  // preserve the progression of multi-frame renderers such as tiled images.
   bool draw_dirty_clipped(display::Display &it, const UiState &state,
                           const UiRect &constraint) {
     const UiRect gate = redraw_gate_bounds();
@@ -84,6 +84,11 @@ class Widget {
       const int bottom = std::min(std::min(gate.y + gate.h, paint.y + paint.h),
                                   std::min(constraint.y + constraint.h, dr.y + dr.h));
       if (right <= left || bottom <= top) continue;
+      if (is_background_widget()) {
+        draw_clipped(it, state, UiRect{left, top, right - left, bottom - top});
+        found = true;
+        continue;
+      }
       if (!found) {
         damage = UiRect{left, top, right - left, bottom - top};
         found = true;
@@ -97,6 +102,7 @@ class Widget {
       }
     }
     if (!found) return false;
+    if (is_background_widget()) return true;
     draw_clipped(it, state, damage);
     return true;
   }

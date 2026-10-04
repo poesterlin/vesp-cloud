@@ -16,7 +16,8 @@
     "test:codegen": "bun test src/lib/codegen",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:migrate:ui": "bun run scripts/migrate-ui-manifests.ts"
   },
   "dependencies": {
     "@fontsource/roboto": "5.2.10",

@@ -94,6 +94,42 @@ export const compilationJobs = pgTable('compilation_jobs', {
 export type CompilationJob = typeof compilationJobs.$inferSelect;
 export type NewCompilationJob = typeof compilationJobs.$inferInsert;
 
+// Immutable boot-manifest artifacts and the firmware resources they require.
+export const uiFirmwareBuilds = pgTable('ui_firmware_build', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  jobId: uuid('job_id').unique().references(() => compilationJobs.id, { onDelete: 'set null' }),
+  sourceExport: boolean('source_export').notNull().default(false),
+  available: boolean('available').notNull().default(false),
+  projectId: uuid('project_id').notNull().references(() => projects.id, fullCascade),
+  capabilities: jsonb('capabilities').notNull(),
+  manifestBase64: text('manifest_base64').notNull(),
+  sha256: varchar('sha256', { length: 64 }).notNull(),
+  fingerprint: varchar('fingerprint', { length: 16 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const uiManifestReleases = pgTable('ui_manifest_release', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id').notNull().references(() => projects.id, fullCascade),
+  revision: integer('revision').notNull(),
+  requirements: jsonb('requirements').notNull(),
+  manifestBase64: text('manifest_base64').notNull(),
+  sha256: varchar('sha256', { length: 64 }).notNull(),
+  fingerprint: varchar('fingerprint', { length: 16 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, table => [uniqueIndex('ui_manifest_release_project_revision').on(table.projectId, table.revision)]);
+
+export const uiDeviceBoots = pgTable('ui_device_boot', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id').notNull().references(() => projects.id, fullCascade),
+  deviceId: varchar('device_id', { length: 64 }).notNull(),
+  firmwareBuildId: uuid('firmware_build_id').references(() => uiFirmwareBuilds.id, { onDelete: 'set null' }),
+  fingerprint: varchar('fingerprint', { length: 16 }).notNull(),
+  source: varchar('source', { length: 16 }).notNull(),
+  error: varchar('error', { length: 512 }),
+  reportedAt: timestamp('reported_at', { withTimezone: true }).notNull().defaultNow(),
+}, table => [uniqueIndex('ui_device_boot_project_device').on(table.projectId, table.deviceId)]);
+
 // ── Stripe Customers ────────────────────────────────────────────────────────
 export const stripeCustomers = pgTable("stripe_customer", {
   id: text("id").primaryKey(),

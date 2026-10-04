@@ -1,11 +1,12 @@
 #pragma once
 
-// Generic VESPUI v1 reader. This header intentionally has no ESPHome
+// Generic VESPUI v1/v2 reader. This header intentionally has no ESPHome
 // dependencies, so malformed-manifest behavior is host-testable.
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace vespui {
@@ -32,6 +33,7 @@ struct Binding {
 struct Screen { uint16_t id; uint16_t name; std::array<uint8_t, 3> background; };
 struct Action { ActionKind kind; uint16_t first; uint16_t second; };
 struct Condition { uint8_t binding; uint8_t operation; uint16_t expected; };
+struct TextPart { uint8_t kind; uint16_t index; };
 struct Widget {
   uint16_t id;
   uint8_t screen;
@@ -44,6 +46,9 @@ struct Widget {
   std::array<uint8_t, 3> foreground;
   uint8_t binding;
   uint8_t action;
+  uint8_t font_size = 0;
+  uint8_t align = 0;
+  std::vector<TextPart> text_parts;
 };
 
 struct Manifest {
@@ -53,6 +58,17 @@ struct Manifest {
   std::vector<Action> actions;
   std::vector<Condition> conditions;
   std::vector<Widget> widgets;
+
+  std::string text_value(const Widget &widget) const {
+    if (widget.text_parts.empty()) {
+      if (widget.binding != kNone8) return bindings[widget.binding].value;
+      return widget.content == kNone16 ? "" : strings[widget.content];
+    }
+    std::string value;
+    for (const auto &part : widget.text_parts)
+      value += part.kind == 0 ? strings[part.index] : bindings[part.index].value;
+    return value;
+  }
 
   bool condition_matches(uint8_t index) const {
     if (index == kNone8) return true;
@@ -67,13 +83,16 @@ struct Manifest {
 class Reader {
  public:
   static bool parse(const uint8_t *data, size_t size, Manifest &output, std::string *error = nullptr) {
+    if (data == nullptr) return fail(error, "null manifest data");
     // Parse into a temporary model: failure never exposes a partially built UI.
     Manifest parsed;
-    Reader reader(data, size);
     if (size > kMaxManifestBytes) return fail(error, "manifest exceeds fixed byte limit");
-    if (size < 16 || !reader.magic() || reader.u16() != 1) return fail(error, "bad magic or version");
+    Reader reader(data, size);
+    if (size < 16 || !reader.magic()) return fail(error, "bad magic or version");
+    const uint16_t version = reader.u16();
+    if (version != 1 && version != 2) return fail(error, "unsupported manifest version");
     const uint32_t payload_size = reader.u32();
-    (void) reader.u32();  // reserved
+    if (reader.u32() != 0) return fail(error, "unsupported header flags");
     if (!reader.ok_ || payload_size != size - 16) return fail(error, "invalid payload length");
     while (reader.remaining() != 0) {
       if (reader.remaining() < 3) return fail(error, "truncated record header");
@@ -81,7 +100,7 @@ class Reader {
       const uint16_t length = reader.u16();
       if (!reader.ok_ || length > reader.remaining()) return fail(error, "truncated record");
       Reader record(reader.cursor_, length);
-      if (!parse_record(type, record, parsed, error)) return false;
+      if (!parse_record(type, record, parsed, version, error)) return false;
       if (!record.ok_ || record.remaining() != 0) return fail(error, "invalid record length");
       reader.skip(length);
     }
@@ -106,7 +125,7 @@ class Reader {
   }
   std::array<uint8_t, 3> color() { return {u8(), u8(), u8()}; }
 
-  static bool parse_record(uint8_t type, Reader &r, Manifest &m, std::string *error) {
+  static bool parse_record(uint8_t type, Reader &r, Manifest &m, uint16_t version, std::string *error) {
     switch (type) {
       case 1: {
         const uint16_t length = r.u16();
@@ -138,6 +157,15 @@ class Reader {
           r.i16(), r.i16(), r.i16(), r.i16(), r.u8(), r.u16(),
           r.color(), r.color(), r.u8(), r.u8()
         });
+        if (version >= 2) {
+          m.widgets.back().font_size = r.u8();
+          m.widgets.back().align = r.u8();
+          const uint8_t parts = r.u8();
+          if (parts > 32 || r.remaining() < static_cast<size_t>(parts) * 3)
+            return fail(error, "invalid text segment count");
+          for (uint8_t i = 0; i < parts; ++i)
+            m.widgets.back().text_parts.push_back({r.u8(), r.u16()});
+        }
         return true;
       default:
         return fail(error, "unknown required record type");
@@ -148,7 +176,7 @@ class Reader {
     if (m.screens.empty()) return fail(error, "manifest has no screens");
     auto string_ok = [&](uint16_t value) { return value == kNone16 || value < m.strings.size(); };
     for (const auto &b : m.bindings)
-      if (!string_ok(b.entity) || !string_ok(b.attribute) || b.entity == kNone16) return fail(error, "bad binding string index");
+      if (!string_ok(b.entity) || !string_ok(b.attribute) || b.entity == kNone16 || b.value_type != 1) return fail(error, "bad binding string index or type");
     for (const auto &s : m.screens)
       if (!string_ok(s.id) || !string_ok(s.name) || s.id == kNone16 || s.name == kNone16) return fail(error, "bad screen string index");
     for (const auto &a : m.actions) {
@@ -163,7 +191,7 @@ class Reader {
         return fail(error, "bad condition index or operation");
     for (const auto &w : m.widgets) {
       const auto kind = static_cast<uint8_t>(w.kind);
-      if (w.screen >= m.screens.size() || kind < 1 || kind > 4 || w.w <= 0 || w.h <= 0)
+      if (w.screen >= m.screens.size() || kind < 1 || kind > 4 || w.w <= 0 || w.h <= 0 || (w.flags & ~1) != 0)
         return fail(error, "bad widget type, screen, or geometry");
       if (!string_ok(w.id) || w.id == kNone16) return fail(error, "bad widget string index");
       if ((w.kind == WidgetKind::Text || w.kind == WidgetKind::Button || w.kind == WidgetKind::Icon) &&
@@ -172,6 +200,15 @@ class Reader {
       if (w.binding != kNone8 && w.binding >= m.bindings.size()) return fail(error, "bad widget binding index");
       if (w.action != kNone8 && w.action >= m.actions.size()) return fail(error, "bad widget action index");
       if (w.condition != kNone8 && w.condition >= m.conditions.size()) return fail(error, "bad widget condition index");
+      if (w.binding != kNone8 && w.kind != WidgetKind::Text) return fail(error, "binding on unsupported widget");
+      if (w.font_size > 2 || w.align > 2 ||
+          (w.kind != WidgetKind::Text && (w.font_size != 0 || w.align != 0 || !w.text_parts.empty())))
+        return fail(error, "bad text style");
+      for (const auto &part : w.text_parts)
+        if ((part.kind == 0 && part.index >= m.strings.size()) ||
+            (part.kind == 1 && part.index >= m.bindings.size()) || part.kind > 1)
+          return fail(error, "bad text segment index or kind");
+      if (w.action != kNone8 && w.kind != WidgetKind::Button) return fail(error, "action on unsupported widget");
     }
     return true;
   }

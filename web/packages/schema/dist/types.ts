@@ -493,6 +493,14 @@ export interface SecretsConfig {
    */
   firmwareUpdateUrl?: string;
   /**
+   * Optional binary VESPUI manifest URL fetched once at boot; validated bytes are cached for offline reboot
+   */
+  uiManifestUrl?: string;
+  /**
+   * Optional boot-result endpoint automatically configured by vESP.cloud
+   */
+  uiManifestReportUrl?: string;
+  /**
    * Optional base URL used to resolve relative Home Assistant entity_picture URLs
    */
   homeAssistantBaseUrl?: string;

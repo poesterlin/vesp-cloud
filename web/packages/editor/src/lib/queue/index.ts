@@ -14,6 +14,8 @@ import { validateProject } from '$lib/codegen/validations';
 import { sanitizeDeviceName } from '$lib/codegen/utils';
 import { copyStaticTemplates } from '$lib/server/esphome-templates';
 import { validateProjectSchema } from '$lib/server/project-schema';
+import { uiManifestUrls, manifestArtifact } from '$lib/server/ui-manifests';
+import { uiFirmwareCapabilities, uiManifestRequirements } from '$lib/codegen/ui-capabilities';
 import { uploadOtaBinary, uploadFactoryBinary, deleteBinaries } from '$lib/server/s3';
 import { addCredits } from '$lib/credits/credits';
 import { CREDIT_COSTS } from '$lib/credits/costs';
@@ -358,6 +360,7 @@ export class CompilationQueue extends EventEmitter {
 
       const configPrepStart = Date.now();
       let firmwareUpdateUrl: string | undefined;
+      let manifestUrls: ReturnType<typeof uiManifestUrls> | undefined;
       if (job.projectId) {
         const db = getDb();
         const [proj] = await db
@@ -370,10 +373,11 @@ export class CompilationQueue extends EventEmitter {
         const envBaseUrl = process.env.PUBLIC_BASE_URL;
         const baseUrl = envBaseUrl || `http://localhost:5173`;
         firmwareUpdateUrl = `${baseUrl}/api/firmware/${proj.firmwareToken}`;
+        manifestUrls = uiManifestUrls(baseUrl, proj.firmwareToken, job.id);
       }
 
       if (firmwareUpdateUrl) {
-        project.secrets = { ...project.secrets, firmwareUpdateUrl };
+        project.secrets = { ...project.secrets, firmwareUpdateUrl, ...manifestUrls };
       }
 
       const schemaValidation = validateProjectSchema(project);
@@ -392,7 +396,15 @@ export class CompilationQueue extends EventEmitter {
         fs.writeFile(join(tempDir, 'includes', 'ui_theme.h'), generateUIThemeHeader(project)),
       ];
       if (runtimeManifest.ok) {
+        if (job.projectId) {
+          const artifact = manifestArtifact(runtimeManifest.bytes, uiManifestRequirements(project));
+          await getDb().insert(schema.uiFirmwareBuilds).values({
+            id: job.id, jobId: job.id, projectId: job.projectId, capabilities: uiFirmwareCapabilities(project),
+            manifestBase64: artifact.manifestBase64, sha256: artifact.sha256, fingerprint: artifact.fingerprint,
+          }).onConflictDoNothing();
+        }
         generatedHeaders.push(
+          fs.writeFile(join(tempDir, 'ui_manifest.vespui'), runtimeManifest.bytes),
           fs.writeFile(join(tempDir, 'includes', 'ui_manifest.h'), generateEmbeddedUiManifestHeader(runtimeManifest.bytes)),
           fs.writeFile(join(tempDir, 'includes', 'ui_types.h'), generateRuntimeUITypesHeader()),
         );
@@ -661,6 +673,10 @@ export class CompilationQueue extends EventEmitter {
       this.consecutiveFailures = 0;
     }
     job.completedAt = new Date();
+
+    if (!result.error) {
+      await db.update(schema.uiFirmwareBuilds).set({ available: true }).where(eq(schema.uiFirmwareBuilds.jobId, job.id));
+    }
 
     await db
       .update(schema.compilationJobs)

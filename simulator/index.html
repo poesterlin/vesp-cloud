@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>vESP Runtime Simulator</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header><div><h1>vESP Runtime Lab</h1><p>Actual C++ UI · native 480 × 480 coordinates</p></div><span class="badge">MOCK HA</span></header>
+  <p style="max-width:980px;margin:0 auto 20px"><a style="color:#70bcff" href="./gallery.html">Browse all widget screenshots →</a></p>
+  <main>
+    <section class="device-panel" aria-label="Device display">
+      <div class="screen-shell">
+        <div id="screen" aria-label="Interactive simulated device display"></div>
+        <canvas id="overlay" width="480" height="480" aria-label="Coordinate inspector"></canvas>
+      </div>
+      <div class="readout"><span id="status" role="status">Connecting…</span><output id="coordinates">x — · y —</output></div>
+      <div class="toggles"><label><input id="inspect" type="checkbox"> Pick without tapping</label><label><input id="grid" type="checkbox"> Coordinate grid</label></div>
+      <div class="actions"><button id="screenshot">Save PNG</button><button id="annotated">Save annotated PNG</button><button id="baseline">Set baseline</button><button id="compare">Compare pixels</button></div>
+      <p id="comparison" role="status">Screenshots are native-resolution device pixels, without browser chrome.</p>
+      <p>Shortcuts: S screenshot · B baseline · G grid · I coordinate picker</p>
+      <img id="diff-preview" alt="Changed pixels compared with the saved baseline" hidden>
+    </section>
+    <aside>
+      <section class="card"><h2>Exact interaction</h2>
+        <form id="tap-form"><div class="fields"><label>X<input id="x" type="number" min="0" max="479" value="350" required></label><label>Y<input id="y" type="number" min="0" max="479" value="198" required></label></div><button type="submit">Tap coordinate</button></form>
+        <form id="drag-form"><div class="fields"><label>To X<input id="to-x" type="number" min="0" max="479" value="350" required></label><label>To Y<input id="to-y" type="number" min="0" max="479" value="100" required></label></div><button type="submit">Drag from X/Y to target</button></form>
+        <p>Hover to preview coordinates and pixel color. Enable picking to select a point without sending touch.</p>
+      </section>
+      <section class="card"><h2>Screen targets</h2><div id="targets" class="target-list"></div><p id="screen-name"></p></section>
+      <section class="card"><h2>Session</h2><div class="actions"><button id="reset">Reset device + mock state</button><button id="reconnect">Reconnect display</button></div><p>This is a shared session. Actions stay inside the simulator.</p></section>
+      <section class="card"><h2>Recent actions</h2><ol id="history"></ol></section>
+      <details class="card"><summary>Firmware logs</summary><button id="refresh-logs">Refresh logs</button><pre id="logs"></pre></details>
+    </aside>
+  </main>
+  <div id="message" role="status" aria-live="polite"></div>
+  <script type="module" src="./client.js"></script>
+</body>
+</html>

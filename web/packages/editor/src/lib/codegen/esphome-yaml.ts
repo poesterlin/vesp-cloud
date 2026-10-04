@@ -1062,6 +1062,7 @@ ${projectVersionYaml}
       - lambda: |-
           g_theme.header.font = id(font_medium);
           g_theme.header_large.font = id(font_giant);
+          g_theme.label_large.font = id(font_large);
           g_theme.label.font = id(font_small);
           g_theme.weather_tiny.font = id(font_weather_tiny);
           g_theme.primary.font = id(font_small);
@@ -1394,7 +1395,8 @@ button:
 
 /**
  * Generic firmware entry point for the VESPUI proof of concept. Project UI,
- * bindings, conditions, and actions are supplied exclusively by ui_manifest.h.
+ * bindings, conditions, and actions come from the boot-selected manifest;
+ * ui_manifest.h supplies its embedded fallback.
  */
 export function generateRuntimeESPHomeYAML(project: Project, firmwareVersion?: string): string {
   const deviceName = sanitizeDeviceName(project.name);
@@ -1407,6 +1409,51 @@ export function generateRuntimeESPHomeYAML(project: Project, firmwareVersion?: s
   const iconAssignment = hasIcons
     ? `\n          g_theme.icon.font = id(${ICON_FONT_ID});`
     : "";
+  const manifestDownload = project.secrets?.uiManifestUrl ? `
+      - wait_until:
+          condition:
+            wifi.connected:
+          timeout: 15s
+      - if:
+          condition:
+            wifi.connected:
+          then:
+            - http_request.get:
+                id: ui_manifest_http
+                url: !secret ui_manifest_url
+                capture_response: true
+                max_response_buffer_size: 32768
+                on_response:
+                  then:
+                    - lambda: |-
+                        if (response->status_code == 200 && response->content_length <= vespui::kMaxManifestBytes) {
+                          g_ui_app.accept_boot_manifest(body);
+                        } else {
+                          g_ui_app.set_boot_download_error("Manifest HTTP status " + std::to_string(response->status_code) + ", bytes " + std::to_string(response->content_length));
+                          ESP_LOGW("vespui", "Manifest HTTP status: %d; using boot fallback", response->status_code);
+                        }
+                on_error:
+                  then:
+                    - lambda: g_ui_app.set_boot_download_error("Manifest download failed");
+                    - logger.log: "Manifest download failed; using boot fallback"
+          else:
+            - lambda: g_ui_app.set_boot_download_error("Manifest boot network timeout");
+            - logger.log: "Manifest boot network timeout; using boot fallback"
+` : '';
+  const manifestReport = project.secrets?.uiManifestReportUrl && firmwareVersion ? `
+      - http_request.post:
+          id: ui_manifest_http
+          url: !secret ui_manifest_report_url
+          json: |-
+            root["deviceId"] = esphome::get_mac_address();
+            root["buildId"] = "${escapeCString(firmwareVersion)}";
+            root["fingerprint"] = g_ui_app.manifest_fingerprint();
+            root["source"] = g_ui_app.manifest_source();
+            root["error"] = g_ui_app.boot_manifest_error();
+          on_error:
+            then:
+              - logger.log: "UI boot report failed; active revision remains unconfirmed in vESP.cloud"
+` : '';
   return `substitutions:
   device_name: ${deviceName}
   friendly_name: "${friendlyName}"
@@ -1426,12 +1473,16 @@ esphome:${projectBlock}
     then:
       - lambda: |-
           g_theme.label.font = id(font_small);
+          g_theme.header.font = id(font_medium);
+          g_theme.header_large.font = id(font_large);
+          g_theme.label_large.font = id(font_large);
           g_theme.primary.font = id(font_small);${iconAssignment}
           UiRedraw::set_display_updater([]() { id(main_display).update(); });
+          g_ui_app.prepare_boot_manifest("${escapeCString(`${deviceName}\n${project.secrets?.uiManifestUrl ?? ''}`)}");${manifestDownload}${project.secrets?.uiManifestUrl ? '      - lambda: |-\n' : ''}
           g_ui_app.init();
           UiInvalidation::request_full("vespui:boot");
           id(main_display).update();
-
+${manifestReport}
   includes:
     - includes/ui_theme.h
     - includes/ui_types.h
@@ -1447,6 +1498,8 @@ esphome:${projectBlock}
     - includes/ui_runtime_state.h
     - includes/ui_screen_base.h
     - includes/ui_runtime_manifest.h
+    - includes/ui_boot_manifest.h
+    - includes/ui_manifest_storage.h
     - includes/ui_manifest.h
     - includes/ui_runtime.h
     - includes/ui_runtime_app.h
@@ -1454,7 +1507,28 @@ esphome:${projectBlock}
     - includes/ui_renderer.h
     - includes/ui_retro.h
 
-globals:
+${project.secrets?.uiManifestUrl || project.secrets?.uiManifestReportUrl || project.secrets?.firmwareUpdateUrl ? `http_request:
+  id: ui_manifest_http
+  timeout: 5s
+  verify_ssl: true
+
+` : ''}${project.secrets?.firmwareUpdateUrl ? `ota:
+  - platform: http_request
+    on_begin:
+      then:
+        - light.turn_off: display_backlight
+    on_error:
+      then:
+        - light.turn_on:
+            id: display_backlight
+            brightness: 100%
+
+update:
+  - platform: http_request
+    name: Firmware Update
+    source: !secret firmware_manifest_url
+
+` : ''}globals:
   - id: touch_last_x
     type: int
     restore_value: no
@@ -1494,6 +1568,7 @@ interval:
   - interval: 50ms
     then:
       - lambda: |-
+          g_ui_app.update(millis());
           if (UiInvalidation::needs_redraw()) id(main_display).update();
 
 # Force ESPHome to compile the dynamic HA APIs used by RuntimeContext.

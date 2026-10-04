@@ -193,6 +193,8 @@ function validateCodegenSafeStrings(project: Project): ValidationError[] {
 
   errors.push(...validatePattern(project.timezone, TIMEZONE_RE, 'Timezone must be an IANA-like identifier'));
   errors.push(...validatePattern(project.secrets?.firmwareUpdateUrl, CODEGEN_SAFE_HTTP_URL_RE, 'Firmware update URL must be an HTTP(S) URL'));
+  errors.push(...validatePattern(project.secrets?.uiManifestUrl, CODEGEN_SAFE_HTTP_URL_RE, 'UI manifest URL must be an HTTP(S) URL'));
+  errors.push(...validatePattern(project.secrets?.uiManifestReportUrl, CODEGEN_SAFE_HTTP_URL_RE, 'UI manifest report URL must be an HTTP(S) URL'));
   errors.push(...validatePattern(project.secrets?.homeAssistantBaseUrl, CODEGEN_SAFE_HTTP_URL_RE, 'Home Assistant base URL must be an HTTP(S) URL'));
 
   const stateFieldNames = new Set<string>();

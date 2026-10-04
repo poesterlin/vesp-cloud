@@ -1,0 +1,17 @@
+{
+  "name": "Migration parity",
+  "display": {"width": 480, "height": 480},
+  "dashboardPages": [{
+    "id": "home", "name": "Shared fixture", "backgroundColor": {"r": 0, "g": 0, "b": 0},
+    "components": [
+      {"id":"background","type":"rectangle","position":{"x":0,"y":0},"size":{"width":480,"height":480},"backgroundColor":{"r":0,"g":0,"b":0}},
+      {"id":"title","type":"text","position":{"x":20,"y":20},"size":{"width":440,"height":45},"text":"MIGRATION PARITY","fontSize":"large","color":{"r":0,"g":240,"b":255}},
+      {"id":"medium","type":"text","position":{"x":20,"y":80},"size":{"width":440,"height":40},"text":"Same project, two renderers","fontSize":"medium","color":{"r":255,"g":255,"b":255}},
+      {"id":"bound","type":"text","position":{"x":20,"y":145},"size":{"width":440,"height":35},"text":"State: {{sensor.demo}}","fontSize":"small","color":{"r":255,"g":255,"b":255}},
+      {"id":"center","type":"text","position":{"x":20,"y":205},"size":{"width":440,"height":35},"text":"Centered label","fontSize":"small","align":"center","color":{"r":255,"g":255,"b":255}},
+      {"id":"icon","type":"icon","position":{"x":210,"y":280},"size":{"width":60,"height":60},"icon":"mdi:lightbulb","color":{"r":255,"g":255,"b":255}},
+      {"id":"next","type":"button","position":{"x":330,"y":432},"size":{"width":130,"height":36},"label":"Next","backgroundColor":{"r":26,"g":26,"b":26}}
+    ]
+  }],
+  "detailViews": []
+}

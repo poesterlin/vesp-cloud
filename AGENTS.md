@@ -10,6 +10,18 @@ and produces a wall-mounted Home Assistant control panel.
 |------|------------|
 | `web/packages/editor/src/lib/codegen/` | TypeScript code generator |
 | `web/packages/editor/src/lib/templates/includes/` | C++ template headers (generated firmware uses these) |
+| `simulator/` | Real C++ host simulator, browser inspector, screenshot/control API and CLI |
+
+## Device UI inspection
+
+See `simulator/AGENTS.md` for the complete workflow. Prefer
+`python3 simulator/control.py tap-widget <id> --capture /tmp/opencode/result.png`
+and read the resulting PNG instead of hard-coding browser CSS coordinates.
+`control.py state`, `logs`, `reset`, and `screenshot` support reproducible checks.
+Use `SIMULATOR_URL` for an isolated test instance. Browser automation can await
+`window.simulator.tapWidget(id)`; it waits for the displayed pixels to match the
+device framebuffer. The simulator is a separate Traefik service, not a Svelte
+canvas renderer. Building an isolated test image does not update the live demo.
 
 ---
 

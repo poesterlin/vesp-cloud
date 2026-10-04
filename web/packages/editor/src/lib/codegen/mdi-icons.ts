@@ -14,6 +14,7 @@
 
 import type { Project } from "@vesp-cloud/schema";
 import { collectProjectIconNames, normalizeIconName } from "./utils";
+import { requiredUiTextGlyphs } from './ui-font-resources';
 import mdiCodepoints from "./mdi-codepoints.json" with { type: "json" };
 
 /** Pixel size of the default MDI icon font generated in fonts.yaml. */
@@ -178,9 +179,18 @@ export function generateFontsYAML(project: Project, baseFontsYaml: string): stri
   const preferredFont = project.theme?.id === "retro"
     ? "Share Tech Mono"
     : "Turret Road";
-  const themedBaseFonts = baseFontsYaml.replace(
+  let themedBaseFonts = baseFontsYaml.replace(
     /(file:\s*")gfonts:\/\/[^"]+(")/g,
     `$1gfonts://${preferredFont}$2`,
+  );
+  const requiredText = requiredUiTextGlyphs(project);
+  themedBaseFonts = themedBaseFonts.replace(
+    /(id:\s*font_(?:small|medium|large)\b[\s\S]*?glyphs:\s*)("(?:\\.|[^"\\])*")/g,
+    (match, prefix: string, quoted: string) => {
+      const current = JSON.parse(quoted) as string;
+      const missing = [...requiredText].filter(char => !current.includes(char));
+      return missing.length ? prefix + JSON.stringify(current + missing.join('')) : match;
+    },
   );
 
   const icons = collectProjectIconNames(project);

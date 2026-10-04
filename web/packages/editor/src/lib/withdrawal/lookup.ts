@@ -161,7 +161,7 @@ export async function lookupPurchase(
     )
     .limit(1);
 
-  if (!row || row.transaction.amount <= 0) {
+  if (!row || !row.user.email || row.transaction.amount <= 0) {
     return null;
   }
 

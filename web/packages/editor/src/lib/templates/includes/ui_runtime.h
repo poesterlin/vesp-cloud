@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ui_runtime_manifest.h"
-#include "ui_boot_manifest.h"
+#include "ui_runtime_session.h"
 #include "ui_screen_base.h"
 #include "ui_widget_rect.h"
 #include "ui_widget_label.h"
@@ -15,63 +15,30 @@
 
 namespace vespui {
 
-// Adapters supplied once by generic firmware. No project-specific C++ is
-// needed: the manifest supplies entity IDs, services, and screen IDs.
-struct RuntimeContext {
-  BootManifestSource boot_manifest_source;
-  using StateSink = std::function<void(const std::string &)>;
-  std::function<void(const std::string &, const std::string &, StateSink)> subscribe_state;
-  std::function<void(const std::string &, const std::string &)> call_service;
-  std::function<const char *(const std::string &)> resolve_icon;
-};
-
 class RuntimeUi {
  public:
   bool load(const uint8_t *bytes, size_t size, RuntimeContext context, std::string *error = nullptr) {
-    if (loaded_) {
-      if (error != nullptr) *error = "runtime manifest is already loaded";
-      return false;
-    }
-    Manifest next;
-    if (!read_boot_manifest(bytes, size, context.boot_manifest_source, next,
-                            external_manifest_, source_error_, error, &fingerprint_)) return false;
-    context.boot_manifest_source = {};  // Release boot-only adapter captures.
-    manifest_ = std::move(next);
-    context_ = std::move(context);
-    screens_.clear();
-    screens_.reserve(manifest_.screens.size());
-    for (size_t i = 0; i < manifest_.screens.size(); ++i) {
-      auto screen = std::make_unique<GenericScreen>();
-      const auto &background = manifest_.screens[i].background;
-      screen->emplace_widget<RectWidget>(
-          UiRect{0, 0, 480, 480},
-          Color(background[0], background[1], background[2]));
-      screens_.push_back(std::move(screen));
-    }
-
-    for (size_t index = 0; index < manifest_.widgets.size(); ++index)
-      create_widget(manifest_.widgets[index]);
-    current_ = 0;
-    history_.clear();
-    screens_[current_]->enter();
-    screens_[current_]->layout();
-
-    // The vector is complete and will no longer reallocate, so each captured
-    // binding index resolves to stable std::string storage.
-    for (size_t i = 0; i < manifest_.bindings.size(); ++i) {
-      if (!context_.subscribe_state) break;
-      const auto &record = manifest_.bindings[i];
-      const std::string entity = manifest_.strings[record.entity];
-      const std::string attribute = record.attribute == kNone16 ? "" : manifest_.strings[record.attribute];
-      context_.subscribe_state(entity, attribute, [this, i](const std::string &value) {
-        if (i >= manifest_.bindings.size() || manifest_.bindings[i].value == value) return;
-        manifest_.bindings[i].value = value;
-        UiRedraw::trigger_display_update();
-      });
-    }
-    UiInvalidation::request_full("vespui:load");
-    loaded_ = true;
-    return true;
+    return session_.load(bytes, size, std::move(context),
+        [this](const Manifest &, std::string *) {
+          screens_.clear();
+          screens_.reserve(manifest_.screens.size());
+          for (const auto &record : manifest_.screens) {
+            auto screen = std::make_unique<GenericScreen>();
+            const auto &background = record.background;
+            screen->emplace_widget<RectWidget>(UiRect{0, 0, 480, 480},
+                Color(background[0], background[1], background[2]));
+            screens_.push_back(std::move(screen));
+          }
+          for (const auto &record : manifest_.widgets) create_widget(record);
+          return true;
+        }, [this](size_t target) {
+          if (entered_) screens_[current_]->exit();
+          current_ = target;
+          screens_[current_]->enter();
+          screens_[current_]->layout();
+          entered_ = true;
+          UiInvalidation::request_full("vespui:activate");
+        }, [] { UiRedraw::trigger_display_update(); }, error);
   }
 
   void update(uint32_t now, const UiState &state) { current_screen()->update(now, state); }
@@ -82,9 +49,9 @@ class RuntimeUi {
   ::Screen *current_screen() { return screens_[current_].get(); }
   const Manifest &manifest() const { return manifest_; }
   size_t current_screen_id() const { return current_; }
-  bool uses_external_manifest() const { return external_manifest_; }
-  const std::string &boot_source_error() const { return source_error_; }
-  uint64_t manifest_fingerprint() const { return fingerprint_; }
+  bool uses_external_manifest() const { return session_.uses_external_manifest(); }
+  const std::string &boot_source_error() const { return session_.boot_source_error(); }
+  uint64_t manifest_fingerprint() const { return session_.fingerprint(); }
 
  private:
   const char *string_or_empty(uint16_t index) const {
@@ -152,56 +119,13 @@ class RuntimeUi {
     if (base != nullptr) install_visibility(base, record);
   }
 
-  void navigate(size_t target, bool remember = true) {
-    if (target >= screens_.size() || target == current_) return;
-    screens_[current_]->exit();
-    if (remember) {
-      // Navigation must not grow the device heap indefinitely.
-      if (history_.size() >= 16) history_.erase(history_.begin());
-      history_.push_back(current_);
-    }
-    current_ = target;
-    screens_[current_]->enter();
-    screens_[current_]->layout();
-    UiInvalidation::request_full("vespui:navigate");
-  }
+  void dispatch(uint8_t index) { session_.dispatch(index); }
 
-  void dispatch(uint8_t index) {
-    if (index == kNone8 || index >= manifest_.actions.size()) return;
-    const auto &action = manifest_.actions[index];
-    switch (action.kind) {
-      case ActionKind::Service:
-        if (context_.call_service)
-          context_.call_service(manifest_.strings[action.first], string_or_empty(action.second));
-        break;
-      case ActionKind::Navigate:
-        navigate(action.first);
-        break;
-      case ActionKind::Back:
-        if (!history_.empty()) {
-          const size_t target = history_.back();
-          history_.pop_back();
-          navigate(target, false);
-        }
-        break;
-      case ActionKind::Next:
-        navigate((current_ + 1) % screens_.size());
-        break;
-      case ActionKind::Previous:
-        navigate((current_ + screens_.size() - 1) % screens_.size());
-        break;
-    }
-  }
-
-  Manifest manifest_;
-  RuntimeContext context_;
+  RuntimeSession session_;
+  const Manifest &manifest_ = session_.manifest();
   std::vector<std::unique_ptr<GenericScreen>> screens_;
-  std::vector<size_t> history_;
   size_t current_ = 0;
-  bool loaded_ = false;
-  bool external_manifest_ = false;
-  std::string source_error_;
-  uint64_t fingerprint_ = 0;
+  bool entered_ = false;
 };
 
 }  // namespace vespui

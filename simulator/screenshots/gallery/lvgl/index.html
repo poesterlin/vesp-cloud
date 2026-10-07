@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>vESP — LVGL integration probe</title>
+  <style>
+    body{margin:0;padding:24px;background:#10141c;color:#f0f6fc;font:16px system-ui,sans-serif}main{max-width:1100px;margin:auto}a{color:#70bcff}.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px}figure{margin:0;padding:14px;background:#151d2a;border:1px solid #2b384c;border-radius:10px}img{display:block;width:100%;height:auto;image-rendering:pixelated}figcaption{padding-top:12px}p{line-height:1.5}
+  </style>
+</head>
+<body><main>
+  <h1>LVGL integration probe</h1>
+  <p>Native 480 × 480 captures from ESPHome 2026.7.1 / LVGL 9.5 on SDL. Labels, buttons and sliders are created dynamically after paused initialization. Captured 2026-10-04.</p>
+  <p>These are experimental probe styles with LVGL’s default font, not production-theme parity captures. Physical-device memory and display performance remain unmeasured.</p>
+  <p><a href="../../gallery.html">← Production widget gallery</a></p>
+  <div class="gallery">
+    <figure><a href="lvgl-retro.png"><img src="lvgl-retro.png" alt="Retro probe with square button and slider" width="480" height="480"></a><figcaption>Retro — initial screen</figcaption></figure>
+    <figure><a href="lvgl-retro-clicked.png"><img src="lvgl-retro-clicked.png" alt="Retro button displaying Runtime event received" width="480" height="480"></a><figcaption>Retro — button event received</figcaption></figure>
+    <figure><a href="lvgl-modern.png"><img src="lvgl-modern.png" alt="Modern probe with rounded button and slider" width="480" height="480"></a><figcaption>Modern — initial screen</figcaption></figure>
+    <figure><a href="lvgl-modern-clicked.png"><img src="lvgl-modern-clicked.png" alt="Modern button displaying Runtime event received" width="480" height="480"></a><figcaption>Modern — button event received</figcaption></figure>
+    <figure><a href="lvgl-modern-slider.png"><img src="lvgl-modern-slider.png" alt="Modern slider moved to the right after dragging" width="480" height="480"></a><figcaption>Modern — slider after drag</figcaption></figure>
+  </div>
+</main></body>
+</html>

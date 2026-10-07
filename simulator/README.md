@@ -165,3 +165,33 @@ To verify an isolated local test container rather than changing the live demo:
 SIMULATOR_URL=http://127.0.0.1:6085/ python3 -m unittest discover -s simulator/tests
 python3 simulator/control.py --url http://127.0.0.1:6085/ screenshot /tmp/opencode/local.png
 ```
+# Experimental LVGL integration probe
+
+Generate with `bun run simulator/generate-lvgl-probe.ts --theme retro` from the
+repository root, then build this directory with `--build-arg
+GENERATED_DIR=generated-lvgl`. Use `--theme modern` for the second probe style.
+The probe creates label/button/slider objects at runtime after paused LVGL setup;
+it does not yet load project manifests. See
+[`docs/lvgl-migration-checklist.md`](../docs/lvgl-migration-checklist.md) for
+commands, verified results and remaining migration gates.
+
+## Manifest-driven LVGL runtime
+
+Publish the experimental runtime at the configured simulator URL with
+`./deploy.sh --lvgl modern` (or `retro`) from this directory; add a project path
+to override the default `lvgl-demo.json`. Restore the custom widget gallery with
+`./deploy.sh --gallery`.
+
+`bun run simulator/generate-lvgl.ts --theme retro --output simulator/generated/lvgl-retro`
+generates an experimental LVGL backend using the shared production manifest reader
+and renderer-neutral session. Build with `GENERATED_DIR=generated/lvgl-retro`.
+Repeat with `--theme modern` and a separate output/image tag.
+
+`python3 simulator/test-lvgl-runtime.py --image <image> --theme retro|modern
+--output /tmp/opencode/<captures>` launches an isolated container and verifies
+bindings, conditional visibility, release-outside cancellation, navigation,
+repeated pixel restoration, action counts and no additional idle redraw work.
+It saves PNGs, logs and an HTML report, then stops the container.
+Use `test-boot-manifest.py --project simulator/lvgl-fixture.json` for the same
+image's reboot-only manifest checks. Host HA state is mocked. This does not
+validate physical display performance, memory or production cloud compatibility.

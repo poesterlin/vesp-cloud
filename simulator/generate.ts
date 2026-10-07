@@ -137,6 +137,12 @@ if (values.deterministic) {
   }
   const path = resolve(output, 'includes/ui_widget_loading.h');
   await writeFile(path, (await readFile(path, 'utf8')).replaceAll('millis()', 'uint32_t(1200)'));
+  // Forecast weekday labels were still using wall-clock time. Preserve the
+  // Sunday labels in the established gallery baseline across future test days.
+  const weatherPath = resolve(output, 'includes/ui_widget_weather.h');
+  await writeFile(weatherPath, (await readFile(weatherPath, 'utf8')).replace(
+    /auto now = sntp_time->now\(\);\s*if \(now.is_valid\(\)\) \{\s*int dow = now.day_of_week - 1;/,
+    '{ const int dow = 0;'));
 }
 if (values.parity) {
   if (values.gallery) throw new Error('parity and gallery are separate fixture modes');

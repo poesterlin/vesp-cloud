@@ -1,6 +1,9 @@
 services:
   simulator:
-    build: .
+    build:
+      context: .
+      args:
+        GENERATED_DIR: ${SIMULATOR_GENERATED_DIR:-generated}
     restart: unless-stopped
     init: true
     ports: []

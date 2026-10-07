@@ -1,0 +1,24 @@
+{
+  "name": "LVGL migration",
+  "display": {"width":480,"height":480},
+  "dashboardPages": [{"id":"home","name":"Home","components":[
+    {"id":"title","type":"text","position":{"x":20,"y":20},"size":{"width":440,"height":45},"text":"LVGL MANIFEST","fontSize":"large"},
+    {"id":"subtitle","type":"text","position":{"x":20,"y":80},"size":{"width":440,"height":40},"text":"Production fonts + runtime bindings","fontSize":"medium"},
+    {"id":"state","type":"text","position":{"x":20,"y":145},"size":{"width":440,"height":35},"text":"Kitchen: {{light.kitchen}}","fontSize":"small"},
+    {"id":"conditional","type":"text","position":{"x":20,"y":205},"size":{"width":440,"height":35},"text":"Visible when on","visibleWhen":{"entityId":"light.kitchen"}},
+    {"id":"icon","type":"icon","position":{"x":210,"y":260},"size":{"width":60,"height":60},"icon":"mdi:lightbulb"},
+    {"id":"toggle","type":"button","position":{"x":20,"y":340},"size":{"width":210,"height":60},"label":"Toggle kitchen","onTap":{"type":"SERVICE_CALL","service":"light.toggle","target":{"entityId":"light.kitchen"}}},
+    {"id":"detail","type":"button","position":{"x":250,"y":340},"size":{"width":210,"height":60},"label":"Details","onTap":{"type":"OPEN_DETAIL","targetId":"detail"}}
+  ]}],
+  "detailViews":[{"id":"detail","title":"Details","height":480,"components":[
+    {"id":"detail-title","type":"text","position":{"x":20,"y":20},"size":{"width":440,"height":45},"text":"DETAIL SCREEN","fontSize":"large"},
+    {"id":"detail-state","type":"text","position":{"x":20,"y":100},"size":{"width":440,"height":40},"text":"Kitchen: {{light.kitchen}}","fontSize":"medium"},
+    {"id":"narrow-small","type":"text","position":{"x":20,"y":160},"size":{"width":130,"height":50},"text":"Café déjà vu overflowing text","fontSize":"small","align":"left"},
+    {"id":"narrow-medium","type":"text","position":{"x":175,"y":160},"size":{"width":130,"height":50},"text":"Café déjà vu overflowing text","fontSize":"medium","align":"center"},
+    {"id":"narrow-large","type":"text","position":{"x":330,"y":160},"size":{"width":130,"height":50},"text":"Café déjà vu overflowing text","fontSize":"large","align":"right"},
+    {"id":"overlap-lower","type":"button","position":{"x":20,"y":250},"size":{"width":180,"height":50},"label":"Covered toggle","onTap":{"type":"SERVICE_CALL","service":"light.toggle","target":{"entityId":"light.kitchen"}}},
+    {"id":"overlap-upper","type":"button","position":{"x":20,"y":250},"size":{"width":180,"height":50},"label":"Topmost back","onTap":{"type":"GO_BACK"}},
+    {"id":"minimum-back","type":"button","position":{"x":430,"y":265},"size":{"width":16,"height":16},"label":"B","onTap":{"type":"GO_BACK"}},
+    {"id":"back","type":"button","position":{"x":20,"y":340},"size":{"width":440,"height":60},"label":"Back","onTap":{"type":"GO_BACK"}}
+  ]}]
+}

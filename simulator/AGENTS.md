@@ -99,3 +99,22 @@ use this adapter. `test-boot-manifest.py --image <deterministic-demo-image> --th
 retro|modern --output /tmp/opencode/<captures>` checks staging isolation,
 reboot activation and exact fallback using an unchanged image. Run for both
 themes after changing boot selection. Fonts/icons/theme remain firmware resources.
+
+## Experimental LVGL backend
+
+Deploy the manifest runtime with `./deploy.sh --lvgl modern|retro [project.json]`;
+it uses `generated/live-lvgl` as the compose build input. It defaults to
+`lvgl-demo.json`, a clean demo layout; pass `lvgl-fixture.json` to publish the
+regression fixture. Restore the custom showcase with `./deploy.sh --gallery`.
+
+Generate `bun run simulator/generate-lvgl.ts --theme retro|modern --output
+simulator/generated/lvgl-<theme>` from the repository root. Build isolated images
+with the matching `GENERATED_DIR` Docker argument. `test-lvgl-runtime.py --image
+<image> --theme <theme> --output /tmp/opencode/<captures>` checks widget-ID actions,
+bindings, input cancellation, navigation and idle mutation/flush counters; it
+starts and cleans up its own container. Run `test-boot-manifest.py` with
+`--project simulator/lvgl-fixture.json` against these images. Keep screenshots
+separate from established custom-renderer baselines; LVGL styling parity is still
+under development. The generator and backend support projects without icons: the
+icon font is generated and referenced only when the manifest contains icon
+widgets. See `docs/lvgl-migration-checklist.md` for progress and commands.

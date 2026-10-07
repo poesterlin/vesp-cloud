@@ -1499,6 +1499,7 @@ ${manifestReport}
     - includes/ui_screen_base.h
     - includes/ui_runtime_manifest.h
     - includes/ui_boot_manifest.h
+    - includes/ui_runtime_session.h
     - includes/ui_manifest_storage.h
     - includes/ui_manifest.h
     - includes/ui_runtime.h

@@ -17,6 +17,7 @@ def main():
     parser.add_argument('--image', required=True)
     parser.add_argument('--theme', choices=['retro', 'modern'], required=True)
     parser.add_argument('--output', type=pathlib.Path, required=True)
+    parser.add_argument('--project', default='simulator/demo.json', help='Project embedded in the tested image')
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -27,7 +28,7 @@ def main():
 import { compileUiManifest } from './web/packages/editor/src/lib/codegen/ui-manifest';
 import { RETRO_THEME } from './web/packages/editor/src/lib/themes/retro';
 import { MODERN_THEME } from './web/packages/editor/src/lib/themes/modern';
-const project = await Bun.file('simulator/demo.json').json();
+const project = await Bun.file(process.argv[3]).json();
 project.theme = process.argv[1] === 'retro' ? RETRO_THEME : MODERN_THEME;
 const title = project.dashboardPages[0].components[0];
 title.text = [...title.text].reverse().join('');
@@ -36,7 +37,7 @@ if (!result.ok) throw Error(JSON.stringify(result.errors));
 await Bun.write(process.argv[2], result.bytes);
 '''
     candidate = output / 'candidate.vespui'
-    subprocess.run(['bun', '-e', compiler, args.theme, str(candidate)], cwd=ROOT, check=True)
+    subprocess.run(['bun', '-e', compiler, args.theme, str(candidate), args.project], cwd=ROOT, check=True)
     candidate.chmod(0o644)
     source.unlink(missing_ok=True)
     container = subprocess.check_output([

@@ -2,6 +2,10 @@
 
 ## Goal
 
+For the proposed incremental LVGL backend migration, see the
+[LVGL architectural spike](lvgl-migration-spike.md). It records source-verified
+integration constraints, backend boundaries and prototype acceptance gates.
+
 Prove that an ESPHome firmware build can load a compact UI manifest at boot and
 construct a working UI without generating project-specific screen, state,
 binding, condition, or action C++.

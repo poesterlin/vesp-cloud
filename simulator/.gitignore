@@ -1,3 +1,4 @@
 .env
 generated/
+generated-lvgl/
 __pycache__/

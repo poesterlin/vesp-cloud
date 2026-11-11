@@ -1,0 +1,151 @@
+substitutions:
+  device_name: migration-parity
+  friendly_name: "Migration parity"
+  timezone: "UTC"
+
+packages:
+  fonts: !include fonts.yaml
+
+esphome:
+  name: vesp-simulator
+  platformio_options:
+    build_flags:
+      - -DVESPUI_RUNTIME=1
+      - -DVESPUI_SIMULATOR=1
+      - -DVESPUI_REGRESSION=1
+      - -DUI_PROFILE=0
+  on_boot:
+    priority: -100
+    then:
+      - lambda: |-
+          g_theme.label.font = id(font_small);
+          g_theme.header.font = id(font_medium);
+          g_theme.header_large.font = id(font_large);
+          g_theme.label_large.font = id(font_large);
+          g_theme.primary.font = id(font_small);
+          g_theme.icon.font = id(mdi_icons_24);
+          UiRedraw::set_display_updater([]() { id(main_display).update(); });
+
+          g_ui_app.init();
+          UiInvalidation::request_full("vespui:boot");
+          id(main_display).update();
+
+  includes:
+    - includes/ui_widget_image_toggle.h
+    - includes/ui_widget_weather.h
+    - includes/ui_tab_container.h
+    - includes/ui_chrome.h
+    - includes/ui_widget_image.h
+    - includes/ui_widget_hvac.h
+    - includes/ui_widget_digital_clock.h
+    - includes/ui_scrollable_detail.h
+    - includes/ui_widgets.h
+    - includes/ui_widget_loading.h
+    - includes/ui_widget_calendar.h
+    - includes/ui_widget_notification_overlay.h
+    - includes/ui_widget_todo.h
+    - includes/ui_state.h
+    - includes/ui_screens.h
+    - includes/ui_theme.h
+    - includes/ui_types.h
+    - includes/ui_invalidation.h
+    - includes/ui_redraw.h
+    - includes/ui_rendering_utils.h
+    - includes/ui_widget_base.h
+    - includes/ui_widget_rect.h
+    - includes/ui_widget_label.h
+    - includes/ui_widget_icon.h
+    - includes/ui_confirmation_popup.h
+    - includes/ui_widget_button.h
+    - includes/ui_runtime_state.h
+    - includes/ui_screen_base.h
+    - includes/ui_runtime_manifest.h
+    - includes/ui_boot_manifest.h
+    - includes/ui_runtime_session.h
+    - includes/ui_manifest.h
+    - includes/ui_runtime.h
+    - includes/ui_runtime_app.h
+    - includes/ui_touch.h
+    - includes/ui_renderer.h
+    - includes/ui_retro.h
+
+globals:
+  - id: touch_last_x
+    type: int
+    restore_value: no
+    initial_value: "0"
+  - id: touch_last_y
+    type: int
+    restore_value: no
+    initial_value: "0"
+
+touchscreen:
+  platform: sdl
+  id: simulator_touch
+  display: main_display
+  update_interval: 16ms
+  on_touch:
+    - lambda: |-
+        id(touch_last_x) = touch.x;
+        id(touch_last_y) = touch.y;
+        BasicTouchHandler::handle_raw_touch(touch.x, touch.y, true);
+        if (UiInvalidation::needs_redraw()) id(main_display).update();
+  on_update:
+    - lambda: |-
+        for (auto &t : touches) {
+          id(touch_last_x) = t.x;
+          id(touch_last_y) = t.y;
+          BasicTouchHandler::handle_raw_touch(t.x, t.y, true);
+        }
+        if (UiInvalidation::needs_redraw()) id(main_display).update();
+  on_release:
+    - lambda: |-
+        BasicTouchHandler::handle_raw_touch(
+            id(touch_last_x), id(touch_last_y), false);
+        if (UiInvalidation::needs_redraw()) id(main_display).update();
+
+interval:
+  - interval: 50ms
+    then:
+      - lambda: |-
+          g_ui_app.update(millis());
+          if (UiInvalidation::needs_redraw()) id(main_display).update();
+
+# Force ESPHome to compile the dynamic HA APIs used by RuntimeContext.
+script:
+  - id: _vespui_ha_service
+    then:
+      - homeassistant.service:
+          service: switch.toggle
+          data:
+            entity_id: none
+
+binary_sensor:
+  - platform: homeassistant
+    entity_id: sun.sun
+    id: _vespui_ha_state
+    internal: true
+
+host:
+time:
+  - platform: host
+    id: sntp_time
+logger:
+  level: INFO
+api:
+  reboot_timeout: 0s
+display:
+  - platform: sdl
+    id: main_display
+    dimensions:
+      width: 480
+      height: 480
+    auto_clear_enabled: false
+    update_interval: never
+    window_options:
+      borderless: true
+      position:
+        x: 0
+        y: 0
+    lambda: |-
+      render_basic_ui(it);

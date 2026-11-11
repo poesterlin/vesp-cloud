@@ -1,0 +1,68 @@
+esphome:
+  name: vesp-lvgl-runtime
+  includes:
+    - includes/ui_runtime_manifest.h
+    - includes/ui_boot_manifest.h
+    - includes/ui_runtime_session.h
+    - includes/ui_lvgl_runtime.h
+    - includes/ui_manifest.h
+    - lvgl-app.h
+  platformio_options:
+    build_flags:
+      - -DLV_USE_LABEL=1
+      - -DLV_USE_BUTTON=1
+  on_boot:
+    priority: -100
+    then:
+      - lambda: |-
+          g_lvgl_app.init(id(runtime_lvgl),
+            {id(font_small)->get_lv_font(), id(font_medium)->get_lv_font(), id(font_large)->get_lv_font()},
+            id(mdi_icons_24)->get_lv_font(), false);
+host:
+logger:
+  level: INFO
+packages:
+  fonts: !include fonts.yaml
+display:
+  - platform: sdl
+    id: main_display
+    dimensions:
+      width: 480
+      height: 480
+    auto_clear_enabled: false
+    update_interval: never
+    window_options:
+      borderless: true
+      position:
+        x: 0
+        y: 0
+touchscreen:
+  - platform: sdl
+    id: simulator_touch
+lvgl:
+  id: runtime_lvgl
+  displays: main_display
+  touchscreens: simulator_touch
+  paused: true
+  resume_on_input: false
+  buffer_size: 12%
+  default_font: font_small
+  widgets:
+    - obj:
+        hidden: true
+        width: 1
+        height: 1
+        widgets:
+          - label:
+              text: ""
+              text_font: font_medium
+          - label:
+              text: ""
+              text_font: font_large
+          - label:
+              text: ""
+              text_font: mdi_icons_24
+interval:
+  - interval: 50ms
+    then:
+      - lambda: g_lvgl_app.update(millis());

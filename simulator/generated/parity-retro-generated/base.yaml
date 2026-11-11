@@ -1,0 +1,111 @@
+esphome:
+  name: ${device_name}
+  on_boot:
+    - priority: 900
+      then:
+        - lambda: |-
+            auto reason = esp_reset_reason();
+            if (reason == ESP_RST_USB || reason == ESP_RST_SW) {
+              esp_sleep_enable_timer_wakeup(100000);
+              esp_deep_sleep_start();
+            }
+    - priority: 800
+      then:
+        - light.turn_on:
+            id: display_backlight
+            brightness: 100%
+
+esp32:
+  variant: esp32s3
+  # Pin the actual hardware maximum. ESPHome 2026.5 defaults the S3 to
+  # 240 MHz, but an explicit value also corrects stale sdkconfig caches made
+  # by older releases that defaulted this board to 160 MHz.
+  cpu_frequency: 240MHz
+  framework:
+    type: esp-idf
+    advanced:
+      # JPEG entropy/IDCT work is CPU-bound. ESPHome otherwise builds for
+      # size (-Os), which is substantially slower in this hot path.
+      compiler_optimization: PERF
+    sdkconfig_options:
+      # Pause briefly after a panic so the Guru Meditation dump can fully
+      # flush on slow USB serial (default 0 = instant reboot can race the
+      # UART FIFO). Cheap insurance for future debugging.
+      CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS: "3"
+
+      # Extend the Interrupt Watchdog Timer from the 300 ms default. On
+      # this board's non-suspend-capable QSPI flash, the LCD bounce-
+      # buffer ISR is deferred during cache-disabled flash windows
+      # (NVS reads at boot, preferences syncs / WiFi reconnects at
+      # runtime). 10 s was empirically the threshold above which the
+      # device stays stable; below ~5 s we still see sporadic
+      # TG1WDT_SYS_RST. Saved PCs on IWDT resets are misleading (they
+      # point at a static reset vector, not the actual offender), so
+      # rather than chase each instance just give the system slack.
+      CONFIG_ESP_INT_WDT_TIMEOUT_MS: "10000"
+      CONFIG_ESP_TASK_WDT_TIMEOUT_S: "30"
+
+      # ---- RGB-LCD + PSRAM framebuffer hardening -------------------------
+      # The ST7701S driver streams the framebuffer out of PSRAM via DMA,
+      # with an EOF interrupt refilling a small bounce buffer. Any flash
+      # op (NVS read/write, OTA, etc.) disables the cache on both cores
+      # while it runs; PSRAM is behind that same cache, so the bounce-
+      # buffer-fill ISR can't read the framebuffer for the duration.
+      #
+      #  * RESTART_IN_VSYNC=y: when the bounce buffer underruns (because
+      #    its ISR was suspended during a cache-disabled window), the
+      #    driver re-syncs at the next VSYNC instead of leaving the
+      #    panel in an undefined state. Worst-case visible artifact is
+      #    a single dropped frame.
+      #  * DO NOT set CONFIG_LCD_RGB_ISR_IRAM_SAFE=y. With it on, the
+      #    ISR is forced to keep running during cache-disabled windows
+      #    and crashes with "Cache disabled but cached memory region
+      #    accessed" inside lcd_rgb_panel_fill_bounce_buffer -- because
+      #    IRAM-safe only helps the ISR's *code*, not the PSRAM data it
+      #    has to read.
+      #  * SPIRAM_FETCH_INSTRUCTIONS / SPIRAM_RODATA explicitly off:
+      #    keeps code+rodata in flash/IRAM so PSRAM bandwidth is fully
+      #    available to the LCD DMA. Both default off in current IDF;
+      #    pinning them defends against future default flips.
+      #
+      # CONFIG_SPI_FLASH_AUTO_SUSPEND=y would be the proper fix but the
+      # Guition board's QSPI flash chip doesn't implement the suspend
+      # command, so enabling it asserts at boot.
+      CONFIG_LCD_RGB_RESTART_IN_VSYNC: "y"
+      CONFIG_SPIRAM_FETCH_INSTRUCTIONS: "n"
+      CONFIG_SPIRAM_RODATA: "n"
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+wifi:
+  ap: {}
+
+captive_portal:
+
+logger:
+  hardware_uart: UART0
+  baud_rate: 115200
+
+api:
+  reboot_timeout: 15min
+
+ota:
+  - platform: esphome
+    on_begin:
+      then:
+        - light.turn_off: display_backlight
+    on_error:
+      then:
+        - light.turn_on:
+            id: display_backlight
+            brightness: 100%
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: ${timezone}
+    on_time_sync:
+      then:
+        - logger.log: "SNTP time sync accomplished"

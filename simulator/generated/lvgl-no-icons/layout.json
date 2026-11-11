@@ -1,0 +1,90 @@
+{
+  "width": 480,
+  "height": 480,
+  "screens": [
+    {
+      "id": "home",
+      "name": "Home",
+      "widgets": [
+        {
+          "id": "title",
+          "type": "text",
+          "x": 20,
+          "y": 20,
+          "width": 440,
+          "height": 45
+        },
+        {
+          "id": "subtitle",
+          "type": "text",
+          "x": 20,
+          "y": 80,
+          "width": 440,
+          "height": 40
+        },
+        {
+          "id": "state",
+          "type": "text",
+          "x": 20,
+          "y": 145,
+          "width": 440,
+          "height": 35
+        },
+        {
+          "id": "conditional",
+          "type": "text",
+          "x": 20,
+          "y": 205,
+          "width": 440,
+          "height": 35
+        },
+        {
+          "id": "toggle",
+          "type": "button",
+          "x": 20,
+          "y": 340,
+          "width": 210,
+          "height": 60
+        },
+        {
+          "id": "detail",
+          "type": "button",
+          "x": 250,
+          "y": 340,
+          "width": 210,
+          "height": 60
+        }
+      ]
+    },
+    {
+      "id": "detail",
+      "name": "Details",
+      "widgets": [
+        {
+          "id": "detail-title",
+          "type": "text",
+          "x": 20,
+          "y": 20,
+          "width": 440,
+          "height": 45
+        },
+        {
+          "id": "detail-state",
+          "type": "text",
+          "x": 20,
+          "y": 100,
+          "width": 440,
+          "height": 40
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "x": 20,
+          "y": 340,
+          "width": 440,
+          "height": 60
+        }
+      ]
+    }
+  ]
+}

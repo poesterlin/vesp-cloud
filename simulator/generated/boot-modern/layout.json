@@ -1,0 +1,124 @@
+{
+  "width": 480,
+  "height": 480,
+  "screens": [
+    {
+      "id": "home",
+      "name": "Home",
+      "widgets": [
+        {
+          "id": "title",
+          "type": "text",
+          "label": "vESP / RUNTIME LAB",
+          "x": 28,
+          "y": 28,
+          "width": 420,
+          "height": 28
+        },
+        {
+          "id": "intro",
+          "type": "text",
+          "label": "Real firmware widgets. Mock HA state.",
+          "x": 28,
+          "y": 65,
+          "width": 420,
+          "height": 28
+        },
+        {
+          "id": "card",
+          "type": "rectangle",
+          "label": "card",
+          "x": 24,
+          "y": 116,
+          "width": 432,
+          "height": 160
+        },
+        {
+          "id": "light-label",
+          "type": "text",
+          "label": "Living room light",
+          "x": 44,
+          "y": 135,
+          "width": 240,
+          "height": 28
+        },
+        {
+          "id": "light-state",
+          "type": "text",
+          "x": 44,
+          "y": 175,
+          "width": 160,
+          "height": 28
+        },
+        {
+          "id": "light-toggle",
+          "type": "button",
+          "label": "Toggle light",
+          "x": 270,
+          "y": 166,
+          "width": 160,
+          "height": 64
+        },
+        {
+          "id": "visible-label",
+          "type": "text",
+          "label": "Light is on / conditional label",
+          "x": 44,
+          "y": 236,
+          "width": 350,
+          "height": 28
+        },
+        {
+          "id": "details",
+          "type": "button",
+          "label": "Open detail screen",
+          "x": 24,
+          "y": 310,
+          "width": 432,
+          "height": 64
+        },
+        {
+          "id": "footer",
+          "type": "text",
+          "label": "Tap buttons to test touch + partial redraws",
+          "x": 28,
+          "y": 410,
+          "width": 424,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "id": "detail",
+      "name": "Detail",
+      "widgets": [
+        {
+          "id": "detail-title",
+          "type": "text",
+          "label": "DETAIL SCREEN / NAVIGATION WORKS",
+          "x": 28,
+          "y": 35,
+          "width": 420,
+          "height": 28
+        },
+        {
+          "id": "detail-state",
+          "type": "text",
+          "x": 28,
+          "y": 105,
+          "width": 420,
+          "height": 28
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "label": "Back to dashboard",
+          "x": 24,
+          "y": 310,
+          "width": 432,
+          "height": 64
+        }
+      ]
+    }
+  ]
+}

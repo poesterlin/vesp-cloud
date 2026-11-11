@@ -243,6 +243,13 @@ export function diffProject(current: Project, previous: Project): ProjectChanges
   } else if (!currOverlay?.enabled && prevOverlay?.enabled) {
     items.push({ message: 'Disabled notification overlay' });
   }
+  if (JSON.stringify(currOverlay?.dismissAction) !== JSON.stringify(prevOverlay?.dismissAction)) {
+    items.push({
+      message: currOverlay?.dismissAction
+        ? 'Notification dismiss action updated'
+        : 'Notification dismiss action removed',
+    });
+  }
 
   if (current.timezone && current.timezone !== previous.timezone) {
     items.push({ message: `Timezone changed to "${current.timezone}"` });

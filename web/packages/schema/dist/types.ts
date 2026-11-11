@@ -527,4 +527,8 @@ export interface NotificationOverlayConfig {
   titleEntityId?: string;
   bodyEntityId?: string;
   severityEntityId?: string;
+  /**
+   * Optional action run when the user taps Dismiss (in addition to clearing the notification)
+   */
+  dismissAction?: ServiceAction | NavigationAction;
 }

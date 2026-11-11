@@ -296,3 +296,65 @@ describe("notification overlay icon font glyphs", () => {
     expect(out).not.toContain("# alert-circle");
   });
 });
+
+describe("notification overlay dismiss action", () => {
+  test("no dismiss action emits no extra callback", () => {
+    const out = generateUIScreensHeader(makeProject({
+      notificationOverlay: { bodyEntityId: "input_text.notification_body" },
+    }));
+    expect(out).not.toContain("notification_dismiss_action");
+  });
+
+  test("service dismiss action is invoked from the dismiss callback", () => {
+    const out = generateUIScreensHeader(makeProject({
+      notificationOverlay: {
+        bodyEntityId: "input_text.notification_body",
+        dismissAction: {
+          type: "SERVICE_CALL",
+          service: "script.turn_on",
+          target: { entityId: "script.ack_alarm" },
+        },
+      },
+    }));
+    expect(out).toContain(
+      'auto notification_dismiss_action = make_ha_callback("script.ack_alarm", "script.turn_on");',
+    );
+    expect(out).toContain("[&state, dismiss_notification, notification_dismiss_action]()");
+    const clearIdx = out.indexOf("if (dismiss_notification) dismiss_notification();");
+    const actionIdx = out.indexOf("notification_dismiss_action();");
+    expect(actionIdx).toBeGreaterThan(clearIdx);
+  });
+
+  test("navigation dismiss action opens the target detail view", () => {
+    const out = generateUIScreensHeader(makeProject({
+      detailViews: [{ id: "cams", title: "Cameras", components: [] } as unknown as Project["detailViews"][number]],
+      notificationOverlay: {
+        bodyEntityId: "input_text.notification_body",
+        dismissAction: { type: "OPEN_DETAIL", targetId: "cams" },
+      },
+    }));
+    expect(out).toMatch(/auto notification_dismiss_action = \[&screens\]\(\) \{ screens\.navigate_to\(UiScreenId::\w+\); \};/);
+  });
+
+  test("validation flags a dismiss action targeting a missing detail view", async () => {
+    const { validateProject } = await import("../validations");
+    const errors = validateProject(makeProject({
+      notificationOverlay: {
+        bodyEntityId: "input_text.notification_body",
+        dismissAction: { type: "OPEN_DETAIL", targetId: "missing" },
+      },
+    }));
+    expect(errors.some((e) => e.field === "dismissAction" && e.type === "error")).toBe(true);
+  });
+
+  test("validation rejects an unsafe dismiss service", async () => {
+    const { validateProject } = await import("../validations");
+    const errors = validateProject(makeProject({
+      notificationOverlay: {
+        bodyEntityId: "input_text.notification_body",
+        dismissAction: { type: "SERVICE_CALL", service: 'script.x"); evil(); ("' },
+      },
+    }));
+    expect(errors.some((e) => e.field === "dismissAction" && e.type === "error")).toBe(true);
+  });
+});

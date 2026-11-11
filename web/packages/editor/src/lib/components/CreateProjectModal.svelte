@@ -1,4 +1,5 @@
 <script lang="ts">
+  import EntityPicker from "$lib/components/sidebar/EntityPicker.svelte";
   import type { NotificationOverlayConfig } from "@vesp-cloud/schema";
   import { fade, fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
@@ -187,8 +188,8 @@ input_select:
     options:
       - info
       - warning
-      - question
-      - critical</code></pre>
+      - error
+      - question</code></pre>
               <p class="note">
                 Install the <a href="https://github.com/vesp-cloud/ha-integration" target="_blank" rel="noopener">vESP.cloud HACS integration</a> to auto-create these entities.
               </p>
@@ -198,32 +199,38 @@ input_select:
               <h3>Entity IDs</h3>
 
               <div class="field">
-                <label for="notification-title-entity">Title Entity</label>
-                <input
-                  id="notification-title-entity"
-                  type="text"
-                  bind:value={notificationTitleEntityId}
-                  placeholder="input_text.notification_title"
+                <span class="field-label">Title Entity</span>
+                <EntityPicker
+                  component={{}}
+                  allowAttribute={false}
+                  allowedDomains={["input_text"]}
+                  preselectedDomain="input_text"
+                  binding={notificationTitleEntityId ? { entityId: notificationTitleEntityId } : undefined}
+                  onUpdate={(b) => (notificationTitleEntityId = b?.entityId ?? "")}
                 />
               </div>
 
               <div class="field">
-                <label for="notification-body-entity">Body Entity</label>
-                <input
-                  id="notification-body-entity"
-                  type="text"
-                  bind:value={notificationBodyEntityId}
-                  placeholder="input_text.notification_body"
+                <span class="field-label">Body Entity</span>
+                <EntityPicker
+                  component={{}}
+                  allowAttribute={false}
+                  allowedDomains={["input_text"]}
+                  preselectedDomain="input_text"
+                  binding={notificationBodyEntityId ? { entityId: notificationBodyEntityId } : undefined}
+                  onUpdate={(b) => (notificationBodyEntityId = b?.entityId ?? "")}
                 />
               </div>
 
               <div class="field">
-                <label for="notification-severity-entity">Severity Entity</label>
-                <input
-                  id="notification-severity-entity"
-                  type="text"
-                  bind:value={notificationSeverityEntityId}
-                  placeholder="input_select.notification_severity"
+                <span class="field-label">Severity Entity</span>
+                <EntityPicker
+                  component={{}}
+                  allowAttribute={false}
+                  allowedDomains={["input_select", "input_text", "sensor"]}
+                  preselectedDomain="input_select"
+                  binding={notificationSeverityEntityId ? { entityId: notificationSeverityEntityId } : undefined}
+                  onUpdate={(b) => (notificationSeverityEntityId = b?.entityId ?? "")}
                 />
               </div>
             </section>
@@ -331,7 +338,8 @@ input_select:
     gap: 0.25rem;
   }
 
-  .field label {
+  .field label,
+  .field-label {
     font-size: 0.85rem;
     color: var(--color-text-secondary);
   }

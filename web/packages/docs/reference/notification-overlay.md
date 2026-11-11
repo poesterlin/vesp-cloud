@@ -58,12 +58,9 @@ defaults, replace them in the three entity fields.
 | `error` | Red `(255, 60, 60)` | `alert` | Error or critical alert |
 | `question` | Purple `(160, 80, 255)` | `help-circle` | A question or confirmation |
 
-::: warning Severity aliases
-`warn` is recognized as an alias for `warning`. `alert` is recognized as an
-alias for `error`.
-
-The string `critical` is **not** recognized by the firmware. Use `error` or
-`alert` instead.
+::: tip Severity aliases
+`warn` is recognized as an alias for `warning`. `alert` and `critical` are
+recognized as aliases for `error`.
 :::
 
 Each severity level uses a color pair: an **accent** color for the border and a
@@ -92,6 +89,20 @@ Tapping **Dismiss**:
    matches)
 3. Calls Home Assistant to clear both `notification_title` and `notification_body`
    by setting them to empty strings
+
+If a **Dismiss Action** is configured, it runs after step 3.
+
+### Dismiss action
+
+In **Project Settings &rarr; Notification Overlay**, you can set an optional
+**Dismiss Action**. It runs every time the user taps **Dismiss**, after the
+notification has been cleared. It accepts the same actions as a button:
+
+- **Service call:** call any Home Assistant service, for example
+  `script.turn_on` on `script.acknowledge_alarm`, or `lock.lock` on the
+  front door
+- **Navigation:** open a detail view (for example, a camera page), go back
+  home, or switch dashboard pages
 
 When a **new** body value arrives (different from the dismissed fingerprint),
 the overlay becomes visible again. This means:

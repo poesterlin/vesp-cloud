@@ -232,7 +232,7 @@ class NotificationOverlayWidget : public Widget {
   Color severity_color() const {
     if (severity_ == nullptr || severity_->empty()) return Color(0, 200, 255);
     const std::string s = *severity_;
-    if (s == "error" || s == "alert") return Color(255, 60, 60);
+    if (s == "error" || s == "alert" || s == "critical") return Color(255, 60, 60);
     if (s == "warning" || s == "warn") return Color(255, 180, 0);
     if (s == "info") return Color(80, 200, 255);
     if (s == "question") return Color(160, 80, 255);
@@ -242,7 +242,7 @@ class NotificationOverlayWidget : public Widget {
   Color severity_dim_color() const {
     if (severity_ == nullptr || severity_->empty()) return Color(0, 44, 56);
     const std::string s = *severity_;
-    if (s == "error" || s == "alert") return Color(72, 18, 22);
+    if (s == "error" || s == "alert" || s == "critical") return Color(72, 18, 22);
     if (s == "warning" || s == "warn") return Color(72, 48, 6);
     if (s == "info") return Color(12, 52, 72);
     if (s == "question") return Color(42, 24, 72);
@@ -252,7 +252,7 @@ class NotificationOverlayWidget : public Widget {
   const char *severity_icon() const {
     if (severity_ == nullptr || severity_->empty()) return "\xF3\xB0\x8B\xBC";
     const std::string s = *severity_;
-    if (s == "error" || s == "alert") return "\xF3\xB0\x80\xA8";
+    if (s == "error" || s == "alert" || s == "critical") return "\xF3\xB0\x80\xA8";
     if (s == "warning" || s == "warn") return "\xF3\xB0\x80\xA6";
     if (s == "question") return "\xF3\xB0\x8B\x97";
     return "\xF3\xB0\x8B\xBC";
@@ -263,6 +263,7 @@ class NotificationOverlayWidget : public Widget {
     const std::string s = *severity_;
     if (s == "error") return "ERROR";
     if (s == "alert") return "ALERT";
+    if (s == "critical") return "CRITICAL";
     if (s == "warning" || s == "warn") return "WARNING";
     if (s == "question") return "QUESTION";
     if (s == "info") return "INFO";

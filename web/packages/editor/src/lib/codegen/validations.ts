@@ -39,6 +39,7 @@ const FIELD_LABELS: Record<string, string> = {
   onDragEnd: "On Drag End",
   pressAction: "Press Action",
   holdAction: "Hold Action",
+  dismissAction: "Dismiss Action",
 };
 
 function componentLabel(c: Component): string {
@@ -70,6 +71,7 @@ export type ValidationRule = (project: Project) => ValidationError[];
 const RULES: ValidationRule[] = [
   validateCodegenSafeStrings,
   validateActionTargets,
+  validateNotificationOverlayAction,
   validateLightStateBinding,
   validateTodoListBinding,
   validateImageHaBinding,
@@ -378,6 +380,40 @@ function validateActionTargets(project: Project): ValidationError[] {
         });
       }
     }
+  }
+
+  return errors;
+}
+
+function validateNotificationOverlayAction(project: Project): ValidationError[] {
+  const overlay = project.notificationOverlay;
+  if (!overlay || overlay.enabled === false || !overlay.dismissAction) return [];
+  const action = overlay.dismissAction;
+  const label = "Notification overlay";
+  const errors: ValidationError[] = [];
+
+  errors.push(
+    ...validateAction(action, "dismissAction", "", label).map((e) => ({
+      ...e,
+      componentId: undefined,
+    })),
+  );
+
+  if (action.type === "SERVICE_CALL") {
+    errors.push(...validatePattern(action.service, HA_SERVICE_RE, "Notification dismiss action service must be a Home Assistant service", undefined, "dismissAction"));
+    errors.push(...validatePattern(action.target?.entityId, HA_ENTITY_RE, "Notification dismiss action target must be a Home Assistant entity ID", undefined, "dismissAction"));
+    errors.push(...validatePattern(action.target?.deviceId, HA_DEVICE_ID_RE, "Notification dismiss action device target must be a safe device ID", undefined, "dismissAction"));
+  } else if (
+    action.type === "OPEN_DETAIL" &&
+    action.targetId &&
+    !(project.detailViews ?? []).some((view) => view.id === action.targetId)
+  ) {
+    errors.push({
+      type: "error" as const,
+      message: `"Dismiss Action" targets a detail view that no longer exists`,
+      componentLabel: label,
+      field: "dismissAction",
+    });
   }
 
   return errors;

@@ -794,6 +794,10 @@
         "severityEntityId": {
           "type": "string",
           "pattern": "^[a-z_]+\\.[a-z0-9_]+$"
+        },
+        "dismissAction": {
+          "$ref": "#/definitions/ActionBinding",
+          "description": "Optional action run when the user taps Dismiss (in addition to clearing the notification)"
         }
       },
       "additionalProperties": false

@@ -468,6 +468,7 @@ function generateNotificationSubscriptions(project: Project): string {
     lines.push(`                  "${escapeCString(overlay.bodyEntityId)}", esphome::optional<std::string>(),`);
     lines.push(`                  [trim_numeric](esphome::StringRef state) {`);
     lines.push(`                    std::string next = trim_numeric(state);`);
+    lines.push(`                    if (next == "unknown" || next == "unavailable") next.clear();`);
     lines.push(`                    const bool changed = (*g_ui_app.state().notification_body.ptr() != next);`);
     lines.push(`                    g_ui_app.state().notification_body.set(next);`);
     lines.push(`                    if (changed) {`);
@@ -481,15 +482,15 @@ function generateNotificationSubscriptions(project: Project): string {
   if (overlay.severityEntityId) {
     lines.push(`          bind_ha_string("${escapeCString(overlay.severityEntityId)}", &g_ui_app.state().notification_severity);`);
   }
-  // Dismiss action: clears HA title/body entities via input_text.set_value
-  if (overlay.titleEntityId || overlay.bodyEntityId) {
-    const clearLines: string[] = [];
-    if (overlay.titleEntityId) {
-      clearLines.push(`          clear_text_entity("${escapeCString(overlay.titleEntityId)}");`);
-    }
-    if (overlay.bodyEntityId) {
-      clearLines.push(`          clear_text_entity("${escapeCString(overlay.bodyEntityId)}");`);
-    }
+  // Dismiss: clears input_text title/body entities via input_text.set_value.
+  // Read-only entities (e.g. sensors) are reset by the dismiss action instead.
+  const clearable = [overlay.titleEntityId, overlay.bodyEntityId].filter(
+    (id): id is string => !!id && id.startsWith('input_text.'),
+  );
+  if (clearable.length > 0) {
+    const clearLines = clearable.map(
+      (id) => `          clear_text_entity("${escapeCString(id)}");`,
+    );
     lines.push('');
     lines.push('          auto clear_text_entity = [](const std::string& entity_id) {');
     lines.push('            auto *api = esphome::api::global_api_server;');

@@ -357,4 +357,50 @@ describe("notification overlay dismiss action", () => {
     }));
     expect(errors.some((e) => e.field === "dismissAction" && e.type === "error")).toBe(true);
   });
+
+  test("sensor entities are not cleared via input_text; button dismiss action resets them", async () => {
+    const project = makeProject({
+      notificationOverlay: {
+        titleEntityId: "sensor.kuche_clearable_notifications_current_title",
+        bodyEntityId: "sensor.kuche_clearable_notifications_current_message",
+        dismissAction: {
+          type: "SERVICE_CALL",
+          service: "button.press",
+          target: { entityId: "button.kuche_clearable_notifications_dismiss_current" },
+        },
+      },
+    });
+    const yaml = generateESPHomeYAML(project);
+    expect(yaml).toContain('"sensor.kuche_clearable_notifications_current_message"');
+    expect(yaml).not.toContain("clear_text_entity(");
+    expect(yaml).not.toContain("g_ui_app.dismiss_notification =");
+    expect(yaml).toContain('if (next == "unknown" || next == "unavailable") next.clear();');
+
+    const header = generateUIScreensHeader(project);
+    expect(header).toContain(
+      'make_ha_callback("button.kuche_clearable_notifications_dismiss_current", "button.press")',
+    );
+
+    const { validateProject } = await import("../validations");
+    expect(validateProject(project).filter((e) => e.field === "dismissAction")).toEqual([]);
+  });
+
+  test("mixed entities only clear the input_text one", () => {
+    const yaml = generateESPHomeYAML(makeProject({
+      notificationOverlay: {
+        titleEntityId: "input_text.notification_title",
+        bodyEntityId: "sensor.notification_body",
+      },
+    }));
+    expect(yaml).toContain('clear_text_entity("input_text.notification_title")');
+    expect(yaml).not.toContain('clear_text_entity("sensor.notification_body")');
+  });
+
+  test("validation warns when a sensor body has no dismiss action", async () => {
+    const { validateProject } = await import("../validations");
+    const errors = validateProject(makeProject({
+      notificationOverlay: { bodyEntityId: "sensor.notification_body" },
+    }));
+    expect(errors.some((e) => e.field === "dismissAction" && e.type === "warning")).toBe(true);
+  });
 });

@@ -203,7 +203,7 @@ input_select:
                 <EntityPicker
                   component={{}}
                   allowAttribute={false}
-                  allowedDomains={["input_text"]}
+                  allowedDomains={["input_text", "sensor"]}
                   preselectedDomain="input_text"
                   binding={notificationTitleEntityId ? { entityId: notificationTitleEntityId } : undefined}
                   onUpdate={(b) => (notificationTitleEntityId = b?.entityId ?? "")}
@@ -215,7 +215,7 @@ input_select:
                 <EntityPicker
                   component={{}}
                   allowAttribute={false}
-                  allowedDomains={["input_text"]}
+                  allowedDomains={["input_text", "sensor"]}
                   preselectedDomain="input_text"
                   binding={notificationBodyEntityId ? { entityId: notificationBodyEntityId } : undefined}
                   onUpdate={(b) => (notificationBodyEntityId = b?.entityId ?? "")}

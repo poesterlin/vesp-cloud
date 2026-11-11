@@ -387,10 +387,22 @@ function validateActionTargets(project: Project): ValidationError[] {
 
 function validateNotificationOverlayAction(project: Project): ValidationError[] {
   const overlay = project.notificationOverlay;
-  if (!overlay || overlay.enabled === false || !overlay.dismissAction) return [];
-  const action = overlay.dismissAction;
+  if (!overlay || overlay.enabled === false) return [];
   const label = "Notification overlay";
   const errors: ValidationError[] = [];
+
+  const bodyEntity = overlay.bodyEntityId;
+  if (bodyEntity && !bodyEntity.startsWith("input_text.") && !overlay.dismissAction) {
+    errors.push({
+      type: "warning" as const,
+      message: `Body entity "${bodyEntity}" can't be cleared by the display. Set a Dismiss Action (e.g. button.press) to reset it in Home Assistant.`,
+      componentLabel: label,
+      field: "dismissAction",
+    });
+  }
+
+  const action = overlay.dismissAction;
+  if (!action) return errors;
 
   errors.push(
     ...validateAction(action, "dismissAction", "", label).map((e) => ({

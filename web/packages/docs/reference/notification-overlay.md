@@ -88,7 +88,7 @@ Tapping **Dismiss**:
 2. Requests a full screen redraw (the overlay is hidden because the fingerprint
    matches)
 3. Calls Home Assistant to clear both `notification_title` and `notification_body`
-   by setting them to empty strings
+   by setting them to empty strings (only for `input_text` entities)
 
 If a **Dismiss Action** is configured, it runs after step 3.
 
@@ -103,6 +103,10 @@ notification has been cleared. It accepts the same actions as a button:
   front door
 - **Navigation:** open a detail view (for example, a camera page), go back
   home, or switch dashboard pages
+
+Title and body can also be read-only `sensor` entities. The display can't clear
+those, so set a dismiss action that resets the notification in Home Assistant,
+for example `button.press` on `button.kuche_clearable_notifications_dismiss_current`.
 
 When a **new** body value arrives (different from the dismissed fingerprint),
 the overlay becomes visible again. This means:

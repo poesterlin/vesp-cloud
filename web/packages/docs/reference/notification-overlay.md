@@ -93,6 +93,20 @@ Tapping **Dismiss**:
 3. Calls Home Assistant to clear both `notification_title` and `notification_body`
    by setting them to empty strings
 
+If a **Dismiss Action** is configured, it runs after step 3.
+
+### Dismiss action
+
+In **Project Settings &rarr; Notification Overlay**, you can set an optional
+**Dismiss Action**. It runs every time the user taps **Dismiss**, after the
+notification has been cleared. It accepts the same actions as a button:
+
+- **Service call:** call any Home Assistant service, for example
+  `script.turn_on` on `script.acknowledge_alarm`, or `lock.lock` on the
+  front door
+- **Navigation:** open a detail view (for example, a camera page), go back
+  home, or switch dashboard pages
+
 When a **new** body value arrives (different from the dismissed fingerprint),
 the overlay becomes visible again. This means:
 

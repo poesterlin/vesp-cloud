@@ -1175,17 +1175,23 @@ export function generateUIScreensHeader(project: Project): string {
 
   let overlaySetup = '';
   if (overlayEnabled) {
-    overlaySetup = `
+    const dismissAction = emitTapAction(project.notificationOverlay?.dismissAction);
+    const dismissActionDecl = dismissAction
+      ? `\n  auto notification_dismiss_action = ${dismissAction};`
+      : '';
+    const dismissActionCapture = dismissAction ? ', notification_dismiss_action' : '';
+    const dismissActionCall = dismissAction ? '\n      notification_dismiss_action();' : '';
+    overlaySetup = `${dismissActionDecl}
   screens.notification_overlay_ = std::make_unique<NotificationOverlayWidget>(
       state.notification_title.ptr(),
       state.notification_body.ptr(),
       state.notification_severity.ptr(),
       state.notification_dismissed.ptr(),
       ${dw}, ${dh});
-  screens.notification_overlay_->set_dismiss_callback([&state, dismiss_notification]() {
+  screens.notification_overlay_->set_dismiss_callback([&state, dismiss_notification${dismissActionCapture}]() {
       state.notification_dismissed = *state.notification_body.ptr();
       UiInvalidation::request_full();
-      if (dismiss_notification) dismiss_notification();
+      if (dismiss_notification) dismiss_notification();${dismissActionCall}
     });
 `;
   }

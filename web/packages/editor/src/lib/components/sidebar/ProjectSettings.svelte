@@ -6,6 +6,9 @@
   import { onMount } from "svelte";
   import TimezoneEditor from "$lib/components/TimezoneEditor.svelte";
   import ColorPicker from "$lib/components/sidebar/ColorPicker.svelte";
+  import ActionEditor from "$lib/components/sidebar/ActionEditor.svelte";
+  import EntityPicker from "$lib/components/sidebar/EntityPicker.svelte";
+  import type { ActionBinding } from "@vesp-cloud/schema";
   import { goto } from "$app/navigation";
   import homeDisplay from "@vesp-cloud/assets/imgs/examples/home-display.png";
   import homeDisplayModern from "@vesp-cloud/assets/imgs/examples/home-display-modern.png";
@@ -105,6 +108,9 @@
     projectStore.project?.notificationOverlay?.severityEntityId ??
       defaultNotificationOverlay.severityEntityId,
   );
+  let notificationDismissAction = $state<ActionBinding | undefined>(
+    projectStore.project?.notificationOverlay?.dismissAction,
+  );
   let homeAssistantBaseUrl = $state(
     projectStore.project?.secrets?.homeAssistantBaseUrl ?? "",
   );
@@ -179,6 +185,7 @@
           severityEntityId:
             notificationSeverityEntityId.trim() ||
             defaultNotificationOverlay.severityEntityId,
+          dismissAction: notificationDismissAction,
         }
       : {
           enabled: false,
@@ -191,6 +198,7 @@
           severityEntityId:
             notificationSeverityEntityId.trim() ||
             defaultNotificationOverlay.severityEntityId,
+          dismissAction: notificationDismissAction,
         };
 
     projectStore.updateProject({
@@ -357,38 +365,55 @@
         Enable global notification overlay
       </label>
 
-      <div class="field">
-        <label for="notification-title-entity">Title Entity</label>
-        <input
-          id="notification-title-entity"
-          type="text"
-          bind:value={notificationTitleEntityId}
-          placeholder="input_text.notification_title"
-          disabled={!notificationOverlayEnabled}
-        />
-      </div>
+      {#if notificationOverlayEnabled}
+        <div class="field">
+          <span class="field-label">Title Entity</span>
+          <EntityPicker
+            component={{}}
+            allowAttribute={false}
+            allowedDomains={["input_text"]}
+            preselectedDomain="input_text"
+            binding={notificationTitleEntityId ? { entityId: notificationTitleEntityId } : undefined}
+            onUpdate={(b) => (notificationTitleEntityId = b?.entityId ?? "")}
+          />
+        </div>
 
-      <div class="field">
-        <label for="notification-body-entity">Body Entity</label>
-        <input
-          id="notification-body-entity"
-          type="text"
-          bind:value={notificationBodyEntityId}
-          placeholder="input_text.notification_body"
-          disabled={!notificationOverlayEnabled}
-        />
-      </div>
+        <div class="field">
+          <span class="field-label">Body Entity</span>
+          <EntityPicker
+            component={{}}
+            allowAttribute={false}
+            allowedDomains={["input_text"]}
+            preselectedDomain="input_text"
+            binding={notificationBodyEntityId ? { entityId: notificationBodyEntityId } : undefined}
+            onUpdate={(b) => (notificationBodyEntityId = b?.entityId ?? "")}
+          />
+        </div>
 
-      <div class="field">
-        <label for="notification-severity-entity">Severity Entity</label>
-        <input
-          id="notification-severity-entity"
-          type="text"
-          bind:value={notificationSeverityEntityId}
-          placeholder="input_select.notification_severity"
-          disabled={!notificationOverlayEnabled}
-        />
-      </div>
+        <div class="field">
+          <span class="field-label">Severity Entity</span>
+          <EntityPicker
+            component={{}}
+            allowAttribute={false}
+            allowedDomains={["input_select", "input_text", "sensor"]}
+            preselectedDomain="input_select"
+            binding={notificationSeverityEntityId ? { entityId: notificationSeverityEntityId } : undefined}
+            onUpdate={(b) => (notificationSeverityEntityId = b?.entityId ?? "")}
+          />
+        </div>
+
+        <div class="field">
+          <ActionEditor
+            label="Dismiss Action"
+            action={notificationDismissAction}
+            onUpdate={(a) => (notificationDismissAction = a)}
+          />
+          <span class="field-help">
+            Optional. Runs when Dismiss is tapped, after the notification is
+            cleared.
+          </span>
+        </div>
+      {/if}
     </section>
 
     <section>
@@ -485,7 +510,8 @@
     margin-bottom: var(--spacing-md);
   }
 
-  label {
+  label,
+  .field-label {
     font-size: 0.9rem;
     color: var(--color-text-secondary);
   }

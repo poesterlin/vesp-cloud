@@ -58,12 +58,9 @@ defaults, replace them in the three entity fields.
 | `error` | Red `(255, 60, 60)` | `alert` | Error or critical alert |
 | `question` | Purple `(160, 80, 255)` | `help-circle` | A question or confirmation |
 
-::: warning Severity aliases
-`warn` is recognized as an alias for `warning`. `alert` is recognized as an
-alias for `error`.
-
-The string `critical` is **not** recognized by the firmware. Use `error` or
-`alert` instead.
+::: tip Severity aliases
+`warn` is recognized as an alias for `warning`. `alert` and `critical` are
+recognized as aliases for `error`.
 :::
 
 Each severity level uses a color pair: an **accent** color for the border and a

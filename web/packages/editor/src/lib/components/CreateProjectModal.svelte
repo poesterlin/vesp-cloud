@@ -188,8 +188,8 @@ input_select:
     options:
       - info
       - warning
-      - question
-      - critical</code></pre>
+      - error
+      - question</code></pre>
               <p class="note">
                 Install the <a href="https://github.com/vesp-cloud/ha-integration" target="_blank" rel="noopener">vESP.cloud HACS integration</a> to auto-create these entities.
               </p>
